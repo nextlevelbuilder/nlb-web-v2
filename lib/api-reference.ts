@@ -1,4 +1,5 @@
 import { openApiSpec } from "@/lib/openapi";
+import { defaultOgImage, serializeJsonLd, siteUrl } from "@/lib/seo";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
@@ -17,12 +18,26 @@ export function renderApiReference() {
     showDeveloperTools: "never", agent: { disabled: true },
   }).replace(/</g, "\\u003c");
 
+  const base = siteUrl();
+  const og = defaultOgImage();
+  const title = "API Reference | Next Level Builders";
+  const description = "Explore and try the Next Level Builders REST API: product documents, Activities, Pulse, revisions, submissions and agent integrations.";
+  const jsonLd = serializeJsonLd({
+    "@context": "https://schema.org", "@type": "TechArticle", headline: "Next Level Builders API", description,
+    url: `${base}/api-docs`, inLanguage: "en", publisher: { "@type": "Organization", name: "Next Level Builders", url: base },
+  });
+  const social = [
+    ["og:title", title], ["og:description", description], ["og:url", `${base}/api-docs`], ["og:type", "website"],
+    ["og:site_name", "Next Level Builders"], ["og:image", og.url], ["og:image:width", String(og.width)], ["og:image:height", String(og.height)], ["og:image:alt", og.alt],
+  ].map(([property, content]) => `<meta property="${property}" content="${escapeHtml(content)}">`).join("")
+    + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(title)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(og.url)}">`;
+
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>API Reference | Next Level Builders</title>
 <meta name="description" content="Explore and try the Next Level Builders REST API: product documents, Activities, Pulse, revisions, submissions and agent integrations.">
-<link rel="canonical" href="https://nextlevelbuilder.io/api-docs">
+<link rel="canonical" href="${escapeHtml(base)}/api-docs">${social}<script type="application/ld+json">${jsonLd}</script>
 <link rel="alternate" type="text/markdown" href="/api-docs.md">
 <link rel="icon" href="/favicon.ico">
 <style>body{margin:0;background:#0d1117;color:#e6edf3;font:16px/1.65 system-ui,sans-serif}#docs-intro a,#endpoint-index a{color:#a5b4fc}#docs-intro,#endpoint-index{max-width:1100px;margin:auto;padding:24px}#docs-intro h1{line-height:1.2}#docs-intro code,#endpoint-index code{overflow-wrap:anywhere}#endpoint-index summary{cursor:pointer}#endpoint-index li{margin-bottom:24px}#docs-intro nav{display:flex;gap:20px;flex-wrap:wrap}#scalar-reference{min-height:70vh}</style>

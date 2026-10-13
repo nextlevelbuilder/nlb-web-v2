@@ -21,7 +21,7 @@ export async function GET() {
       sections.push(...batch.map((page) => page.body));
     }
     sections.push(...products.map((product) => productMarkdown(product.publishedDocument, `${origin}/products/${product.slug}`) + `\nTrust Score: ${product.trustScore}/100\n\nOrganic votes: ${product.votesCount}\n`));
-    return new Response(sections.join("\n\n---\n\n") + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600, s-maxage=600" } });
+    return new Response(sections.join("\n\n---\n\n") + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600, s-maxage=600", "X-Robots-Tag": "noindex" } });
   } catch {
     return new Response("Full published content is temporarily unavailable.\n", { status: 503, headers: { "Cache-Control": "no-store" } });
   }

@@ -18,7 +18,7 @@ export function slugifyTitle(title: string, maxLength = MAX_BLOG_SLUG_LENGTH): s
     .replace(/-+$/, "");
 }
 
-/** Public path of a post: Vietnamese is unprefixed, English lives under /en (site-wide convention). */
+/** Public path of a post: English is unprefixed, Vietnamese lives under /vi (site-wide convention). */
 export function blogPostPath(locale: BlogLocale, slug: string): string {
   return localizedPath(`/blog/${slug}`, locale);
 }

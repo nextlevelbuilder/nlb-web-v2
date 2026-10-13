@@ -1,10 +1,10 @@
 /**
  * Metadata for the public blog pages. hreflang alternates are emitted only for locales that really
  * have a published post (linked by translationKey), unlike lib/seo.ts pageMetadata which assumes every
- * page exists in both locales and advertises a .md twin the blog does not serve.
+ * page exists in both locales. Both the index and posts advertise their `.md` twin (app/api/markdown).
  */
 import type { Metadata } from "next";
-import { siteUrl } from "@/lib/seo";
+import { defaultOgImage, siteUrl } from "@/lib/seo";
 import { BLOG_COPY } from "./blog-copy";
 import { blogIndexPath, blogPostPath } from "./blog-slug-rules";
 import type { BlogLocale, BlogPost, BlogPostSummary } from "./blog-types";
@@ -22,10 +22,12 @@ export function blogIndexMetadata(locale: BlogLocale, tag?: string): Metadata {
     alternates: {
       canonical,
       languages: { vi: absolute(blogIndexPath("vi")), en: absolute(blogIndexPath("en")), "x-default": absolute(blogIndexPath("vi")) },
+      types: { "text/markdown": `${canonical}.md` },
     },
     // Tag-filtered lists are thin duplicates of the index; keep them out of the index but follow links.
     ...(tag ? { robots: { index: false, follow: true } } : {}),
-    openGraph: { title: copy.indexTitle, description: copy.indexDescription, url: canonical, type: "website", siteName: "Next Level Builders", locale: OG_LOCALE[locale] },
+    openGraph: { title: copy.indexTitle, description: copy.indexDescription, url: canonical, type: "website", siteName: "Next Level Builders", locale: OG_LOCALE[locale], images: [defaultOgImage()] },
+    twitter: { card: "summary_large_image", title: copy.indexTitle, description: copy.indexDescription, images: [defaultOgImage()] },
   };
 }
 
@@ -33,7 +35,8 @@ export function blogPostMetadata(post: BlogPost, translation: BlogPostSummary | 
   const title = post.seo.title ?? post.title;
   const description = post.seo.description ?? post.description ?? undefined;
   const url = absolute(blogPostPath(post.locale, post.slug));
-  const image = post.seo.ogImage ?? post.coverUrl ?? `${siteUrl()}/og-image.png`;
+  const customImage = post.seo.ogImage ?? post.coverUrl;
+  const image = customImage ? { url: absolute(customImage), alt: title } : defaultOgImage();
   const languages: Record<string, string> = {};
   if (translation) {
     languages[post.locale] = url;
@@ -43,7 +46,7 @@ export function blogPostMetadata(post: BlogPost, translation: BlogPostSummary | 
   return {
     title,
     description,
-    alternates: { canonical: post.seo.canonical ?? url, ...(translation ? { languages } : {}) },
+    alternates: { canonical: post.seo.canonical ?? url, ...(translation ? { languages } : {}), types: { "text/markdown": `${url}.md` } },
     ...(post.seo.noindex ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
@@ -52,13 +55,13 @@ export function blogPostMetadata(post: BlogPost, translation: BlogPostSummary | 
       type: "article",
       siteName: "Next Level Builders",
       locale: OG_LOCALE[post.locale],
-      images: [absolute(image)],
+      images: [image],
       ...(post.publishedAt ? { publishedTime: post.publishedAt } : {}),
       modifiedTime: post.updatedAt,
       ...(post.authorName ? { authors: [post.authorName] } : {}),
       tags: post.tags,
     },
-    twitter: { card: "summary_large_image", title, description, images: [absolute(image)] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
