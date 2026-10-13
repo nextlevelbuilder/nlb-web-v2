@@ -173,6 +173,8 @@ SECRET_KEYS=(
   POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL POLAR_PRODUCT_PREMIUM_QUARTERLY POLAR_PRODUCT_PREMIUM_ANNUAL
   POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL POLAR_PRODUCT_VIP_QUARTERLY POLAR_PRODUCT_VIP_ANNUAL
   RESEND_API_KEY RESEND_FROM_EMAIL DISCORD_INVITE_URL DISCORD_BOT_TOKEN DISCORD_GUILD_ID DISCORD_PREMIUM_ROLE_ID
+  # Shared with the MCP worker; the same value must be set there (docs/cutover-runbook.md).
+  MCP_DELEGATION_SECRET
 )
 
 cmd_secrets() {
@@ -193,12 +195,6 @@ cmd_secrets() {
   done
   printf '%s' "$app_url" | wr_project secret put BETTER_AUTH_URL "${env_args[@]}" >/dev/null; echo "set BETTER_AUTH_URL"
   turnstile_secret "$site_key" | wr_project secret put TURNSTILE_SECRET_KEY "${env_args[@]}" >/dev/null; echo "set TURNSTILE_SECRET_KEY"
-  # Per-environment secret for signed MCP delegation assertions, generated once (not stored elsewhere).
-  if wr_project secret list "${env_args[@]}" 2>/dev/null | grep -q '"MCP_DELEGATION_SECRET"'; then
-    echo "keep MCP_DELEGATION_SECRET"
-  else
-    openssl rand -base64 48 | tr -d '\n' | wr_project secret put MCP_DELEGATION_SECRET "${env_args[@]}" >/dev/null; echo "set MCP_DELEGATION_SECRET"
-  fi
 }
 
 case "${1:-}" in

@@ -46,15 +46,15 @@ These hostnames are served from the Digitop account. They stop resolving when th
 | `ui-ux-pro-max-skill.nextlevelbuilder.io` | worker `ui-ux-pro-max-skill-redirect` (Digitop) | Redeploy on hi@ from its source repo |
 | `cdn.nextlevelbuilder.io` | R2 custom domain on a Digitop bucket | Step 6 |
 
-`MCP_DELEGATION_SECRET` must be **identical** on the web worker and the MCP worker of the same environment. `provision-cloudflare.sh` generated the web value and did not store it anywhere. When you set up the MCP worker on hi@, generate one new value and put it on both workers in one pass, without printing it:
+`MCP_DELEGATION_SECRET` must be **identical** on the web worker and the MCP worker of the same environment. It was rotated on 2026-10-13: one value is set on the staging and production web workers and stored as `MCP_DELEGATION_SECRET` in the repo `.env` (gitignored), which `provision-cloudflare.sh secrets` copies from. When you set up the MCP worker on hi@, put the same value on it without printing it:
 
 ```bash
-secret="$(openssl rand -base64 48 | tr -d '\n')"
-printf '%s' "$secret" | wr secret put MCP_DELEGATION_SECRET --env=""            # web, production
 # from the toolkits repo, with its wrangler pinned to hi@:
-printf '%s' "$secret" | npx wrangler secret put MCP_DELEGATION_SECRET            # MCP worker, production
-unset secret
+python3 -c 'import sys; [sys.stdout.write(l.strip().split("=",1)[1]) for l in open(sys.argv[1]) if l.startswith("MCP_DELEGATION_SECRET=")]' \
+  /path/to/nlb-web-v2/.env | npx wrangler secret put MCP_DELEGATION_SECRET            # MCP worker, production
 ```
+
+To rotate again, generate a new value, update `.env`, run `provision-cloudflare.sh secrets staging` and `secrets production`, then set it on the MCP worker. Assertions signed with the old value fail until both sides match.
 
 ## 3. Freeze writes on the old site
 

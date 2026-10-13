@@ -51,9 +51,9 @@ scripts/provision-cloudflare.sh secrets staging     # Worker secrets piped from 
 scripts/provision-cloudflare.sh secrets production
 ```
 
-- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and a per-environment `MCP_DELEGATION_SECRET` (generated once, kept if present).
+- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets; the same value must be on the MCP worker ([cutover-runbook.md](./cutover-runbook.md)).
 - Because `BETTER_AUTH_URL` is the final domain, OAuth sign-in works only there.
-- Course video secrets are set by hand once Stream is enabled: [courses.md](./courses.md#one-time-setup-cloudflare-stream).
+- Course video secrets (`CF_STREAM_API_TOKEN`, signing key, customer subdomain) are set by hand once Stream is enabled: [courses.md](./courses.md#one-time-setup-cloudflare-stream).
 - Staging currently uses the production Polar token. Provide a Polar sandbox token in the staging secrets if staging must not touch live Polar data.
 
 ## Database
