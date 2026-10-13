@@ -8,11 +8,11 @@ export function LiveDemoBlockView({ block }: { block: LiveDemoBlock }) {
   const effectiveSandbox = sandboxTokens || "allow-scripts allow-popups allow-forms";
 
   return (
-    <div className="w-full my-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/40">
-      <div className="flex items-center gap-2 px-4 py-3 bg-white/[0.05] border-b border-white/10 text-xs text-muted-foreground">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-        <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+    <div className="w-full my-6 rounded-sm overflow-hidden border border-line bg-canvas-deep">
+      <div className="flex items-center gap-2 px-4 py-3 bg-surface-raised border-b border-line text-xs text-ink-2">
+        <span aria-hidden className="w-2.5 h-2.5 rounded-full bg-destructive/80" />
+        <span aria-hidden className="w-2.5 h-2.5 rounded-full bg-warning/80" />
+        <span aria-hidden className="w-2.5 h-2.5 rounded-full bg-success/80" />
         <span className="ml-2 font-mono truncate">{embedUrl}</span>
       </div>
       <iframe

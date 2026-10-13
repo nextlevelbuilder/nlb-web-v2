@@ -1,17 +1,20 @@
+import Navbar from '@/components/navbar';
 import PolicySidebar from '@/components/policy-sidebar';
+import FooterSection from '@/components/sections/footer-section';
 
 export default function PoliciesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-6xl px-6 py-24">
-        <div className="flex gap-10 md:gap-14">
-          {/* Sidebar — desktop only; mobile tabs rendered inside PolicySidebar */}
-          <PolicySidebar />
-
-          {/* Main content */}
-          <main className="flex-1 min-w-0">{children}</main>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <Navbar />
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
+          <div className="flex flex-col gap-8 md:flex-row md:gap-12 lg:gap-16">
+            <PolicySidebar />
+            <div className="min-w-0 flex-1">{children}</div>
+          </div>
         </div>
-      </div>
+      </main>
+      <FooterSection />
     </div>
   );
 }

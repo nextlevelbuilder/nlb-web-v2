@@ -1,4 +1,3 @@
-import React from "react";
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -14,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, ArrowLeft, ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import type { ProductDocument } from "@/packages/contracts/src";
 import PreviewPublishButton from "@/components/studio/preview-publish-button";
@@ -54,7 +53,7 @@ export default async function StudioProductPreviewPage({ params }: StudioPreview
       notFound();
     }
 
-    if ((session.user as any).role !== "admin") {
+    if ((session.user as { role?: string }).role !== "admin") {
       const [membership] = await db
         .select()
         .from(members)
@@ -82,72 +81,66 @@ export default async function StudioProductPreviewPage({ params }: StudioPreview
   const rawDoc = latestRevision.document;
   const document = (typeof rawDoc === "string" ? JSON.parse(rawDoc) : rawDoc || {}) as ProductDocument;
   const blocks = Array.isArray(document?.blocks) ? document.blocks : [];
-  const contentHash = latestRevision.contentHash || (latestRevision as any)?.content_hash || "";
+  // Older rows exposed the raw snake_case column; keep reading it as a fallback.
+  const contentHash = latestRevision.contentHash || (latestRevision as { content_hash?: string }).content_hash || "";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
 
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {/* Back to Studio navigation */}
-          <div className="flex items-center justify-between">
-            <Button asChild variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+      <main id="main" className="flex-1">
+        <div className="wrap max-w-5xl space-y-8 pb-section-sm pt-[calc(var(--header-h)+2rem)] md:pt-[calc(var(--header-h)+3rem)]">
+          <nav aria-label={t("backToStudio")} className="flex flex-wrap items-center justify-between gap-3">
+            <Button asChild variant="ghost" size="sm" className="gap-2">
               <Link href="/studio">
-                <ArrowLeft className="w-4 h-4" />
-                {t('backToStudio')}
+                <ArrowLeft aria-hidden className="h-4 w-4" />
+                {t("backToStudio")}
               </Link>
             </Button>
-
             {product.status === "published" && (
-              <Button asChild variant="outline" size="sm" className="gap-2 border-emerald-500/30 text-emerald-400">
+              <Button asChild variant="outline" size="sm" className="gap-2">
                 <Link href={`/products/${product.slug}`}>
-                  {t('viewLivePage')}
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  {t("viewLivePage")}
+                  <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             )}
-          </div>
+          </nav>
 
-          {/* Studio Preview Watermark Bar with Publish Action */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
-            <div className="flex items-center gap-3">
-              <Eye className="w-5 h-5 text-amber-400 shrink-0" />
-              <div>
-                <div className="text-sm font-bold text-amber-400">{t('sandboxPreview')}</div>
-                <div className="text-xs text-muted-foreground">
-                  {t('revision')} #{latestRevision.revisionNumber} ({t('hash')}: {contentHash ? contentHash.slice(0, 12) : "draft"}…) • {t('status')}:{" "}
-                  <span className="font-semibold text-foreground uppercase">{product.status}</span>
-                </div>
+          <section
+            aria-label={t("sandboxPreview")}
+            className="flex flex-col items-start justify-between gap-4 rounded-sm border border-warning/50 bg-warning/10 p-4 sm:flex-row sm:items-center sm:p-5"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <Eye aria-hidden className="h-5 w-5 shrink-0 text-warning" />
+              <div className="min-w-0">
+                <p className="text-step-sm font-medium text-foreground">{t("sandboxPreview")}</p>
+                <p className="break-words font-mono text-step-xs text-ink-2">
+                  {t("revision")} #{latestRevision.revisionNumber} ({t("hash")}: {contentHash ? contentHash.slice(0, 12) : "draft"}…) · {t("status")}:{" "}
+                  <span className="uppercase text-foreground">{product.status}</span>
+                </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-              <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-xs px-3 py-1 bg-amber-500/5">
-                {t('draftMode')}
-              </Badge>
+            <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+              <Badge variant="outline" className="border-warning/50 text-warning">{t("draftMode")}</Badge>
               <PreviewPublishButton slug={product.slug} status={product.status} />
             </div>
-          </div>
+          </section>
 
-          {/* Main Listing Block Presentation */}
-          <main className="space-y-12 pt-4">
-            <div className="border-b border-white/10 pb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-2xl text-primary overflow-hidden shrink-0">
-                  <ProductLogo src={product.logoUrl} name={product.title} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-extrabold tracking-tight">{product.title}</h1>
-                  <p className="text-lg text-muted-foreground mt-1">{product.tagline}</p>
-                </div>
+          <article className="space-y-12 pt-4">
+            <header className="flex items-center gap-5 border-b border-line pb-8">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-surface-raised text-primary">
+                <ProductLogo src={product.logoUrl} name={product.title} />
               </div>
-            </div>
-
+              <div className="min-w-0">
+                <h1 className="break-words font-display text-step-2xl font-light">{product.title}</h1>
+                <p className="mt-1 text-step-md text-ink-2">{product.tagline}</p>
+              </div>
+            </header>
             <BlockRenderer blocks={blocks} />
-          </main>
+          </article>
         </div>
-      </div>
+      </main>
 
       <FooterSection />
     </div>

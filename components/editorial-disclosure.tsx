@@ -10,9 +10,9 @@ export default function EditorialDisclosure({ className = "" }: EditorialDisclos
     <div
       role="note"
       aria-label="Editorial Independence Disclosure"
-      className={`p-4 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-muted-foreground flex items-start gap-3 leading-relaxed ${className}`}
+      className={`flex items-start gap-3 rounded-sm border border-line bg-surface p-4 text-step-sm leading-relaxed text-ink-2 ${className}`}
     >
-      <div className="w-5 h-5 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5">
+      <div aria-hidden className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-line text-primary">
         <Info className="w-3 h-3" />
       </div>
       <div>

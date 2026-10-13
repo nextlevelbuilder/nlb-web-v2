@@ -27,7 +27,6 @@ import {
   History,
   MapPin,
   Send,
-  Eye,
   Plus,
 } from 'lucide-react';
 import type { Block } from '@/packages/contracts/src';
@@ -64,7 +63,8 @@ export default function BlockItemCard({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Helper to update props
-  const updateProps = (newProps: Partial<any>) => {
+  // Callers pass fields of the current block's own props; the cast re-asserts the discriminated union.
+  const updateProps = (newProps: Record<string, unknown>) => {
     onUpdateBlock(index, {
       ...block,
       props: {
@@ -78,37 +78,37 @@ export default function BlockItemCard({
   const getBlockMeta = (type: Block['type']) => {
     switch (type) {
       case 'analytics':
-        return { icon: BarChart3, color: 'text-sky-400', badgeClass: 'bg-sky-500/10 border-sky-500/30 text-sky-400' };
+        return { icon: BarChart3, color: 'text-primary', badgeClass: 'bg-primary/10 border-primary/40 text-primary' };
       case 'hero':
-        return { icon: Sparkles, color: 'text-amber-400', badgeClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400' };
+        return { icon: Sparkles, color: 'text-warning', badgeClass: 'bg-warning/10 border-warning/40 text-warning' };
       case 'grid':
-        return { icon: LayoutGrid, color: 'text-cyan-400', badgeClass: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' };
+        return { icon: LayoutGrid, color: 'text-primary', badgeClass: 'bg-primary/10 border-primary/40 text-primary' };
       case 'mediaGallery':
-        return { icon: ImageIcon, color: 'text-emerald-400', badgeClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
+        return { icon: ImageIcon, color: 'text-success', badgeClass: 'bg-success/10 border-success/40 text-success' };
       case 'carousel':
-        return { icon: Layers, color: 'text-blue-400', badgeClass: 'bg-blue-500/10 border-blue-500/30 text-blue-400' };
+        return { icon: Layers, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'techStack':
-        return { icon: Cpu, color: 'text-purple-400', badgeClass: 'bg-purple-500/10 border-purple-500/30 text-purple-400' };
+        return { icon: Cpu, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'liveDemo':
-        return { icon: Video, color: 'text-rose-400', badgeClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400' };
+        return { icon: Video, color: 'text-destructive', badgeClass: 'bg-destructive/10 border-destructive/40 text-destructive' };
       case 'pricing':
-        return { icon: DollarSign, color: 'text-emerald-400', badgeClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
+        return { icon: DollarSign, color: 'text-success', badgeClass: 'bg-success/10 border-success/40 text-success' };
       case 'faq':
-        return { icon: HelpCircle, color: 'text-teal-400', badgeClass: 'bg-teal-500/10 border-teal-500/30 text-teal-400' };
+        return { icon: HelpCircle, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'founder':
-        return { icon: User, color: 'text-sky-400', badgeClass: 'bg-sky-500/10 border-sky-500/30 text-sky-400' };
+        return { icon: User, color: 'text-primary', badgeClass: 'bg-primary/10 border-primary/40 text-primary' };
       case 'verification':
-        return { icon: ShieldCheck, color: 'text-emerald-400', badgeClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
+        return { icon: ShieldCheck, color: 'text-success', badgeClass: 'bg-success/10 border-success/40 text-success' };
       case 'quote':
-        return { icon: Quote, color: 'text-indigo-400', badgeClass: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' };
+        return { icon: Quote, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'caseStudy':
-        return { icon: BookOpen, color: 'text-orange-400', badgeClass: 'bg-orange-500/10 border-orange-500/30 text-orange-400' };
+        return { icon: BookOpen, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'milestones':
-        return { icon: Flag, color: 'text-yellow-400', badgeClass: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' };
+        return { icon: Flag, color: 'text-warning', badgeClass: 'bg-warning/10 border-warning/40 text-warning' };
       case 'changelog':
-        return { icon: History, color: 'text-lime-400', badgeClass: 'bg-lime-500/10 border-lime-500/30 text-lime-400' };
+        return { icon: History, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'roadmap':
-        return { icon: MapPin, color: 'text-fuchsia-400', badgeClass: 'bg-fuchsia-500/10 border-fuchsia-500/30 text-fuchsia-400' };
+        return { icon: MapPin, color: 'text-ink-2', badgeClass: 'bg-surface-raised border-line-strong text-ink-2' };
       case 'cta':
         return { icon: Send, color: 'text-primary', badgeClass: 'bg-primary/10 border-primary/30 text-primary' };
       default:
@@ -118,6 +118,8 @@ export default function BlockItemCard({
 
   const meta = getBlockMeta(block.type);
   const IconComponent = meta.icon;
+  // Unique, stable prefix for label/field associations within this block card.
+  const fieldPrefix = `block-${block.id}`;
 
   // Render quick summary text based on block type
   const getSummary = () => {
@@ -161,7 +163,7 @@ export default function BlockItemCard({
       case 'caseStudy':
         return `Case Study: ${block.props.customerName || 'Customer'}`;
       default:
-        return (block as any).id || 'Custom Block';
+        return (block as { id?: string }).id || 'Custom Block';
     }
   };
 
@@ -172,33 +174,34 @@ export default function BlockItemCard({
       onDragOver={(e) => onDragOver(e, index)}
       onDragEnd={onDragEnd}
       onDrop={(event) => onDrop?.(event, index)}
-      className={`rounded-2xl border transition-all ${
+      className={`rounded-sm border transition-colors duration-base ${
         isDragOver
-          ? 'border-primary bg-primary/10 scale-[1.01] shadow-lg shadow-primary/20'
-          : 'bg-black/40 border-white/10 hover:border-white/20'
+          ? 'border-primary bg-primary/10'
+          : 'bg-surface border-line hover:border-line-strong'
       }`}
     >
       {/* Block Header Row */}
-      <div className="p-3.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
           {/* Drag Handle */}
           <div
+            aria-hidden
             title="Drag to reorder"
-            className="cursor-grab active:cursor-grabbing text-muted-foreground/60 hover:text-foreground p-1 rounded-md transition-colors shrink-0"
+            className="shrink-0 cursor-grab rounded-sm p-1 text-ink-3 transition-colors hover:text-foreground active:cursor-grabbing"
           >
             <GripVertical className="w-4 h-4" />
           </div>
 
-          <span className="font-mono text-xs text-muted-foreground w-5 shrink-0">#{index + 1}</span>
+          <span className="w-6 shrink-0 font-mono text-step-xs text-ink-3">#{index + 1}</span>
 
           {/* Type Badge */}
-          <Badge variant="outline" className={`text-xs font-mono capitalize gap-1 shrink-0 ${meta.badgeClass}`}>
-            <IconComponent className="w-3 h-3" />
+          <Badge variant="outline" className={`shrink-0 gap-1 normal-case ${meta.badgeClass}`}>
+            <IconComponent aria-hidden className="w-3 h-3" />
             {block.type}
           </Badge>
 
           {/* Visual Summary */}
-          <span className="text-xs font-medium text-foreground truncate">{getSummary()}</span>
+          <span className="min-w-0 truncate text-step-sm text-foreground">{getSummary()}</span>
         </div>
 
         {/* Action Buttons */}
@@ -208,16 +211,18 @@ export default function BlockItemCard({
             size="sm"
             variant="ghost"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1 rounded-lg"
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? `Collapse block ${index + 1}` : `Customize block ${index + 1}`}
+            className="h-10 gap-1 px-2.5"
           >
             {isExpanded ? (
               <>
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp aria-hidden className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Collapse</span>
               </>
             ) : (
               <>
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown aria-hidden className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Customize</span>
               </>
             )}
@@ -229,10 +234,10 @@ export default function BlockItemCard({
             variant="ghost"
             disabled={index === 0}
             onClick={() => onMoveBlock(index, 'up')}
-            title="Move Up"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            aria-label={`Move block ${index + 1} up`}
+            className="h-10 w-10 p-0"
           >
-            <ArrowUp className="w-3.5 h-3.5" />
+            <ArrowUp aria-hidden className="w-3.5 h-3.5" />
           </Button>
 
           <Button
@@ -241,10 +246,10 @@ export default function BlockItemCard({
             variant="ghost"
             disabled={index === totalBlocks - 1}
             onClick={() => onMoveBlock(index, 'down')}
-            title="Move Down"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            aria-label={`Move block ${index + 1} down`}
+            className="h-10 w-10 p-0"
           >
-            <ArrowDown className="w-3.5 h-3.5" />
+            <ArrowDown aria-hidden className="w-3.5 h-3.5" />
           </Button>
 
           <Button
@@ -252,60 +257,64 @@ export default function BlockItemCard({
             size="sm"
             variant="ghost"
             onClick={() => onRemoveBlock(index)}
-            title="Delete Block"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
+            aria-label={`Delete block ${index + 1}`}
+            className="h-10 w-10 p-0 hover:text-destructive"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 aria-hidden className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
       {/* Expandable Customizer & Visual Preview */}
       {isExpanded && (
-        <div className="p-4 border-t border-white/10 bg-white/[0.01] space-y-4 rounded-b-2xl text-xs">
+        <div className="space-y-4 border-t border-line bg-surface-raised p-4 text-step-sm">
           {(block.type === 'activities' || block.type === 'pulse') && <ActivityPulseEditor block={block} onChange={(updated) => onUpdateBlock(index, updated)} />}
           {/* HERO BLOCK CUSTOMIZER */}
           {block.type === 'hero' && (
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-muted-foreground font-semibold uppercase">Headline</label>
+                <label htmlFor={`${fieldPrefix}-headline`} className="mono-label text-ink-3">Headline</label>
                 <input
+                  id={`${fieldPrefix}-headline`}
                   type="text"
                   value={block.props.headline || ''}
                   onChange={(e) => updateProps({ headline: e.target.value })}
                   placeholder="Compelling product title"
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-muted-foreground font-semibold uppercase">Subheadline</label>
+                <label htmlFor={`${fieldPrefix}-subheadline`} className="mono-label text-ink-3">Subheadline</label>
                 <textarea
+                  id={`${fieldPrefix}-subheadline`}
                   value={block.props.subheadline || ''}
                   onChange={(e) => updateProps({ subheadline: e.target.value })}
                   placeholder="One or two sentences explaining the core value"
                   rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] text-muted-foreground font-semibold uppercase">Button Text</label>
+                  <label htmlFor={`${fieldPrefix}-button-text`} className="mono-label text-ink-3">Button Text</label>
                   <input
+                    id={`${fieldPrefix}-button-text`}
                     type="text"
                     value={block.props.primaryCtaText || ''}
                     onChange={(e) => updateProps({ primaryCtaText: e.target.value })}
                     placeholder="Get Started"
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                    className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-muted-foreground font-semibold uppercase">Button URL</label>
+                  <label htmlFor={`${fieldPrefix}-button-url`} className="mono-label text-ink-3">Button URL</label>
                   <input
+                    id={`${fieldPrefix}-button-url`}
                     type="url"
                     value={block.props.primaryCtaUrl || ''}
                     onChange={(e) => updateProps({ primaryCtaUrl: e.target.value })}
                     placeholder="https://yourproduct.com"
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                    className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               </div>
@@ -315,7 +324,7 @@ export default function BlockItemCard({
           {block.type === 'analytics' && (
             <div className="space-y-3">
               <div>
-                <label htmlFor={`analytics-title-${block.id}`} className="text-[11px] text-muted-foreground font-semibold uppercase">Title</label>
+                <label htmlFor={`analytics-title-${block.id}`} className="mono-label text-ink-3">Title</label>
                 <input
                   id={`analytics-title-${block.id}`}
                   type="text"
@@ -323,23 +332,23 @@ export default function BlockItemCard({
                   minLength={1}
                   maxLength={100}
                   onChange={(e) => updateProps({ title: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <div>
-                <label htmlFor={`analytics-period-${block.id}`} className="text-[11px] text-muted-foreground font-semibold uppercase">Reporting period</label>
+                <label htmlFor={`analytics-period-${block.id}`} className="mono-label text-ink-3">Reporting period</label>
                 <select
                   id={`analytics-period-${block.id}`}
                   value={block.props.period}
                   onChange={(e) => updateProps({ period: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-background border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="7d">Last 7 days</option>
                   <option value="30d">Last 30 days</option>
                   <option value="90d">Last 90 days</option>
                 </select>
               </div>
-              <p className="text-xs text-muted-foreground">Publishing this block shares aggregate visits and website clicks for this NLB product page. It does not measure your external website. Preview visits are not counted.</p>
+              <p className="text-step-xs text-ink-2">Publishing this block shares aggregate visits and website clicks for this NLB product page. It does not measure your external website. Preview visits are not counted.</p>
             </div>
           )}
 
@@ -347,7 +356,7 @@ export default function BlockItemCard({
           {(block.type === 'mediaGallery' || block.type === 'carousel') && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-semibold uppercase">
+                <span className="mono-label text-ink-3">
                   Images (Uploaded to Cloudflare R2)
                 </span>
                 <Button
@@ -371,21 +380,21 @@ export default function BlockItemCard({
                       });
                     }
                   }}
-                  className="h-7 text-xs gap-1 border-white/10"
+                  className="gap-1"
                 >
-                  <Plus className="w-3 h-3 text-primary" />
+                  <Plus aria-hidden className="w-3 h-3 text-primary" />
                   Add Image Slot
                 </Button>
               </div>
 
               {/* List of images with R2 upload */}
               {(block.type === 'mediaGallery' ? block.props.images || [] : block.props.items || []).map(
-                (item: any, imgIdx: number) => {
+                (item: { url?: string; imageUrl?: string }, imgIdx: number) => {
                   const url = block.type === 'mediaGallery' ? item.url : item.imageUrl;
                   return (
-                    <div key={imgIdx} className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
+                    <div key={imgIdx} className="space-y-2 rounded-sm border border-line bg-surface p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground font-mono">Image #{imgIdx + 1}</span>
+                        <span className="font-mono text-step-xs text-ink-3">Image #{imgIdx + 1}</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -393,17 +402,18 @@ export default function BlockItemCard({
                           onClick={() => {
                             if (block.type === 'mediaGallery') {
                               updateProps({
-                                images: (block.props.images || []).filter((_: any, i: number) => i !== imgIdx),
+                                images: (block.props.images || []).filter((_: unknown, i: number) => i !== imgIdx),
                               });
                             } else {
                               updateProps({
-                                items: (block.props.items || []).filter((_: any, i: number) => i !== imgIdx),
+                                items: (block.props.items || []).filter((_: unknown, i: number) => i !== imgIdx),
                               });
                             }
                           }}
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-rose-400"
+                          aria-label={`Remove image ${imgIdx + 1}`}
+                          className="h-10 w-10 p-0 hover:text-destructive"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 aria-hidden className="w-3 h-3" />
                         </Button>
                       </div>
 
@@ -441,13 +451,14 @@ export default function BlockItemCard({
                 folder="videos"
               />
               <div>
-                <label className="text-[11px] text-muted-foreground font-semibold uppercase">Or Embed / Iframe URL</label>
+                <label htmlFor={`${fieldPrefix}-or-embed-iframe-url`} className="mono-label text-ink-3">Or Embed / Iframe URL</label>
                 <input
+                  id={`${fieldPrefix}-or-embed-iframe-url`}
                   type="url"
                   value={block.props.embedUrl || ''}
                   onChange={(e) => updateProps({ embedUrl: e.target.value })}
                   placeholder="https://youtube.com/embed/... or https://demo.yourproduct.com"
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
             </div>
@@ -458,23 +469,25 @@ export default function BlockItemCard({
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] text-muted-foreground font-semibold uppercase">Founder Name</label>
+                  <label htmlFor={`${fieldPrefix}-founder-name`} className="mono-label text-ink-3">Founder Name</label>
                   <input
+                    id={`${fieldPrefix}-founder-name`}
                     type="text"
                     value={block.props.name || ''}
                     onChange={(e) => updateProps({ name: e.target.value })}
                     placeholder="Jane Doe"
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                    className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-muted-foreground font-semibold uppercase">X / Twitter Handle</label>
+                  <label htmlFor={`${fieldPrefix}-x-twitter-handle`} className="mono-label text-ink-3">X / Twitter Handle</label>
                   <input
+                    id={`${fieldPrefix}-x-twitter-handle`}
                     type="text"
                     value={block.props.xHandle || ''}
                     onChange={(e) => updateProps({ xHandle: e.target.value })}
                     placeholder="builder_jane"
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                    className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               </div>
@@ -485,13 +498,14 @@ export default function BlockItemCard({
                 folder="logos"
               />
               <div>
-                <label className="text-[11px] text-muted-foreground font-semibold uppercase">Bio</label>
+                <label htmlFor={`${fieldPrefix}-bio`} className="mono-label text-ink-3">Bio</label>
                 <textarea
+                  id={`${fieldPrefix}-bio`}
                   value={block.props.bio || ''}
                   onChange={(e) => updateProps({ bio: e.target.value })}
                   placeholder="Building in public with autonomous coding agents..."
                   rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-foreground text-xs focus:outline-none focus:border-primary"
+                  className="mt-1 w-full rounded-sm border border-input bg-surface px-3 py-2 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
             </div>
@@ -501,7 +515,7 @@ export default function BlockItemCard({
           {block.type === 'grid' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-semibold uppercase">
+                <span className="mono-label text-ink-3">
                   Feature Cards ({block.props.items?.length || 0})
                 </span>
                 <Button
@@ -514,16 +528,16 @@ export default function BlockItemCard({
                       items: [...items, { title: `Feature ${items.length + 1}`, description: 'Feature description' }],
                     });
                   }}
-                  className="h-7 text-xs gap-1 border-white/10"
+                  className="gap-1"
                 >
-                  <Plus className="w-3 h-3 text-primary" />
+                  <Plus aria-hidden className="w-3 h-3 text-primary" />
                   Add Feature
                 </Button>
               </div>
 
               <div className="space-y-2">
-                {(block.props.items || []).map((item: any, fIdx: number) => (
-                  <div key={fIdx} className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
+                {(block.props.items || []).map((item, fIdx: number) => (
+                  <div key={fIdx} className="space-y-2 rounded-sm border border-line bg-surface p-3">
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
@@ -534,7 +548,8 @@ export default function BlockItemCard({
                           updateProps({ items: newItems });
                         }}
                         placeholder="Feature Title"
-                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs font-semibold focus:outline-none focus:border-primary"
+                        aria-label={`Feature ${fIdx + 1} title`}
+                        className="min-w-0 flex-1 rounded-sm border border-input bg-surface px-2.5 py-1.5 text-step-sm font-medium text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                       <Button
                         type="button"
@@ -542,12 +557,13 @@ export default function BlockItemCard({
                         size="sm"
                         onClick={() => {
                           updateProps({
-                            items: block.props.items.filter((_: any, i: number) => i !== fIdx),
+                            items: block.props.items.filter((_: unknown, i: number) => i !== fIdx),
                           });
                         }}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-400"
+                        aria-label={`Remove feature ${fIdx + 1}`}
+                        className="h-10 w-10 p-0 hover:text-destructive"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 aria-hidden className="w-3 h-3" />
                       </Button>
                     </div>
                     <textarea
@@ -558,8 +574,9 @@ export default function BlockItemCard({
                         updateProps({ items: newItems });
                       }}
                       placeholder="Brief benefit description"
+                      aria-label={`Feature ${fIdx + 1} description`}
                       rows={2}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs focus:outline-none focus:border-primary"
+                      className="w-full rounded-sm border border-input bg-surface px-2.5 py-1.5 text-step-sm text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </div>
                 ))}
@@ -570,21 +587,22 @@ export default function BlockItemCard({
           {/* TECH STACK CUSTOMIZER */}
           {block.type === 'techStack' && (
             <div className="space-y-2">
-              <label className="text-[11px] text-muted-foreground font-semibold uppercase">Technologies</label>
-              <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-white/[0.02] border border-white/10">
-                {(block.props.technologies || []).map((t: any, tIdx: number) => (
-                  <Badge key={tIdx} variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300 gap-1.5 py-1">
+              <span className="mono-label text-ink-3">Technologies</span>
+              <div className="flex flex-wrap gap-1.5 rounded-sm border border-line bg-surface p-2">
+                {(block.props.technologies || []).map((t, tIdx: number) => (
+                  <Badge key={tIdx} variant="outline" className="gap-1.5 normal-case">
                     {t.name}
                     <button
                       type="button"
                       onClick={() => {
                         updateProps({
-                          technologies: block.props.technologies.filter((_: any, i: number) => i !== tIdx),
+                          technologies: block.props.technologies.filter((_: unknown, i: number) => i !== tIdx),
                         });
                       }}
-                      className="hover:text-rose-400"
+                      aria-label={`Remove ${t.name}`}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-sm hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 aria-hidden className="w-3 h-3" />
                     </button>
                   </Badge>
                 ))}
@@ -596,7 +614,7 @@ export default function BlockItemCard({
           {block.type === 'faq' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-semibold uppercase">
+                <span className="mono-label text-ink-3">
                   Questions & Answers ({block.props.items?.length || 0})
                 </span>
                 <Button
@@ -609,15 +627,15 @@ export default function BlockItemCard({
                       items: [...items, { question: 'New Question', answer: 'Clear answer to this question.' }],
                     });
                   }}
-                  className="h-7 text-xs gap-1 border-white/10"
+                  className="gap-1"
                 >
-                  <Plus className="w-3 h-3 text-primary" />
+                  <Plus aria-hidden className="w-3 h-3 text-primary" />
                   Add FAQ Item
                 </Button>
               </div>
 
-              {(block.props.items || []).map((item: any, qIdx: number) => (
-                <div key={qIdx} className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
+              {(block.props.items || []).map((item, qIdx: number) => (
+                <div key={qIdx} className="space-y-2 rounded-sm border border-line bg-surface p-3">
                   <div className="flex items-center justify-between gap-2">
                     <input
                       type="text"
@@ -628,7 +646,8 @@ export default function BlockItemCard({
                         updateProps({ items: newItems });
                       }}
                       placeholder="Question"
-                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs font-semibold focus:outline-none focus:border-primary"
+                      aria-label={`Question ${qIdx + 1}`}
+                      className="min-w-0 flex-1 rounded-sm border border-input bg-surface px-2.5 py-1.5 text-step-sm font-medium text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                     <Button
                       type="button"
@@ -636,12 +655,13 @@ export default function BlockItemCard({
                       size="sm"
                       onClick={() => {
                         updateProps({
-                          items: block.props.items.filter((_: any, i: number) => i !== qIdx),
+                          items: block.props.items.filter((_: unknown, i: number) => i !== qIdx),
                         });
                       }}
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-400"
+                      aria-label={`Remove question ${qIdx + 1}`}
+                      className="h-10 w-10 p-0 hover:text-destructive"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 aria-hidden className="w-3 h-3" />
                     </Button>
                   </div>
                   <textarea
@@ -652,8 +672,9 @@ export default function BlockItemCard({
                       updateProps({ items: newItems });
                     }}
                     placeholder="Answer"
+                    aria-label={`Answer ${qIdx + 1}`}
                     rows={2}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs focus:outline-none focus:border-primary"
+                    className="w-full rounded-sm border border-input bg-surface px-2.5 py-1.5 text-step-sm text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               ))}

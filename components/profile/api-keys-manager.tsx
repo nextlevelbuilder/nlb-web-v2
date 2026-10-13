@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,9 +13,7 @@ import {
   Loader2,
   Terminal,
   Cpu,
-  Globe,
   X,
-  Sparkles,
   ShieldCheck,
   CheckCircle2,
 } from 'lucide-react';
@@ -55,7 +52,7 @@ export default function ApiKeysManager() {
       if (res.ok && data.success) {
         setKeys(data.data || []);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to fetch API keys:', err);
     } finally {
       setLoading(false);
@@ -94,8 +91,8 @@ export default function ApiKeysManager() {
       setKeyName('');
       setExpiresDays(undefined);
       await loadKeys();
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate key');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Failed to generate key');
     } finally {
       setIsCreating(false);
     }
@@ -119,8 +116,8 @@ export default function ApiKeysManager() {
       setSuccess(t('revokedSuccess'));
       setKeys((prev) => prev.filter((k) => k.id !== id));
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete key');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Failed to delete key');
     } finally {
       setRevokingId(null);
     }
@@ -132,75 +129,75 @@ export default function ApiKeysManager() {
       setCopiedKey(true);
       setTimeout(() => setCopiedKey(false), 2000);
     } catch {
-      // fallback
+      // Clipboard access can be denied; the key stays selectable (select-all) for manual copy.
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with Title & Action */}
+    <section aria-labelledby="api-keys-title" className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Key className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-bold text-foreground">{t('apiKeysTitle')}</h3>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+          <h2 id="api-keys-title" className="flex items-center gap-2 font-display text-step-xl text-foreground">
+            <Key aria-hidden className="w-4 h-4 text-primary" />
+            {t('apiKeysTitle')}
+          </h2>
+          <p className="mt-2 max-w-2xl text-step-sm leading-relaxed text-ink-2">
             {t('apiKeysDesc')}
           </p>
         </div>
       </div>
 
-      {/* Error / Success Feedback */}
-      {error && (
-        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {success && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
+      <div aria-live="polite" className="space-y-3 empty:hidden">
+        {error && (
+          <div role="alert" className="flex items-center gap-2.5 rounded-sm border border-destructive/50 bg-destructive/10 p-3.5 text-step-sm text-foreground">
+            <AlertCircle aria-hidden className="w-4 h-4 shrink-0 text-destructive" />
+            <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div role="status" className="flex items-center gap-2.5 rounded-sm border border-success/50 bg-success/10 p-3.5 text-step-sm text-foreground">
+            <CheckCircle2 aria-hidden className="w-4 h-4 shrink-0 text-success" />
+            <span>{success}</span>
+          </div>
+        )}
+      </div>
 
       {/* Secret Key Alert Box (Displayed ONLY after creation) */}
       {newlyCreatedKey && (
-        <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3 shadow-xl animate-in fade-in duration-200">
+        <div role="region" aria-labelledby="new-key-title" className="space-y-3 rounded-sm border border-warning/50 bg-warning/10 p-5">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-              <ShieldCheck className="w-5 h-5 shrink-0" />
+            <h3 id="new-key-title" className="flex items-center gap-2 text-step-base font-medium text-foreground">
+              <ShieldCheck aria-hidden className="w-5 h-5 shrink-0 text-warning" />
               <span>{t('newKeyAlertTitle')}</span>
-            </div>
+            </h3>
             <button
               type="button"
               onClick={() => setNewlyCreatedKey(null)}
-              className="text-muted-foreground hover:text-foreground text-xs p-1"
+              aria-label="Dismiss"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <X className="w-4 h-4" />
+              <X aria-hidden className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">{t('newKeyAlertDesc')}</p>
+          <p className="text-step-sm leading-relaxed text-ink-2">{t('newKeyAlertDesc')}</p>
 
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-black/70 border border-amber-500/30 font-mono text-xs text-amber-300 overflow-x-auto">
-            <span className="flex-1 truncate select-all">{newlyCreatedKey}</span>
+          <div className="flex flex-wrap items-center gap-2 rounded-sm border border-warning/50 bg-canvas-deep p-3 font-mono text-step-xs text-foreground">
+            <code className="min-w-0 flex-1 break-all select-all">{newlyCreatedKey}</code>
             <Button
               type="button"
               size="sm"
               onClick={() => copyToClipboard(newlyCreatedKey)}
-              className="rounded-lg gap-1.5 px-3 h-8 bg-amber-500 hover:bg-amber-600 text-black font-bold shrink-0"
+              className="gap-1.5 shrink-0"
             >
               {copiedKey ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Check aria-hidden className="w-3.5 h-3.5" />
                   <span>{t('keyCopied')}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy aria-hidden className="w-3.5 h-3.5" />
                   <span>{t('copyKeyBtn')}</span>
                 </>
               )}
@@ -210,30 +207,33 @@ export default function ApiKeysManager() {
       )}
 
       {/* Key Generation Form */}
-      <form onSubmit={handleCreateKey} className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
+      <form onSubmit={handleCreateKey} className="space-y-4 rounded-sm border border-line bg-surface p-5">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
           <div className="sm:col-span-7 space-y-1.5">
-            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="api-key-name" className="mono-label block text-ink-3">
               {t('keyNameLabel')}
             </label>
             <input
+              id="api-key-name"
               type="text"
+              autoComplete="off"
               placeholder={t('keyNamePlaceholder')}
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary"
+              className="h-11 w-full rounded-sm border border-input bg-surface px-3.5 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               required
             />
           </div>
 
           <div className="sm:col-span-3 space-y-1.5">
-            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="api-key-expiry" className="mono-label block text-ink-3">
               {t('expiresLabel')}
             </label>
             <select
+              id="api-key-expiry"
               value={expiresDays || ''}
               onChange={(e) => setExpiresDays(e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#0B101B] border border-white/10 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer"
+              className="h-11 w-full cursor-pointer rounded-sm border border-input bg-surface px-3 text-step-sm text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">{t('expiresNever')}</option>
               <option value="30">{t('expires30')}</option>
@@ -246,16 +246,16 @@ export default function ApiKeysManager() {
             <Button
               type="submit"
               disabled={isCreating || !keyName.trim()}
-              className="w-full rounded-xl gap-2 font-bold shadow-lg btn-premium text-xs py-2.5 h-10"
+              className="w-full gap-2"
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 aria-hidden className="w-3.5 h-3.5 animate-spin" />
                   <span>{t('generating')}</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus aria-hidden className="w-3.5 h-3.5" />
                   <span>{t('generateBtn')}</span>
                 </>
               )}
@@ -267,35 +267,35 @@ export default function ApiKeysManager() {
       {/* Active API Keys List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="p-8 text-center rounded-2xl bg-white/[0.01] border border-white/5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <div role="status" className="flex items-center justify-center gap-2 rounded-sm border border-line bg-surface p-8 text-center text-step-sm text-ink-2">
+            <Loader2 aria-hidden className="w-4 h-4 animate-spin text-primary" />
             <span>Loading active API keys...</span>
           </div>
         ) : keys.length === 0 ? (
-          <Card className="p-8 bg-white/[0.01] border-white/5 rounded-2xl text-center space-y-2">
-            <Key className="w-8 h-8 text-muted-foreground mx-auto opacity-30" />
-            <p className="text-xs text-muted-foreground">{t('noKeys')}</p>
-          </Card>
+          <div className="surface-panel space-y-2 p-8 text-center">
+            <Key aria-hidden className="mx-auto w-8 h-8 text-ink-3" strokeWidth={1.25} />
+            <p className="text-step-sm text-ink-2">{t('noKeys')}</p>
+          </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.01]">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-white/[0.04] text-muted-foreground font-mono uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">{t('keyColumnName')}</th>
-                  <th className="p-3">{t('keyColumnPrefix')}</th>
-                  <th className="p-3">{t('keyColumnCreated')}</th>
-                  <th className="p-3">{t('keyColumnStatus')}</th>
-                  <th className="p-3 text-right">{t('keyColumnAction')}</th>
+          <div className="overflow-x-auto rounded-sm border border-line bg-surface">
+            <table className="w-full min-w-[34rem] text-left text-step-sm">
+              <thead className="bg-surface-raised">
+                <tr className="mono-label text-ink-3">
+                  <th scope="col" className="p-3 font-normal">{t('keyColumnName')}</th>
+                  <th scope="col" className="p-3 font-normal">{t('keyColumnPrefix')}</th>
+                  <th scope="col" className="p-3 font-normal">{t('keyColumnCreated')}</th>
+                  <th scope="col" className="p-3 font-normal">{t('keyColumnStatus')}</th>
+                  <th scope="col" className="p-3 text-right font-normal">{t('keyColumnAction')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-line">
                 {keys.map((k) => (
-                  <tr key={k.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="p-3 font-semibold text-foreground">{k.name}</td>
-                    <td className="p-3 font-mono text-muted-foreground">{k.prefix || `${k.start}…`}</td>
-                    <td className="p-3 text-muted-foreground">{new Date(k.createdAt).toLocaleDateString()}</td>
+                  <tr key={k.id}>
+                    <td className="p-3 font-medium text-foreground">{k.name}</td>
+                    <td className="p-3 font-mono text-step-xs text-ink-2">{k.prefix || `${k.start}…`}</td>
+                    <td className="p-3 text-ink-2">{new Date(k.createdAt).toLocaleDateString()}</td>
                     <td className="p-3">
-                      <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono">
+                      <Badge variant="outline" className="border-success/50 text-success">
                         Active
                       </Badge>
                     </td>
@@ -306,12 +306,13 @@ export default function ApiKeysManager() {
                         size="sm"
                         disabled={revokingId === k.id}
                         onClick={() => handleRevokeKey(k.id)}
-                        className="h-7 px-2 text-xs text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 gap-1 rounded-lg"
+                        aria-label={`${t('revokeKeyBtn')}: ${k.name}`}
+                        className="gap-1 hover:text-destructive"
                       >
                         {revokingId === k.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <Loader2 aria-hidden className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 aria-hidden className="w-3.5 h-3.5" />
                         )}
                         <span>{t('revokeKeyBtn')}</span>
                       </Button>
@@ -325,21 +326,21 @@ export default function ApiKeysManager() {
       </div>
 
       {/* Developer Integration Quick Start Snippets */}
-      <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4 shadow-lg">
-        <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-primary" />
+      <div className="space-y-4 rounded-sm border border-line bg-canvas-deep p-6">
+        <h3 className="flex items-center gap-2 text-step-base font-medium text-foreground">
+          <Terminal aria-hidden className="w-4 h-4 text-primary" />
           {t('integrationGuideTitle')}
-        </h4>
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* CLI Guide */}
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-              <Terminal className="w-3.5 h-3.5" />
+          <div className="p-4 rounded-sm bg-surface border border-line space-y-2">
+            <div className="flex items-center gap-2 font-mono text-step-xs text-primary">
+              <Terminal aria-hidden className="w-3.5 h-3.5" />
               <span>@nextlevelbuilder/cli</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Authenticate local CLI commands:</p>
-            <pre className="p-2.5 rounded-lg bg-black/80 font-mono text-[11px] text-emerald-400 overflow-x-auto">
+            <p className="text-step-xs text-ink-2">Authenticate local CLI commands:</p>
+            <pre className="overflow-x-auto rounded-sm border border-line bg-canvas-deep p-2.5 font-mono text-step-xs text-foreground">
               nlb submit product.json --api-key nlb_live_...
               <br />
               # Or via environment variable:
@@ -351,18 +352,18 @@ export default function ApiKeysManager() {
           </div>
 
           {/* MCP Server Guide */}
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
-              <Cpu className="w-3.5 h-3.5" />
+          <div className="p-4 rounded-sm bg-surface border border-line space-y-2">
+            <div className="flex items-center gap-2 font-mono text-step-xs text-primary">
+              <Cpu aria-hidden className="w-3.5 h-3.5" />
               <span>Cursor / Claude Desktop MCP</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Configure in your MCP settings file:</p>
-            <pre className="p-2.5 rounded-lg bg-black/80 font-mono text-[11px] text-cyan-300 overflow-x-auto">
+            <p className="text-step-xs text-ink-2">Configure in your MCP settings file:</p>
+            <pre className="overflow-x-auto rounded-sm border border-line bg-canvas-deep p-2.5 font-mono text-step-xs text-foreground">
               npx -y @nextlevelbuilder/mcp
             </pre>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

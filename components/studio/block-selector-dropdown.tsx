@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { badgeVariants } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   Plus,
   BarChart3,
@@ -193,10 +194,17 @@ export default function BlockSelectorDropdown({
         setIsOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsOpen(false);
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [isOpen]);
 
   const filteredBlocks =
@@ -212,43 +220,47 @@ export default function BlockSelectorDropdown({
         size="sm"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className="rounded-xl gap-2 text-xs font-semibold bg-white/[0.04] border-white/10 hover:border-primary/40 hover:bg-primary/10 text-foreground transition-all shadow-sm"
+        aria-expanded={isOpen}
+        aria-controls="block-selector-panel"
+        className="gap-2"
       >
-        <Plus className="w-3.5 h-3.5 text-primary" />
+        <Plus aria-hidden className="w-3.5 h-3.5 text-primary" />
         <span>Add Block ({AVAILABLE_BLOCKS.length} Types)</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown aria-hidden className={`w-3.5 h-3.5 text-ink-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </Button>
 
       {/* Custom Styled Dark Dropdown Popover */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[340px] sm:w-[400px] max-h-[500px] rounded-2xl bg-[#0B101B] border border-white/15 text-slate-100 shadow-2xl z-50 overflow-hidden flex flex-col backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div id="block-selector-panel" role="dialog" aria-label="Select block type" className="absolute left-0 z-50 mt-2 flex max-h-[500px] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-sm border border-line-strong bg-surface text-foreground shadow-constellation sm:left-auto sm:right-0">
           {/* Header & Filter Tabs */}
-          <div className="p-3 border-b border-white/10 space-y-2 bg-black/40">
+          <div className="p-3 border-b border-line space-y-2 bg-canvas-deep">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="mono-label flex items-center gap-1.5 text-foreground">
+                <Sparkles aria-hidden className="w-3.5 h-3.5 text-primary" />
                 Select Block Type
               </span>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-xs p-1 rounded-md"
+                aria-label="Close block list"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <X className="w-3.5 h-3.5" />
+                <X aria-hidden className="w-4 h-4" />
               </button>
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[11px]">
+            <div role="group" aria-label="Block category" className="flex items-center gap-1 overflow-x-auto pb-1 text-step-xs">
               {(['All', 'Structure', 'Trust & Proof', 'Engagement'] as const).map((cat) => (
                 <button
                   key={cat}
                   type="button"
+                  aria-pressed={activeCategory === cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition-colors shrink-0 ${
+                  className={`min-h-9 shrink-0 rounded-pill px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     activeCategory === cat
-                      ? 'bg-primary text-primary-foreground font-bold'
-                      : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-surface-raised text-ink-2 hover:text-foreground'
                   }`}
                 >
                   {cat}
@@ -258,7 +270,7 @@ export default function BlockSelectorDropdown({
           </div>
 
           {/* Block Options Scroll List */}
-          <div className="overflow-y-auto p-2 space-y-1 divide-y divide-white/5 max-h-[380px]">
+          <div className="max-h-[380px] space-y-1 divide-y divide-line overflow-y-auto p-2">
             {filteredBlocks.map((option) => {
               const IconComponent = option.icon;
               return (
@@ -269,30 +281,25 @@ export default function BlockSelectorDropdown({
                     onSelectBlock(option.type);
                     setIsOpen(false);
                   }}
-                  className="w-full p-2.5 rounded-xl text-left flex items-start gap-3 hover:bg-white/[0.06] transition-all group cursor-pointer"
+                  className="group flex w-full cursor-pointer items-start gap-3 rounded-sm p-2.5 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+                  <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-line text-primary">
                     <IconComponent className="w-4 h-4" />
-                  </div>
+                  </span>
 
-                  <div className="flex-1 min-w-0 space-y-0.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-100 group-hover:text-primary transition-colors truncate">
+                  <span className="block min-w-0 flex-1 space-y-0.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-step-sm font-medium text-foreground transition-colors group-hover:text-primary">
                         {option.label}
                       </span>
                       {option.badge && (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] px-1.5 py-0 border-primary/30 bg-primary/10 text-primary font-mono shrink-0"
-                        >
-                          {option.badge}
-                        </Badge>
+                        <span className={cn(badgeVariants({ variant: 'outline' }), 'shrink-0')}>{option.badge}</span>
                       )}
-                    </div>
-                    <p className="text-[11px] text-slate-400 line-clamp-1 leading-normal">
+                    </span>
+                    <span className="block line-clamp-1 text-step-xs leading-normal text-ink-2">
                       {option.description}
-                    </p>
-                  </div>
+                    </span>
+                  </span>
                 </button>
               );
             })}

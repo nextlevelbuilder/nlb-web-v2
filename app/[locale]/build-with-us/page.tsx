@@ -1,14 +1,14 @@
-import React from "react";
 import { getPublishedProducts } from "@/lib/domain/catalog";
 import { getLatestRankingSnapshot, computeRankingSnapshot } from "@/lib/domain/rankings";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
-import BuildWithUsClient from "./build-with-us-client";
+import BuildWithUsClient, { type RankEntry } from "./build-with-us-client";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { pageMetadata } from "@/lib/seo";
+
+// Reads D1 (products and ranking snapshots) on every request.
+export const dynamic = "force-dynamic";
 
 interface BuildWithUsProps {
   params: Promise<{ locale: string }>;
@@ -56,37 +56,39 @@ export default async function BuildWithUsPage({ params }: BuildWithUsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
+          <header className="max-w-3xl space-y-5">
+            <p className="eyebrow">{t("heroBadge")}</p>
+            <h1 className="h-display">{t("heroTitle")}</h1>
+            <p className="lede">{t("heroDesc")}</p>
+          </header>
 
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-12">
-          {/* Hero Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <Badge variant="outline" className="text-xs font-semibold px-3 py-1 border-primary/40 bg-primary/10 text-primary gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              {t('heroBadge')}
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-              {t('heroTitle')}
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              {t('heroDesc')}
-            </p>
-          </div>
-
-          {/* Interactive Hub with Sticky Right Sidebar */}
           <BuildWithUsClient
+            locale={locale}
             initialProducts={publishedProducts}
             totalPublishedCount={publishedProducts.length}
-            dailyRanks={(dailySnapshot?.ranks as any) || []}
-            weeklyRanks={(weeklySnapshot?.ranks as any) || []}
-            monthlyRanks={(monthlySnapshot?.ranks as any) || []}
+            dailyRanks={toRankEntries(dailySnapshot?.ranks)}
+            weeklyRanks={toRankEntries(weeklySnapshot?.ranks)}
+            monthlyRanks={toRankEntries(monthlySnapshot?.ranks)}
           />
         </div>
-      </div>
-
+      </main>
       <FooterSection />
     </div>
+  );
+}
+
+/** Snapshot ranks are stored as JSON; keep only well-formed entries. */
+function toRankEntries(ranks: unknown): RankEntry[] {
+  if (!Array.isArray(ranks)) return [];
+  return ranks.filter(
+    (r): r is RankEntry =>
+      typeof r === "object" && r !== null &&
+      typeof (r as RankEntry).productId === "string" &&
+      typeof (r as RankEntry).rank === "number" &&
+      typeof (r as RankEntry).voteCount === "number",
   );
 }

@@ -1,29 +1,16 @@
-import React from "react";
+// Reads D1 on every request; never prerender at build time.
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { users, products, members, organizations } from "@/lib/db/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
-import { Card } from "@/components/ui/card";
 import ProductLogo from "@/components/product-logo";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  ShieldCheck,
-  CheckCircle2,
-  Calendar,
-  Layers,
-  Sparkles,
-  ArrowUpRight,
-  User,
-  Star,
-  Globe,
-  ExternalLink,
-} from "lucide-react";
-import Link from "next/link";
+import { ShieldCheck, CheckCircle2, Calendar, Layers, ArrowUpRight, Globe } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import ShareProfileButton from "@/components/profile/share-profile-button";
 import { getTranslations } from "next-intl/server";
 import { getPublishedProducts } from "@/lib/domain/catalog";
@@ -77,7 +64,7 @@ export default async function BuilderPublicProfilePage({ params }: BuilderProfil
   const orgIds = userMemberships.map((m) => m.orgId);
 
   // 3. Query builder's published products
-  let publishedProducts: typeof products.$inferSelect[] = [];
+  const publishedProducts: typeof products.$inferSelect[] = [];
   if (orgIds.length > 0) {
     const batchSize = 100;
     for (let offset = 0; ; offset += batchSize) {
@@ -97,170 +84,125 @@ export default async function BuilderPublicProfilePage({ params }: BuilderProfil
       : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
 
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-10">
-          {/* Builder Public Passport Card */}
-          <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-cyan-500/20 border border-primary/40 flex items-center justify-center font-bold text-3xl text-primary shadow-xl overflow-hidden shrink-0">
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
+          <header className="flex flex-col justify-between gap-6 border-b border-line pb-8 md:flex-row md:items-end">
+            <div className="flex min-w-0 items-start gap-5">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-surface font-display text-3xl text-primary">
                 {builder.image ? (
-                  <img src={builder.image} alt={builder.name || "Builder"} className="w-full h-full object-cover" />
+                  <img src={builder.image} alt="" width={80} height={80} className="h-full w-full object-cover" />
                 ) : (
-                  (builder.name || "B").charAt(0).toUpperCase()
+                  <span aria-hidden>{(builder.name || "B").charAt(0).toUpperCase()}</span>
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{builder.name || "Next Level Builder"}</h1>
-                  <Badge
-                    variant="outline"
-                    className="text-xs capitalize border-primary/40 bg-primary/10 text-primary font-mono"
-                  >
-                    {builder.role === "admin" ? t("platformLead") : t("verifiedBuilder")}
-                  </Badge>
-
+              <div className="min-w-0 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Badge>{builder.role === "admin" ? t("platformLead") : t("verifiedBuilder")}</Badge>
                   {builder.emailVerified && (
-                    <Badge variant="outline" className="text-xs border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <Badge variant="outline">
+                      <CheckCircle2 aria-hidden className="h-3.5 w-3.5 text-success" />
                       {t("verifiedPassport")}
                     </Badge>
                   )}
                 </div>
-
-                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-4 font-mono">
+                <h1 className="break-words font-display text-step-3xl font-light">{builder.name || "Next Level Builder"}</h1>
+                <p className="flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-step-xs text-ink-3">
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    <Calendar aria-hidden className="h-3.5 w-3.5 text-primary" />
                     {t("builderSince", { year: joinYear })}
                   </span>
-
                   {userMemberships.length > 0 && (
-                    <span className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                      {userMemberships.map((m) => m.orgName).join(", ")}
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <Layers aria-hidden className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span className="break-words">{userMemberships.map((m) => m.orgName).join(", ")}</span>
                     </span>
                   )}
-                </div>
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <ShareProfileButton builderName={builder.name || "Builder"} />
+            <ShareProfileButton />
+          </header>
+
+          <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-sm border border-line bg-line sm:grid-cols-2">
+            <div className="space-y-1 bg-surface p-5">
+              <dt className="mono-label text-ink-3">{t("publishedTools")}</dt>
+              <dd className="num-tab font-display text-step-2xl">{totalProducts}</dd>
+              <dd className="text-step-sm text-ink-2">{t("publishedToolsDesc")}</dd>
             </div>
-          </div>
-
-          {/* Builder Trust Metrics Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-5 bg-white/[0.02] border-white/10 rounded-2xl space-y-1">
-              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t("publishedTools")}</div>
-              <div className="text-2xl font-extrabold text-foreground flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span>{totalProducts}</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">{t("publishedToolsDesc")}</p>
-            </Card>
-
-            <Card className="p-5 bg-white/[0.02] border-white/10 rounded-2xl space-y-1">
-              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t("avgTrustScore")}</div>
-              <div className="text-2xl font-extrabold text-emerald-400 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <span>{avgTrustScore}/100</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">{t("avgTrustScoreDesc")}</p>
-            </Card>
-
-            <Card className="p-5 bg-white/[0.02] border-white/10 rounded-2xl space-y-1">
-              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t("communityStanding")}</div>
-              <div className="text-2xl font-extrabold text-cyan-400 flex items-center gap-2">
-                <Star className="w-5 h-5 text-cyan-400" />
-                <span>{t("communityVerified")}</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">{t("communityStandingDesc")}</p>
-            </Card>
-          </div>
-
-          {/* Published Products Showcase */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
-                {t("publishedProducts")} ({totalProducts})
-              </h3>
+            <div className="space-y-1 bg-surface p-5">
+              <dt className="mono-label text-ink-3">{t("avgTrustScore")}</dt>
+              <dd className="num-tab font-display text-step-2xl">
+                {totalProducts > 0 ? (
+                  <>
+                    {avgTrustScore}
+                    <span className="text-step-sm text-ink-3"> / 100</span>
+                  </>
+                ) : (
+                  <span aria-label="—">—</span>
+                )}
+              </dd>
+              <dd className="text-step-sm text-ink-2">{t("avgTrustScoreDesc")}</dd>
             </div>
+          </dl>
+
+          <section aria-labelledby="published-products" className="space-y-5">
+            <h2 id="published-products" className="flex items-center gap-2 font-display text-step-xl font-normal">
+              {t("publishedProducts")} <span className="num-tab text-ink-3">({totalProducts})</span>
+            </h2>
 
             {totalProducts === 0 ? (
-              <Card className="p-10 bg-white/[0.01] border-white/5 rounded-2xl text-center space-y-3">
-                <ShieldCheck className="w-10 h-10 text-muted-foreground mx-auto opacity-30" />
-                <div className="space-y-1">
-                  <div className="font-semibold text-sm text-foreground">{t("noProductsTitle")}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("noProductsDesc")}
-                  </p>
-                </div>
-              </Card>
+              <div className="surface-panel space-y-2 p-10 text-center">
+                <ShieldCheck aria-hidden className="mx-auto h-10 w-10 text-ink-3" strokeWidth={1.25} />
+                <p className="font-medium">{t("noProductsTitle")}</p>
+                <p className="text-step-sm text-ink-2">{t("noProductsDesc")}</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {publishedProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="p-5 bg-white/[0.02] border-white/10 hover:border-white/20 transition-all rounded-2xl flex flex-col justify-between space-y-4 group"
-                  >
+                  <li key={product.id} className="surface-panel group flex flex-col justify-between gap-4 p-5 transition-colors duration-base hover:border-line-strong">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-lg text-primary overflow-hidden shrink-0">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-background font-display text-lg text-primary">
                           <ProductLogo src={product.logoUrl} name={product.title} />
                         </div>
-
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono gap-1"
-                        >
-                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                          Trust: {product.trustScore}/100
+                        <Badge variant="outline">
+                          <ShieldCheck aria-hidden className="h-3 w-3 text-primary" />
+                          {product.trustScore}/100
                         </Badge>
                       </div>
-
-                      <div className="space-y-1">
-                        <div className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
-                          {product.title}
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                          {product.tagline}
-                        </p>
-                      </div>
+                      <h3 className="text-step-base font-medium">{product.title}</h3>
+                      <p className="line-clamp-2 text-step-sm text-ink-2">{product.tagline}</p>
                     </div>
 
-                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                      <Link
-                        href={`/products/${product.slug}`}
-                        className="text-primary hover:underline font-semibold flex items-center gap-1"
-                      >
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-step-sm">
+                      <Link href={`/products/${product.slug}`} className="inline-flex min-h-[44px] items-center gap-1 font-medium text-primary hover:underline hover:underline-offset-4">
                         {t("viewListing")}
-                        <ArrowUpRight className="w-3.5 h-3.5" />
+                        <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
                       </Link>
-
                       {product.websiteUrl && (
                         <a
                           href={product.websiteUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          className="inline-flex min-h-[44px] items-center gap-1 text-ink-2 hover:text-foreground"
                         >
-                          <Globe className="w-3 h-3" />
+                          <Globe aria-hidden className="h-3.5 w-3.5" />
                           {t("website")}
                         </a>
                       )}
                     </div>
-                  </Card>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
 
       <FooterSection />
     </div>

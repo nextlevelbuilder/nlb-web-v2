@@ -9,28 +9,30 @@ export function HeroBlockView({ block }: { block: HeroBlock }) {
   const { headline, subheadline, primaryCtaText, primaryCtaUrl, badge } = block.props;
 
   return (
-    <div className="flex flex-col items-center text-center py-12 px-6 rounded-2xl bg-gradient-to-b from-primary/10 via-background to-background border border-white/10">
+    <section className="surface-panel flex flex-col items-center px-6 py-12 text-center">
       {badge && (
-        <Badge variant="outline" className="mb-4 text-xs font-medium px-3 py-1 border-primary/40 bg-primary/10">
+        <Badge className="mb-4">
           {badge}
         </Badge>
       )}
-      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground max-w-3xl mb-4">
+      {/* The product page owns the h1; block headlines start at h2. */}
+      <h2 className="mb-4 max-w-3xl break-words font-display text-step-3xl font-light text-foreground">
         {headline}
-      </h1>
+      </h2>
       {subheadline && (
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-8">
+        <p className="lede mb-8 max-w-2xl">
           {subheadline}
         </p>
       )}
       {primaryCtaText && primaryCtaUrl && (
-        <Button asChild size="lg" className="rounded-full shadow-lg gap-2">
+        <Button asChild size="lg" className="gap-2">
           <Link href={primaryCtaUrl} target="_blank" rel="noopener noreferrer">
             {primaryCtaText}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight aria-hidden className="w-4 h-4" />
+            <span className="sr-only">(opens in a new tab)</span>
           </Link>
         </Button>
       )}
-    </div>
+    </section>
   );
 }

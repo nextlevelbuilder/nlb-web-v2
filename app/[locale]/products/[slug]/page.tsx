@@ -1,4 +1,3 @@
-import React from "react";
 import { notFound } from "next/navigation";
 import { getPublishedProductBySlug } from "@/lib/domain/catalog";
 import { getProductTrustFactors, evaluateProductBadges } from "@/lib/domain/trust";
@@ -8,11 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, CheckCircle2, ShieldCheck, Award, TrendingUp, ThumbsUp } from "lucide-react";
 import Link from "next/link";
+import { directoryCopy } from "@/content/pages/directory-copy";
+import { toPageLocale } from "@/content/pages/page-locale";
 import type { ProductDocument } from "@/packages/contracts/src";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
 import { getTranslations } from "next-intl/server";
 import { pageMetadata, serializeJsonLd, localizedPath, siteUrl } from "@/lib/seo";
+
+// Reads D1 on every request; never prerender at build time.
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -38,7 +42,8 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
   const rawDoc = revision?.document;
   const document = (typeof rawDoc === "string" ? JSON.parse(rawDoc) : rawDoc || {}) as ProductDocument;
   const blocks = Array.isArray(document?.blocks) ? document.blocks : [];
-  const contentHash = revision?.contentHash || (revision as any)?.content_hash || "";
+  // Older rows exposed the raw snake_case column; keep reading it as a fallback.
+  const contentHash = revision?.contentHash || (revision as { content_hash?: string } | undefined)?.content_hash || "";
   // Compute Trust Passport and Badges
   const trustFactors = getProductTrustFactors(product);
   const trustScore = product.trustScore;
@@ -57,96 +62,85 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-12">
-      {/* Inject JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
-      <div className="max-w-5xl mx-auto space-y-12">
-        {/* Product Hero Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/10">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-2xl text-primary overflow-hidden shrink-0">
-              <ProductLogo src={product.logoUrl} name={product.title} imgWidth={64} imgHeight={64} />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-extrabold tracking-tight">{product.title}</h1>
-                <Badge variant="outline" className="text-xs border-primary/40 bg-primary/10 text-primary gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-primary" />
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
+          <header className="flex flex-col justify-between gap-6 border-b border-line pb-8 md:flex-row md:items-end">
+            <div className="flex min-w-0 items-start gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-surface font-display text-2xl text-primary">
+                <ProductLogo src={product.logoUrl} name={product.title} imgWidth={64} imgHeight={64} />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <Badge>
+                  <CheckCircle2 aria-hidden className="h-3 w-3" />
                   {t('verifiedLaunch')}
                 </Badge>
+                <h1 className="break-words font-display text-step-3xl font-light">{product.title}</h1>
+                <p className="lede max-w-[52ch]">{product.tagline}</p>
               </div>
-              <p className="text-lg text-muted-foreground mt-1">{product.tagline}</p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <Button asChild size="lg" className="rounded-full shadow-lg gap-2">
+            <Button asChild size="lg" className="self-start md:self-auto">
               <Link href={`/go/${product.slug}`} target="_blank" rel="noopener noreferrer">
                 {t('visitWebsite')}
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight aria-hidden />
+                <span className="sr-only">{directoryCopy[toPageLocale(locale)].opensInNewTab}</span>
               </Link>
             </Button>
-          </div>
-        </header>
+          </header>
 
-        {/* Trust Passport Snapshot Card */}
-        <section className="p-6 rounded-2xl border border-primary/20 bg-primary/[0.02] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="text-xs uppercase font-mono tracking-wider text-muted-foreground font-semibold">
-                {t('trustPassportScore')}
-              </div>
-              <div className="text-2xl font-extrabold text-foreground flex items-baseline gap-1.5 mt-0.5">
-                <span>{trustScore}</span>
-                <span className="text-sm font-normal text-muted-foreground">/ 100</span>
+          <section aria-labelledby="trust-passport" className="surface-panel flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center">
+            <div className="flex items-center gap-4">
+              <ShieldCheck aria-hidden className="h-8 w-8 shrink-0 text-primary" strokeWidth={1.25} />
+              <div>
+                <h2 id="trust-passport" className="mono-label text-ink-3">
+                  {t('trustPassportScore')}
+                </h2>
+                <p className="mt-1 flex items-baseline gap-1.5">
+                  <span className="num-tab font-display text-step-2xl">{trustScore}</span>
+                  <span className="text-step-sm text-ink-3">/ 100</span>
+                </p>
               </div>
             </div>
+
+            {grantedBadges.length > 0 && (
+              <ul className="flex flex-wrap items-center gap-2">
+                {grantedBadges.map((badge) => (
+                  <li key={badge.id}>
+                    <Badge variant="outline" title={badge.description}>
+                      {badge.id === "human_approved" ? (
+                        <Award aria-hidden className="h-3.5 w-3.5 text-primary" />
+                      ) : badge.id === "community_voted" ? (
+                        <ThumbsUp aria-hidden className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <TrendingUp aria-hidden className="h-3.5 w-3.5 text-primary" />
+                      )}
+                      {badge.name}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <div className="space-y-12">
+            <BlockRenderer blocks={blocks} productSlug={product.slug} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {grantedBadges.map((badge) => (
-              <Badge key={badge.id} variant="outline" className="px-3 py-1 text-xs gap-1.5 border-white/10 bg-white/[0.03]">
-                {badge.id === "human_approved" ? (
-                  <Award className="w-3.5 h-3.5 text-primary" />
-                ) : badge.id === "community_voted" ? (
-                  <ThumbsUp className="w-3.5 h-3.5 text-primary" />
-                ) : (
-                  <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                )}
-                {badge.name}
-              </Badge>
-            ))}
-          </div>
-        </section>
-
-        {/* Dynamic Block Document Presentation */}
-        <main className="space-y-12">
-          <BlockRenderer blocks={blocks} productSlug={product.slug} />
-        </main>
-
-        {/* Verification & Trust Footer */}
-        <footer className="mt-16 pt-8 border-t border-white/10 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>{t('humanReviewedBy')}</span>
-          </div>
-          <div>
-            {t('contentHash')} <span className="font-mono">{contentHash ? contentHash.slice(0, 16) : "verified"}…</span>
-          </div>
-        </footer>
-      </div>
+          <footer className="flex flex-col items-start justify-between gap-4 border-t border-line pt-8 text-step-sm text-ink-3 sm:flex-row sm:items-center">
+            <p className="flex items-center gap-2">
+              <ShieldCheck aria-hidden className="h-4 w-4 text-primary" />
+              {t('humanReviewedBy')}
+            </p>
+            <p className="break-all">
+              {t('contentHash')} <span className="font-mono">{contentHash ? contentHash.slice(0, 16) : "verified"}…</span>
+            </p>
+          </footer>
         </div>
-      </div>
+      </main>
       <FooterSection />
     </div>
   );

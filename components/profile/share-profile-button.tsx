@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Share2, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-export default function ShareProfileButton({ builderName }: { builderName?: string }) {
+export default function ShareProfileButton() {
   const [copied, setCopied] = useState(false);
   const t = useTranslations('builders');
 
@@ -17,7 +17,7 @@ export default function ShareProfileButton({ builderName }: { builderName?: stri
         setTimeout(() => setCopied(false), 2000);
       }
     } catch {
-      // fallback
+      // Clipboard access can be denied (permissions, insecure context); the URL stays in the address bar.
     }
   };
 
@@ -27,16 +27,16 @@ export default function ShareProfileButton({ builderName }: { builderName?: stri
       variant="outline"
       size="sm"
       onClick={handleShare}
-      className="rounded-full gap-1.5 text-xs border-white/20 hover:bg-white/10"
+      aria-live="polite"
     >
       {copied ? (
         <>
-          <Check className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-emerald-400 font-semibold">{t('linkCopied')}</span>
+          <Check aria-hidden className="text-success" />
+          <span>{t('linkCopied')}</span>
         </>
       ) : (
         <>
-          <Share2 className="w-3.5 h-3.5 text-primary" />
+          <Share2 aria-hidden className="text-primary" />
           <span>{t('shareProfile')}</span>
         </>
       )}

@@ -9,7 +9,7 @@ export function MediaGalleryBlockView({ block }: { block: Extract<Block, { type:
       {images.map((image, index) => (
         <div
           key={index}
-          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 aspect-video"
+          className="group relative overflow-hidden rounded-sm border border-line bg-canvas-deep aspect-video"
         >
           <img
             src={image.url}
@@ -18,7 +18,7 @@ export function MediaGalleryBlockView({ block }: { block: Extract<Block, { type:
             loading="lazy"
           />
           {image.caption && (
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 text-xs text-white/90">
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/80 from-background/80 to-transparent p-4 text-xs text-foreground">
               {image.caption}
             </div>
           )}

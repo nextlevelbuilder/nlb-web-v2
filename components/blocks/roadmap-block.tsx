@@ -9,9 +9,9 @@ export function RoadmapBlockView({ block }: { block: RoadmapBlock }) {
 
   return (
     <div className="w-full my-6 space-y-6">
-      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+      <div className="flex items-center gap-2 border-b border-line pb-3">
         <Compass className="w-5 h-5 text-primary" />
-        <h3 className="text-xl font-bold text-foreground">Product Roadmap</h3>
+        <h3 className="font-display text-step-xl text-foreground">Product Roadmap</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {milestones.map((m, index) => {
@@ -21,24 +21,24 @@ export function RoadmapBlockView({ block }: { block: RoadmapBlock }) {
           return (
             <Card
               key={index}
-              className={`p-6 rounded-2xl border ${
+              className={`p-6 rounded-sm border ${
                 isInProgress
                   ? "border-primary/40 bg-primary/[0.03]"
                   : isDone
-                  ? "border-white/20 bg-white/[0.03]"
-                  : "border-white/10 bg-white/[0.01]"
+                  ? "border-line-strong bg-surface-raised"
+                  : "border-line bg-surface"
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-mono font-bold text-muted-foreground uppercase">{m.quarter}</span>
+                <span className="text-xs font-mono font-medium text-ink-2 uppercase">{m.quarter}</span>
                 <Badge
                   variant="outline"
                   className={`text-xs ${
                     isDone
-                      ? "border-green-500/40 text-green-400 bg-green-500/10"
+                      ? "border-success/40 text-success bg-success/10"
                       : isInProgress
                       ? "border-primary/40 text-primary bg-primary/10"
-                      : "text-muted-foreground"
+                      : "text-ink-2"
                   }`}
                 >
                   {isDone ? (
@@ -51,7 +51,7 @@ export function RoadmapBlockView({ block }: { block: RoadmapBlock }) {
                   {m.status.replace("_", " ")}
                 </Badge>
               </div>
-              <h4 className="font-bold text-foreground">{m.title}</h4>
+              <h4 className="font-medium text-foreground">{m.title}</h4>
             </Card>
           );
         })}

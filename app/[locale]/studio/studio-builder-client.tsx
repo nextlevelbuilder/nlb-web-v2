@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Sparkles,
   Layers,
   Send,
   Eye,
@@ -13,13 +12,11 @@ import {
   AlertCircle,
   Code2,
   Globe,
-  Tag,
   Save,
   LayoutTemplate as LayoutIcon,
-  HelpCircle,
   ExternalLink,
 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { LAYOUT_TEMPLATES } from '@/packages/contracts/src/templates';
 import type { Block } from '@/packages/contracts/src/blocks';
 import type { ProductDocument } from '@/packages/contracts/src/product-document';
@@ -32,16 +29,17 @@ import StudioPreviewModal from '@/components/studio/studio-preview-modal';
 
 interface StudioBuilderClientProps {
   defaultOrgId?: string;
-  isEarlyBird?: boolean;
-  publishedCount?: number;
 }
+
+const fieldClass =
+  'h-11 w-full rounded-sm border border-input bg-surface px-4 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const labelClass = 'mono-label block text-ink-3';
+const stepHeadingClass = 'flex items-center gap-2 font-display text-step-lg text-foreground';
 
 export default function StudioBuilderClient({
   defaultOrgId = 'nlb-official',
-  isEarlyBird = true,
-  publishedCount = 0,
 }: StudioBuilderClientProps) {
-  const [orgId, setOrgId] = useState(defaultOrgId);
+  const [orgId] = useState(defaultOrgId);
   const [slug, setSlug] = useState('');
   const [title, setTitle] = useState('');
   const [tagline, setTagline] = useState('');
@@ -284,7 +282,7 @@ export default function StudioBuilderClient({
           props: {
             tiers: [
               { name: 'Starter', price: '$0', features: ['Core features', 'Community support'], ctaText: 'Start Free', isPopular: false },
-              { name: 'Early Bird', price: '$24.50', features: ['All features', 'Verified Passport', 'Priority Review'], ctaText: 'Claim Slot', isPopular: true },
+              { name: 'Pro', price: '$19/mo', features: ['All features', 'Priority support'], ctaText: 'Upgrade', isPopular: true },
             ],
           },
         };
@@ -391,7 +389,7 @@ export default function StudioBuilderClient({
           type: 'cta',
           props: {
             title: 'Ready to Launch Your Builder Tool?',
-            subtitle: 'Join hundreds of creators getting verified today.',
+            subtitle: 'Start building with it today.',
             buttonText: 'Submit Listing Now',
             buttonUrl: websiteUrl || 'https://nextlevelbuilder.io/studio',
           },
@@ -447,23 +445,24 @@ export default function StudioBuilderClient({
   };
 
   return (
-    <Card className="p-6 sm:p-8 bg-white/[0.02] border-white/10 rounded-3xl space-y-8 shadow-2xl backdrop-blur-xl">
+    <Card className="space-y-8 p-5 sm:p-8">
       {/* Alert & Auto-save Status */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div aria-live="polite" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {message ? (
           <div
-            className={`p-3.5 rounded-xl text-sm flex items-center gap-2.5 border flex-1 ${
+            role={message.type === 'error' ? 'alert' : 'status'}
+            className={`p-3.5 rounded-sm text-sm flex items-center gap-2.5 border flex-1 ${
               message.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                ? 'bg-success/10 border-success/40 text-success'
+                : 'bg-destructive/10 border-destructive/40 text-destructive'
             }`}
           >
-            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            {message.type === 'success' ? <CheckCircle2 aria-hidden className="w-4 h-4 shrink-0" /> : <AlertCircle aria-hidden className="w-4 h-4 shrink-0" />}
             <span>{message.text}</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-            <Save className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="flex items-center gap-2 font-mono text-step-xs text-ink-3">
+            <Save aria-hidden className="w-3.5 h-3.5 text-success" />
             <span>Auto-save active</span>
             {lastSavedTime && <span>(Last saved: {lastSavedTime})</span>}
           </div>
@@ -474,75 +473,80 @@ export default function StudioBuilderClient({
 
       {/* Metadata Form Grid with R2 Media Upload */}
       <div className="space-y-6">
-        <h3 className="text-lg font-bold text-foreground border-b border-white/10 pb-3 flex items-center gap-2">
-          <Globe className="w-4 h-4 text-primary" />
+        <h3 className={`${stepHeadingClass} border-b border-line pb-3`}>
+          <Globe aria-hidden className="w-4 h-4 text-primary" />
           1. General Product Information
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="studio-slug" className={labelClass}>
               Slug (URL Identifier) *
             </label>
             <input
+              id="studio-slug"
               type="text"
+              autoComplete="off"
               placeholder="e.g. agentkit"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary text-sm font-mono"
+              className={`${fieldClass} font-mono`}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="studio-title" className={labelClass}>
               Product Title *
             </label>
             <input
+              id="studio-title"
               type="text"
               placeholder="e.g. AgentKit"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary text-sm font-bold"
+              className={fieldClass}
             />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="studio-tagline" className={labelClass}>
               Tagline (One-sentence elevator pitch) *
             </label>
             <input
+              id="studio-tagline"
               type="text"
               placeholder="e.g. The Agent-First Operating System for Autonomous Coding Agents"
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary text-sm"
+              className={fieldClass}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="studio-website" className={labelClass}>
               Website URL *
             </label>
             <input
+              id="studio-website"
               type="url"
               placeholder="https://yourproduct.com"
               value={websiteUrl}
               onChange={(e) => setWebsiteUrl(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary text-sm"
+              className={fieldClass}
             />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label htmlFor="studio-description" className="text-xs font-semibold text-muted-foreground uppercase">Description *</label>
-            <textarea id="studio-description" value={description} onChange={(e) => setDescription(e.target.value)} minLength={10} maxLength={2000} rows={3} placeholder="Describe what your product does (10–2000 characters)." className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm" />
+            <label htmlFor="studio-description" className={labelClass}>Description *</label>
+            <textarea id="studio-description" value={description} onChange={(e) => setDescription(e.target.value)} minLength={10} maxLength={2000} rows={3} placeholder="Describe what your product does (10–2000 characters)." className={`${fieldClass} h-auto py-2.5`} />
           </div>
           <div className="space-y-2">
-            <label htmlFor="studio-categories" className="text-xs font-semibold text-muted-foreground uppercase">Category slugs * (1–5, comma separated)</label>
-            <input id="studio-categories" value={categorySlugs} onChange={(e) => setCategorySlugs(e.target.value)} placeholder="e.g. developer-tools" className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm" />
+            <label htmlFor="studio-categories" className={labelClass}>Category slugs * (1–5, comma separated)</label>
+            <input id="studio-categories" value={categorySlugs} onChange={(e) => setCategorySlugs(e.target.value)} placeholder="e.g. developer-tools" className={fieldClass} />
           </div>
           <div className="space-y-2">
-            <label htmlFor="studio-tags" className="text-xs font-semibold text-muted-foreground uppercase">Tag slugs (up to 10, comma separated)</label>
-            <input id="studio-tags" value={tagSlugs} onChange={(e) => setTagSlugs(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm" />
+            <label htmlFor="studio-tags" className={labelClass}>Tag slugs (up to 10, comma separated)</label>
+            <input id="studio-tags" value={tagSlugs} onChange={(e) => setTagSlugs(e.target.value)} className={fieldClass} />
           </div>
 
           {/* Product Logo with R2 Upload */}
@@ -570,12 +574,12 @@ export default function StudioBuilderClient({
       </div>
 
       {/* 5 Layout Templates Selector */}
-      <div className="space-y-4 pt-4 border-t border-white/10">
-        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <LayoutIcon className="w-4 h-4 text-primary" />
+      <div className="space-y-4 pt-4 border-t border-line">
+        <h3 className={stepHeadingClass}>
+          <LayoutIcon aria-hidden className="w-4 h-4 text-primary" />
           2. Choose a Layout Template Preset
         </h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-step-sm text-ink-2">
           Select one of 5 battle-tested block layout presets to populate your document structure:
         </p>
 
@@ -584,34 +588,35 @@ export default function StudioBuilderClient({
             <button
               key={tmpl.id}
               type="button"
+              aria-pressed={selectedTemplateId === tmpl.id}
               onClick={() => applyTemplate(tmpl.id)}
-              className={`p-4 rounded-2xl text-left border transition-all ${
+              className={`p-4 rounded-sm text-left border transition-colors duration-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selectedTemplateId === tmpl.id
-                  ? 'bg-primary/10 border-primary shadow-md shadow-primary/20'
-                  : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+                  ? 'bg-primary/10 border-primary'
+                  : 'bg-surface border-line hover:border-line-strong'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-sm text-foreground">{tmpl.name}</span>
-                <Badge variant="outline" className="text-[10px] bg-primary/10 border-primary/30 text-primary">
+                <span className="text-step-sm font-medium text-foreground">{tmpl.name}</span>
+                <Badge variant="outline">
                   {tmpl.badge}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{tmpl.description}</p>
+              <p className="text-step-xs leading-relaxed text-ink-2">{tmpl.description}</p>
             </button>
           ))}
         </div>
       </div>
 
       {/* Visual Block Document Editor with Drag & Drop */}
-      <div className="space-y-4 pt-4 border-t border-white/10">
-        <div className="flex items-center justify-between gap-4">
+      <div className="space-y-4 pt-4 border-t border-line">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Layers className="w-4 h-4 text-primary" />
+            <h3 className={stepHeadingClass}>
+              <Layers aria-hidden className="w-4 h-4 text-primary" />
               3. Visual Block Document Canvas ({blocks.length} Blocks)
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="mt-1 text-step-sm text-ink-2">
               Drag & drop blocks to rearrange, customize properties, and upload media directly to Cloudflare R2.
             </p>
           </div>
@@ -623,9 +628,9 @@ export default function StudioBuilderClient({
         {/* Blocks Reorderable Drag & Drop List */}
         <div className="space-y-3">
           {blocks.length === 0 ? (
-            <div className="p-8 rounded-2xl border-2 border-dashed border-white/10 text-center space-y-2">
-              <Layers className="w-8 h-8 text-muted-foreground mx-auto opacity-40" />
-              <p className="text-xs text-muted-foreground">No blocks in canvas yet. Click &quot;Add Block&quot; above to get started.</p>
+            <div className="p-8 rounded-sm border-2 border-dashed border-line text-center space-y-2">
+              <Layers aria-hidden className="w-8 h-8 text-ink-3 mx-auto" />
+              <p className="text-step-sm text-ink-2">No blocks in canvas yet. Click &quot;Add Block&quot; above to get started.</p>
             </div>
           ) : (
             blocks.map((block, index) => (
@@ -649,15 +654,15 @@ export default function StudioBuilderClient({
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-line">
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={handleSaveDraft}
             disabled={loading}
             variant="outline"
-            className="rounded-full gap-2 px-6 border-white/20"
+            className="gap-2"
           >
-            <Save className="w-4 h-4 text-primary" />
+            <Save aria-hidden className="w-4 h-4 text-primary" />
             {loading ? 'Saving...' : 'Save Draft'}
           </Button>
 
@@ -665,30 +670,28 @@ export default function StudioBuilderClient({
             type="button"
             onClick={() => setIsPreviewOpen(true)}
             variant="outline"
-            className="rounded-full gap-2 px-6 border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+            className="gap-2"
           >
-            <Eye className="w-4 h-4" />
+            <Eye aria-hidden className="w-4 h-4" />
             Live Preview
           </Button>
 
           <Button
             onClick={handleSubmitForVerification}
             disabled={loading}
-            className="rounded-full gap-2 px-7 shadow-lg btn-premium font-bold"
+            aria-describedby="studio-checkout-note"
+            className="gap-2"
           >
-            <Send className="w-4 h-4" />
-            {loading
-              ? 'Processing...'
-              : isEarlyBird
-              ? 'Pay & Submit for Review ($24.50 • Early Bird)'
-              : 'Pay & Submit for Review ($49.00)'}
+            <Send aria-hidden className="w-4 h-4" />
+            {loading ? 'Processing...' : 'Pay & Submit for Review'}
           </Button>
 
           {slug && (
-            <Button asChild variant="ghost" className="rounded-full gap-2 text-muted-foreground hover:text-foreground">
+            <Button asChild variant="ghost" className="gap-2">
               <Link href={`/studio/products/${normalizeStudioSlug(slug)}/preview`} target="_blank">
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink aria-hidden className="w-4 h-4" />
                 Dedicated Preview Page
+                <span className="sr-only">(opens in a new tab)</span>
               </Link>
             </Button>
           )}
@@ -698,16 +701,21 @@ export default function StudioBuilderClient({
           variant="ghost"
           size="sm"
           onClick={() => setShowJson(!showJson)}
-          className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+          aria-expanded={showJson}
+          className="gap-1.5"
         >
-          <Code2 className="w-3.5 h-3.5" />
+          <Code2 aria-hidden className="w-3.5 h-3.5" />
           {showJson ? 'Hide Block Schema JSON' : 'Inspect Block Schema JSON'}
         </Button>
       </div>
 
+      <p id="studio-checkout-note" className="text-step-xs text-ink-3">
+        Submitting saves your draft first. When payment is required, you continue to Polar checkout, which shows the final price before you pay. Polar is the merchant of record.
+      </p>
+
       {/* JSON Schema Viewer */}
       {showJson && (
-        <div className="mt-4 p-4 rounded-2xl bg-black/80 border border-white/10 font-mono text-xs text-emerald-400 overflow-x-auto">
+        <div className="mt-4 p-4 rounded-sm bg-canvas-deep border border-line font-mono text-step-xs text-foreground overflow-x-auto">
           <pre>
             {JSON.stringify(
               documentJson,

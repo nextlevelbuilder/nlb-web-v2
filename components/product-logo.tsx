@@ -33,6 +33,8 @@ export default function ProductLogo({
 
   useEffect(() => {
     const img = imgRef.current;
+    // An image that failed before hydration never fires onError; read the DOM state once to fall back.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from external DOM state, runs once per src.
     if (img && img.complete && img.naturalWidth === 0) setFailedSrc(src ?? null);
   }, [src]);
 

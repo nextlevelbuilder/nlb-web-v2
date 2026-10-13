@@ -1,16 +1,18 @@
-import React from "react";
 import { getPublishedProducts } from "@/lib/domain/catalog";
 import { getLatestRankingSnapshot, computeRankingSnapshot } from "@/lib/domain/rankings";
-import { Card } from "@/components/ui/card";
 import ProductLogo from "@/components/product-logo";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, ThumbsUp, ArrowUpRight, ShieldCheck, Hash } from "lucide-react";
-import Link from "next/link";
+import { Trophy, TrendingUp, ThumbsUp, ArrowUpRight, Hash } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { directoryCopy } from "@/content/pages/directory-copy";
+import { toPageLocale } from "@/content/pages/page-locale";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { pageMetadata } from "@/lib/seo";
+
+// Reads (and may compute) ranking snapshots in D1; never prerender at build time.
+export const dynamic = "force-dynamic";
 
 interface LeaderboardsPageProps {
   params: Promise<{ locale: string }>;
@@ -40,106 +42,101 @@ export default async function LeaderboardsPage({ params }: LeaderboardsPageProps
   const productMap = new Map(publishedProducts.map((p) => [p.id, p]));
 
   const rankedItems = (dailySnapshot?.ranks as RankedProductItem[]) || [];
+  // Only ranks whose product is still published are shown.
+  const visibleItems = rankedItems.flatMap((item) => {
+    const product = productMap.get(item.productId);
+    return product ? [{ item, product }] : [];
+  });
+  const copy = directoryCopy[toPageLocale(locale)];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-12">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary gap-1.5 px-3 py-1">
-            <Trophy className="w-4 h-4 text-primary" />
-            {t('badge')}
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            {t('desc')}
-          </p>
-
-          {dailySnapshot && (
-            <div className="flex items-center justify-center gap-4 text-xs font-mono text-muted-foreground pt-2">
-              <span>{t('date')} {dailySnapshot.windowDate}</span>
-              <span>•</span>
-              <span>{t('ruleset')} {dailySnapshot.rulesetVersion}</span>
-              <span>•</span>
-              <span className="flex items-center gap-1" title={dailySnapshot.snapshotHash}>
-                <Hash className="w-3 h-3 text-primary" />
-                {t('auditHash')} {dailySnapshot.snapshotHash.slice(0, 12)}…
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Leaderboard Table / Cards */}
-        {rankedItems.length === 0 ? (
-          <div className="text-center py-20 border border-white/10 rounded-2xl bg-white/[0.02]">
-            <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-            <h3 className="text-lg font-bold">{t('noRankingsTitle')}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('noRankingsDesc')}
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap max-w-4xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
+          <header className="space-y-5">
+            <p className="eyebrow">
+              <Trophy aria-hidden className="h-3.5 w-3.5 text-primary" />
+              {t('badge')}
             </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {rankedItems.map((item) => {
-              const product = productMap.get(item.productId);
-              if (!product) return null;
+            <h1 className="font-display text-step-3xl font-light">{t('title')}</h1>
+            <p className="lede max-w-[60ch]">{t('desc')}</p>
 
-              return (
-                <Card
+            {dailySnapshot && (
+              <dl className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-5 font-mono text-step-xs text-ink-3">
+                <div className="flex gap-1.5">
+                  <dt>{t('date')}</dt>
+                  <dd className="text-ink-2">{dailySnapshot.windowDate}</dd>
+                </div>
+                <div className="flex gap-1.5">
+                  <dt>{t('ruleset')}</dt>
+                  <dd className="text-ink-2">{dailySnapshot.rulesetVersion}</dd>
+                </div>
+                <div className="flex min-w-0 gap-1.5" title={dailySnapshot.snapshotHash}>
+                  <dt className="flex items-center gap-1">
+                    <Hash aria-hidden className="h-3 w-3 text-primary" />
+                    {t('auditHash')}
+                  </dt>
+                  <dd className="text-ink-2">{dailySnapshot.snapshotHash.slice(0, 12)}…</dd>
+                </div>
+              </dl>
+            )}
+          </header>
+
+          {visibleItems.length === 0 ? (
+            <div className="surface-panel px-6 py-16 text-center">
+              <TrendingUp aria-hidden className="mx-auto mb-4 h-10 w-10 text-ink-3" strokeWidth={1.25} />
+              <h2 className="font-display text-step-xl font-normal">{t('noRankingsTitle')}</h2>
+              <p className="mt-2 text-step-sm text-ink-2">{t('noRankingsDesc')}</p>
+            </div>
+          ) : (
+            <ol className="surface-panel divide-y divide-line">
+              {visibleItems.map(({ item, product }) => (
+                <li
                   key={item.productId}
-                  className="flex items-center justify-between p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-primary/40 hover:bg-white/[0.04] transition-all"
+                  className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-3 p-4 transition-colors duration-base hover:bg-primary/5 sm:grid-cols-[2.5rem_3rem_minmax(0,1fr)_auto] sm:p-5"
                 >
-                  <div className="flex items-center gap-5">
-                    <div
-                      className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-lg shrink-0 ${
-                        item.rank === 1
-                          ? "bg-yellow-500/20 text-yellow-500 border border-yellow-500/40 shadow-lg shadow-yellow-500/10"
-                          : item.rank === 2
-                          ? "bg-slate-300/20 text-slate-300 border border-slate-300/40"
-                          : item.rank === 3
-                          ? "bg-amber-700/20 text-amber-600 border border-amber-700/40"
-                          : "bg-white/5 text-muted-foreground border border-white/10"
-                      }`}
-                    >
-                      #{item.rank}
-                    </div>
+                  <span
+                    aria-label={copy.rankLabel(item.rank)}
+                    className={`text-center font-display text-step-xl italic leading-none ${item.rank <= 3 ? "text-primary" : "text-ink-3"}`}
+                  >
+                    {item.rank}
+                  </span>
 
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-lg text-primary overflow-hidden shrink-0">
-                      <ProductLogo src={product.logoUrl} name={product.title} />
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-bold text-foreground hover:text-primary transition-colors">
-                        <Link href={`/products/${product.slug}`}>{product.title}</Link>
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-1">{product.tagline}</p>
-                    </div>
+                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-background font-display text-lg text-primary sm:flex">
+                    <ProductLogo src={product.logoUrl} name={product.title} />
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/5 border-primary/20 text-primary gap-1">
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                      {item.voteCount} {t('votes')} ({item.score} pts)
-                    </Badge>
-                    <Link
+                  <div className="min-w-0">
+                    <h2 className="text-step-base font-medium">
+                      <Link href={`/products/${product.slug}`} className="hover:text-primary hover:underline hover:underline-offset-4">
+                        {product.title}
+                      </Link>
+                    </h2>
+                    <p className="truncate text-step-sm text-ink-2">{product.tagline}</p>
+                  </div>
+
+                  <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
+                    <p className="flex items-center gap-1.5 font-mono text-step-xs text-ink-2">
+                      <ThumbsUp aria-hidden className="h-3.5 w-3.5 text-primary" />
+                      {copy.votes(item.voteCount)} · {copy.points(item.score)}
+                    </p>
+                    <a
                       href={`/go/${product.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
-                      title="Visit site"
+                      aria-label={`${copy.visitSite(product.title)} ${copy.opensInNewTab}`}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-pill border border-line-strong text-ink-2 transition-colors hover:border-foreground hover:text-foreground"
                     >
-                      <ArrowUpRight className="w-4 h-4" />
-                    </Link>
+                      <ArrowUpRight aria-hidden className="h-4 w-4" />
+                    </a>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </main>
       <FooterSection />
     </div>
   );

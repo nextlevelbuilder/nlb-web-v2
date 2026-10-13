@@ -9,13 +9,11 @@ import { useTranslations } from 'next-intl';
 export interface PreviewPublishButtonProps {
   slug: string;
   status: string;
-  isEarlyBird?: boolean;
 }
 
 export default function PreviewPublishButton({
   slug,
   status,
-  isEarlyBird = true,
 }: PreviewPublishButtonProps) {
   const t = useTranslations('preview');
   const [loading, setLoading] = useState(false);
@@ -25,8 +23,8 @@ export default function PreviewPublishButton({
 
   if (status === 'published') {
     return (
-      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 font-mono">
-        <CheckCircle2 className="w-4 h-4" />
+      <div className="flex items-center gap-2 font-mono text-step-xs text-success">
+        <CheckCircle2 aria-hidden className="w-4 h-4" />
         <span>{t('listingLive')}</span>
       </div>
     );
@@ -47,7 +45,7 @@ export default function PreviewPublishButton({
       const data = await res.json();
 
       if (res.status === 402 && data.checkoutUrl) {
-        setSuccess('Redirecting to Polar checkout to activate slot...');
+        setSuccess('Redirecting to Polar checkout…');
         window.location.href = data.checkoutUrl;
         return;
       }
@@ -60,25 +58,25 @@ export default function PreviewPublishButton({
       setTimeout(() => {
         router.refresh();
       }, 1200);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while submitting.');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'An error occurred while submitting.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+    <div aria-live="polite" className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
       {error && (
-        <div className="text-[11px] text-rose-400 flex items-center gap-1">
-          <AlertCircle className="w-3.5 h-3.5" />
+        <div role="alert" className="text-step-xs text-destructive flex items-center gap-1">
+          <AlertCircle aria-hidden className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="text-[11px] text-emerald-400 flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <div role="status" className="text-step-xs text-success flex items-center gap-1">
+          <CheckCircle2 aria-hidden className="w-3.5 h-3.5 shrink-0" />
           <span>{success}</span>
         </div>
       )}
@@ -87,16 +85,17 @@ export default function PreviewPublishButton({
         type="button"
         onClick={handlePublish}
         disabled={loading}
-        className="rounded-full gap-2 px-6 shadow-lg btn-premium font-bold text-xs shrink-0"
+        size="sm"
+        className="gap-2 shrink-0"
       >
         {loading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 aria-hidden className="w-3.5 h-3.5 animate-spin" />
             <span>{t('submitting')}</span>
           </>
         ) : (
           <>
-            <Send className="w-3.5 h-3.5" />
+            <Send aria-hidden className="w-3.5 h-3.5" />
             <span>{t('publishBtn')}</span>
           </>
         )}

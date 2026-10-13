@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { signOut } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 
 export default function ProfileSignOutButton() {
   const [loading, setLoading] = useState(false);
@@ -26,11 +26,13 @@ export default function ProfileSignOutButton() {
   return (
     <Button
       variant="outline"
+      size="sm"
       onClick={handleSignOut}
       disabled={loading}
-      className="rounded-full gap-1.5 text-xs border-white/10 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30"
+      aria-busy={loading}
+      className="gap-1.5 hover:border-destructive/50 hover:text-destructive"
     >
-      <LogOut className="w-3.5 h-3.5" />
+      <LogOut aria-hidden className="w-3.5 h-3.5" />
       {loading ? 'Signing out...' : 'Sign Out'}
     </Button>
   );

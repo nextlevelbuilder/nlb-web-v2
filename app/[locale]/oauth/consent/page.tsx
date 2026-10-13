@@ -34,7 +34,7 @@ export default async function OAuthConsentPage({ searchParams }: {
     });
     details = { clientName: client.client_name || clientId, accountEmail: session.user.email };
   } catch {
-    return <main className="mx-auto max-w-xl px-6 py-32"><h1 className="text-2xl font-bold">Authorization request expired or invalid</h1><p className="mt-4">Restart the connection from your MCP client to sign in and review access.</p></main>;
+    return <main id="main" className="sky-backdrop flex min-h-screen items-center justify-center bg-background px-5 py-24 text-foreground"><div className="surface-panel w-full max-w-xl p-6 sm:p-8"><p className="eyebrow mb-4">MCP · OAuth</p><h1 className="font-display text-step-2xl font-light">Authorization request expired or invalid</h1><p className="mt-4 text-step-base text-ink-2">Restart the connection from your MCP client to sign in and review access.</p></div></main>;
   }
-  return <main className="min-h-screen flex items-center justify-center px-4 py-24"><OAuthConsentForm {...details} clientId={clientId} scopes={scopes} oauthQuery={oauthQuery} resource={resource} /></main>;
+  return <main id="main" className="sky-backdrop flex min-h-screen items-center justify-center bg-background px-4 py-24 text-foreground"><OAuthConsentForm {...details} clientId={clientId} scopes={scopes} oauthQuery={oauthQuery} resource={resource} /></main>;
 }

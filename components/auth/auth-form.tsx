@@ -3,11 +3,8 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-  Sparkles,
   Mail,
-  KeyRound,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
@@ -21,11 +18,20 @@ import { authClient, signIn } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-export interface AuthFormProps {
-  initialMode?: 'signin' | 'signup';
-}
+/** Email OTP creates the account on first verification, so sign-in and sign-up share one form. */
+type AuthResult = { error?: { message?: string } | null; data?: { url?: unknown } | null } | null | undefined;
+type OtpSender = (args: { email: string; type: 'sign-in' }) => Promise<AuthResult>;
+type OtpVerifier = (args: { email: string; otp: string }) => Promise<AuthResult>;
+/** better-auth's emailOTP plugin method names changed between releases; probe the known spellings. */
+type EmailOtpClient = {
+  emailOtp?: { sendVerificationOtp?: OtpSender };
+  emailOTP?: { sendVerificationOTP?: OtpSender };
+  sendVerificationOTP?: OtpSender;
+  signIn?: { emailOtp?: OtpVerifier };
+};
+type EmailOtpSignIn = { emailOtp?: OtpVerifier; emailOTP?: OtpVerifier };
 
-export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
+export default function AuthForm() {
   const t = useTranslations('auth');
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -55,18 +61,20 @@ export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
     setSuccess(null);
 
     try {
+      const client = authClient as unknown as EmailOtpClient;
       const sendOtpFunc =
-        (authClient as any).emailOtp?.sendVerificationOtp ||
-        (authClient as any).emailOTP?.sendVerificationOTP ||
-        (authClient as any).sendVerificationOTP;
+        client.emailOtp?.sendVerificationOtp ||
+        client.emailOTP?.sendVerificationOTP ||
+        client.sendVerificationOTP;
+      if (!sendOtpFunc) throw new Error(t('sendFailed'));
 
       const res = await sendOtpFunc({
         email: email.trim().toLowerCase(),
         type: 'sign-in',
       });
 
-      if ((res as any)?.error) {
-        throw new Error((res as any).error.message || t('sendFailed'));
+      if (res?.error) {
+        throw new Error(res.error.message || t('sendFailed'));
       }
 
       setStep('otp');
@@ -91,23 +99,25 @@ export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
     setSuccess(null);
 
     try {
+      const signInMethods = signIn as unknown as EmailOtpSignIn;
       const verifyOtpFunc =
-        (signIn as any).emailOtp ||
-        (signIn as any).emailOTP ||
-        (authClient as any).signIn?.emailOtp;
+        signInMethods.emailOtp ||
+        signInMethods.emailOTP ||
+        (authClient as unknown as EmailOtpClient).signIn?.emailOtp;
+      if (!verifyOtpFunc) throw new Error(t('verifyFailed'));
 
       const res = await verifyOtpFunc({
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
       });
 
-      if ((res as any)?.error) {
-        throw new Error((res as any).error.message || t('verifyFailed'));
+      if (res?.error) {
+        throw new Error(res.error.message || t('verifyFailed'));
       }
 
       if (isOAuth) {
         // The provider verifies the signed query and returns the next consent step.
-        const nextUrl = (res as any)?.data?.url;
+        const nextUrl = res?.data?.url;
         if (typeof nextUrl !== 'string') throw new Error('Could not continue authorization. Please restart from your MCP client.');
         window.location.assign(nextUrl);
         return;
@@ -134,8 +144,9 @@ export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
         provider,
         callbackURL: callbackUrl,
       });
-      if ((res as any)?.error) {
-        throw new Error((res as any).error.message || `${provider} OAuth is not yet configured.`);
+      const socialResult = res as AuthResult;
+      if (socialResult?.error) {
+        throw new Error(socialResult.error.message || `${provider} OAuth is not yet configured.`);
       }
     } catch {
       setError(
@@ -145,102 +156,95 @@ export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
     }
   };
 
+  const fieldClass =
+    'w-full rounded-sm border border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+
   return (
-    <Card className="p-8 sm:p-10 bg-white/[0.02] border-white/10 rounded-3xl max-w-md w-full mx-auto space-y-6 shadow-2xl backdrop-blur-xl">
-      {/* Header Badge & Title */}
-      <div className="text-center space-y-2">
-        <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-xs px-3 py-1">
-          <ShieldCheck className="w-3.5 h-3.5 mr-1.5 inline text-emerald-400" />
+    <Card className="mx-auto w-full max-w-md space-y-7 bg-surface/90 p-6 shadow-constellation backdrop-blur-md sm:p-10">
+      <div className="space-y-3 text-center">
+        <p className="eyebrow justify-center">
+          <ShieldCheck aria-hidden className="h-3.5 w-3.5 text-primary" />
           {t('badge')}
-        </Badge>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-          {step === 'email' ? t('signInTitle') : t('otpTitle')}
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          {step === 'email'
-            ? t('signInDesc')
-            : t('otpDesc', { email })}
         </p>
+        <h1 className="font-display text-step-2xl font-light leading-tight">
+          {step === 'email' ? t('signInTitle') : t('otpTitle')}
+        </h1>
+        <p className="text-step-sm text-ink-2">{step === 'email' ? t('signInDesc') : t('otpDesc', { email })}</p>
       </div>
 
-      {/* Error & Success Feedback */}
-      {error && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+      <div aria-live="polite" className="space-y-3 empty:hidden">
+        {error && (
+          <p role="alert" className="flex items-start gap-2.5 rounded-sm border border-destructive/40 bg-destructive/10 p-3.5 text-step-sm text-destructive">
+            <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </p>
+        )}
+        {success && (
+          <p role="status" className="flex items-start gap-2.5 rounded-sm border border-success/40 bg-success/10 p-3.5 text-step-sm text-success">
+            <CheckCircle2 aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{success}</span>
+          </p>
+        )}
+      </div>
 
-      {success && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Step 1 Form: Email Input */}
       {step === 'email' && (
-        <form onSubmit={handleSendOtp} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
+          <div className="space-y-2">
+            <label htmlFor="auth-email" className="mono-label text-ink-2">
               {t('emailLabel')}
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail aria-hidden className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
               <input
+                id="auth-email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 placeholder={t('emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-foreground placeholder:text-muted-foreground/40 text-sm focus:outline-none focus:border-primary"
+                className={`${fieldClass} h-12 pl-10 pr-4 text-step-base`}
                 required
                 autoFocus
               />
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl gap-2 font-bold shadow-lg btn-premium py-6 mt-2"
-          >
+          <Button type="submit" size="lg" disabled={loading} className="w-full">
             {loading ? t('sendingOtp') : t('sendOtpBtn')}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight aria-hidden />
           </Button>
         </form>
       )}
 
-      {/* Step 2 Form: 6-Digit OTP Verification */}
       {step === 'otp' && (
-        <form onSubmit={handleVerifyOtp} className="space-y-5">
+        <form onSubmit={handleVerifyOtp} className="space-y-5" noValidate>
           <div className="space-y-2 text-center">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label htmlFor="auth-otp" className="mono-label text-ink-2">
               {t('otpLabel')}
             </label>
-            <div className="relative max-w-[240px] mx-auto">
-              <input
-                type="text"
-                placeholder="123456"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                className="w-full text-center tracking-[12px] font-mono text-2xl py-3 rounded-2xl bg-black/50 border border-primary/40 text-primary placeholder:text-muted-foreground/20 focus:outline-none focus:border-primary font-extrabold shadow-inner"
-                required
-                autoFocus
-              />
-            </div>
+            <input
+              id="auth-otp"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              placeholder="123456"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              className={`${fieldClass} mx-auto block h-14 max-w-[240px] text-center font-mono text-step-xl tracking-[0.5em]`}
+              required
+              autoFocus
+            />
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading || otp.length < 6}
-            className="w-full rounded-xl gap-2 font-bold shadow-lg btn-premium py-6"
-          >
+          <Button type="submit" size="lg" disabled={loading || otp.length < 6} className="w-full">
             {loading ? t('verifying') : t('verifyOtpBtn')}
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 aria-hidden />
           </Button>
 
-          <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-step-sm text-ink-2">
             <button
               type="button"
               onClick={() => {
@@ -248,55 +252,40 @@ export default function AuthForm({ initialMode = 'signin' }: AuthFormProps) {
                 setError(null);
                 setSuccess(null);
               }}
-              className="hover:text-foreground flex items-center gap-1 transition-colors"
+              className="inline-flex min-h-[44px] items-center gap-1.5 transition-colors hover:text-foreground"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft aria-hidden className="h-3.5 w-3.5" />
               {t('changeEmail')}
             </button>
 
             <button
               type="button"
-              onClick={(e) => handleSendOtp(e as any)}
+              onClick={(e) => handleSendOtp(e as unknown as React.FormEvent)}
               disabled={loading}
-              className="hover:text-primary flex items-center gap-1 transition-colors"
+              className="inline-flex min-h-[44px] items-center gap-1.5 transition-colors hover:text-primary disabled:opacity-50"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
               {t('resendOtp')}
             </button>
           </div>
         </form>
       )}
 
-      {/* Social 1-Click Login Options (Step 1 only) */}
       {step === 'email' && (
-        <div className="space-y-3 pt-2">
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-white/10 w-full" />
-            <span className="bg-background px-3 text-[10px] text-muted-foreground uppercase font-mono tracking-wider absolute">
-              {t('orSocial')}
-            </span>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3" role="presentation">
+            <span className="h-px flex-1 bg-line" />
+            <span className="mono-label text-ink-3">{t('orSocial')}</span>
+            <span className="h-px flex-1 bg-line" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => handleSocialSignIn('github')}
-              className="rounded-xl gap-2 text-xs border-white/10 hover:bg-white/5 py-5"
-            >
-              <Github className="w-4 h-4" />
+          <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+            <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialSignIn('github')}>
+              <Github aria-hidden />
               GitHub
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => handleSocialSignIn('google')}
-              className="rounded-xl gap-2 text-xs border-white/10 hover:bg-white/5 py-5"
-            >
-              <Globe className="w-4 h-4 text-primary" />
+            <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialSignIn('google')}>
+              <Globe aria-hidden />
               Google
             </Button>
           </div>

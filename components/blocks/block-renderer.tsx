@@ -72,7 +72,8 @@ export function BlockRenderer({ blocks, productSlug }: BlockRendererProps) {
           case "pulse":
             return <PulseBlockView key={block.id} block={block} productSlug={productSlug} />;
           default: {
-            const _exhaustive: never = block;
+            // Compile-time exhaustiveness check: a new block type without a case fails typechecking here.
+            block satisfies never;
             return null;
           }
         }

@@ -36,23 +36,24 @@ export default function OAuthConsentForm({ clientName, clientId, accountEmail, s
   }
 
   return (
-    <section className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Connect {clientName}?</h1>
-        <p className="text-muted-foreground">Signed in as <strong className="text-foreground">{accountEmail}</strong>.</p>
-        <p className="text-sm text-muted-foreground">This application is requesting access to Next Level Builder through MCP. Approve only if you recognize it.</p>
-        <p className="text-xs text-muted-foreground break-all">Client ID: {clientId}</p>
-        <p className="text-xs text-muted-foreground break-all">Server: {resource}</p>
+    <section aria-labelledby="consent-title" className="surface-panel w-full max-w-xl space-y-6 p-6 shadow-constellation sm:p-8">
+      <div className="space-y-3">
+        <p className="eyebrow">MCP · OAuth</p>
+        <h1 id="consent-title" className="font-display text-step-2xl font-light">Connect {clientName}?</h1>
+        <p className="text-step-base text-ink-2">Signed in as <strong className="break-all font-medium text-foreground">{accountEmail}</strong>.</p>
+        <p className="text-step-sm text-ink-2">This application is requesting access to Next Level Builder through MCP. Approve only if you recognize it.</p>
+        <p className="break-all font-mono text-step-xs text-ink-3">Client ID: {clientId}</p>
+        <p className="break-all font-mono text-step-xs text-ink-3">Server: {resource}</p>
       </div>
-      <ul className="space-y-4">
-        {scopes.map(scope => <li key={scope} className="space-y-1">
-          <strong className="text-sm">{scopeLabels[scope]}</strong>
-          <p className="text-sm text-muted-foreground">{scopeDescriptions[scope]}</p>
+      <ul className="divide-y divide-line border-y border-line">
+        {scopes.map(scope => <li key={scope} className="space-y-1 py-4">
+          <strong className="text-step-base font-medium">{scopeLabels[scope]}</strong>
+          <p className="text-step-sm text-ink-2">{scopeDescriptions[scope]}</p>
         </li>)}
       </ul>
-      <p className="text-sm text-muted-foreground">Your account permissions still apply. Manage access from <a className="underline" href="/oauth/connections" target="_blank" rel="noreferrer">connected applications</a>. Separately revoke any API keys it created from your profile.</p>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className="flex gap-3">
+      <p className="text-step-sm text-ink-2">Your account permissions still apply. Manage access from <a className="text-foreground underline underline-offset-4" href="/oauth/connections" target="_blank" rel="noreferrer">connected applications</a>. Separately revoke any API keys it created from your profile.</p>
+      {error && <p role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 p-3 text-step-sm text-destructive">{error}</p>}
+      <div className="flex flex-wrap gap-3">
         <Button variant="outline" disabled={pending} onClick={() => decide(false)}>Deny</Button>
         <Button disabled={pending} onClick={() => decide(true)}>{pending ? 'Continuing…' : 'Allow access'}</Button>
       </div>

@@ -1,52 +1,63 @@
 import Link from "next/link";
-export const metadata = { title: "Welcome", robots: { index: false, follow: false } };
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
+import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
+import { Link as LocaleLink } from "@/i18n/navigation";
+import { toPageLocale } from "@/content/pages/page-locale";
+import { successPageCopy } from "@/content/pages/success-page-copy";
 
-export default function SuccessPage() {
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return { title: successPageCopy[toPageLocale(locale)].metaTitle, robots: { index: false, follow: false } };
+}
+
+export default async function SuccessPage({ params }: Props) {
+  const { locale } = await params;
+  const copy = successPageCopy[toPageLocale(locale)];
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <CheckCircle2 className="w-20 h-20 text-green-500" />
-          </div>
-          <CardTitle className="text-3xl">Welcome to Next Level Builders! 🎉</CardTitle>
-          <CardDescription className="text-lg">
-            Your payment was successful. Check your email for next steps!
-          </CardDescription>
-        </CardHeader>
+    <main id="main" className="sky-backdrop flex min-h-screen items-center justify-center bg-background px-4 py-16 text-foreground">
+      <div className="surface-panel w-full max-w-2xl space-y-8 p-6 shadow-constellation sm:p-10">
+        <header className="space-y-4 text-center">
+          <CheckCircle2 aria-hidden className="mx-auto h-14 w-14 text-primary" strokeWidth={1.25} />
+          <p className="eyebrow justify-center">{copy.eyebrow}</p>
+          <h1 className="font-display text-step-2xl font-light">{copy.title}</h1>
+          <p className="lede mx-auto">{copy.lede}</p>
+        </header>
 
-        <CardContent className="space-y-6">
-          <div className="bg-muted p-6 rounded-lg space-y-4">
-            <h3 className="font-semibold text-lg">What happens next?</h3>
-            <ol className="space-y-3 list-decimal list-inside">
-              <li>Check your email for a welcome message with Discord invite link</li>
-              <li>Join our Discord server and introduce yourself</li>
-              <li>Access exclusive resources in the #resources channel</li>
-              <li>Browse the recorded session library and watch new weekly drops</li>
-            </ol>
-          </div>
+        <section aria-labelledby="next-steps" className="border-t border-line pt-6">
+          <h2 id="next-steps" className="mono-label mb-4 text-ink-3">
+            {copy.nextStepsTitle}
+          </h2>
+          <ol className="space-y-3">
+            {copy.nextSteps.map((step, i) => (
+              <li key={step} className="grid grid-cols-[2rem_1fr] gap-3 text-step-base text-ink-2">
+                <span aria-hidden className="font-display text-step-lg italic leading-none text-primary">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </section>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button asChild className="flex-1">
-              <Link href="https://discord.com/invite/Ht4sb7Wjnx">
-                Join Discord Now
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link href="/">
-                Back to Home
-              </Link>
-            </Button>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button asChild size="lg" className="flex-1">
+            <Link href="https://discord.com/invite/Ht4sb7Wjnx">{copy.joinDiscord}</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="flex-1">
+            <LocaleLink href="/">{copy.backHome}</LocaleLink>
+          </Button>
+        </div>
 
-          <p className="text-sm text-center text-muted-foreground">
-            Having trouble? Email us at hi@nextlevelbuilder.io
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+        <p className="text-center text-step-sm text-ink-3">
+          {copy.troublePrefix}{" "}
+          <a href="mailto:hi@nextlevelbuilder.io" className="text-foreground underline underline-offset-4">
+            hi@nextlevelbuilder.io
+          </a>
+        </p>
+      </div>
+    </main>
   );
 }

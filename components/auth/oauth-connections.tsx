@@ -28,13 +28,13 @@ export default function OAuthConnections({ connections }: {
   }
 
   return <section className="space-y-6">
-    {error && <p role="alert" className="text-destructive">{error}</p>}
-    {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
-    {!items.length && <p className="text-muted-foreground">No connected applications.</p>}
-    {items.map(item => <article key={item.id} className="rounded-xl border border-border bg-card p-5 space-y-3">
-      <h2 className="font-semibold">{item.name}</h2>
-      <p className="text-xs text-muted-foreground break-all">Client ID: {item.clientId}</p>
-      <p className="text-sm text-muted-foreground">Permissions: {item.scopes.join(', ')}</p>
+    {error && <p role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 p-4 text-step-sm text-destructive">{error}</p>}
+    {notice && <p role="status" className="rounded-sm border border-line bg-surface p-4 text-step-sm text-ink-2">{notice}</p>}
+    {!items.length && <p className="surface-panel p-6 text-step-base text-ink-2">No connected applications.</p>}
+    {items.map(item => <article key={item.id} className="surface-panel space-y-3 p-5">
+      <h2 className="font-display text-step-xl font-normal">{item.name}</h2>
+      <p className="break-all font-mono text-step-xs text-ink-3">Client ID: {item.clientId}</p>
+      <p className="text-step-sm text-ink-2">Permissions: {item.scopes.join(', ')}</p>
       <Button variant="outline" disabled={!!pending} onClick={() => disconnect(item.id)}>{pending === item.id ? 'Disconnecting…' : 'Disconnect'}</Button>
     </article>)}
   </section>;

@@ -8,14 +8,14 @@ export const metadata = { title: "Sign in", robots: { index: false, follow: fals
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
 
-      <div className="flex-1 pt-32 pb-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <Suspense fallback={<div className="text-center text-sm text-muted-foreground">Loading authentication...</div>}>
-          <AuthForm initialMode="signin" />
+      <main id="main" className="sky-backdrop flex flex-1 items-center justify-center px-4 pb-20 pt-[calc(var(--header-h)+3rem)] sm:px-6">
+        <Suspense fallback={<div role="status" className="text-center text-step-sm text-ink-2">Loading authentication...</div>}>
+          <AuthForm />
         </Suspense>
-      </div>
+      </main>
 
       <FooterSection />
     </div>

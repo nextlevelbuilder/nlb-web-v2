@@ -12,12 +12,12 @@ export function FaqBlockView({ block }: { block: Extract<Block, { type: "faq" }>
           <AccordionItem
             key={index}
             value={`item-${index}`}
-            className="border border-white/10 bg-white/[0.02] rounded-xl px-6"
+            className="border border-line bg-surface rounded-sm px-6"
           >
             <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
               {item.question}
             </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground pb-4 leading-relaxed">
+            <AccordionContent className="text-ink-2 pb-4 leading-relaxed">
               {item.answer}
             </AccordionContent>
           </AccordionItem>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   UploadCloud,
@@ -40,6 +40,9 @@ export default function MediaUploadDropzone({
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fieldId = useId();
+  const labelId = `${fieldId}-label`;
+  const urlInputId = `${fieldId}-url`;
 
   const acceptedMime =
     accept === 'video'
@@ -55,8 +58,8 @@ export default function MediaUploadDropzone({
     try {
       const res = await uploadMediaToR2(file, folder);
       onChange(res.url);
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload media to Cloudflare R2.');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Failed to upload media to Cloudflare R2.');
     } finally {
       setIsUploading(false);
     }
@@ -78,18 +81,19 @@ export default function MediaUploadDropzone({
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            {accept === 'video' ? <VideoIcon className="w-3.5 h-3.5 text-primary" /> : <ImageIcon className="w-3.5 h-3.5 text-primary" />}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label id={labelId} htmlFor={showUrlInput ? urlInputId : undefined} className="mono-label flex items-center gap-1.5 text-ink-3">
+            {accept === 'video' ? <VideoIcon aria-hidden className="w-3.5 h-3.5 text-primary" /> : <ImageIcon aria-hidden className="w-3.5 h-3.5 text-primary" />}
             {label}
           </label>
 
           <button
             type="button"
             onClick={() => setShowUrlInput(!showUrlInput)}
-            className="text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+            aria-pressed={showUrlInput}
+            className="inline-flex min-h-10 items-center gap-1 rounded-sm text-step-xs text-ink-2 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <LinkIcon className="w-3 h-3" />
+            <LinkIcon aria-hidden className="w-3 h-3" />
             {showUrlInput ? 'Switch to file upload' : 'Paste external URL'}
           </button>
         </div>
@@ -97,8 +101,8 @@ export default function MediaUploadDropzone({
 
       {/* Error Message */}
       {error && (
-        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        <div role="alert" className="p-2.5 rounded-sm bg-destructive/10 border border-destructive/40 text-destructive text-step-xs flex items-center gap-2">
+          <AlertCircle aria-hidden className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -107,6 +111,8 @@ export default function MediaUploadDropzone({
       {showUrlInput ? (
         <div className="flex items-center gap-2">
           <input
+            id={urlInputId}
+            aria-label={label ? undefined : 'Media URL'}
             type="url"
             placeholder="https://cdn.example.com/asset.png"
             value={value || customUrl}
@@ -114,38 +120,40 @@ export default function MediaUploadDropzone({
               setCustomUrl(e.target.value);
               onChange(e.target.value);
             }}
-            className="flex-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary font-mono"
+            className="h-10 min-w-0 flex-1 rounded-sm border border-input bg-surface px-3 font-mono text-step-xs text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           {value && (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => onChange('')}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-400"
+              aria-label="Clear media URL"
+              className="hover:text-destructive"
             >
-              <X className="w-4 h-4" />
+              <X aria-hidden className="w-4 h-4" />
             </Button>
           )}
         </div>
       ) : value ? (
         /* Mode B: Preview of Existing Asset */
-        <div className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3 group hover:border-white/20 transition-all">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-line bg-canvas-deep p-3 transition-colors hover:border-line-strong">
           <div className="flex items-center gap-3 overflow-hidden">
             {/* Visual Thumbnail */}
-            <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-12 h-12 rounded-sm bg-surface-raised border border-line flex items-center justify-center overflow-hidden shrink-0">
               {isVideoUrl(value) ? (
                 <video src={value} className="w-full h-full object-cover" muted playsInline />
               ) : (
-                <img src={value} alt="Preview" className="w-full h-full object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element -- user-supplied R2/external URL; next/image would need every host allow-listed.
+                <img src={value} alt="" className="w-full h-full object-cover" />
               )}
             </div>
 
-            <div className="truncate text-xs space-y-0.5">
+            <div className="min-w-0 truncate text-step-xs space-y-0.5">
               <div className="font-semibold text-foreground truncate">{value.split('/').pop() || 'Uploaded Asset'}</div>
-              <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
-                <CheckCircle2 className="w-2.5 h-2.5" />
-                Cloudflare R2 CDN Ready
+              <div className="flex items-center gap-1 font-mono text-step-xs text-success">
+                <CheckCircle2 aria-hidden className="w-3 h-3" />
+                Media ready
               </div>
             </div>
           </div>
@@ -154,22 +162,20 @@ export default function MediaUploadDropzone({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               asChild
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
             >
-              <a href={value} target="_blank" rel="noreferrer" title="Open asset in new tab">
-                <ExternalLink className="w-3.5 h-3.5" />
+              <a href={value} target="_blank" rel="noopener noreferrer" aria-label="Open asset in a new tab">
+                <ExternalLink aria-hidden className="w-3.5 h-3.5" />
               </a>
             </Button>
 
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground border border-white/10 rounded-lg"
             >
               Change
             </Button>
@@ -177,17 +183,22 @@ export default function MediaUploadDropzone({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => onChange('')}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-400 rounded-lg"
+              aria-label="Remove media"
+              className="hover:text-destructive"
             >
-              <X className="w-3.5 h-3.5" />
+              <X aria-hidden className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
       ) : (
         /* Mode C: Dropzone to Upload */
-        <div
+        <button
+          type="button"
+          aria-labelledby={label ? labelId : undefined}
+          aria-label={label ? undefined : placeholder}
+          aria-busy={isUploading}
           onDragOver={(e) => {
             e.preventDefault();
             setIsDragging(true);
@@ -195,35 +206,35 @@ export default function MediaUploadDropzone({
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => !isUploading && fileInputRef.current?.click()}
-          className={`p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center space-y-2 ${
+          className={`block w-full p-4 rounded-sm border-2 border-dashed transition-colors cursor-pointer text-center space-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             isDragging
-              ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20'
-              : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+              ? 'border-primary bg-primary/10'
+              : 'border-line bg-surface hover:border-line-strong hover:bg-surface-raised'
           }`}
         >
           {isUploading ? (
-            <div className="py-3 flex flex-col items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
-              <span className="text-xs text-muted-foreground font-mono">Uploading to Cloudflare R2...</span>
-            </div>
+            <span className="py-3 flex flex-col items-center justify-center gap-2">
+              <Loader2 aria-hidden className="w-5 h-5 text-primary animate-spin" />
+              <span role="status" className="font-mono text-step-xs text-ink-2">Uploading to Cloudflare R2...</span>
+            </span>
           ) : (
-            <div className="py-2 flex flex-col items-center justify-center gap-1.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <span className="py-2 flex flex-col items-center justify-center gap-1.5">
+              <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-sm border border-line text-primary">
                 <UploadCloud className="w-4 h-4" />
-              </div>
-              <div className="text-xs font-medium text-foreground">
-                <span className="text-primary font-bold">Click to upload</span> or drag and drop
-              </div>
-              <div className="text-[10px] text-muted-foreground font-mono">
+              </span>
+              <span className="block text-step-xs font-medium text-foreground">
+                <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+              </span>
+              <span className="block font-mono text-step-xs text-ink-3">
                 {accept === 'video'
                   ? 'MP4, WebM up to 100MB'
                   : accept === 'both'
                   ? 'Images up to 10MB • Videos up to 100MB'
                   : 'PNG, JPG, WebP, SVG up to 10MB'}
-              </div>
-            </div>
+              </span>
+            </span>
           )}
-        </div>
+        </button>
       )}
 
       {/* Hidden File Input */}
@@ -231,6 +242,8 @@ export default function MediaUploadDropzone({
         ref={fileInputRef}
         type="file"
         accept={acceptedMime}
+        tabIndex={-1}
+        aria-hidden
         onChange={(e) => {
           if (e.target.files && e.target.files[0]) {
             handleFile(e.target.files[0]);

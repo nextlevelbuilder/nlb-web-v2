@@ -1,32 +1,27 @@
-import React from "react";
 import { projectDashboardProductTrust } from "@/lib/domain/catalog";
 export const metadata = { title: "Profile", robots: { index: false, follow: false } };
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getDb } from "@/lib/db";
-import { products, members, organizations, orders, customers } from "@/lib/db/schema";
+import { products, members, organizations } from "@/lib/db/schema";
 import { eq, inArray, desc } from "drizzle-orm";
 import Navbar from "@/components/navbar";
 import FooterSection from "@/components/sections/footer-section";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   User,
-  Mail,
   ShieldCheck,
   Building2,
   Layers,
   ArrowUpRight,
   Sparkles,
-  CheckCircle2,
-  Clock,
-  LogOut,
   Lock,
   PlusCircle,
 } from "lucide-react";
-import Link from "next/link";
+import { Link, getPathname } from "@/i18n/navigation";
 import ProfileSignOutButton from "./profile-sign-out-button";
+import AccountIdentityHeader from "@/components/profile/account-identity-header";
 import ApiKeysManager from "@/components/profile/api-keys-manager";
 import { getTranslations } from "next-intl/server";
 import { BlockSchema } from "@/packages/contracts/src";
@@ -52,24 +47,24 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   if (!session || !session.user) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
         <Navbar />
-        <div className="flex-1 pt-32 pb-20 px-4 flex items-center justify-center">
-          <Card className="p-10 bg-white/[0.02] border-white/10 rounded-3xl max-w-md w-full text-center space-y-6 shadow-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
-              <Lock className="w-7 h-7" />
-            </div>
+        <main id="main" className="sky-backdrop flex flex-1 items-center justify-center px-4 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
+          <section aria-labelledby="profile-login" className="surface-panel w-full max-w-md space-y-6 p-8 text-center shadow-constellation sm:p-10">
+            <span aria-hidden className="mx-auto flex h-14 w-14 items-center justify-center rounded-sm border border-line text-primary">
+              <Lock className="h-6 w-6" strokeWidth={1.5} />
+            </span>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">{t("loginRequiredTitle")}</h2>
-              <p className="text-xs text-muted-foreground">
-                {t("loginRequiredDesc")}
-              </p>
+              <h1 id="profile-login" className="font-display text-step-2xl font-light">{t("loginRequiredTitle")}</h1>
+              <p className="text-step-sm text-ink-2">{t("loginRequiredDesc")}</p>
             </div>
-            <Button asChild className="w-full rounded-xl gap-2 font-bold shadow-lg btn-premium py-6">
-              <Link href="/sign-in?callbackUrl=/profile">{t("loginRequiredBtn")}</Link>
+            <Button asChild size="lg" className="w-full">
+              <Link href={{ pathname: "/sign-in", query: { callbackUrl: getPathname({ href: "/profile", locale }) } }}>
+                {t("loginRequiredBtn")}
+              </Link>
             </Button>
-          </Card>
-        </div>
+          </section>
+        </main>
         <FooterSection />
       </div>
     );
@@ -77,7 +72,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const db = getDb();
   const user = session.user;
-  const userRole = (user as any).role || "user";
+  const userRole = (user as { role?: string }).role || "user";
 
   // Query user organizations
   const userMemberships = await db
@@ -108,198 +103,133 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   userProducts = await projectDashboardProductTrust(userProducts, db);
 
-  // Query paid orders
-  const userOrders = await db
-    .select()
-    .from(orders)
-    .innerJoin(customers, eq(orders.customerId, customers.id))
-    .where(eq(customers.email, user.email))
-    .orderBy(desc(orders.createdAt))
-    .limit(10);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
 
-      <div className="flex-1 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-10">
-          {/* Profile Header Card */}
-          <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-cyan-500/20 border border-primary/40 flex items-center justify-center font-bold text-2xl text-primary shadow-lg overflow-hidden shrink-0">
-                {user.image ? (
-                  <img src={user.image} alt={user.name || "User"} className="w-full h-full object-cover" />
-                ) : (
-                  (user.name || user.email || "U").charAt(0).toUpperCase()
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-2xl font-extrabold text-foreground">{user.name || "Builder"}</h1>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs capitalize ${
-                      userRole === "admin"
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        : "border-primary/30 bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {userRole}
-                  </Badge>
-                  {user.emailVerified && (
-                    <Badge variant="outline" className="text-xs border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1 font-mono">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      {t("verified")}
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="text-xs text-muted-foreground flex items-center gap-1.5 font-mono">
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>{user.email}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild variant="outline" size="sm" className="rounded-full gap-1.5 text-xs border-white/20 hover:bg-white/10">
-                <Link href={`/builders/${user.id}`}>
-                  <User className="w-3.5 h-3.5 text-primary" />
-                  {t("publicProfileBtn")}
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="rounded-full gap-1.5 text-xs border-white/20 hover:bg-white/10">
-                <Link href="/account">
-                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                  {t("manageSlotsBtn")}
-                </Link>
-              </Button>
-              <ProfileSignOutButton />
-            </div>
-          </div>
-
-          {/* Builder Studio Dedicated Launchpad Banner */}
-          <div className="p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-white/[0.02] to-cyan-500/10 border border-primary/30 relative overflow-hidden shadow-2xl space-y-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="space-y-2 max-w-xl">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-xs px-3 py-0.5 font-mono">
-                    <Sparkles className="w-3 h-3 mr-1 inline" />
-                    {t("creativeWorkspaceBadge")}
-                  </Badge>
-                </div>
-                <h2 className="text-2xl font-extrabold text-foreground">{t("studioLaunchpadTitle")}</h2>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {t("studioLaunchpadDesc")}
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-mono text-muted-foreground">
-                  <span className="px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10">{BlockSchema.options.length} Block Types</span>
-                  <span className="px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10">Cloudflare R2 Upload</span>
-                  <span className="px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10">Drag & Drop Reorder</span>
-                  <span className="px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10">Sandbox Preview</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-                <Button asChild className="rounded-2xl gap-2 font-bold shadow-xl btn-premium py-6 px-8 text-sm">
-                  <Link href="/studio">
-                    <Sparkles className="w-4 h-4" />
-                    {t("studioLaunchpadBtn")}
+      <main id="main" className="sky-backdrop flex-1">
+        <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
+          <AccountIdentityHeader
+            name={user.name}
+            email={user.email}
+            image={user.image}
+            role={userRole}
+            emailVerified={Boolean(user.emailVerified)}
+            verifiedLabel={t("verified")}
+            actions={
+              <>
+                <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <Link href={`/builders/${user.id}`}>
+                    <User aria-hidden className="h-3.5 w-3.5 text-primary" />
+                    {t("publicProfileBtn")}
                   </Link>
                 </Button>
-              </div>
-            </div>
-          </div>
-          {/* Organizations & Memberships Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-primary" />
-              {t("orgsTitle")} ({userMemberships.length})
-            </h3>
+                <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <Link href="/account">
+                    <Layers aria-hidden className="h-3.5 w-3.5 text-primary" />
+                    {t("manageSlotsBtn")}
+                  </Link>
+                </Button>
+                <ProfileSignOutButton />
+              </>
+            }
+          />
 
-            {userMemberships.length === 0 ? (
-              <Card className="p-6 bg-white/[0.01] border-white/5 rounded-2xl text-center text-xs text-muted-foreground">
-                {t("noOrgs")}
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {userMemberships.map((org) => (
-                  <Card key={org.orgId} className="p-5 bg-white/[0.02] border-white/10 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-sm text-foreground">{org.orgName}</div>
-                      <div className="text-xs font-mono text-muted-foreground">slug: {org.orgSlug}</div>
-                    </div>
-                    <Badge variant="outline" className="text-xs capitalize border-white/10 bg-white/5">
-                      {org.memberRole}
-                    </Badge>
-                  </Card>
+          <section aria-labelledby="profile-studio" className="surface-panel flex flex-col justify-between gap-6 p-6 sm:p-8 md:flex-row md:items-center">
+            <div className="max-w-xl space-y-3">
+              <p className="eyebrow">{t("creativeWorkspaceBadge")}</p>
+              <h2 id="profile-studio" className="h-section">{t("studioLaunchpadTitle")}</h2>
+              <p className="text-step-sm leading-relaxed text-ink-2">{t("studioLaunchpadDesc")}</p>
+              <ul className="flex flex-wrap gap-2 pt-1">
+                {[`${BlockSchema.options.length} Block Types`, "Cloudflare R2 Upload", "Drag & Drop Reorder", "Sandbox Preview"].map((feature) => (
+                  <li key={feature}>
+                    <Badge variant="secondary">{feature}</Badge>
+                  </li>
                 ))}
-              </div>
-            )}
-          </div>
+              </ul>
+            </div>
+            <Button asChild size="lg" className="shrink-0 gap-2">
+              <Link href="/studio">
+                <Sparkles aria-hidden className="h-4 w-4" />
+                {t("studioLaunchpadBtn")}
+              </Link>
+            </Button>
+          </section>
 
-          {/* Developer API Keys Management Section */}
+          <section aria-labelledby="profile-orgs" className="space-y-4">
+            <h2 id="profile-orgs" className="flex items-center gap-2 font-display text-step-xl">
+              <Building2 aria-hidden className="h-4 w-4 text-primary" />
+              {t("orgsTitle")} ({userMemberships.length})
+            </h2>
+            {userMemberships.length === 0 ? (
+              <p className="surface-panel p-6 text-center text-step-sm text-ink-2">{t("noOrgs")}</p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {userMemberships.map((org) => (
+                  <li key={org.orgId} className="flex items-center justify-between gap-3 rounded-sm border border-line bg-surface p-5">
+                    <div className="min-w-0">
+                      <h3 className="break-words text-step-base font-medium text-foreground">{org.orgName}</h3>
+                      <p className="break-all font-mono text-step-xs text-ink-3">slug: {org.orgSlug}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0">{org.memberRole}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <ApiKeysManager />
 
-          {/* User Products & Listings Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
+          <section aria-labelledby="profile-products" className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="profile-products" className="flex items-center gap-2 font-display text-step-xl">
+                <Layers aria-hidden className="h-4 w-4 text-primary" />
                 {t("productsTitle")} ({userProducts.length})
-              </h3>
-              <Button asChild variant="outline" size="sm" className="rounded-full gap-1.5 text-xs border-white/10">
+              </h2>
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
                 <Link href="/studio">
-                  <PlusCircle className="w-3.5 h-3.5" />
+                  <PlusCircle aria-hidden className="h-3.5 w-3.5" />
                   {t("addProductBtn")}
                 </Link>
               </Button>
             </div>
 
             {userProducts.length === 0 ? (
-              <Card className="p-8 bg-white/[0.01] border-white/5 rounded-2xl text-center space-y-2">
-                <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto opacity-40" />
-                <p className="text-xs text-muted-foreground">{t("noProducts")}</p>
-              </Card>
+              <div className="surface-panel space-y-2 p-8 text-center">
+                <ShieldCheck aria-hidden className="mx-auto h-8 w-8 text-ink-3" strokeWidth={1.25} />
+                <p className="text-step-sm text-ink-2">{t("noProducts")}</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {userProducts.map((p) => (
-                  <Card key={p.id} className="p-5 bg-white/[0.02] border-white/10 rounded-2xl space-y-3 flex flex-col justify-between">
+                  <li key={p.id} className="flex flex-col justify-between space-y-3 rounded-sm border border-line bg-surface p-5">
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] capitalize px-2 py-0.5 ${
-                            p.status === "published"
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                              : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                          }`}
-                        >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Badge variant="outline" className={p.status === "published" ? "border-success/50 text-success" : "border-warning/50 text-warning"}>
                           {p.status.replace("_", " ")}
                         </Badge>
-                        <span className="text-[10px] font-mono text-muted-foreground">Trust: {p.trustScore}/100</span>
+                        <span className="font-mono text-step-xs text-ink-3">Trust: {p.trustScore}/100</span>
                       </div>
-                      <div className="font-bold text-sm text-foreground">{p.title}</div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{p.tagline}</p>
+                      <h3 className="font-display text-step-lg text-foreground">{p.title}</h3>
+                      <p className="line-clamp-2 text-step-sm text-ink-2">{p.tagline}</p>
                     </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs">
-                      <Link href={`/products/${p.slug}`} className="text-primary hover:underline flex items-center gap-1 font-medium">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-step-xs">
+                      <Link href={`/products/${p.slug}`} className="link-arrow">
                         {t("publicPage")}
-                        <ArrowUpRight className="w-3 h-3" />
+                        <ArrowUpRight aria-hidden className="h-3 w-3" />
                       </Link>
-                      <Link href={`/studio/products/${p.slug}/preview`} className="text-muted-foreground hover:text-foreground">
+                      <Link href={`/studio/products/${p.slug}/preview`} className="text-ink-2 underline-offset-4 hover:text-foreground hover:underline">
                         {t("preview")}
                       </Link>
                     </div>
-                  </Card>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
 
       <FooterSection />
     </div>

@@ -10,6 +10,7 @@ vi.mock('@/components/navbar', () => ({ default: () => null }));
 vi.mock('@/components/sections/footer-section', () => ({ default: () => null }));
 vi.mock('@/components/blocks/block-renderer', () => ({ BlockRenderer: () => null }));
 vi.mock('@/components/studio/preview-publish-button', () => ({ default: () => null }));
+vi.mock('@/i18n/navigation', () => ({ Link: () => null }));
 
 import PreviewPage, { metadata } from '@/app/[locale]/studio/products/[slug]/preview/page';
 
