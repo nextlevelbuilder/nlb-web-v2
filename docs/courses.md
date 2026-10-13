@@ -18,12 +18,12 @@ Courses sell individual videos. Each video is bought once through Polar and play
 
 [`lib/courses/course-video-access.ts`](../lib/courses/course-video-access.ts) decides who may watch. A viewer qualifies with any one of the following (the file's doc comment is authoritative):
 1. an active `video:<id>` entitlement (granted by the Polar webhook on a paid order);
-2. a paid order for the video's Polar product placed with the viewer's email;
-3. an active subscription on a plan in the access policy.
+2. a paid or partially refunded order for the video's Polar product placed with the viewer's email;
+3. an `active` subscription on a plan in the access policy whose `current_period_end` is still in the future. A VIP who cancels keeps access until the paid period ends; a subscription without a period end does not qualify.
 
 Commerce rows are keyed by email. That is safe because every sign-in method proves the email (email OTP or OAuth, with password sign-in disabled).
 
-The token endpoint documents its status codes in its header comment: [`app/api/courses/videos/[slug]/token/route.ts`](../app/api/courses/videos/%5Bslug%5D/token/route.ts).
+The token endpoint also refuses (409 `stream_not_signed_only`) any video that the service has not confirmed as signed-only on Stream. It documents its status codes in its header comment: [`app/api/courses/videos/[slug]/token/route.ts`](../app/api/courses/videos/%5Bslug%5D/token/route.ts).
 
 ## Endpoints
 
@@ -48,12 +48,12 @@ Stream is not reachable with the current API token or OAuth scopes. The account 
 2. Create a signing key with a token that has **Stream: Edit**:
    `curl -X POST -H "Authorization: Bearer <token>" https://api.cloudflare.com/client/v4/accounts/7ac87c90789159ae1b10b7d78f5dcc08/stream/keys`
    `result.id` and `result.jwk` are shown once. Pipe them straight into the secrets in the next step. Do not paste them into files or chat.
-3. Set the Worker secrets for each environment. Production uses `--env=""`, staging uses `--env staging` (see [deployment-guide.md](./deployment-guide.md) for the wrangler invocation): `CF_STREAM_SIGNING_KEY_ID`, `CF_STREAM_SIGNING_KEY_JWK`, `CF_STREAM_CUSTOMER_SUBDOMAIN`. The token endpoint returns 503 until these are set.
+3. Set the Worker secrets for each environment. Production uses `--env=""`, staging uses `--env staging` (see [deployment-guide.md](./deployment-guide.md) for the wrangler invocation): `CF_STREAM_SIGNING_KEY_ID`, `CF_STREAM_SIGNING_KEY_JWK`, `CF_STREAM_CUSTOMER_SUBDOMAIN`, and `CF_STREAM_API_TOKEN` (Stream: Edit; `CF_ACCOUNT_ID` is already a var in `wrangler.jsonc`). The token endpoint returns 503 until the signing values are set; registering or publishing a video returns 503 until the API token is set.
 4. `POLAR_ACCESS_TOKEN` needs `products:write` so that publishing can create products.
 
 ## Publishing a video
 
-1. Upload the video to Stream with `requireSignedURLs: true`. A uid uploaded without signed URLs plays without a token, which defeats the access rule.
+1. Upload the video to Stream. Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
 2. As an admin, `POST /api/courses/videos` with the slug, title, price and `streamUid`. The video is created as a draft.
 3. `POST /api/courses/videos/<slug>/publish`. This creates the Polar product and makes the video visible.
 4. Verify on staging:

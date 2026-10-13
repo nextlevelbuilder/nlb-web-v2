@@ -53,14 +53,14 @@ Staging and production share the `nlb-media-staging` bucket for `MEDIA_STAGING`.
 Programmatic callers are resolved in one place, `resolveCaller` in [`lib/auth-api-key.ts`](../lib/auth-api-key.ts). It accepts:
 1. An `nlb_live_` API key in `Authorization: Bearer` or `x-api-key`.
 2. A session cookie.
-3. An MCP delegation assertion in `x-nlb-mcp-assertion`, signed with `MCP_DELEGATION_SECRET`. The MCP worker (`mcp.nextlevelbuilder.io`, toolkits repo) mints it, bound to user, scope, method and path, with a lifetime of at most 60 s ([`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts)).
+3. An MCP delegation assertion in `x-nlb-mcp-assertion`, signed with `MCP_DELEGATION_SECRET`. The MCP worker (`mcp.nextlevelbuilder.io`, toolkits repo) mints it, bound to user, scope, method and path, with a lifetime of at most 60 s ([`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts)). Each assertion is single-use: its `jti` is recorded in the `MCP_DELEGATION_JTI` KV for the token lifetime and a reuse is rejected. KV is eventually consistent, so a replay at the same instant from another location is not guaranteed to be caught.
 
 Bot protection: votes require a Turnstile token, verified server-side in [`lib/domain/analytics.ts`](../lib/domain/analytics.ts).
 
 ## Payments (Polar)
 
 - Checkout sessions are created in [`lib/polar.ts`](../lib/polar.ts) (memberships, directory listings) and [`lib/courses/course-checkout.ts`](../lib/courses/course-checkout.ts) (course videos). Success URLs are derived from `NEXT_PUBLIC_APP_URL`.
-- Webhooks arrive at `POST /api/webhooks/polar` and are verified with the Polar SDK (Standard Webhooks, `POLAR_WEBHOOK_SECRET`). The route fails closed when the secret is empty. Idempotency comes from the unique event id in `webhook_events`. Side effects (Resend email, Discord) go through delivery intents ([`lib/domain/events.ts`](../lib/domain/events.ts)).
+- Webhooks arrive at `POST /api/webhooks/polar` and are verified with the Polar SDK (Standard Webhooks, `POLAR_WEBHOOK_SECRET`). The route fails closed when the secret is empty. Idempotency comes from the unique event id in `webhook_events`. A delivery claims an event with an atomic conditional update on `locked_until` (a 5-minute lease), so concurrent redeliveries cannot process it twice; a failure releases the lease for Polar's retry ([`lib/domain/webhook-event-lock.ts`](../lib/domain/webhook-event-lock.ts)). Side effects (Resend email, Discord) go through delivery intents ([`lib/domain/events.ts`](../lib/domain/events.ts)).
 - Membership plans (Premium, VIP) and the FOMO seat caps are in [`lib/home`](../lib/home) and [`lib/polar.ts`](../lib/polar.ts). Seat counts come from real `active` subscriptions, not fabricated numbers (a contract decision).
 
 ## Content features
