@@ -13,7 +13,7 @@ Status as of 2026-10-13. This page is a stateful record, so update the date when
 
 ## Blocked on the account owner
 
-1. **CI deploy token** with D1, KV, Queues, R2 and Workers edit permissions on hi@ ([deployment-guide.md](./deployment-guide.md#cicd)). Until then, CI deploys fail and deploys are manual.
+1. **CI deploy token** with D1, KV, R2 and Workers edit permissions on hi@ ([deployment-guide.md](./deployment-guide.md#cicd)). Until then, CI deploys fail and deploys are manual.
 2. **Zone on hi@**, then the nameserver change at Spaceship ([cutover-runbook.md](./cutover-runbook.md)).
 3. **Cloudflare Stream** enabled, plus a signing key ([courses.md](./courses.md#one-time-setup-cloudflare-stream)).
 4. **MCP worker and redirect worker** redeployed on hi@ before the nameserver change.
@@ -22,18 +22,10 @@ Status as of 2026-10-13. This page is a stateful record, so update the date when
 ## Next (engineering)
 
 These come from the codebase review and the live check. Remove an item once it is merged.
-- VIP course access must end at the subscription's paid period end, not only on `status=active`.
-- Enforce Stream `requireSignedURLs` for every video that gets a token.
-- Add a migration pre-import guard against wiping rows written on v2 after the dump. Extend verify beyond primary-key hashes.
-- Fix the theme no-flash script error on the deployed Worker (`__name` injected by esbuild `keep_names`).
-- Polish the homepage: decide on the FAQ, the always-enabled CTA with a consent dialog, the seat-meter display rule, and the EGANY partner heading.
-- `/api/traffic/posthog` should no-op when PostHog is not configured.
-- Hardening: a webhook lock lease on reclaim, MCP assertion `jti` replay protection, a banned-user check on API keys, and an idempotent moderation decide.
-- Housekeeping:
-  - commit a `.dev.vars.example`;
-  - fix or remove `db:seed:local` (its seed file is missing);
-  - align the `deploy:*` npm scripts with the explicit `--env` rule;
-  - decide whether to wire up or remove the unused `GO_REDIRECTS`, `POLAR_WEBHOOK_QUEUE` and `AI` bindings.
+- Hardening: a banned-user check on API keys, and an idempotent moderation decide.
+- Low review items: the `createCourseVideoSchema` locale default.
+- Set `CF_STREAM_API_TOKEN` (Stream: Edit) with the signing key once Stream is enabled; registering or publishing a video returns 503 until then ([courses.md](./courses.md#one-time-setup-cloudflare-stream)).
+- Put the rotated `MCP_DELEGATION_SECRET` from `.env` on the MCP worker when it moves to hi@ ([cutover-runbook.md](./cutover-runbook.md)).
 
 ## Open product questions
 
