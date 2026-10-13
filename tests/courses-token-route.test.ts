@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { exportJWK, generateKeyPair, jwtVerify, type CryptoKey } from "jose";
 import { getDb } from "@/lib/db";
 import { courseVideos, customers, entitlements, orders, subscriptions, users } from "@/lib/db/schema";
@@ -43,6 +44,7 @@ async function seedVideo(overrides: Partial<typeof courseVideos.$inferInsert> = 
       title: "Week 1",
       priceCents: 1900,
       streamUid: STREAM_UID,
+      streamSignedOnly: true,
       status: "published",
       polarProductId: `${VIDEO_PRODUCT_ID}-${seq}`,
       publishedAt: new Date(),
@@ -143,7 +145,7 @@ describe("POST /api/courses/videos/[slug]/token", () => {
       const customerId = await seedCustomer(caller.user.email);
       await getDb().insert(subscriptions).values({
         customerId, polarSubscriptionId: `sub-${caller.user.id}`, polarProductId: productId,
-        productName: "Membership", status: "active",
+        productName: "Membership", status: "active", currentPeriodEnd: new Date(Date.now() + 86_400_000),
       });
     }
     resolveCallerMock.mockResolvedValue(vip);
@@ -162,6 +164,58 @@ describe("POST /api/courses/videos/[slug]/token", () => {
     });
     resolveCallerMock.mockResolvedValue(caller);
     expect((await tokenRequest(video.slug)).status).toBe(403);
+  });
+
+  it("keeps access through a partially refunded order and ends it on a full refund", async () => {
+    const video = await seedVideo();
+    const caller = await seedUser();
+    const customerId = await seedCustomer(caller.user.email);
+    const [order] = await getDb().insert(orders).values({
+      customerId, polarOrderId: `ord-partial-${seq}`, polarProductId: video.polarProductId!, productName: video.title,
+      amount: "1900", currency: "usd", status: "partially_refunded",
+    }).returning();
+    resolveCallerMock.mockResolvedValue(caller);
+    expect((await tokenRequest(video.slug)).status).toBe(200);
+    await getDb().update(orders).set({ status: "refunded" }).where(eq(orders.id, order.id));
+    expect((await tokenRequest(video.slug)).status).toBe(403);
+  });
+
+  it("keeps access for a VIP who cancelled until the paid period ends, then refuses", async () => {
+    const video = await seedVideo();
+    const caller = await seedUser();
+    const customerId = await seedCustomer(caller.user.email);
+    const [subscription] = await getDb().insert(subscriptions).values({
+      customerId, polarSubscriptionId: `sub-cancel-at-end-${seq}`, polarProductId: PRODUCT_IDS.VIP_QUARTERLY,
+      productName: "VIP", status: "active", cancelAtPeriodEnd: true, currentPeriodEnd: new Date(Date.now() + 3_600_000),
+    }).returning();
+    resolveCallerMock.mockResolvedValue(caller);
+    expect((await tokenRequest(video.slug)).status).toBe(200);
+
+    // A missed revoke webhook leaves status active; the elapsed period still ends access.
+    await getDb().update(subscriptions).set({ currentPeriodEnd: new Date(Date.now() - 1000) }).where(eq(subscriptions.id, subscription.id));
+    expect((await tokenRequest(video.slug)).status).toBe(403);
+  });
+
+  it("refuses an active VIP subscription with no recorded period end", async () => {
+    const video = await seedVideo();
+    const caller = await seedUser();
+    const customerId = await seedCustomer(caller.user.email);
+    await getDb().insert(subscriptions).values({
+      customerId, polarSubscriptionId: `sub-no-period-${seq}`, polarProductId: PRODUCT_IDS.VIP_ANNUAL,
+      productName: "VIP", status: "active",
+    });
+    resolveCallerMock.mockResolvedValue(caller);
+    expect((await tokenRequest(video.slug)).status).toBe(403);
+  });
+
+  it("refuses to issue a token for a video Stream has not confirmed as signed-only (409)", async () => {
+    const video = await seedVideo({ streamSignedOnly: false });
+    const caller = await seedUser();
+    await getDb().insert(entitlements).values({ userId: caller.user.id, featureKey: `video:${video.id}` });
+    resolveCallerMock.mockResolvedValue(caller);
+    const res = await tokenRequest(video.slug);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "stream_not_signed_only" });
   });
 
   it("returns 503 (never an unsigned URL) when Stream secrets are missing", async () => {

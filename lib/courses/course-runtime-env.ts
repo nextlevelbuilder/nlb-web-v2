@@ -5,7 +5,9 @@ export type CourseEnvKey =
   | "COURSES_ACCESS_PLANS"
   | "CF_STREAM_SIGNING_KEY_ID"
   | "CF_STREAM_SIGNING_KEY_JWK"
-  | "CF_STREAM_CUSTOMER_SUBDOMAIN";
+  | "CF_STREAM_CUSTOMER_SUBDOMAIN"
+  | "CF_ACCOUNT_ID"
+  | "CF_STREAM_API_TOKEN";
 export type CourseRuntimeEnv = Partial<Record<CourseEnvKey, string>>;
 
 /**

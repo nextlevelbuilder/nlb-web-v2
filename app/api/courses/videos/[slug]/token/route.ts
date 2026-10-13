@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Issue a short-lived signed Cloudflare Stream playback URL.
- * 401 anonymous, 404 unknown or draft, 403 no purchase or qualifying plan, 503 Stream not configured.
+ * 401 anonymous, 404 unknown or draft, 403 no purchase or qualifying plan, 409 not signed-only on
+ * Stream, 503 Stream not configured.
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -26,6 +27,10 @@ export async function POST(request: Request, context: RouteContext) {
     }
     if (!video.streamUid) {
       throw new CourseError(409, "video_not_ready", "This video is not ready for playback yet");
+    }
+    // Only uids Stream confirmed as signed-only get tokens; a public uid would play without one.
+    if (!video.streamSignedOnly) {
+      throw new CourseError(409, "stream_not_signed_only", "This video is not ready for playback yet");
     }
     const config = loadStreamSigningConfig(getCourseRuntimeEnv());
     const playback = await createSignedStreamPlayback(video.streamUid, config);

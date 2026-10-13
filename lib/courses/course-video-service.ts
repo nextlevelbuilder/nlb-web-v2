@@ -4,6 +4,13 @@ import { courseVideos } from "@/lib/db/schema";
 import { CourseError, courseNotFound } from "./course-errors";
 import { ensureCourseVideoPolarProduct, type CoursePolarProductsClient } from "./course-polar-product";
 import type { CreateCourseVideoInput, UpdateCourseVideoInput } from "./course-video-schemas";
+import { getCourseRuntimeEnv } from "./course-runtime-env";
+import { createStreamVideoClient, loadStreamVideoApiConfig, type StreamVideoClient } from "./stream-video-api";
+
+/** Stream client from runtime config; resolved lazily so videos without a uid need no Stream setup. */
+export function defaultStreamVideoClient(): StreamVideoClient {
+  return { requireSignedUrls: (uid) => createStreamVideoClient(loadStreamVideoApiConfig(getCourseRuntimeEnv())).requireSignedUrls(uid) };
+}
 
 export type CourseVideoRow = typeof courseVideos.$inferSelect;
 
@@ -64,10 +71,19 @@ async function requireVideo(slug: string, db: AppDb): Promise<CourseVideoRow> {
   return video;
 }
 
-export async function createVideo(input: CreateCourseVideoInput, db: AppDb): Promise<CourseVideoRow> {
+/**
+ * Create a draft. Registering a Stream uid first marks that video signed-only on Stream, so a uid
+ * stored here can never be played without a token.
+ */
+export async function createVideo(
+  input: CreateCourseVideoInput,
+  db: AppDb,
+  stream: StreamVideoClient = defaultStreamVideoClient()
+): Promise<CourseVideoRow> {
   if (await getVideoBySlug(input.slug, db)) {
     throw new CourseError(409, "slug_taken", "A video with this slug already exists");
   }
+  if (input.streamUid) await stream.requireSignedUrls(input.streamUid);
   const [created] = await db
     .insert(courseVideos)
     .values({
@@ -77,6 +93,7 @@ export async function createVideo(input: CreateCourseVideoInput, db: AppDb): Pro
       locale: input.locale,
       weekNumber: input.weekNumber ?? null,
       streamUid: input.streamUid ?? null,
+      streamSignedOnly: Boolean(input.streamUid),
       durationSec: input.durationSec,
       priceCents: input.priceCents,
       currency: input.currency,
@@ -93,7 +110,12 @@ export async function createVideo(input: CreateCourseVideoInput, db: AppDb): Pro
  * Patch a video. Price and currency are frozen once the Polar product exists, because the product's
  * price is what buyers pay; changing it requires a new product.
  */
-export async function updateVideo(slug: string, patch: UpdateCourseVideoInput, db: AppDb): Promise<CourseVideoRow> {
+export async function updateVideo(
+  slug: string,
+  patch: UpdateCourseVideoInput,
+  db: AppDb,
+  stream: StreamVideoClient = defaultStreamVideoClient()
+): Promise<CourseVideoRow> {
   const video = await requireVideo(slug, db);
   const priceChanged =
     (patch.priceCents !== undefined && patch.priceCents !== video.priceCents) ||
@@ -104,30 +126,39 @@ export async function updateVideo(slug: string, patch: UpdateCourseVideoInput, d
   if (video.status === "published" && patch.streamUid === null) {
     throw new CourseError(422, "stream_uid_required", "A published video must keep its Stream uid");
   }
+  // A new uid is registered signed-only before it is stored; clearing the uid clears the flag.
+  const streamChange: Partial<CourseVideoRow> = {};
+  if (patch.streamUid !== undefined && patch.streamUid !== video.streamUid) {
+    if (patch.streamUid) await stream.requireSignedUrls(patch.streamUid);
+    streamChange.streamSignedOnly = Boolean(patch.streamUid);
+  }
   const [updated] = await db
     .update(courseVideos)
-    .set({ ...patch, updatedAt: new Date() })
+    .set({ ...patch, ...streamChange, updatedAt: new Date() })
     .where(eq(courseVideos.id, video.id))
     .returning();
   if (!updated) throw courseNotFound();
   return updated;
 }
 
-/** Create the Polar product (idempotent), then mark the video published. */
+/** Enforce signed-only playback on Stream, create the Polar product (idempotent), then publish. */
 export async function publishVideo(
   slug: string,
   db: AppDb,
-  polarClient: CoursePolarProductsClient
+  polarClient: CoursePolarProductsClient,
+  stream: StreamVideoClient = defaultStreamVideoClient()
 ): Promise<CourseVideoRow> {
   const video = await requireVideo(slug, db);
   if (!video.streamUid) {
     throw new CourseError(422, "stream_uid_required", "Set the Cloudflare Stream uid before publishing");
   }
+  // Re-applied on every publish (idempotent): the uid may have been edited on Stream since registration.
+  await stream.requireSignedUrls(video.streamUid);
   const polarProductId = await ensureCourseVideoPolarProduct(video, db, polarClient);
   const now = new Date();
   const [published] = await db
     .update(courseVideos)
-    .set({ status: "published", polarProductId, publishedAt: video.publishedAt ?? now, updatedAt: now })
+    .set({ status: "published", polarProductId, streamSignedOnly: true, publishedAt: video.publishedAt ?? now, updatedAt: now })
     .where(eq(courseVideos.id, video.id))
     .returning();
   if (!published) throw courseNotFound();

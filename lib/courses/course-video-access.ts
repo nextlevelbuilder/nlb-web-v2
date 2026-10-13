@@ -21,8 +21,12 @@ export interface CanWatchOptions {
 /**
  * True when the viewer may watch the video:
  * 1. an active, unexpired `video:<id>` entitlement, or
- * 2. a paid order for the video's Polar product placed with the viewer's email, or
- * 3. an active subscription to a plan listed in the course access policy (VIP by default).
+ * 2. a paid (or only partially refunded) order for the video's Polar product placed with the
+ *    viewer's email, or
+ * 3. an active subscription to a plan listed in the course access policy (VIP by default) whose paid
+ *    period has not ended. A member who cancels keeps status `active` with `cancel_at_period_end` until
+ *    Polar ends the period, so access lasts exactly as long as the paid period; a missed revoke webhook
+ *    can never extend it past `current_period_end`.
  * Commerce rows are keyed by customer email, so the user's email links them to orders/subscriptions.
  */
 export async function canWatchVideo(
@@ -60,7 +64,8 @@ export async function canWatchVideo(
         and(
           sql`lower(${customers.email}) = ${email}`,
           eq(orders.polarProductId, video.polarProductId),
-          eq(orders.status, "paid")
+          // A partial refund keeps access; only a full refund (`refunded`) ends it.
+          inArray(orders.status, ["paid", "partially_refunded"])
         )
       )
       .limit(1);
@@ -79,7 +84,8 @@ export async function canWatchVideo(
       and(
         sql`lower(${customers.email}) = ${email}`,
         inArray(subscriptions.polarProductId, planProductIds),
-        inArray(subscriptions.status, [...ACTIVE_SUBSCRIPTION_STATUSES])
+        inArray(subscriptions.status, [...ACTIVE_SUBSCRIPTION_STATUSES]),
+        gt(subscriptions.currentPeriodEnd, now)
       )
     )
     .limit(1);
