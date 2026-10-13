@@ -13,6 +13,7 @@ import {
   isDirectoryProduct,
   extractProductIdsFromEvent,
 } from "@/lib/polar";
+import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import crypto from "crypto";
 
@@ -44,6 +45,7 @@ interface PolarWebhookPayload {
       id?: string;
       name?: string;
     };
+    metadata?: Record<string, unknown>;
   };
 }
 
@@ -80,8 +82,10 @@ export async function POST(request: Request) {
     const event = JSON.parse(body) as PolarWebhookPayload;
     const eventId = webhookId || event.id || crypto.randomUUID();
     const productIds = extractProductIdsFromEvent(event);
+    // Course video products are created at publish time, so they are matched in D1, not the allowlist.
     const hasOurProducts =
-      productIds.length > 0 && productIds.some(isOurProduct);
+      productIds.length > 0 &&
+      (productIds.some(isOurProduct) || (await hasCourseVideoProduct(productIds, db)));
 
     if (!hasOurProducts) {
       console.log(
@@ -164,6 +168,10 @@ export async function POST(request: Request) {
         case "order.paid":
         case "order.updated":
           await handleOrderCreated(event, eventId, db);
+          await syncCourseVideoEntitlementFromOrder(event, db);
+          break;
+        case "order.refunded":
+          await syncCourseVideoEntitlementFromOrder(event, db);
           break;
         default:
           console.log(`Unhandled event type: ${event.type}`);

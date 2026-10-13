@@ -32,6 +32,18 @@ export const MEMBERSHIP_PRODUCT_IDS = new Set<string>([
   PRODUCT_IDS.VIP_ANNUAL,
 ]);
 
+// Membership plans mapped to their recurring Polar product ids (every billing interval of a plan).
+export type MembershipPlan = "premium" | "vip";
+export const MEMBERSHIP_PLAN_PRODUCT_IDS: Readonly<Record<MembershipPlan, readonly string[]>> = {
+  premium: [PRODUCT_IDS.PREMIUM_QUARTERLY, PRODUCT_IDS.PREMIUM_ANNUAL],
+  vip: [PRODUCT_IDS.VIP_QUARTERLY, PRODUCT_IDS.VIP_ANNUAL],
+};
+
+/** Polar product ids for every billing interval of the given membership plans. */
+export function productIdsForPlans(plans: readonly MembershipPlan[]): string[] {
+  return [...new Set(plans.flatMap((plan) => MEMBERSHIP_PLAN_PRODUCT_IDS[plan]))];
+}
+
 // Publishing Studio Toolkit (One-time developer software licenses)
 export const PUBLISHING_PRODUCT_IDS = new Set<string>([
   PRODUCT_IDS.PUBLISHING_TOOLKIT_EARLY_BIRD,
