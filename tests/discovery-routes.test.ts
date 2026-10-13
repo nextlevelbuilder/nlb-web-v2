@@ -25,9 +25,10 @@ beforeEach(() => {
 describe("Discovery metadata and routes", () => {
   it("has locale-specific canonicals instead of inheriting the home canonical", () => {
     const meta = pageMetadata({ title: "Tool", description: "Description", locale: "en", path: "/products/tool" });
-    expect(meta.alternates?.canonical).toBe("https://example.test/en/products/tool");
-    expect(meta.alternates?.languages).toMatchObject({ vi: "https://example.test/products/tool", en: "https://example.test/en/products/tool" });
-    expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "vi" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/.md" });
+    expect(meta.alternates?.canonical).toBe("https://example.test/products/tool");
+    expect(meta.alternates?.languages).toMatchObject({ vi: "https://example.test/vi/products/tool", en: "https://example.test/products/tool", "x-default": "https://example.test/products/tool" });
+    expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "en" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/.md" });
+    expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "vi" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/vi.md" });
     expect(serializeJsonLd({ title: "</script><script>alert(1)</script>" })).not.toContain("<");
   });
 
@@ -35,7 +36,7 @@ describe("Discovery metadata and routes", () => {
     const entries = await sitemap();
     expect(entries.some((entry) => entry.url.endsWith("/build-with-us"))).toBe(true);
     expect(entries.some((entry) => entry.url.endsWith("/directory"))).toBe(false);
-    expect(entries.find((entry) => entry.url === "https://example.test/en/products/tool")?.lastModified).toEqual(published.updatedAt);
+    expect(entries.find((entry) => entry.url === "https://example.test/vi/products/tool")?.lastModified).toEqual(published.updatedAt);
     expect(entries.find((entry) => entry.url === "https://example.test/")).not.toHaveProperty("lastModified");
     expect(entries.some((entry) => entry.url.endsWith("/account"))).toBe(false);
   });
@@ -53,7 +54,7 @@ describe("Discovery metadata and routes", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("vary")).toContain("Cookie");
     expect(response.headers.get("content-type")).toContain("text/markdown");
-    expect(fetchPageMarkdown).toHaveBeenCalledWith("https://example.test", "/en/account", "?tab=orders", expect.any(Headers));
+    expect(fetchPageMarkdown).toHaveBeenCalledWith("https://example.test", "/account", "?tab=orders", expect.any(Headers));
     expect(vi.mocked(fetchPageMarkdown).mock.calls[0][3].get("cookie")).toBe("session=private");
   });
 

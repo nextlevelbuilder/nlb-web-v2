@@ -1,3 +1,4 @@
+import { DISCORD_INVITE_URL as DISCORD_INVITE_URL_FALLBACK } from "@/lib/constants/socials";
 import { z } from "zod";
 
 // Custom UUID validator that rejects placeholder UUIDs
@@ -56,7 +57,7 @@ const envSchema = z.object({
   FORM01_LARK_URL: z.string().url().optional().default("https://example.com/form01"),
 
   // Discord
-  DISCORD_INVITE_URL: z.string().url().optional().default("https://discord.gg/example"),
+  DISCORD_INVITE_URL: z.string().url().optional().default(DISCORD_INVITE_URL_FALLBACK),
   DISCORD_BOT_TOKEN: z.string().optional(),
   DISCORD_GUILD_ID: z.string().optional(),
   DISCORD_PREMIUM_ROLE_ID: z.string().optional(),
@@ -91,7 +92,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_POLAR_PRODUCT_DIRECTORY_EARLY_BIRD: validUUID.default("d216882e-2975-4d0e-85c2-795bd35c5964"),
   NEXT_PUBLIC_POLAR_PRODUCT_DIRECTORY_STANDARD: validUUID.default("d09bcf17-d65d-4a82-ab66-77458d4fa582"),
 
-  NEXT_PUBLIC_DISCORD_URL: z.string().url().optional().default("https://discord.gg/example"),
+  NEXT_PUBLIC_DISCORD_URL: z.string().url().optional().default(DISCORD_INVITE_URL_FALLBACK),
 });
 
 // Parse and validate environment variables

@@ -70,7 +70,7 @@ export async function sendForm01Email({ name, email, idempotencyKey }: Form01Ema
     <p style="margin: 10px 0 0 0;">
       <a href="https://x.com/nextlevelbuilders" style="color: #0EA5E9; text-decoration: none; margin: 0 10px;">X</a>
       <a href="https://fb.com/nextlevelbuilders" style="color: #0EA5E9; text-decoration: none; margin: 0 10px;">Facebook</a>
-      <a href="https://www.linkedin.com/nextlevelbuilders" style="color: #0EA5E9; text-decoration: none; margin: 0 10px;">LinkedIn</a>
+      <a href="https://www.linkedin.com/company/nextlevelbuilders" style="color: #0EA5E9; text-decoration: none; margin: 0 10px;">LinkedIn</a>
     </p>
   </div>
 </body>

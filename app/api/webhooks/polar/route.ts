@@ -7,6 +7,7 @@ import { sendForm01Email } from "@/lib/email-form01";
 import { sendDiscordSalesNotification } from "@/lib/discord";
 import { claimDeliveryIntent, markDeliveryComplete } from "@/lib/domain/events";
 import { env } from "@/lib/env";
+import { resolveDiscordInvite } from "@/lib/constants/socials";
 import {
   isOurProduct,
   isMembershipProduct,
@@ -290,7 +291,7 @@ async function sendOnboardingEmails({
     const welcomeRes = await sendWelcomeEmail({
       email,
       name: customerName,
-      discordInvite: env.DISCORD_INVITE_URL || "https://discord.gg/nextlevelbuilder",
+      discordInvite: resolveDiscordInvite(env.DISCORD_INVITE_URL),
       idempotencyKey: `nlb-welcome-${subscriptionId}`,
     });
     if (!welcomeRes.success) {

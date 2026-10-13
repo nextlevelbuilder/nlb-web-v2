@@ -7,10 +7,11 @@ import type { ProductDocument } from "@/packages/contracts/src";
 
 describe("Markdown page representations", () => {
   it("supports index aliases for both languages", () => {
-    expect(markdownSourcePath("/index.md")).toEqual({ path: "/", pathname: "/", locale: "vi" });
-    expect(markdownSourcePath("/en/index.md")).toEqual({ path: "/", pathname: "/en", locale: "en" });
-    expect(markdownSourcePath("/directory.md")).toEqual({ path: "/build-with-us", pathname: "/build-with-us", locale: "vi" });
-    expect(markdownSourcePath("/en/directory.md")).toEqual({ path: "/build-with-us", pathname: "/en/build-with-us", locale: "en" });
+    expect(markdownSourcePath("/index.md")).toEqual({ path: "/", pathname: "/", locale: "en" });
+    expect(markdownSourcePath("/vi/index.md")).toEqual({ path: "/", pathname: "/vi", locale: "vi" });
+    expect(markdownSourcePath("/en/index.md")).toEqual({ path: "/", pathname: "/", locale: "en" });
+    expect(markdownSourcePath("/directory.md")).toEqual({ path: "/build-with-us", pathname: "/build-with-us", locale: "en" });
+    expect(markdownSourcePath("/vi/directory.md")).toEqual({ path: "/build-with-us", pathname: "/vi/build-with-us", locale: "vi" });
   });
   it.each(["/.md", "/en.md", "/vi.md", "/build-with-us.md", "/en/build-with-us/instructions.md", "/policies/onboarding.md", "/products/tool.md", "/en/builders/id.md", "/account.md", "/profile.md", "/studio.md", "/en/studio/products/tool/preview.md", "/sign-in.md", "/sign-up.md", "/success.md", "/api-docs.md", "/docs/api.md"])("recognizes page %s", (path) => {
     expect(markdownSourcePath(path)).not.toBeNull();
@@ -36,7 +37,7 @@ describe("Markdown page representations", () => {
     expect(result.status).toBe(200);
     expect(result.body).toContain("Private org");
     const [url, options] = fetcher.mock.calls[0] as unknown as [URL, RequestInit];
-    expect(url.href).toBe("https://example.test/en/account?tab=orders");
+    expect(url.href).toBe("https://example.test/account?tab=orders");
     expect(new Headers(options.headers).get("cookie")).toContain("better-auth.session_token=private");
     expect(new Headers(options.headers).get("cookie")).toContain("NEXT_LOCALE=en");
     expect(new Headers(options.headers).get("x-nlb-markdown")).toBe("1");

@@ -4,9 +4,10 @@ export function siteUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || "https://nextlevelbuilder.io").replace(/\/$/, "");
 }
 
+/** English is the unprefixed default locale; Vietnamese lives under /vi (next-intl `as-needed`). */
 export function localizedPath(path: string, locale: string) {
   const suffix = path === "/" ? "" : path;
-  return `${locale === "en" ? "/en" : ""}${suffix}` || "/";
+  return `${locale === "vi" ? "/vi" : ""}${suffix}` || "/";
 }
 
 export function pageMetadata({ title, description, path, locale }: {
@@ -17,7 +18,7 @@ export function pageMetadata({ title, description, path, locale }: {
     title, description,
     alternates: {
       canonical,
-      languages: { vi: `${siteUrl()}${localizedPath(path, "vi")}`, en: `${siteUrl()}${localizedPath(path, "en")}`, "x-default": `${siteUrl()}${localizedPath(path, "vi")}` },
+      languages: { vi: `${siteUrl()}${localizedPath(path, "vi")}`, en: `${siteUrl()}${localizedPath(path, "en")}`, "x-default": `${siteUrl()}${localizedPath(path, "en")}` },
       types: { "text/markdown": `${canonical}.md` },
     },
     openGraph: { title, description, url: canonical, type: "website", siteName: "Next Level Builders", locale: locale === "en" ? "en_US" : "vi_VN", images: [`${siteUrl()}/og-image.png`] },

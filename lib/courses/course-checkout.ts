@@ -16,7 +16,7 @@ export interface CourseCheckoutBuyer {
 
 /** Locale-aware path to the video page; the default locale (vi) has no prefix. */
 export function courseVideoPath(slug: string, locale?: "en" | "vi"): string {
-  return localizedPath(`/courses/${encodeURIComponent(slug)}`, locale ?? "vi");
+  return localizedPath(`/courses/${encodeURIComponent(slug)}`, locale ?? "en");
 }
 
 /**
