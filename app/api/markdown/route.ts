@@ -36,7 +36,8 @@ export async function GET(request: Request) {
     }
     // A configured origin, never Host/X-Forwarded-Host or a caller-supplied URL.
     // This prevents cookie forwarding to arbitrary destinations.
-    const query = isRewrittenPage ? requestUrl.search : requestUrl.searchParams.get("query") || "";
+    // The middleware passes the visitor's query as `query`; a retained `.md` URL without it keeps its own search.
+    const query = requestUrl.searchParams.has("path") ? requestUrl.searchParams.get("query") || "" : isRewrittenPage ? requestUrl.search : "";
     const result = await fetchPageMarkdown(siteUrl(), source.pathname, query, request.headers);
     return new Response(result.body, { status: result.status, headers });
   } catch {

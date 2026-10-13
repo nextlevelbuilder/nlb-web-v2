@@ -40,6 +40,9 @@ export async function fetchPageMarkdown(origin: string, pathname: string, query:
   // Pin locale so an unprefixed URL cannot change language with a visitor cookie.
   headers.set("accept-language", initial.locale);
   headers.set("cookie", `${headers.get("cookie")?.replace(/(?:^|;\s*)NEXT_LOCALE=[^;]*/g, "") || ""}; NEXT_LOCALE=${initial.locale}`);
+  // A service-binding request carries no Host. Without it OpenNext classifies next-intl's absolute
+  // locale rewrite as external and proxies it over the public internet to whatever DNS serves.
+  headers.set("host", new URL(origin).host);
   for (let hop = 0; hop < 5; hop++) {
     if (target.origin !== new URL(origin).origin || !pagePath(target.pathname)) return { body: "# Not found\n", status: 404 };
     const response = await render(target, { headers, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(20000) });

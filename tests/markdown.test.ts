@@ -41,6 +41,8 @@ describe("Markdown page representations", () => {
     expect(new Headers(options.headers).get("cookie")).toContain("better-auth.session_token=private");
     expect(new Headers(options.headers).get("cookie")).toContain("NEXT_LOCALE=en");
     expect(new Headers(options.headers).get("x-nlb-markdown")).toBe("1");
+    // Keeps the next-intl locale rewrite internal when rendered through a service binding.
+    expect(new Headers(options.headers).get("host")).toBe("example.test");
     expect(options).toMatchObject({ redirect: "manual", cache: "no-store" });
   });
 
