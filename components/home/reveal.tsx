@@ -1,22 +1,10 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 /**
- * Calm fade-up on first view. MotionConfig (reducedMotion="user") drops the transform for visitors who
- * prefer reduced motion, leaving a short opacity fade. Use only below the fold so the LCP stays text.
+ * Fade-up on scroll, driven by CSS (`.reveal` in app/globals.css). The content is fully visible in
+ * the server HTML, so crawlers, no-JS visitors and full-page captures never see an empty section;
+ * browsers with scroll-driven animations add the motion, and reduced-motion visitors get none.
  */
-export default function Reveal({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -12% 0px' }}
-      transition={{ duration: 0.9, delay, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+export default function Reveal({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={className ? `reveal ${className}` : 'reveal'}>{children}</div>;
 }

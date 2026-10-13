@@ -26,7 +26,7 @@ export default async function CoursesPage({ params }: CoursesPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
       <Navbar />
-      <main id="main" className="wrap w-full flex-1 pb-20 pt-28">
+      <main id="main" className="wrap flex-1 pb-20 pt-28">
         <header className="max-w-2xl">
           <p className="eyebrow">NLB · {copy.listTitle}</p>
           <h1 className="h-section mt-4">{copy.listTitle}</h1>

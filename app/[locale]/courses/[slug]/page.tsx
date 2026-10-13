@@ -47,7 +47,7 @@ export default async function CourseVideoPage({ params, searchParams }: CourseVi
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
       <Navbar />
-      <main id="main" className="wrap w-full max-w-4xl flex-1 pb-20 pt-28">
+      <main id="main" className="wrap max-w-4xl flex-1 pb-20 pt-28">
         <Link
           href={localizedPath("/courses", locale)}
           className="link-arrow mono-label text-ink-2"
