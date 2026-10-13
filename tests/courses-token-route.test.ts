@@ -113,6 +113,16 @@ describe("POST /api/courses/videos/[slug]/token", () => {
     expect(Date.parse(data.expiresAt)).toBeGreaterThan(Date.now());
   });
 
+  it("keeps archived videos playable for entitled users only", async () => {
+    const video = await seedVideo({ status: "archived" });
+    const buyer = await seedUser();
+    await getDb().insert(entitlements).values({ userId: buyer.user.id, featureKey: `video:${video.id}` });
+    resolveCallerMock.mockResolvedValue(buyer);
+    expect((await tokenRequest(video.slug)).status).toBe(200);
+    resolveCallerMock.mockResolvedValue(await seedUser());
+    expect((await tokenRequest(video.slug)).status).toBe(403);
+  });
+
   it("returns 200 for a buyer whose paid order is recorded but not yet entitled", async () => {
     const video = await seedVideo();
     const caller = await seedUser();

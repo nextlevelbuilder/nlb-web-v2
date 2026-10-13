@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { canWatchVideo } from "@/lib/courses/course-video-access";
 import { CourseError, courseNotFound } from "@/lib/courses/course-errors";
 import { getCourseRuntimeEnv } from "@/lib/courses/course-runtime-env";
-import { getPublishedVideoBySlug } from "@/lib/courses/course-video-service";
+import { getVideoBySlug } from "@/lib/courses/course-video-service";
 import { createSignedStreamPlayback, loadStreamSigningConfig } from "@/lib/courses/stream-signed-url";
 import { readSlug, requireCaller, toErrorResponse, type RouteContext } from "@/lib/courses/course-route-helpers";
 
@@ -11,15 +11,16 @@ export const dynamic = "force-dynamic";
 
 /**
  * Issue a short-lived signed Cloudflare Stream playback URL.
- * 401 anonymous, 404 unknown/unpublished, 403 no purchase or qualifying plan, 503 Stream not configured.
+ * 401 anonymous, 404 unknown or draft, 403 no purchase or qualifying plan, 503 Stream not configured.
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const caller = await requireCaller(request);
     const slug = await readSlug(context);
     const db = getDb();
-    const video = await getPublishedVideoBySlug(slug, db);
-    if (!video) throw courseNotFound();
+    // Archived videos leave the catalogue but stay playable for people who already have access.
+    const video = await getVideoBySlug(slug, db);
+    if (!video || video.status === "draft") throw courseNotFound();
     if (!(await canWatchVideo(caller.user.id, video, db))) {
       throw new CourseError(403, "purchase_required", "Buy this video or join VIP to watch it");
     }
