@@ -181,7 +181,7 @@ SECRET_KEYS=(
 cmd_secrets() {
   local target="${1:-}" env_args=() site_key app_url
   case "$target" in
-    production) env_args=(); site_key="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY)' "$CONFIG")" ;;
+    production) env_args=(--env=""); site_key="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY)' "$CONFIG")" ;;
     staging) env_args=(--env staging); site_key="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).env.staging.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY)' "$CONFIG")" ;;
     *) echo "usage: $0 secrets production|staging" >&2; exit 1 ;;
   esac
