@@ -20,3 +20,7 @@ scripts/migrate/dump/
 # os/editor
 .DS_Store
 *.log
+.vercel
+next-env.d.ts
+.dev.vars
+cloudflare-env.d.ts.bak

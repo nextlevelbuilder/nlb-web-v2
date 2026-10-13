@@ -1,0 +1,68 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nextlevelbuilder-web",
+  "account_id": "7ac87c90789159ae1b10b7d78f5dcc08",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public", "cache_option_enabled"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "nextlevelbuilder-web" }],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "vars": {
+    "MCP_OAUTH_ENABLED": "true",
+    "MCP_OAUTH_RESOURCE": "https://mcp.nextlevelbuilder.io/mcp",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "TURNSTILE_SITE_KEY_PRODUCTION",
+    "NEXT_PUBLIC_APP_URL": "https://nextlevelbuilder.io",
+    "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
+    "COURSES_ACCESS_PLANS": "vip"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nlb-prod",
+      "database_id": "D1_PROD_ID",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "queues": { "producers": [{ "binding": "POLAR_WEBHOOK_QUEUE", "queue": "nlb-polar-webhooks" }] },
+  "r2_buckets": [
+    { "binding": "MEDIA_STAGING", "bucket_name": "nlb-media-staging" },
+    { "binding": "MEDIA_PUBLIC", "bucket_name": "nlb-media-public" }
+  ],
+  "kv_namespaces": [{ "binding": "GO_REDIRECTS", "id": "KV_GO_REDIRECTS_PROD_ID" }],
+  "ai": { "binding": "AI" },
+  "env": {
+    "staging": {
+      "name": "nextlevelbuilder-web-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "nextlevelbuilder-web-staging" }],
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "vars": {
+        "MCP_OAUTH_ENABLED": "true",
+        "MCP_OAUTH_RESOURCE": "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "TURNSTILE_SITE_KEY_STAGING",
+        "NEXT_PUBLIC_APP_URL": "https://staging.nextlevelbuilder.io",
+        "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
+        "COURSES_ACCESS_PLANS": "vip"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "nlb-staging",
+          "database_id": "D1_STAGING_ID",
+          "migrations_dir": "drizzle/migrations"
+        }
+      ],
+      "queues": { "producers": [{ "binding": "POLAR_WEBHOOK_QUEUE", "queue": "nlb-polar-webhooks-staging" }] },
+      "r2_buckets": [
+        { "binding": "MEDIA_STAGING", "bucket_name": "nlb-media-staging" },
+        { "binding": "MEDIA_PUBLIC", "bucket_name": "nlb-media-staging-public" }
+      ],
+      "kv_namespaces": [{ "binding": "GO_REDIRECTS", "id": "KV_GO_REDIRECTS_STAGING_ID" }],
+      "ai": { "binding": "AI" }
+    }
+  }
+}

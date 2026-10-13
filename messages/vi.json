@@ -1,0 +1,642 @@
+{
+  "nav": {
+    "brand": "Next Level Builders",
+    "features": "Tính năng",
+    "buildWithUs": "Build with us",
+    "leaderboards": "Bảng xếp hạng",
+    "pricing": "Bảng giá",
+    "team": "Đội ngũ",
+    "faq": "Câu hỏi",
+    "joinNow": "Tham gia ngay"
+  },
+  "hero": {
+    "urgencyBadge": "Giá thành viên sáng lập - Thời gian có hạn",
+    "headline": "Từ con số 0 lên 1",
+    "headlineHighlight": "Luôn là phần khó nhất.",
+    "headlineEnd": "Chúng tôi có thể đưa bạn đến đó.",
+    "subheadline": "Nền tảng giáo dục & trung tâm tài nguyên builder nơi solopreneur & nhà sáng lập micro-SaaS nhận playbook tuyển chọn, template đã kiểm chứng và cộng đồng builder để ra mắt & mở rộng sản phẩm nhanh hơn.",
+    "ctaPrimary": "Tham gia trước khi giá tăng",
+    "ctaSecondary": "Xem bên trong có gì",
+    "trustMoneyBack": "Hoàn lại 100% tiền trong 30 ngày",
+    "trustMembers": "Gia nhập cộng đồng 500+ builder năng động",
+    "trustPayment": "Thanh toán an toàn qua Polar.sh"
+  },
+  "features": {
+    "title": "Tất cả những gì bạn cần để xây dựng & mở rộng",
+    "subtitle": "Ngừng lãng phí thời gian tìm hiểu một mình. Tiếp cận tài liệu đã được chứng minh, hướng dẫn từ chuyên gia, và cộng đồng builder thực sự ra mắt sản phẩm.",
+    "provenPlaybooks": {
+      "title": "Playbook đã kiểm chứng",
+      "description": "Phân tích teardown và playbook từ những nhà sáng lập đã xây dựng hơn 14 sản phẩm SaaS sinh lợi với doanh thu $100K+ ARR. Chiến lược thực chiến, được viết ra rõ ràng."
+    },
+    "resources": {
+      "title": "Tài liệu & Mẫu sẵn sàng",
+      "description": "Truy cập template đã được thử nghiệm, framework, và tài liệu được sử dụng để ra mắt sản phẩm thành công. Không cần bắt đầu từ đầu."
+    },
+    "communitySupport": {
+      "title": "Hỗ trợ từ cộng đồng",
+      "description": "Tham gia 500+ builder năng động trong Discord. Nhận phản hồi, trách nhiệm, và kết nối với những doanh nhân có cùng chí hướng."
+    },
+    "recordedLibrary": {
+      "title": "Thư viện video đã ghi sẵn",
+      "description": "Video on-demand về tự động hóa AI, SEO, phát triển sản phẩm, và chiến thuật tăng trưởng. Nội dung mới được bổ sung mỗi tuần."
+    },
+    "realLaunches": {
+      "title": "Phát hành sản phẩm thực tế",
+      "description": "Xem xây dựng sản phẩm thời gian thực, học hỏi từ các lần ra mắt, và áp dụng chiến lược đã được chứng minh vào dự án của bạn ngay lập tức."
+    },
+    "founderNetwork": {
+      "title": "Mạng lưới nhà sáng lập",
+      "description": "Kết nối với những nhà sáng lập có kinh nghiệm, đồng sáng lập tiềm năng, và đối tác. Xây dựng mối quan hệ thúc đẩy thành công của bạn."
+    }
+  },
+  "mission": {
+    "title": "Không chỉ là một cộng đồng",
+    "subtitle": "Chúng tôi có sứ mệnh giúp các builder thành công. Đây là điều làm nên sự khác biệt.",
+    "ourMission": {
+      "title": "Sứ mệnh",
+      "description": "Cung cấp cho các builder kiến thức và cơ hội cần thiết để xây dựng và phát triển micro-saas của họ. Cốt lõi bắt đầu từ cộng đồng."
+    },
+    "ourValues": {
+      "title": "Giá trị",
+      "description": "Chúng tôi tin vào việc kết bạn, không phải tạo mối quan hệ. Chúng tôi tin vào việc cho trước, không phải nhận. Chúng tôi tin vào việc giúp đỡ người khác trước khi giúp bản thân."
+    },
+    "ourCommunity": {
+      "title": "Cộng đồng",
+      "description": "Môi trường chào đón, hòa nhập nơi các solo-founder và builder hỗ trợ lẫn nhau, chia sẻ kiến thức, và cùng phát triển."
+    },
+    "notACourse": {
+      "title": "Đây KHÔNG phải khóa học trực tuyến",
+      "subtitle": "Đây là Cộng đồng riêng tư giúp các Builder đạt được kết quả thực sự cùng nhau.",
+      "youNeed": "Bạn chỉ cần",
+      "youNeedTime": "3-6 giờ/tuần (Discord + tự thực hành)",
+      "youNeedSkills": "Kỹ năng hiện tại (có thể xây dựng sản phẩm là được)",
+      "youNeedCommitment": "Cam kết ra mắt, không phải hoàn hảo",
+      "youDontNeed": "Bạn KHÔNG cần",
+      "youDontNeedJob": "Nghỉ việc (làm full-time vẫn OK)",
+      "youDontNeedTeam": "Đội nhóm (solo founder hoàn toàn ổn)",
+      "youDontNeedBudget": "Ngân sách lớn (công cụ rẻ là đủ)",
+      "achieveTitle": "Những gì bạn sẽ đạt được",
+      "achieveLaunch": "Ra mắt sản phẩm (live, công khai, mọi người có thể truy cập)",
+      "achieveValidation": "Người dùng & khách hàng sẵn sàng trả tiền (xác thực thực sự)",
+      "achieveRevenue": "Doanh thu đặt trước (bằng chứng sớm về product-market fit)",
+      "achieveSkills": "Kỹ năng để RA MẮT sản phẩm tiếp theo hiệu quả"
+    }
+  },
+  "team": {
+    "title": "Học hỏi từ những nhà sáng lập đã làm được",
+    "subtitle": "Đội ngũ chúng tôi đã xây dựng hơn 14 sản phẩm sinh lợi với doanh thu $100K+ ARR. Chúng tôi chia sẻ chiến lược thực sự hiệu quả."
+  },
+  "pricing": {
+    "title": "Đầu tư cho thành công của bạn",
+    "subtitle": "Chọn gói phù hợp với hành trình của bạn. Tất cả gói bao gồm đảm bảo hoàn tiền 30 ngày.",
+    "premium": {
+      "name": "Premium: Builder tự học",
+      "subtitle": "Builder tự học",
+      "slots": "30 chỗ",
+      "earlybird": {
+        "name": "EarlyBird 2025",
+        "period": "tháng",
+        "badge": "Giá trị tốt nhất",
+        "billingNote": "Thanh toán hàng năm $228/năm",
+        "urgency": "Thời gian có hạn - Tiết kiệm $120/năm"
+      },
+      "quarterly": {
+        "name": "Premium Access (Hàng quý)",
+        "period": "quý",
+        "billingNote": "Tương đương $49/tháng"
+      },
+      "annual": {
+        "name": "Premium Access (Hàng năm)",
+        "period": "tháng",
+        "billingNote": "Thanh toán hàng năm $468/năm"
+      },
+      "features": {
+        "workshops": "Thư viện 52 tuần video đã ghi + nội dung mới hàng tuần",
+        "discord": "Cộng đồng cộng tác builder (đã bao gồm quyền truy cập)",
+        "videos": "Truy cập kho video eLearning",
+        "support": "Kênh cộng đồng hỗ trợ ra mắt sản phẩm",
+        "consult": "Phản hồi văn bản từ nhà sáng lập trên kênh cộng đồng"
+      }
+    },
+    "vip": {
+      "name": "VIP: Builder được hướng dẫn",
+      "subtitle": "Builder được hướng dẫn",
+      "slots": "10 chỗ",
+      "earlybird": {
+        "name": "EarlyBird 2025",
+        "period": "tháng",
+        "badge": "Giá trị tối ưu",
+        "billingNote": "Thanh toán hàng năm $468/năm",
+        "urgency": "Số chỗ có hạn - Bao gồm quyền lợi Premium"
+      },
+      "quarterly": {
+        "name": "VIP Access (Hàng quý)",
+        "period": "quý",
+        "billingNote": "Tương đương $99/tháng"
+      },
+      "annual": {
+        "name": "VIP Access (Hàng năm)",
+        "period": "tháng",
+        "billingNote": "Thanh toán hàng năm $948/năm"
+      },
+      "features": {
+        "allPremium": "Tất cả trong Premium VÀ:",
+        "vipChannel": "Kênh VIP: câu hỏi ưu tiên",
+        "earlyAccess": "Truy cập sớm công cụ & nội dung mới",
+        "article": "1 buổi mổ xẻ ra mắt & đánh giá định vị riêng tư",
+        "vault": "Kho template + prompt AI VIP"
+      }
+    },
+    "trustMoneyBack": "Đảm bảo hoàn tiền 30 ngày",
+    "trustPayment": "Thanh toán an toàn qua Polar.sh",
+    "trustMembers": "500+ thành viên tích cực"
+  },
+  "faq": {
+    "title": "Câu hỏi thường gặp",
+    "subtitle": "Có câu hỏi? Chúng tôi có câu trả lời.",
+    "items": {
+      "whatIsNLB": {
+        "question": "Next Level Builders là gì?",
+        "answer": "Next Level Builders là nền tảng giáo dục và trung tâm tài nguyên cho solopreneur và nhà sáng lập micro-SaaS. Chúng tôi cung cấp playbook tuyển chọn, video ghi sẵn, template đã chứng minh và bộ công cụ ra mắt để giúp bạn xây dựng và mở rộng sản phẩm sinh lợi nhanh hơn, kèm theo kênh cộng tác cộng đồng. Các nhà sáng lập của chúng tôi đã xây dựng hơn 14 sản phẩm với doanh thu $100K+ ARR."
+      },
+      "refundPolicy": {
+        "question": "Chính sách hoàn tiền như thế nào?",
+        "answer": "Đảm bảo hoàn tiền 100% trong 30 ngày, không cần lý do. Nếu cộng đồng và thư viện không phù hợp với bạn trong 30 ngày đầu, gửi yêu cầu hoàn tiền và chúng tôi sẽ xử lý. Chúng tôi đứng sau giá trị mình mang lại."
+      },
+      "timeCommitment": {
+        "question": "Tôi cần dành bao nhiêu thời gian?",
+        "answer": "Bạn chỉ cần 3-6 giờ mỗi tuần (Discord + tự thực hành). Điều này hoàn toàn khả thi ngay cả khi bạn làm full-time. Bạn không cần nghỉ việc, có đội nhóm, hoặc ngân sách lớn. Tất cả những gì bạn cần là kỹ năng hiện tại (có thể xây dựng sản phẩm là được) và cam kết ra mắt, không phải hoàn hảo."
+      },
+      "isItACourse": {
+        "question": "Đây có phải là khóa học trực tuyến không?",
+        "answer": "Không! Đây không phải khóa học lý thuyết truyền thống để nhận chứng chỉ. Đây là nền tảng giáo dục thực hành và tài nguyên builder giúp các Builder đạt được: Ra mắt sản phẩm (live, công khai), Người dùng & khách hàng sẵn sàng trả tiền (xác thực thực sự), Doanh thu đặt trước (bằng chứng sớm về market fit), và bài học thực tế để ra mắt sản phẩm hiệu quả."
+      },
+      "whatWillILearn": {
+        "question": "Tôi sẽ học được gì trong chương trình này?",
+        "answer": "Bạn sẽ hiểu cách xây dựng thương hiệu cá nhân chuyển đổi, xây dựng hệ thống bán hàng tự động 24/7, ra mắt sản phẩm thực tế với khách hàng thực sự, và có được kỹ năng để ra mắt nhanh & có thể mở rộng như những nhà sáng lập đã được thử nghiệm. Đây là kiến thức thực hành từ những nhà sáng lập đã xây dựng hơn 14 sản phẩm sinh lợi với doanh thu $100K+ ARR."
+      },
+      "needTechnical": {
+        "question": "Tôi có cần kỹ thuật không?",
+        "answer": "Bạn cần kỹ năng hiện tại để xây dựng sản phẩm (code, no-code, công cụ AI - bất cứ thứ gì hiệu quả). Bạn KHÔNG cần nghỉ việc, có đội nhóm, hoặc ngân sách lớn. Solo founder làm full-time được chào đón. Công cụ rẻ là đủ để bắt đầu."
+      },
+      "technicalLevel": {
+        "question": "Yêu cầu trình độ kỹ thuật như thế nào?",
+        "answer": "Chào đón tất cả các cấp độ! Chúng tôi có người mới bắt đầu học code, developer có kinh nghiệm, và nhà sáng lập không kỹ thuật sử dụng công cụ no-code. Nội dung của chúng tôi phù hợp với nhiều cấp độ kỹ năng, và cộng đồng rất hỗ trợ người mới."
+      },
+      "tierIncludes": {
+        "question": "Mỗi gói bao gồm những gì?",
+        "answer": "Gói Premium bao gồm toàn bộ thư viện 52 tuần video ghi sẵn, kho video eLearning, kho template và các kênh cộng tác cộng đồng. Gói VIP thêm các kênh hỏi đáp ưu tiên, truy cập sớm công cụ và nội dung mới, 1:1 buổi mổ xẻ ra mắt & đánh giá định vị gửi riêng cho bạn, và kho template + prompt AI VIP."
+      },
+      "howDiscordWorks": {
+        "question": "Discord hoạt động như thế nào?",
+        "answer": "Discord là nền tảng chat miễn phí (như Slack). Khi bạn tham gia NLB, bạn sẽ nhận được link mời đến server riêng của chúng tôi. Chúng tôi có kênh cho các chủ đề khác nhau, nội dung mới được drop hàng tuần, và cộng đồng hỗ trợ. Nó thân thiện với di động và rất dễ sử dụng."
+      },
+      "whatMakesDifferent": {
+        "question": "Điều gì làm NLB khác biệt với các cộng đồng khác?",
+        "answer": "Hầu hết các cộng đồng được điều hành bởi những người chưa xây dựng sản phẩm thành công. Các nhà sáng lập của chúng tôi có hơn 14 sản phẩm sinh lợi và $100K+ ARR. Chúng tôi chia sẻ chiến lược thực sự hiệu quả, không phải lý thuyết. Cộng đồng của chúng tôi có 500+ thành viên tích cực thực sự xây dựng và ra mắt sản phẩm."
+      },
+      "upgradePlan": {
+        "question": "Tôi có thể nâng cấp hoặc hạ cấp gói không?",
+        "answer": "Có! Bạn có thể nâng cấp bất cứ lúc nào và ngay lập tức nhận được quyền truy cập vào lợi ích cấp cao hơn. Hạ cấp cũng dễ dàng - chỉ cần cho chúng tôi biết trước chu kỳ thanh toán tiếp theo. Hoàn tiền theo tỷ lệ khi nâng cấp."
+      },
+      "freeTrial": {
+        "question": "Có dùng thử miễn phí không?",
+        "answer": "Chúng tôi không cung cấp dùng thử miễn phí, nhưng chúng tôi có đảm bảo hoàn tiền 30 ngày thậm chí còn tốt hơn. Điều này cho bạn một tháng đầy đủ để trải nghiệm cộng đồng, khám phá thư viện, và xem nó có phù hợp với bạn không - hoàn toàn không rủi ro."
+      }
+    }
+  },
+  "finalCTA": {
+    "title": "Sẵn sàng xây dựng sản phẩm tiếp theo?",
+    "subtitle": "Tham gia 500+ builder đang ra mắt nhanh hơn, phát triển thông minh hơn, và chinh phục với AI & SEO. Bắt đầu ngay hôm nay với đảm bảo hoàn tiền 30 ngày.",
+    "button": "Đăng ký ngay",
+    "trustRiskFree": "Không rủi ro trong 30 ngày",
+    "trustInstant": "Truy cập ngay lập tức"
+  },
+  "products": {
+    "title": "Sản phẩm của chúng tôi",
+    "subtitle": "Công cụ và tài nguyên mạnh mẽ được xây dựng bởi Next Level Builders để đẩy nhanh hành trình của bạn.",
+    "visitSite": "Truy cập",
+    "claudekit": {
+      "description": "Skills và workflows cao cấp cho Claude Code. Phát triển nhanh hơn với automation patterns đã được kiểm chứng."
+    },
+    "uiuxpromax": {
+      "description": "Hệ thống thiết kế UI/UX với AI. Tạo giao diện ấn tượng với design tokens thông minh."
+    },
+    "agenticworking": {
+      "description": "Thành thạo nghệ thuật làm việc với AI agents. Frameworks và phương pháp luận cho năng suất 10x."
+    },
+    "200lab": {
+      "description": "Nền tảng giáo dục công nghệ hàng đầu Việt Nam. Học từ chuyên gia và xây dựng sản phẩm thực tế."
+    },
+    "goclaw": {
+      "description": "Nền tảng AI agent bảo mật, mở rộng cho doanh nghiệp. Triển khai đội AI phối hợp với multi-tenant isolation và 5 lớp bảo mật."
+    },
+    "tose": {
+      "description": "Click. Deploy. Xong! Đưa lên production trong chưa đầy 2 phút với auto-scaling Kubernetes, SSL, và rollback tức thì."
+    }
+  },
+  "footer": {
+    "tagline": "Xây dựng tương lai, từng sản phẩm một.",
+    "discord": "Discord",
+    "twitter": "Twitter",
+    "github": "GitHub",
+    "policies": "Chính sách",
+    "copyright": "© {year} Next Level Builders. Tất cả quyền được bảo lưu."
+  },
+  "policies": {
+    "title": "Chính sách & Quy chế",
+    "subtitle": "Tất cả chính sách và quy chế của cộng đồng Next Level Builders",
+    "backToOverview": "Quay lại tổng quan",
+    "nav": {
+      "overview": "Tổng quan",
+      "ship-policy": "Quy chế SHIP",
+      "contributor-policy": "Quy chế Contributor",
+      "membership-tiers": "Hạng thành viên",
+      "onboarding": "Quy trình Onboarding",
+      "violations": "Xử lý vi phạm"
+    },
+    "overview": {
+      "title": "Tổng quan Quy chế NLB",
+      "sections": [
+        {
+          "heading": "Tầm nhìn & Sứ mệnh",
+          "content": "NextLevelBuilder (NLB) là cộng đồng Builders thực chiến — nơi mọi thành viên đều tích cực SHIP (công bố sản phẩm, nội dung, giá trị ra thế giới) hoặc CONTRIBUTE (đóng góp xây dựng cộng đồng).\n\n\"No Ship, No Seat\" — Không SHIP, không có chỗ trong cộng đồng."
+        },
+        {
+          "heading": "Hai đường tham gia",
+          "content": "• SHIP: Cam kết 4 bài/tháng public, post #ship vào Discord — dành cho ai muốn Build in Public\n• CONTRIBUTE: Thử việc 45 ngày, báo cáo weekly — dành cho ai muốn đóng góp kỹ thuật hoặc cộng đồng"
+        },
+        {
+          "heading": "Hai loại thành viên",
+          "content": "• Premium: Đầy đủ quyền lợi chuẩn — Discord, content drops, resources, community support\n• VIP: Premium + ưu tiên slots, early access, Discord DM ưu tiên với Mentor, direct access Mentors"
+        },
+        {
+          "heading": "Hệ thống Hạng (Ranking)",
+          "content": "Hạng dựa trên đóng góp, độc lập với loại thành viên:\n• Apprentice: Mới vào (0–45 ngày)\n• Builder: ≥8 SHIP + 80% feedback\n• Architect: ≥20 SHIP + 90% feedback + bài highlight\n• Master: ≥50 SHIP + Featured/Contributor\n• Legend: ≥100 SHIP + Mentor đề cử"
+        },
+        {
+          "heading": "Cam kết bắt buộc",
+          "content": "• Điền đầy đủ thông tin cá nhân (verify bởi BQT)\n• Submit Feedback Weekly mỗi tuần\n• Đọc hiểu và đồng ý toàn bộ quy chế\n• SHIP 4 bài/tháng HOẶC được duyệt làm Contributor"
+        },
+        {
+          "heading": "Ranking Points (RP)",
+          "content": "• SHIP bài viết: +10 RP\n• SHIP được highlight: +25 RP\n• Feedback weekly: +5 RP\n• Hoạt động Discord (tuần): +3 RP\n• Giúp member: +8 RP\n• Đóng góp nổi bật: +50 RP\n• Contributor work/tuần: +15 RP"
+        }
+      ]
+    },
+    "ship-policy": {
+      "title": "Quy chế SHIP — Build in Public",
+      "sections": [
+        {
+          "heading": "SHIP là gì?",
+          "content": "SHIP là công bố ra công chúng bất kỳ thứ gì bạn đang xây dựng, học hỏi, hoặc chia sẻ — bài viết, sản phẩm, ý tưởng, kinh nghiệm...\n\n\"Ship early, ship often, ship with intention.\""
+        },
+        {
+          "heading": "Cam kết SHIP tối thiểu",
+          "content": "• Số lượng: Tối thiểu 4 lần/tháng (trung bình 1 lần/tuần), không gom cuối tháng\n• Hình thức: Bài viết public có link (blog, social media, website...)\n• Báo cáo: Post link vào channel #ship trên Discord\n• Mục đích: Để cộng đồng hỗ trợ tương tác, feedback"
+        },
+        {
+          "heading": "Những gì được tính là SHIP",
+          "content": "Được chấp nhận:\n• Profile cá nhân: Giới thiệu bản thân, LinkedIn, portfolio\n• Sản phẩm: MVP, beta, feature mới, demo\n• Kiến thức chuyên môn: Tutorial, hướng dẫn, tips & tricks\n• Kinh nghiệm làm nghề: Lessons learned, behind the scenes\n• Ý tưởng: Concept, wireframe, validation\n\nKhông được chấp nhận:\n• Bài repost/share đơn thuần không có nội dung riêng\n• Bài viết private/không có link public\n• Comment trên bài người khác"
+        },
+        {
+          "heading": "Quy trình SHIP hàng tuần",
+          "content": "1. Tạo nội dung (bài viết, video, sản phẩm...)\n2. Đăng PUBLIC (blog, social, website...)\n3. Copy link bài viết\n4. Chia sẻ vào channel #ship trên Discord\n5. Cộng đồng vào hỗ trợ tương tác"
+        },
+        {
+          "heading": "Đánh giá hàng tháng",
+          "content": "• 0–1 bài: Không đạt — Cảnh báo\n• 2–3 bài: Chưa đạt — Nhắc nhở\n• 4+ bài: Đạt yêu cầu\n• 8+ bài: Xuất sắc\n• 12+ bài: Top Shipper"
+        },
+        {
+          "heading": "Hỗ trợ từ cộng đồng",
+          "content": "Khi bạn SHIP vào #ship, các thành viên khác sẽ like/react, comment feedback xây dựng, share nếu nội dung hay, và kết nối nếu có synergy.\n\nVăn hóa NLB: \"Support first, critique second\""
+        }
+      ]
+    },
+    "contributor-policy": {
+      "title": "Quy chế Contributor",
+      "sections": [
+        {
+          "heading": "Contributor là gì?",
+          "content": "Contributor là thành viên NLB đóng góp xây dựng cộng đồng thay vì SHIP nội dung cá nhân hàng tuần. Đây là lựa chọn thay thế cho những ai không muốn/không thể Build in Public nhưng vẫn muốn đóng góp giá trị."
+        },
+        {
+          "heading": "Các loại Contributor",
+          "content": "• Technical Support: Trả lời câu hỏi kỹ thuật trên Discord, hướng dẫn debug, review code, chia sẻ resources\n• Developer: Fix bugs, implement features, update docs, code review — cần được 3 Mentors thẩm định trình độ; cam kết 4–8 giờ/tuần\n• Other: Content, Community, QA/Testing, Design, Research — tự đề xuất hình thức đóng góp"
+        },
+        {
+          "heading": "Quy trình đăng ký",
+          "content": "1. Là thành viên trả phí NLB\n2. Submit Contributor Application Form\n3. Mentors review (Developer: thẩm định kỹ, 3–7 ngày)\n4. Nếu approved: Bắt đầu thử việc 45 ngày\n5. Tự chọn cách contribute + Báo cáo weekly\n6. Mentors review tổng thể\n7. Kết quả: CONFIRM, EXTEND, hoặc REMOVE + Refund"
+        },
+        {
+          "heading": "Thử việc 45 ngày",
+          "content": "• Tự chọn tasks/contributions phù hợp năng lực\n• Báo cáo công việc MỖI TUẦN (bắt buộc)\n• Vẫn phải submit Feedback Weekly form\n• Miễn yêu cầu SHIP 4 bài/tháng trong giai đoạn này"
+        },
+        {
+          "heading": "Quyền lợi Contributor chính thức",
+          "content": "• Badge Contributor trên Discord\n• Miễn SHIP 4 bài/tháng\n• +15 RP/tuần công việc\n• Early Access sản phẩm NLB\n• Kết nối với Mentors và Partners\n• Thư giới thiệu từ NLB khi cần\n• Revenue share từ dự án đóng góp (tùy case)"
+        },
+        {
+          "heading": "Đặc quyền Đối tác Chiến lược",
+          "content": "Dành cho cá nhân xuất sắc vừa là Contributor tích cực vừa SHIP đều đặn:\n• Ưu tiên phân phối AgentBrain.sh và GoClaw.sh với chia sẻ lợi nhuận\n• Hỗ trợ đóng gói sản phẩm riêng dựa trên nền tảng NLB\n• Tham gia các buổi họp chiến lược với Founders (Co-founder Level Access)"
+        }
+      ]
+    },
+    "membership-tiers": {
+      "title": "Phân loại & Hạng thành viên",
+      "sections": [
+        {
+          "heading": "Hai hệ thống độc lập",
+          "content": "NLB có 2 hệ thống phân loại hoạt động độc lập:\n• Loại thành viên (Membership Type): Dựa trên gói đăng ký & thanh toán — Premium hoặc VIP\n• Hạng thành viên (Member Rank): Dựa trên đóng góp & hoạt động — Apprentice đến Legend"
+        },
+        {
+          "heading": "Premium Member",
+          "content": "Dành cho Builders muốn học hỏi, kết nối và SHIP trong môi trường chuyên nghiệp.\n\nQuyền lợi:\n• Discord Access: Tất cả channels Premium\n• Drops Hàng Tuần: Truy cập đầy đủ nội dung mới được drop hàng tuần\n• Resources: Templates, tools, guides\n• Community: Network với 30+ builders\n• Q&A bất đồng bộ: Ưu tiên trả lời từ Mentors trên Discord\n• Product Access: Truy cập sản phẩm NLB"
+        },
+        {
+          "heading": "VIP Member",
+          "content": "Dành cho Builders nghiêm túc muốn accelerate và có cơ hội trở thành Partner.\n\nQuyền lợi = Premium + Ưu tiên:\n• Early Access: First access mọi sản phẩm mới\n• Early Bird Slots: Ưu tiên suất giá tốt\n• Partner Priority: Ưu tiên xét duyệt làm Đối tác Chiến lược\n• Mentor DM ưu tiên: Nhắn riêng Mentor trên Discord (hàng ưu tiên)\n• Direct Access: Chat trực tiếp với Mentors\n• Co-launch: Cơ hội hợp tác biên tập ra mắt sản phẩm dựa trên độ phù hợp với cộng đồng"
+        },
+        {
+          "heading": "Hệ thống 5 Hạng",
+          "content": "• Apprentice (Xám): Tự động khi mới tham gia (0–45 ngày)\n• Builder (Xanh lá): >45 ngày, ≥8 SHIP, ≥80% feedback, ≥4 lần check-in hàng tuần\n• Architect (Xanh dương): >90 ngày, ≥20 SHIP, ≥90% feedback, giúp ≥5 members, ≥2 bài highlight\n• Master (Tím): >6 tháng, ≥50 SHIP, ≥95% feedback, Featured/Contributor\n• Legend (Vàng): >1 năm, ≥100 SHIP, được ≥2 Mentors đề cử — tối đa 5% thành viên"
+        },
+        {
+          "heading": "Ranking Points System",
+          "content": "• SHIP bài viết: +10 RP\n• SHIP được highlight: +25 RP\n• Feedback weekly: +5 RP/tuần\n• Hoạt động Discord (tuần): +3 RP/tuần\n• Giúp member (verified): +8 RP/lần\n• Đóng góp nổi bật: +50 RP/lần\n• Contributor work: +15 RP/tuần\n• Product launch: +100 RP\n\nNgưỡng hạng: Builder 100 RP | Architect 300 RP | Master 800 RP | Legend 2000 RP + Đề cử"
+        },
+        {
+          "heading": "Upgrade & Downgrade",
+          "content": "• Upgrade loại (Premium → VIP): Bất kỳ lúc nào, thanh toán chênh lệch, hiệu lực ngay\n• Ranking: Tự động tính dựa trên Ranking Points, cập nhật ngày 1 mỗi tháng\n• Không downgrade hạng đã đạt (chỉ freeze nếu inactive)\n• Legend cần re-nomination hàng năm"
+        }
+      ]
+    },
+    "onboarding": {
+      "title": "Quy trình xét duyệt thành viên mới",
+      "sections": [
+        {
+          "heading": "Tổng quan quy trình (7–14 ngày)",
+          "content": "1. Thanh toán phí membership\n2. Submit Form Thông Tin cá nhân\n3. BQT Review & Verify (2–3 ngày)\n4. Submit Form Cam Kết\n5. Nhận Discord Access + Onboarding\n\nLưu ý: Nếu không đạt xét duyệt, được REFUND 100% chi phí đã đóng."
+        },
+        {
+          "heading": "Tiêu chí xét duyệt",
+          "content": "BQT đánh giá dựa trên:\n• Thông tin đầy đủ (20%): Điền hết các trường bắt buộc\n• Profile thật (20%): Có link xác minh được\n• Mục tiêu rõ ràng (25%): Biết muốn build gì\n• Năng lực phù hợp (20%): Có nền tảng để build\n• Động lực đúng (15%): Muốn SHIP, học hỏi — không chỉ \"hóng\""
+        },
+        {
+          "heading": "Cam kết cần đồng ý",
+          "content": "• SHIP tối thiểu 4 bài/tháng dưới dạng bài viết public, post vào #ship\n• Submit Form Feedback Weekly MỖI TUẦN với nội dung thực chất\n• Hoạt động Discord tích cực: ít nhất 2 lần check-in hàng tuần/tháng\n• Tuân thủ Code of Conduct của NLB\n• Nếu không muốn SHIP, đăng ký làm Contributor (xét duyệt)"
+        },
+        {
+          "heading": "Checklist sau khi được duyệt",
+          "content": "• Ngày 1: Đọc quy chế SHIP, update Discord profile\n• Ngày 2: Giới thiệu bản thân tại #introductions\n• Ngày 3: Xem Onboarding Video\n• Ngày 7: Xem Onboarding Video Phần 2 + hoàn thành Onboarding Checklist trên Discord\n• Tuần 2: SHIP bài đầu tiên\n• Tuần 2: Submit Feedback Weekly đầu tiên"
+        },
+        {
+          "heading": "Tái đăng ký (Re-application)",
+          "content": "Điều kiện: Đã bị gỡ quyền do vi phạm + chờ ít nhất 45 ngày\n\nQuy trình:\n1. Submit Form Thông Tin (cập nhật mới)\n2. Giải thích lý do muốn quay lại\n3. Cam kết cụ thể sẽ làm gì khác\n4. BQT review (strict hơn lần đầu)\n5. Nếu approved: đi qua quy trình bình thường"
+        }
+      ]
+    },
+    "violations": {
+      "title": "Chính sách xử lý vi phạm",
+      "sections": [
+        {
+          "heading": "Nguyên tắc chung",
+          "content": "NLB áp dụng chính sách \"Fair but Firm\" — công bằng với tất cả thành viên, nhưng nghiêm túc với cam kết.\n\n\"Chúng tôi không muốn kick ai. Chúng tôi muốn tất cả cùng SHIP.\""
+        },
+        {
+          "heading": "Các loại vi phạm",
+          "content": "Vi phạm SHIP:\n• Nhẹ: SHIP 2–3 bài/tháng\n• Trung bình: SHIP 1 bài/tháng\n• Nặng: Không SHIP bài nào\n• Nghiêm trọng: Không SHIP 2 tháng liên tiếp\n\nVi phạm Feedback:\n• Nhẹ: Miss 1–2 tuần/tháng\n• Nặng: Không submit cả tháng hoặc điền đại (\".\", \"ok\", spam)\n\nVi phạm Code of Conduct:\n• Spam, off-topic, không tôn trọng\n• Gây conflict, toxic behavior\n• Quấy rối, phân biệt đối xử"
+        },
+        {
+          "heading": "Quy trình xử lý tự động",
+          "content": "Hệ thống tự động theo dõi SHIP count, feedback submissions và tổng hợp theo chu kỳ 45 ngày.\n\nKhi đến hạn review:\n• Đạt: Đủ SHIP + Feedback + Hoạt động Discord → Tiếp tục membership\n• Không đạt: Tự động gỡ quyền Discord, revoke credentials, gửi email thông báo, xử lý Refund 100%, ghi nhận danh sách chờ 45 ngày"
+        },
+        {
+          "heading": "Xử lý nhanh (Fast Track)",
+          "content": "Một số vi phạm được xử lý ngay lập tức không qua warning:\n• Quấy rối thành viên khác → Terminate ngay\n• Spam quảng cáo, scam → Terminate + Ban vĩnh viễn\n• Vi phạm pháp luật → Terminate + Báo cáo nếu cần\n• Fake identity → Terminate + Ban vĩnh viễn\n• Leak thông tin nội bộ → Terminate + Xem xét pháp lý"
+        },
+        {
+          "heading": "Chính sách Refund",
+          "content": "Refund 100% khi:\n• Bị terminate do vi phạm cam kết\n• Tự rời đi trong 45 ngày đầu\n• NLB ngừng hoạt động\n\nRefund pro-rata: Tự rời đi sau 45 ngày (tính theo thời gian còn lại)\n\nKhông refund: Bị ban vĩnh viễn do vi phạm nghiêm trọng, hoặc đã hết thời gian membership"
+        },
+        {
+          "heading": "Quyền khiếu nại",
+          "content": "Nếu bạn cho rằng quyết định không công bằng:\n1. Reply email terminate với lý do khiếu nại\n2. BQT review trong 7 ngày\n3. Nếu chưa hài lòng, escalate lên Co-founders\n4. Quyết định cuối cùng trong 14 ngày\n\nCần cung cấp: Lý do khiếu nại cụ thể, bằng chứng (nếu có), đề xuất giải quyết"
+        }
+      ]
+    }
+  },
+  "tc": {
+    "title": "Điều khoản & Quy chế Cộng đồng",
+    "scrollHint": "Vui lòng đọc hết nội dung để tiếp tục",
+    "proceed": "Đồng ý & Tiếp tục thanh toán",
+    "sections": [
+      {
+        "heading": "Quy chế SHIP — Build in Public",
+        "summary": "Thành viên cam kết SHIP tối thiểu 4 bài công khai/tháng hoặc đăng ký làm Contributor. Bài SHIP chia sẻ trong kênh #ship trên Discord. Cộng đồng sẽ hỗ trợ, tương tác và đóng góp phản hồi.",
+        "link": "/policies/ship-policy",
+        "policyKey": "ship-policy"
+      },
+      {
+        "heading": "Hạng thành viên & Xếp hạng",
+        "summary": "Hai hệ thống độc lập: Loại thành viên (Premium/VIP theo subscription) và Xếp hạng (Apprentice → Legend theo đóng góp). Thăng hạng dựa trên Ranking Points tích lũy qua SHIP, feedback, hoạt động Discord.",
+        "link": "/policies/membership-tiers",
+        "policyKey": "membership-tiers"
+      },
+      {
+        "heading": "Quy trình Onboarding",
+        "summary": "Sau thanh toán: Điền Form thông tin → BQT xét duyệt (2-3 ngày) → Điền Form cam kết → Nhận quyền truy cập Discord + Onboarding. Nếu không đạt xét duyệt, hoàn tiền 100%.",
+        "link": "/policies/onboarding",
+        "policyKey": "onboarding"
+      },
+      {
+        "heading": "Xử lý vi phạm & Hoàn tiền",
+        "summary": "Hệ thống tự động theo dõi mỗi 45 ngày. Không đạt yêu cầu SHIP/Feedback → Tự động thu hồi quyền truy cập + Hoàn tiền 100%. Vi phạm nghiêm trọng (quấy rối, spam, gian lận) → Xử lý ngay lập tức.",
+        "link": "/policies/violations",
+        "policyKey": "violations"
+      }
+    ],
+    "readFull": "Xem chi tiết chính sách",
+    "agreement": "Bằng việc tiếp tục thanh toán, bạn xác nhận đã đọc, hiểu và đồng ý tuân thủ tất cả các điều khoản và quy chế trên của cộng đồng Next Level Builders."
+  },
+  "auth": {
+    "badge": "Xác thực Không Mật khẩu & An Toàn",
+    "signInTitle": "Đăng Nhập Builder",
+    "otpTitle": "Xác Thực Mã OTP",
+    "signInDesc": "Đăng nhập không cần mật khẩu qua mã Email OTP an toàn hoặc tài khoản GitHub/Google",
+    "otpDesc": "Nhập mã 6 chữ số vừa được gửi đến email: {email}",
+    "emailLabel": "Địa Chỉ Email",
+    "emailPlaceholder": "builder@nextlevelbuilder.io",
+    "sendOtpBtn": "Gửi Mã Xác Thực OTP",
+    "sendingOtp": "Đang gửi mã...",
+    "otpLabel": "Mã Xác Thực 6 Chữ Số",
+    "verifyOtpBtn": "Xác Nhận & Đăng Nhập",
+    "verifying": "Đang xác thực...",
+    "changeEmail": "Đổi email khác",
+    "resendOtp": "Gửi lại mã",
+    "orSocial": "Hoặc đăng nhập nhanh với",
+    "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ.",
+    "sendFailed": "Gửi mã OTP thất bại. Vui lòng thử lại.",
+    "otpSentSuccess": "Mã xác thực 6 chữ số đã được gửi tới {email}. Vui lòng kiểm tra hộp thư.",
+    "invalidOtp": "Vui lòng nhập đầy đủ mã OTP 6 chữ số.",
+    "verifyFailed": "Mã OTP không hợp lệ hoặc đã hết hạn.",
+    "loginSuccess": "Đăng nhập thành công! Đang chuyển hướng...",
+    "oauthNotConfigured": "{provider} OAuth chưa được cấu hình. Vui lòng đăng nhập bằng mã Email OTP."
+  },
+  "profile": {
+    "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
+    "loginRequiredDesc": "Vui lòng đăng nhập để xem thông tin tài khoản Builder và quản lý sản phẩm của bạn.",
+    "loginRequiredBtn": "Đăng Nhập Ngay",
+    "verified": "Đã Xác Thực",
+    "builderSince": "Builder từ",
+    "publicProfileBtn": "Hồ Sơ Công Khai",
+    "manageSlotsBtn": "Quản Lý Slots",
+    "signingOut": "Đang đăng xuất...",
+    "signOut": "Đăng Xuất",
+    "creativeWorkspaceBadge": "Không Gian Sáng Tạo",
+    "studioLaunchpadTitle": "Next Level Builder Studio",
+    "studioLaunchpadDesc": "Trình soạn thảo khối trực quan (18 visual block types) với tính năng kéo thả mượt mà, tải ảnh/video trực tiếp lên Cloudflare R2 và chế độ xem trước sản phẩm trước khi xuất bản.",
+    "studioLaunchpadBtn": "Mở Builder Studio Ngay",
+    "orgsTitle": "Tổ Chức & Nhóm Của Bạn",
+    "noOrgs": "Bạn chưa tham gia tổ chức nào. Mặc định các sản phẩm sẽ được gán vào nlb-official.",
+    "productsTitle": "Sản Phẩm & Bản Đăng Ký",
+    "noProducts": "Chưa có sản phẩm nào được tạo dưới tài khoản của bạn.",
+    "addProductBtn": "Thêm Sản Phẩm",
+    "publicPage": "Trang Công Khai",
+    "preview": "Xem Trước",
+    "apiKeysTitle": "Quản Lý API Keys & Developer Tokens",
+    "apiKeysDesc": "Tạo và quản lý các khóa API an toàn để xác thực với @nextlevelbuilder/cli, MCP server trong Cursor/Claude Desktop, hoặc tự động hóa gửi bài qua REST API.",
+    "createKeyBtn": "Tạo API Key Mới",
+    "keyNameLabel": "Mô Tả / Tên Khóa",
+    "keyNamePlaceholder": "Ví dụ: Cursor MCP Server hoặc CI Deployment",
+    "expiresLabel": "Thời Hạn Hết Hiệu Lực",
+    "expiresNever": "Không bao giờ (Khuyên dùng cho MCP)",
+    "expires30": "30 Ngày",
+    "expires90": "90 Ngày",
+    "expires365": "1 Năm",
+    "generateBtn": "Tạo Khóa",
+    "generating": "Đang tạo...",
+    "newKeyAlertTitle": "Khóa API Bảo Mật Mới Của Bạn",
+    "newKeyAlertDesc": "Hãy sao chép khóa này ngay bây giờ. Vì lý do bảo mật, khóa sẽ không được hiển thị lại.",
+    "copyKeyBtn": "Sao Chép Khóa",
+    "keyCopied": "Đã Sao Chép!",
+    "noKeys": "Chưa có API key nào được tạo. Hãy tạo một khóa để xác thực công cụ CLI và MCP.",
+    "keyColumnName": "Tên Khóa",
+    "keyColumnPrefix": "Tiền Tố",
+    "keyColumnCreated": "Ngày Tạo",
+    "keyColumnStatus": "Trạng Thái",
+    "keyColumnAction": "Thao Tác",
+    "revokeKeyBtn": "Thu Hồi",
+    "revoking": "Đang thu hồi...",
+    "revokedSuccess": "Đã thu hồi API key thành công.",
+    "integrationGuideTitle": "Hướng Dẫn Tích Hợp Cho Lập Trình Viên",
+    "cliGuide": "Lệnh CLI",
+    "mcpGuide": "Cấu Hình MCP Server (Cursor / Claude Desktop)"
+  },
+  "account": {
+    "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
+    "loginRequiredDesc": "Vui lòng đăng nhập để truy cập Account Dashboard và quản lý các slot đăng ký sản phẩm của bạn.",
+    "loginRequiredBtn": "Đăng Nhập Ngay",
+    "title": "Quản Lý Slot Submissions & Hạn Mức",
+    "description": "Mỗi slot cho phép bạn gửi một sản phẩm vào hàng đợi kiểm duyệt danh bạ Next Level Builders.",
+    "availableSlots": "Slot Khả Dụng",
+    "readyToUse": "Sẵn Sàng Dùng",
+    "availableSlotsDesc": "Có thể dùng ngay để tạo sản phẩm mới trong Studio",
+    "usedSlots": "Slot Đang Dùng / Đã Duyệt",
+    "active": "Hoạt Động",
+    "usedSlotsDesc": "Sản phẩm đã xuất bản hoặc đang chờ duyệt",
+    "totalSlots": "Tổng Số Slot Đã Có",
+    "totalSlotsDesc": "Bao gồm các slot mua qua Polar và slot tặng ban đầu",
+    "slotAvailableAlert": "Bạn có {count} slot khả dụng! Hãy mở Studio để soạn thảo và xuất bản sản phẩm.",
+    "openStudioBtn": "Mở Studio & Dùng Slot",
+    "buySlotBtn": "Mua Thêm Slot ($24.50 • Early Bird)",
+    "redirectingPolar": "Đang chuyển hướng sang Polar...",
+    "productsTitle": "Danh Sách Sản Phẩm & Bản Thảo",
+    "noProducts": "Chưa có sản phẩm nào được tạo dưới tài khoản của bạn.",
+    "createProductBtn": "Tạo Sản Phẩm Mới",
+    "ordersTitle": "Lịch Sử Mua Slot Submissions",
+    "noOrders": "Chưa có đơn hàng mua slot nào qua Polar. Slot hiện tại là slot tặng khởi tạo ban đầu.",
+    "servicePackage": "Gói Dịch Vụ",
+    "polarOrderId": "Mã Đơn Hàng Polar",
+    "amount": "Số Tiền",
+    "date": "Ngày Mua",
+    "status": "Trạng Thái"
+  },
+  "builders": {
+    "platformLead": "Trưởng Nền Tảng",
+    "verifiedBuilder": "Builder Đã Xác Thực",
+    "verifiedPassport": "Hộ Chiếu Đã Xác Thực",
+    "builderSince": "Builder từ năm {year}",
+    "publishedTools": "Sản Phẩm Đã Xuất Bản",
+    "publishedToolsDesc": "Sản phẩm được xác thực niêm yết trên danh bạ NLB",
+    "avgTrustScore": "Điểm Trust Trung Bình",
+    "avgTrustScoreDesc": "Đánh giá kiểm duyệt chuyên gia & chỉ số tích lũy",
+    "communityStanding": "Xếp Hạng Cộng Đồng",
+    "communityStandingDesc": "Nhà phát triển & người sáng tạo sản phẩm xác thực",
+    "communityVerified": "Đã Xác Thực",
+    "publishedProducts": "Sản Phẩm Đã Xuất Bản",
+    "noProductsTitle": "Chưa Có Sản Phẩm Xuất Bản Nào",
+    "noProductsDesc": "Builder này hiện chưa xuất bản sản phẩm được duyệt nào trên Next Level Builders.",
+    "viewListing": "Xem Trang Sản Phẩm",
+    "website": "Trang Web",
+    "shareProfile": "Chia Sẻ Hồ Sơ",
+    "linkCopied": "Đã Sao Chép Link!"
+  },
+  "preview": {
+    "backToStudio": "Quay Lại Builder Studio",
+    "viewLivePage": "Xem Trang Công Khai Live",
+    "sandboxPreview": "Xem Trước Trong Studio Sandbox",
+    "revision": "Phiên Bản",
+    "hash": "Mã Hash",
+    "status": "Trạng Thái",
+    "draftMode": "Chế Độ Bản Thảo",
+    "publishBtn": "Xuất Bản / Gửi Duyệt",
+    "submitting": "Đang gửi...",
+    "listingLive": "Sản Phẩm Đang Hoạt Động",
+    "submittedSuccess": "Sản phẩm đã được gửi duyệt thành công!"
+  },
+  "buildWithUs": {
+    "heroBadge": "Danh Mục Sản Phẩm & Trung Tâm Ra Mắt Đáng Tin Cậy",
+    "heroTitle": "Build with Us",
+    "heroDesc": "Khám phá các sản phẩm phần mềm được kiểm duyệt thủ công, bảng xếp hạng tự nhiên minh bạch và bộ công cụ AI agent từ cộng đồng Next Level Builders.",
+    "searchPlaceholder": "Tìm kiếm công cụ, agent & framework đã xác thực...",
+    "sort": "Sắp xếp:",
+    "highestTrust": "Điểm Trust Cao Nhất",
+    "mostUpvoted": "Được Bình Chọn Nhiều Nhất",
+    "newestLaunches": "Ra Mắt Mới Nhất",
+    "all": "Tất Cả",
+    "today": "Hôm Nay",
+    "thisWeek": "Tuần Này",
+    "thisMonth": "Tháng Này",
+    "noProductsTitle": "Không tìm thấy sản phẩm xác thực phù hợp",
+    "noProductsDesc": "Hãy thử điều chỉnh từ khóa tìm kiếm hoặc danh mục bộ lọc.",
+    "rank": "Hạng",
+    "votes": "Bình Chọn",
+    "viewDetails": "Xem Chi Tiết",
+    "visitWebsite": "Trang Web",
+    "sidebarTitle": "Ra Mắt Trên Build with Us",
+    "sidebarDesc": "Xuất bản AI agents, micro-SaaS hoặc công cụ lập trình của bạn để tiếp cận hàng nghìn builders và người dùng sớm.",
+    "submitBtn": "Gửi Sản Phẩm Của Bạn",
+    "instructionsBtn": "Xem Hướng Dẫn Đăng Ký",
+    "trustGuarantee": "Kiểm Duyệt Thủ Công • Không Trả Tiền Để Lên Hạng • Cloudflare Edge"
+  },
+  "leaderboards": {
+    "badge": "Bảng Xếp Hạng Tự Nhiên Minh Bạch",
+    "title": "Bảng Xếp Hạng Cộng Đồng",
+    "desc": "Thứ hạng được tính toán hoàn toàn từ lượt bình chọn duy nhất, có xác thực của thành viên cộng đồng theo chu kỳ 24 giờ UTC. Không có trả tiền mua thứ hạng.",
+    "date": "Ngày:",
+    "ruleset": "Bộ Quy Tắc:",
+    "auditHash": "Mã Hash Đối Soát:",
+    "noRankingsTitle": "Chưa có dữ liệu xếp hạng hôm nay",
+    "noRankingsDesc": "Các lượt bình chọn hôm nay sẽ tự động được chốt vào chu kỳ snapshot tiếp theo.",
+    "rank": "Hạng",
+    "viewProduct": "Xem Sản Phẩm"
+  },
+  "productDetail": {
+    "verifiedLaunch": "Ra Mắt Đã Xác Thực",
+    "visitWebsite": "Truy Cập Trang Web",
+    "trustPassportScore": "Điểm Hộ Chiếu Tin Cậy",
+    "humanReviewedBy": "Được kiểm duyệt thủ công bởi Ban Quản Trị Next Level Builders.",
+    "contentHash": "Mã Hash Nội Dung:"
+  }
+}

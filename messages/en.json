@@ -1,0 +1,642 @@
+{
+  "nav": {
+    "brand": "Next Level Builders",
+    "features": "Features",
+    "buildWithUs": "Build with us",
+    "leaderboards": "Leaderboards",
+    "pricing": "Pricing",
+    "team": "Team",
+    "faq": "FAQ",
+    "joinNow": "Join Now"
+  },
+  "hero": {
+    "urgencyBadge": "Founding Member Pricing - Limited Time",
+    "headline": "From Zero to One",
+    "headlineHighlight": "Is Always the Hardest Part.",
+    "headlineEnd": "We Can Take You There.",
+    "subheadline": "The educational platform & builder resource hub where solopreneurs & micro-SaaS founders get expert-curated playbooks, proven templates, and a builder community to launch & scale products faster.",
+    "ctaPrimary": "Join Before Price Increases",
+    "ctaSecondary": "See What's Inside",
+    "trustMoneyBack": "30-day money-back guarantee",
+    "trustMembers": "Join 500+ active builders",
+    "trustPayment": "Secure payment via Polar.sh"
+  },
+  "features": {
+    "title": "Everything You Need to Build & Scale",
+    "subtitle": "Stop wasting time figuring it out alone. Get access to proven resources, expert guidance, and a community of builders who actually ship.",
+    "provenPlaybooks": {
+      "title": "Proven Playbooks",
+      "description": "Teardowns and playbooks from founders who built 14+ profitable SaaS products generating $100K+ ARR. Real strategies, written down."
+    },
+    "resources": {
+      "title": "Resources & Templates",
+      "description": "Access battle-tested templates, frameworks, and resources used to launch successful products. No more starting from scratch."
+    },
+    "communitySupport": {
+      "title": "Community Support",
+      "description": "Join 500+ active builders in our Discord. Get feedback, accountability, and connections with like-minded entrepreneurs."
+    },
+    "recordedLibrary": {
+      "title": "Recorded Session Library",
+      "description": "On-demand recorded sessions on AI automation, SEO, product development, and growth tactics. New drops every week."
+    },
+    "realLaunches": {
+      "title": "Real Product Launches",
+      "description": "Watch real-time product builds, learn from launches, and apply proven strategies to your own projects immediately."
+    },
+    "founderNetwork": {
+      "title": "Founder Network",
+      "description": "Connect with experienced founders, potential co-founders, and partners. Build relationships that accelerate your success."
+    }
+  },
+  "mission": {
+    "title": "More Than Just a Community",
+    "subtitle": "We're on a mission to help builders succeed. Here's what makes us different.",
+    "ourMission": {
+      "title": "Our Mission",
+      "description": "To give builders the education and opportunities they need to build and grow their micro-saas. At the core, it starts with community."
+    },
+    "ourValues": {
+      "title": "Our Values",
+      "description": "We believe in making friends, not contacts. We believe in giving first, not taking. We believe in helping others before helping ourselves."
+    },
+    "ourCommunity": {
+      "title": "Our Community",
+      "description": "A welcoming, inclusive environment where solo-founders and builders support each other, share knowledge, and grow together."
+    },
+    "notACourse": {
+      "title": "This Is NOT an Online Course",
+      "subtitle": "This is a Private Community helping Builders achieve real results together.",
+      "youNeed": "You Only Need",
+      "youNeedTime": "3-6 hours/week (Discord + self-practice)",
+      "youNeedSkills": "Current skills (being able to build a product is OK)",
+      "youNeedCommitment": "Commitment to ship, not perfection",
+      "youDontNeed": "You Do NOT Need",
+      "youDontNeedJob": "Quit your job (work full-time is OK)",
+      "youDontNeedTeam": "Team (solo founder is perfectly fine)",
+      "youDontNeedBudget": "Large budget (cheap tools are enough)",
+      "achieveTitle": "What You'll Actually Achieve",
+      "achieveLaunch": "Product launch (live, public, people can access)",
+      "achieveValidation": "Users & customers willing to pay (real validation)",
+      "achieveRevenue": "Pre-order revenue (early proof of market fit)",
+      "achieveSkills": "Skills to SHIP your next product effectively"
+    }
+  },
+  "team": {
+    "title": "Learn from Founders Who've Done It",
+    "subtitle": "Our team has built 14+ profitable products generating $100K+ ARR. We share real strategies that actually work."
+  },
+  "pricing": {
+    "title": "Invest in Your Success",
+    "subtitle": "Choose the package that fits your journey. All plans include 30-day money-back guarantee.",
+    "premium": {
+      "name": "Premium: Self-paced Builder",
+      "subtitle": "Self-paced Builder",
+      "slots": "30 slots",
+      "earlybird": {
+        "name": "EarlyBird 2025",
+        "period": "month",
+        "badge": "Best Value",
+        "billingNote": "Billed annually at $228/year",
+        "urgency": "Limited time - Save $120/year"
+      },
+      "quarterly": {
+        "name": "Premium Access (Quarterly)",
+        "period": "quarter",
+        "billingNote": "Equivalent to $49/month"
+      },
+      "annual": {
+        "name": "Premium Access (Annual)",
+        "period": "month",
+        "billingNote": "Billed annually at $468/year"
+      },
+      "features": {
+        "workshops": "52-week recorded session library + new drops",
+        "discord": "Builder collaboration community (access included)",
+        "videos": "Access to eLearning video treasury",
+        "support": "Community launch support channels",
+        "consult": "Async written feedback from founders in community channels"
+      }
+    },
+    "vip": {
+      "name": "VIP: Guided Builder",
+      "subtitle": "Guided Builder",
+      "slots": "10 slots",
+      "earlybird": {
+        "name": "EarlyBird 2025",
+        "period": "month",
+        "badge": "Ultimate Value",
+        "billingNote": "Billed annually at $468/year",
+        "urgency": "Limited slots - Premium perks included"
+      },
+      "quarterly": {
+        "name": "VIP Access (Quarterly)",
+        "period": "quarter",
+        "billingNote": "Equivalent to $99/month"
+      },
+      "annual": {
+        "name": "VIP Access (Annual)",
+        "period": "month",
+        "billingNote": "Billed annually at $948/year"
+      },
+      "features": {
+        "allPremium": "Everything in Premium PLUS:",
+        "vipChannel": "VIP Channel: priority questions",
+        "earlyAccess": "Early access to tools & new content",
+        "article": "1 private launch teardown & positioning review",
+        "vault": "VIP template + AI prompt vault"
+      }
+    },
+    "trustMoneyBack": "30-Day Money-Back Guarantee",
+    "trustPayment": "Secure Payment via Polar.sh",
+    "trustMembers": "500+ Active Members"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Got questions? We've got answers.",
+    "items": {
+      "whatIsNLB": {
+        "question": "What is Next Level Builders?",
+        "answer": "Next Level Builders is an educational platform and builder resource hub for solopreneurs and micro-SaaS founders. We provide expert-curated playbooks, recorded sessions, proven templates, and launch tooling to help you build and scale profitable products faster, with an included community collaboration channel. Our founders have built 14+ products generating $100K+ ARR."
+      },
+      "refundPolicy": {
+        "question": "What's the refund policy?",
+        "answer": "30-day money-back guarantee, no questions asked. If the community and library aren't a fit within your first 30 days, request a 100% refund and we'll process it. We stand behind the value we ship."
+      },
+      "timeCommitment": {
+        "question": "How much time do I need to commit?",
+        "answer": "You only need 3-6 hours per week (Discord + self-practice). This is completely manageable even if you work full-time. You don't need to quit your job, have a team, or a large budget. All you need is your current skills (being able to build a product is OK) and commitment to ship, not perfection."
+      },
+      "isItACourse": {
+        "question": "Is this an online course?",
+        "answer": "No! This is not a traditional theoretical course for getting a certificate. This is a practical educational and builder resource platform helping Builders achieve: Product launch (live, public), Users & customers willing to pay (real validation), Pre-order revenue (early proof of market fit), and actionable lessons to ship products effectively."
+      },
+      "whatWillILearn": {
+        "question": "What will I learn in this program?",
+        "answer": "You'll understand how to build a personal brand that converts, build an automated sales system 24/7, launch products in reality with real customers, and gain skills to ship fast & scalable like battle-tested founders. This is hands-on, practical knowledge from founders who have built 14+ profitable products generating $100K+ ARR."
+      },
+      "needTechnical": {
+        "question": "Do I need to be technical?",
+        "answer": "You need current skills to build a product (code, no-code, AI tools - whatever works). You DON'T need to quit your job, have a team, or a large budget. Solo founders working full-time are welcome. Cheap tools are enough to get started."
+      },
+      "technicalLevel": {
+        "question": "What technical level is required?",
+        "answer": "All levels welcome! We have complete beginners learning to code, experienced developers, and non-technical founders using no-code tools. Our content caters to different skill levels, and the community is very supportive of newcomers."
+      },
+      "tierIncludes": {
+        "question": "What's included in each tier?",
+        "answer": "Premium tier includes the full 52-week recorded session library, eLearning video treasury, template vault, and community collaboration channels. VIP adds priority Q&A channels, early access to new tools and content, 1:1 private launch teardowns and structured positioning reviews delivered privately to you, and the VIP template + AI prompt vault."
+      },
+      "howDiscordWorks": {
+        "question": "How does Discord work?",
+        "answer": "Discord is a free chat platform (like Slack). Once you join NLB, you'll get an invite link to our private server. We have channels for different topics, weekly content drops, and a supportive community. It's mobile-friendly and very easy to use."
+      },
+      "whatMakesDifferent": {
+        "question": "What makes NLB different from other communities?",
+        "answer": "Most communities are run by people who haven't built successful products. Our founders have 14+ profitable products and $100K+ ARR. We share real strategies that work, not theory. Plus our community is highly engaged with 500+ active members actually building and launching products."
+      },
+      "upgradePlan": {
+        "question": "Can I upgrade or downgrade my plan?",
+        "answer": "Yes! You can upgrade anytime and immediately get access to higher tier benefits. Downgrading is also easy - just let us know before your next billing cycle. Pro-rated refunds available when upgrading."
+      },
+      "freeTrial": {
+        "question": "Is there a free trial?",
+        "answer": "We don't offer free trials, but we have a 30-day money-back guarantee which is even better. This gives you a full month to experience the community, browse the library, and see if it's right for you - completely risk-free."
+      }
+    }
+  },
+  "finalCTA": {
+    "title": "Ready to Build Your Next Product?",
+    "subtitle": "Join 500+ builders who are shipping faster, growing smarter, and winning with AI & SEO. Get started today with our 30-day money-back guarantee.",
+    "button": "Claim Your Spot Now",
+    "trustRiskFree": "Risk-free for 30 days",
+    "trustInstant": "Instant access"
+  },
+  "products": {
+    "title": "Our Products",
+    "subtitle": "Powerful tools and resources built by Next Level Builders to accelerate your journey.",
+    "visitSite": "Visit Site",
+    "claudekit": {
+      "description": "Premium skills and workflows for Claude Code. Ship faster with battle-tested automation patterns."
+    },
+    "uiuxpromax": {
+      "description": "AI-powered UI/UX design system. Create stunning interfaces with intelligent design tokens."
+    },
+    "agenticworking": {
+      "description": "Master the art of working with AI agents. Frameworks and methodologies for 10x productivity."
+    },
+    "200lab": {
+      "description": "Vietnam's leading tech education platform. Learn from industry experts and build real products."
+    },
+    "goclaw": {
+      "description": "Secure, scalable AI agent platform for enterprise. Deploy coordinated AI teams with multi-tenant isolation and 5-layer security."
+    },
+    "tose": {
+      "description": "Click. Deploy. Done! Ship to production in under 2 minutes with auto-scaling Kubernetes, SSL, and instant rollbacks."
+    }
+  },
+  "footer": {
+    "tagline": "Building the future, one product at a time.",
+    "discord": "Discord",
+    "twitter": "Twitter",
+    "github": "GitHub",
+    "policies": "Policies",
+    "copyright": "© {year} Next Level Builders. All rights reserved."
+  },
+  "policies": {
+    "title": "Policies & Guidelines",
+    "subtitle": "All policies and guidelines of the Next Level Builders community",
+    "backToOverview": "Back to overview",
+    "nav": {
+      "overview": "Overview",
+      "ship-policy": "SHIP Policy",
+      "contributor-policy": "Contributor Policy",
+      "membership-tiers": "Membership Tiers",
+      "onboarding": "Onboarding Process",
+      "violations": "Violation Policy"
+    },
+    "overview": {
+      "title": "NLB Community Guidelines Overview",
+      "sections": [
+        {
+          "heading": "Vision & Mission",
+          "content": "NextLevelBuilder (NLB) is a community of hands-on Builders — where every member actively SHIPs (publishes products, content, and value to the world) or CONTRIBUTEs (builds the community).\n\n\"No Ship, No Seat\" — If you don't ship, you don't have a seat in the community."
+        },
+        {
+          "heading": "Two Paths to Join",
+          "content": "• SHIP: Commit to 4 public posts/month, share in Discord #ship — for those who want to Build in Public\n• CONTRIBUTE: 45-day trial period, weekly reports — for those who want to contribute technically or to the community"
+        },
+        {
+          "heading": "Two Membership Types",
+          "content": "• Premium: Full standard benefits — Discord, content drops, resources, community support\n• VIP: Premium + priority slots, early access, priority Discord DM with Mentor, direct Mentor access"
+        },
+        {
+          "heading": "Ranking System",
+          "content": "Rank is based on contributions, independent from membership type:\n• Apprentice: New members (0–45 days)\n• Builder: ≥8 SHIPs + 80% feedback\n• Architect: ≥20 SHIPs + 90% feedback + highlighted post\n• Master: ≥50 SHIPs + Featured/Contributor\n• Legend: ≥100 SHIPs + Mentor nomination"
+        },
+        {
+          "heading": "Required Commitments",
+          "content": "• Complete personal information (verified by admin)\n• Submit Feedback Weekly every week\n• Read and agree to all community guidelines\n• SHIP 4 posts/month OR be approved as a Contributor"
+        },
+        {
+          "heading": "Ranking Points (RP)",
+          "content": "• SHIP a post: +10 RP\n• SHIP gets highlighted: +25 RP\n• Feedback weekly: +5 RP\n• Active in Discord (week): +3 RP\n• Help a member: +8 RP\n• Featured contributor: +50 RP\n• Contributor work/week: +15 RP"
+        }
+      ]
+    },
+    "ship-policy": {
+      "title": "SHIP Policy — Build in Public",
+      "sections": [
+        {
+          "heading": "What is SHIP?",
+          "content": "SHIP means publishing anything you're building, learning, or sharing to the public — articles, products, ideas, experiences...\n\n\"Ship early, ship often, ship with intention.\""
+        },
+        {
+          "heading": "Minimum SHIP Commitment",
+          "content": "• Quantity: At least 4 times/month (avg. once/week), not all at the end of the month\n• Format: Public posts with links (blog, social media, website...)\n• Report: Share the link in the #ship Discord channel\n• Purpose: So the community can support, engage, and give feedback"
+        },
+        {
+          "heading": "What Counts as a SHIP",
+          "content": "Accepted:\n• Personal profile: Introducing yourself, LinkedIn updates, portfolio\n• Product: MVP, beta, new feature, demo\n• Expert knowledge: Tutorial, guides, tips & tricks\n• Work experience: Lessons learned, behind the scenes\n• Ideas: Concept, wireframe, validation\n\nNot accepted:\n• Simple reposts/shares without original content\n• Private posts without a public link\n• Comments on others' posts"
+        },
+        {
+          "heading": "Weekly SHIP Process",
+          "content": "1. Create content (article, video, product...)\n2. Post it PUBLIC (blog, social, website...)\n3. Copy the post link\n4. Share it in the #ship Discord channel\n5. Community comes in to support and engage"
+        },
+        {
+          "heading": "Monthly Evaluation",
+          "content": "• 0–1 posts: Not met — Warning\n• 2–3 posts: Below expectation — Reminder\n• 4+ posts: Meets requirement\n• 8+ posts: Outstanding\n• 12+ posts: Top Shipper"
+        },
+        {
+          "heading": "Community Support",
+          "content": "When you SHIP in #ship, other members will like/react, leave constructive feedback, share if the content is good, and connect if there's synergy.\n\nNLB Culture: \"Support first, critique second\""
+        }
+      ]
+    },
+    "contributor-policy": {
+      "title": "Contributor Policy",
+      "sections": [
+        {
+          "heading": "What is a Contributor?",
+          "content": "A Contributor is an NLB member who helps build the community instead of shipping personal content weekly. This is an alternative path for those who don't want or can't Build in Public but still want to contribute value."
+        },
+        {
+          "heading": "Types of Contributors",
+          "content": "• Technical Support: Answer technical questions on Discord, help with debugging, review code, share resources\n• Developer: Fix bugs, implement features, update docs, code review — requires assessment by 3 Mentors; commit 4–8 hours/week\n• Other: Content, Community, QA/Testing, Design, Research — propose your own contribution format"
+        },
+        {
+          "heading": "Application Process",
+          "content": "1. Be a paid NLB member\n2. Submit Contributor Application Form\n3. Mentor review (Developer: thorough assessment, 3–7 days)\n4. If approved: Begin 45-day trial period\n5. Choose how to contribute + submit weekly reports\n6. Mentors conduct overall review\n7. Result: CONFIRM, EXTEND, or REMOVE + Refund"
+        },
+        {
+          "heading": "45-Day Trial Period",
+          "content": "• Choose tasks/contributions that match your skills\n• Submit work report EVERY WEEK (mandatory)\n• Still required to submit Feedback Weekly form\n• SHIP 4 posts/month requirement is waived during this period"
+        },
+        {
+          "heading": "Confirmed Contributor Benefits",
+          "content": "• Contributor badge on Discord\n• SHIP requirement waived\n• +15 RP/week of work\n• Early access to NLB products\n• Connect with Mentors and Partners\n• Reference letter from NLB when needed\n• Revenue share from contributed projects (case by case)"
+        },
+        {
+          "heading": "Strategic Partner Privileges",
+          "content": "For outstanding individuals who are both active Contributors and consistent Shippers:\n• Priority to distribute AgentBrain.sh and GoClaw.sh with profit sharing\n• Support for packaging your own product based on NLB platforms\n• Join strategic meetings with Founders (Co-founder Level Access)"
+        }
+      ]
+    },
+    "membership-tiers": {
+      "title": "Membership Types & Ranks",
+      "sections": [
+        {
+          "heading": "Two Independent Systems",
+          "content": "NLB has 2 independent classification systems:\n• Membership Type: Based on subscription plan — Premium or VIP\n• Member Rank: Based on contributions and activity — Apprentice to Legend"
+        },
+        {
+          "heading": "Premium Member",
+          "content": "For Builders who want to learn, connect, and SHIP in a professional environment.\n\nBenefits:\n• Discord Access: All Premium channels\n• Weekly Drops: Full access to weekly content drops in the library\n• Resources: Templates, tools, guides\n• Community: Network with 30+ builders\n• Async Q&A: Priority answers from Mentors in Discord\n• Product Access: Access to NLB products"
+        },
+        {
+          "heading": "VIP Member",
+          "content": "For serious Builders who want to accelerate and have the opportunity to become a Partner.\n\nBenefits = Premium + Priority:\n• Early Access: First access to all new products\n• Early Bird Slots: Priority pricing on new programs\n• Partner Priority: Priority review to become Strategic Partner\n• Priority Mentor DM: Direct Discord DM with Mentor (priority queue)\n• Direct Access: Chat directly with Mentors\n• Co-launch: Opportunity for editorial collaboration on product launches based on community relevance"
+        },
+        {
+          "heading": "5-Tier Ranking System",
+          "content": "• Apprentice (Gray): Auto-assigned when joining (0–45 days)\n• Builder (Green): >45 days, ≥8 SHIPs, ≥80% feedback, ≥4 weekly check-ins\n• Architect (Blue): >90 days, ≥20 SHIPs, ≥90% feedback, helped ≥5 members, ≥2 highlighted posts\n• Master (Purple): >6 months, ≥50 SHIPs, ≥95% feedback, Featured/Contributor\n• Legend (Gold): >1 year, ≥100 SHIPs, nominated by ≥2 Mentors — max 5% of members"
+        },
+        {
+          "heading": "Ranking Points System",
+          "content": "• SHIP a post: +10 RP\n• SHIP gets highlighted: +25 RP\n• Feedback weekly: +5 RP/week\n• Active in Discord (week): +3 RP/week\n• Help member (verified): +8 RP/time\n• Featured contributor: +50 RP/instance\n• Contributor work: +15 RP/week\n• Product launch: +100 RP\n\nRank thresholds: Builder 100 RP | Architect 300 RP | Master 800 RP | Legend 2000 RP + Nomination"
+        },
+        {
+          "heading": "Upgrade & Downgrade",
+          "content": "• Type upgrade (Premium → VIP): Any time, pay the difference, effective immediately\n• Ranking: Auto-calculated based on Ranking Points, updated on the 1st of each month\n• No downgrade from achieved ranks (only freeze if inactive)\n• Legend requires annual re-nomination"
+        }
+      ]
+    },
+    "onboarding": {
+      "title": "New Member Review Process",
+      "sections": [
+        {
+          "heading": "Process Overview (7–14 days)",
+          "content": "1. Pay membership fee\n2. Submit Member Information Form\n3. Admin Review & Verify (2–3 days)\n4. Submit Commitment Form\n5. Receive Discord Access + Onboarding\n\nNote: If you don't pass the review, you will receive a 100% refund."
+        },
+        {
+          "heading": "Review Criteria",
+          "content": "Admin evaluates based on:\n• Complete information (20%): All required fields filled\n• Verified profile (20%): Verifiable links\n• Clear goals (25%): Knows what they want to build\n• Suitable skills (20%): Has a foundation to build\n• Right motivation (15%): Wants to SHIP and learn — not just lurk"
+        },
+        {
+          "heading": "Required Commitments",
+          "content": "• SHIP at least 4 posts/month as public posts, share in #ship\n• Submit Feedback Weekly form EVERY WEEK with substantive content\n• Active Discord participation: at least 2 weekly check-ins/month\n• Follow NLB's Code of Conduct\n• If you don't want to SHIP, apply as a Contributor (requires approval)"
+        },
+        {
+          "heading": "Post-Approval Checklist",
+          "content": "• Day 1: Read SHIP guidelines, update Discord profile\n• Day 2: Introduce yourself in #introductions\n• Day 3: Watch the Onboarding Video\n• Day 7: Watch Onboarding Video Pt.2 + complete Onboarding Checklist in Discord\n• Week 2: SHIP your first post\n• Week 2: Submit first Feedback Weekly"
+        },
+        {
+          "heading": "Re-application",
+          "content": "Requirements: Previously removed due to violations + waited at least 45 days\n\nProcess:\n1. Submit updated Member Information Form\n2. Explain why you want to return\n3. Specific commitments about what you'll do differently\n4. Admin review (stricter than first time)\n5. If approved: Go through the normal process"
+        }
+      ]
+    },
+    "violations": {
+      "title": "Violation Policy",
+      "sections": [
+        {
+          "heading": "General Principles",
+          "content": "NLB follows a \"Fair but Firm\" policy — fair to all members, but serious about commitments.\n\n\"We don't want to remove anyone. We want everyone to SHIP.\""
+        },
+        {
+          "heading": "Types of Violations",
+          "content": "SHIP violations:\n• Minor: 2–3 posts/month\n• Moderate: 1 post/month\n• Severe: No posts at all\n• Critical: No posts for 2 consecutive months\n\nFeedback violations:\n• Minor: Miss 1–2 weeks/month\n• Severe: No submissions for the whole month or fake submissions (\".\", \"ok\", spam)\n\nCode of Conduct violations:\n• Spam, off-topic, disrespectful behavior\n• Causing conflict, toxic behavior\n• Harassment, discrimination"
+        },
+        {
+          "heading": "Automated Enforcement Process",
+          "content": "The system automatically tracks SHIP count, feedback submissions, and consolidates every 45 days.\n\nAt review time:\n• Pass: Sufficient SHIP + Feedback + Discord activity → Membership continues\n• Fail: Auto-revoke Discord access, revoke credentials, send notification email, process 100% Refund, add to 45-day waiting list"
+        },
+        {
+          "heading": "Fast Track (Immediate Action)",
+          "content": "Some violations are handled immediately without warning:\n• Harassing other members → Immediate termination\n• Spam, advertising, scam → Terminate + Permanent ban\n• Violating laws → Terminate + Report if needed\n• Fake identity → Terminate + Permanent ban\n• Leaking internal information → Terminate + Legal review"
+        },
+        {
+          "heading": "Refund Policy",
+          "content": "100% Refund when:\n• Terminated due to commitment violations\n• Voluntarily leaving within the first 45 days\n• NLB ceases operations\n\nPro-rata refund: Voluntarily leaving after 45 days (based on remaining time)\n\nNo refund: Permanently banned due to serious violations, or membership period has ended"
+        },
+        {
+          "heading": "Right to Appeal",
+          "content": "If you believe the decision was unfair:\n1. Reply to the termination email with your appeal reason\n2. Admin reviews within 7 days\n3. If unsatisfied, escalate to Co-founders\n4. Final decision within 14 days\n\nRequired: Specific reason for appeal, evidence (if any), proposed resolution"
+        }
+      ]
+    }
+  },
+  "tc": {
+    "title": "Community Terms & Guidelines",
+    "scrollHint": "Please read to the end to continue",
+    "proceed": "Agree & Proceed to Checkout",
+    "sections": [
+      {
+        "heading": "SHIP Policy — Build in Public",
+        "summary": "Members commit to SHIP at least 4 public posts/month or register as a Contributor. SHIP posts are shared in the #ship Discord channel. The community will support, engage, and provide feedback.",
+        "link": "/policies/ship-policy",
+        "policyKey": "ship-policy"
+      },
+      {
+        "heading": "Membership Types & Ranking",
+        "summary": "Two independent systems: Membership Type (Premium/VIP by subscription) and Rank (Apprentice → Legend by contribution). Ranking based on Ranking Points accumulated through SHIPs, feedback, and Discord activity.",
+        "link": "/policies/membership-tiers",
+        "policyKey": "membership-tiers"
+      },
+      {
+        "heading": "Onboarding Process",
+        "summary": "After payment: Fill in Member Info Form → Admin review (2-3 days) → Submit Commitment Form → Receive Discord access + Onboarding. If review not passed, 100% refund.",
+        "link": "/policies/onboarding",
+        "policyKey": "onboarding"
+      },
+      {
+        "heading": "Violations & Refund Policy",
+        "summary": "System automatically tracks every 45 days. Not meeting SHIP/Feedback requirements → Auto-revoke access + 100% refund. Serious violations (harassment, spam, fraud) → Immediate action.",
+        "link": "/policies/violations",
+        "policyKey": "violations"
+      }
+    ],
+    "readFull": "Read full policy",
+    "agreement": "By proceeding to checkout, you confirm that you have read, understood, and agree to comply with all the terms and guidelines above of the Next Level Builders community."
+  },
+  "auth": {
+    "badge": "Passwordless & Secure Authentication",
+    "signInTitle": "Builder Sign In",
+    "otpTitle": "Verify OTP Code",
+    "signInDesc": "Sign in password-free using a secure Email OTP code or your GitHub/Google account",
+    "otpDesc": "Enter the 6-digit code sent to your email: {email}",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "builder@nextlevelbuilder.io",
+    "sendOtpBtn": "Send Verification OTP",
+    "sendingOtp": "Sending code...",
+    "otpLabel": "6-Digit Verification Code",
+    "verifyOtpBtn": "Verify & Sign In",
+    "verifying": "Verifying...",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend code",
+    "orSocial": "Or sign in quickly with",
+    "invalidEmail": "Please enter a valid email address.",
+    "sendFailed": "Failed to send OTP code. Please try again.",
+    "otpSentSuccess": "A 6-digit verification code has been sent to {email}. Please check your inbox.",
+    "invalidOtp": "Please enter all 6 digits of the OTP code.",
+    "verifyFailed": "OTP code is invalid or has expired.",
+    "loginSuccess": "Sign in successful! Redirecting...",
+    "oauthNotConfigured": "{provider} OAuth is not yet configured. Please sign in via Email OTP."
+  },
+  "profile": {
+    "loginRequiredTitle": "Sign In Required",
+    "loginRequiredDesc": "Please sign in to view your Builder account details and manage your products.",
+    "loginRequiredBtn": "Sign In Now",
+    "verified": "Verified",
+    "builderSince": "Builder since",
+    "publicProfileBtn": "Public Profile",
+    "manageSlotsBtn": "Manage Slots",
+    "signingOut": "Signing out...",
+    "signOut": "Sign Out",
+    "creativeWorkspaceBadge": "Creative Workspace",
+    "studioLaunchpadTitle": "Next Level Builder Studio",
+    "studioLaunchpadDesc": "Visual document editor (18 block types) with smooth drag & drop, direct Cloudflare R2 uploads, and sandbox preview before publishing.",
+    "studioLaunchpadBtn": "Open Builder Studio",
+    "orgsTitle": "Your Organizations & Teams",
+    "noOrgs": "You have not joined any organization yet. Default products will be assigned to nlb-official.",
+    "productsTitle": "Products & Registrations",
+    "noProducts": "No products created under your account yet.",
+    "addProductBtn": "Add Product",
+    "publicPage": "Public Page",
+    "preview": "Preview",
+    "apiKeysTitle": "API Keys & Developer Tokens",
+    "apiKeysDesc": "Generate and manage secure API keys to authenticate with @nextlevelbuilder/cli, MCP servers in Cursor/Claude Desktop, or automate listing submissions via REST API.",
+    "createKeyBtn": "Create New API Key",
+    "keyNameLabel": "Key Description / Name",
+    "keyNamePlaceholder": "e.g. Cursor MCP Server or CI Deployment",
+    "expiresLabel": "Expiration",
+    "expiresNever": "Never (Recommended for MCP)",
+    "expires30": "30 Days",
+    "expires90": "90 Days",
+    "expires365": "1 Year",
+    "generateBtn": "Generate Key",
+    "generating": "Generating...",
+    "newKeyAlertTitle": "Your New Secret API Key",
+    "newKeyAlertDesc": "Copy this key now. For security reasons, it will not be displayed again.",
+    "copyKeyBtn": "Copy Key",
+    "keyCopied": "Copied!",
+    "noKeys": "No API keys created yet. Generate one to authenticate CLI and MCP tools.",
+    "keyColumnName": "Key Name",
+    "keyColumnPrefix": "Prefix",
+    "keyColumnCreated": "Created",
+    "keyColumnStatus": "Status",
+    "keyColumnAction": "Action",
+    "revokeKeyBtn": "Revoke",
+    "revoking": "Revoking...",
+    "revokedSuccess": "API key revoked successfully.",
+    "integrationGuideTitle": "Developer Integration Quick Start",
+    "cliGuide": "CLI Command",
+    "mcpGuide": "Cursor / Claude Desktop MCP Server"
+  },
+  "account": {
+    "loginRequiredTitle": "Sign In Required",
+    "loginRequiredDesc": "Please sign in to access your Account Dashboard and manage your product submission slots.",
+    "loginRequiredBtn": "Sign In Now",
+    "title": "Submission Slots & Quota Management",
+    "description": "Each slot allows you to submit one product to the Next Level Builders directory review queue.",
+    "availableSlots": "Available Slots",
+    "readyToUse": "Ready to Use",
+    "availableSlotsDesc": "Can be used immediately to create a new product in Studio",
+    "usedSlots": "Used / Live Slots",
+    "active": "Active",
+    "usedSlotsDesc": "Products published or awaiting moderation review",
+    "totalSlots": "Total Acquired Slots",
+    "totalSlotsDesc": "Includes slots purchased via Polar and complimentary starter slots",
+    "slotAvailableAlert": "You have {count} available slot(s)! Open Studio to compose and publish your product.",
+    "openStudioBtn": "Open Studio & Use Slot",
+    "buySlotBtn": "Buy Submission Slot ($24.50 • Early Bird)",
+    "redirectingPolar": "Redirecting to Polar...",
+    "productsTitle": "Products & Drafts",
+    "noProducts": "No products created under your account yet.",
+    "createProductBtn": "Create New Product",
+    "ordersTitle": "Submission Slot Purchase History",
+    "noOrders": "No slot orders placed via Polar yet. Current slots include complimentary starter quota.",
+    "servicePackage": "Package",
+    "polarOrderId": "Polar Order ID",
+    "amount": "Amount",
+    "date": "Date",
+    "status": "Status"
+  },
+  "builders": {
+    "platformLead": "Core Platform Lead",
+    "verifiedBuilder": "Verified Builder",
+    "verifiedPassport": "Verified Passport",
+    "builderSince": "Builder since {year}",
+    "publishedTools": "Published Tools",
+    "publishedToolsDesc": "Verified products listed on NLB directory",
+    "avgTrustScore": "Avg Trust Score",
+    "avgTrustScoreDesc": "Cumulative human review & metric rating",
+    "communityStanding": "Community Standing",
+    "communityStandingDesc": "Authentic developer & product creator",
+    "communityVerified": "Verified",
+    "publishedProducts": "Published Products",
+    "noProductsTitle": "No Published Products Yet",
+    "noProductsDesc": "This builder has not yet published an approved listing on Next Level Builders.",
+    "viewListing": "View Product Listing",
+    "website": "Website",
+    "shareProfile": "Share Profile",
+    "linkCopied": "Link Copied!"
+  },
+  "preview": {
+    "backToStudio": "Back to Builder Studio",
+    "viewLivePage": "View Live Public Page",
+    "sandboxPreview": "Studio Sandbox Preview",
+    "revision": "Revision",
+    "hash": "Hash",
+    "status": "Status",
+    "draftMode": "Draft Mode",
+    "publishBtn": "Publish / Submit for Review",
+    "submitting": "Submitting...",
+    "listingLive": "Listing is Live",
+    "submittedSuccess": "Product submitted successfully for review!"
+  },
+  "buildWithUs": {
+    "heroBadge": "High-Trust Builder Catalog & Release Hub",
+    "heroTitle": "Build with Us",
+    "heroDesc": "Discover human-verified software launches, transparent organic leaderboards, and autonomous agent toolkits from the Next Level Builders community.",
+    "searchPlaceholder": "Search verified tools, agents & frameworks...",
+    "sort": "Sort:",
+    "highestTrust": "Highest Trust Score",
+    "mostUpvoted": "Most Upvoted",
+    "newestLaunches": "Newest Launches",
+    "all": "All",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "noProductsTitle": "No matching verified products found",
+    "noProductsDesc": "Try adjusting your search keywords or filter category.",
+    "rank": "Rank",
+    "votes": "Votes",
+    "viewDetails": "View Details",
+    "visitWebsite": "Website",
+    "sidebarTitle": "Launch on Build with Us",
+    "sidebarDesc": "Publish your autonomous agents, micro-SaaS, or developer tooling to reach active builders and early adopters.",
+    "submitBtn": "Submit Your Product",
+    "instructionsBtn": "View Submission Guide",
+    "trustGuarantee": "Human-Reviewed • Zero Pay-to-Rank • Cloudflare Edge"
+  },
+  "leaderboards": {
+    "badge": "Transparent Organic Rankings",
+    "title": "Community Leaderboards",
+    "desc": "Rankings computed solely from unique, verified community member votes in 24-hour UTC windows. No pay-to-rank.",
+    "date": "Date:",
+    "ruleset": "Ruleset:",
+    "auditHash": "Audit Hash:",
+    "noRankingsTitle": "No ranking entries yet for today",
+    "noRankingsDesc": "Votes cast today will automatically finalize in the next snapshot window.",
+    "rank": "Rank",
+    "viewProduct": "View Product"
+  },
+  "productDetail": {
+    "verifiedLaunch": "Verified Launch",
+    "visitWebsite": "Visit Website",
+    "trustPassportScore": "Trust Passport Score",
+    "humanReviewedBy": "Human-reviewed by Next Level Builders Management Board.",
+    "contentHash": "Content Hash:"
+  }
+}

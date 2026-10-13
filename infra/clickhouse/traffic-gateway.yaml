@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nlb-traffic-gateway
+  namespace: clickhouse
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: nlb-traffic-gateway}
+  template:
+    metadata:
+      labels: {app: nlb-traffic-gateway}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: gateway
+          image: node:22-alpine
+          command: [node, /app/traffic-gateway.mjs]
+          ports: [{containerPort: 8080}]
+          env:
+            - name: CLICKHOUSE_UPSTREAM
+              value: http://clickhouse-clickhouse-ha.clickhouse.svc.cluster.local:8123/
+          envFrom:
+            - secretRef: {name: nlb-traffic-production}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 25m, memory: 48Mi}
+            limits: {cpu: 250m, memory: 128Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          livenessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          volumeMounts:
+            - {name: code, mountPath: /app, readOnly: true}
+      volumes:
+        - name: code
+          configMap: {name: nlb-traffic-gateway-code}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nlb-traffic-gateway
+  namespace: clickhouse
+spec:
+  selector: {app: nlb-traffic-gateway}
+  ports: [{port: 8080, targetPort: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nlb-traffic-gateway
+  namespace: clickhouse
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 8k
+    nginx.ingress.kubernetes.io/limit-rps: "30"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [traffic-storage.nextlevelbuilder.io]
+      secretName: nlb-traffic-gateway-tls
+  rules:
+    - host: traffic-storage.nextlevelbuilder.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nlb-traffic-gateway
+                port: {number: 8080}

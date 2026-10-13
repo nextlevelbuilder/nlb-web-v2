@@ -1,0 +1,240 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 100%;
+    --radius: 0.5rem;
+
+    /* Dark mode design system colors */
+    --bg-primary: 222 47% 11%;
+    --bg-surface: 222 30% 15%;
+    --bg-elevated: 222 24% 20%;
+
+    --text-primary: 0 0% 100%;
+    --text-secondary: 217 16% 67%;
+    --text-muted: 217 9% 45%;
+
+    --accent-primary: 199 89% 48%;
+    --accent-hover: 188 86% 53%;
+    --accent-pressed: 201 84% 38%;
+
+    --success: 158 64% 52%;
+    --warning: 38 92% 50%;
+    --error: 4 90% 58%;
+    --info: 217 91% 60%;
+
+    --border-subtle: 222 19% 20%;
+    --border-emphasis: 217 15% 28%;
+
+    /* Premium gradient stops */
+    --gradient-start: 222 47% 11%;
+    --gradient-mid: 222 35% 13%;
+    --gradient-end: 222 30% 15%;
+
+    /* Subtle accent variations */
+    --accent-muted: 199 70% 40%;
+    --accent-subtle: 199 50% 30%;
+
+    /* Premium border */
+    --border-premium: 217 15% 25%;
+
+    /* Glow colors */
+    --glow-primary: 199 89% 48%;
+    --glow-success: 158 64% 52%;
+
+    --card: 222 30% 15%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222 30% 15%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 24% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 222 24% 20%;
+    --muted-foreground: 217 16% 67%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 19% 20%;
+    --input: 222 19% 20%;
+    --ring: 199 89% 48%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 100%;
+    --card: 222 30% 15%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222 30% 15%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 24% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 222 24% 20%;
+    --muted-foreground: 217 16% 67%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 19% 20%;
+    --input: 222 19% 20%;
+    --ring: 199 89% 48%;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Glass morphism utilities */
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .glass-strong {
+    @apply bg-white/10 backdrop-blur-xl border border-white/15;
+  }
+
+  /* Subtle gradient backgrounds */
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
+  }
+
+  .bg-gradient-radial-top {
+    background: radial-gradient(ellipse at top, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
+  }
+
+  /* Premium text gradient */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-cyan-400 to-primary;
+  }
+
+  /* Refined focus states */
+  .focus-premium:focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Responsive display text overrides */
+  @media (max-width: 639px) {
+    .text-display-xl {
+      font-size: 36px;
+      line-height: 1.15;
+    }
+    .text-display-2xl {
+      font-size: 40px;
+      line-height: 1.15;
+    }
+  }
+}
+
+@layer components {
+  /* Premium heading styles */
+  .heading-display {
+    @apply font-heading font-bold tracking-tight;
+  }
+
+  .heading-section {
+    @apply font-heading font-semibold tracking-tight;
+  }
+
+  /* Premium body text */
+  .body-relaxed {
+    @apply font-sans text-muted-foreground leading-relaxed;
+  }
+
+  /* Premium card base */
+  .card-premium {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl;
+    @apply hover:border-primary/30 hover:shadow-premium transition-all duration-350;
+  }
+
+  /* Premium button base */
+  .btn-premium {
+    @apply relative overflow-hidden font-semibold;
+    @apply transition-all duration-250 ease-premium;
+    @apply hover:shadow-glow-primary hover:-translate-y-0.5;
+    @apply active:translate-y-0 active:shadow-none;
+  }
+
+  /* Inner highlight for premium button */
+  .btn-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .btn-premium:hover::before {
+    opacity: 1;
+  }
+
+  /* Shimmer effect for CTAs */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+  }
+}
