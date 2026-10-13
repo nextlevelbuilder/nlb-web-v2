@@ -41,7 +41,7 @@ describe("page copy modules", () => {
     expect(directoryCopy.en.votes(1200)).toBe("1,200 votes");
     expect(directoryCopy.vi.votes(3)).toBe("3 lượt bình chọn");
     expect(buildWithUsCopy.en.publishedCount(1)).toBe("1 published product");
-    expect(buildWithUsCopy.en.voteFor("Tool", 2)).toBe("Upvote Tool (2 votes)");
+    expect(buildWithUsCopy.en.voteFor("Tool", 2)).toBe("2 votes, upvote Tool");
   });
 
   it("keeps the same category filters in both locales", () => {

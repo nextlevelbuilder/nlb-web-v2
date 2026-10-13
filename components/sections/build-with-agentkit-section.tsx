@@ -91,7 +91,6 @@ export default function BuildWithAgentKitSection({ launchedProducts }: { launche
                 <li key={product.slug}>
                   <Link
                     href={`/products/${product.slug}`}
-                    aria-label={t('viewProduct', { name: product.title })}
                     className="surface-panel flex h-full items-start gap-4 p-5 transition-colors duration-base hover:border-line-strong"
                   >
                     <Mark src={product.logoUrl} name={product.title} />

@@ -10,6 +10,7 @@ export type BuildWithUsCopy = {
   editorsPickTitle: string;
   trust: string;
   launched: string;
+  /** Starts with the visible count so the accessible name contains the visible label (WCAG 2.5.3). */
   voteFor: (name: string, votes: number) => string;
   opensInNewTab: string;
   howToSubmitTitle: string;
@@ -35,7 +36,7 @@ export const buildWithUsCopy: Record<PageLocale, BuildWithUsCopy> = {
     editorsPickTitle: "Editorially curated based on product quality and community relevance",
     trust: "Trust",
     launched: "Launched",
-    voteFor: (name, votes) => `Upvote ${name} (${votes} ${votes === 1 ? "vote" : "votes"})`,
+    voteFor: (name, votes) => `${votes} ${votes === 1 ? "vote" : "votes"}, upvote ${name}`,
     opensInNewTab: "(opens in a new tab)",
     howToSubmitTitle: "How to submit",
     howToSubmitSubtitle: "Web, CLI or AI agents",
@@ -59,7 +60,7 @@ export const buildWithUsCopy: Record<PageLocale, BuildWithUsCopy> = {
     editorsPickTitle: "Được biên tập viên chọn dựa trên chất lượng sản phẩm và mức độ phù hợp với cộng đồng",
     trust: "Độ tin cậy",
     launched: "Ra mắt",
-    voteFor: (name, votes) => `Bình chọn cho ${name} (${votes} lượt)`,
+    voteFor: (name, votes) => `${votes} lượt bình chọn, bình chọn cho ${name}`,
     opensInNewTab: "(mở trong tab mới)",
     howToSubmitTitle: "Cách gửi sản phẩm",
     howToSubmitSubtitle: "Web, CLI hoặc AI agent",
