@@ -20,7 +20,7 @@ This file is the entry point for UI work. Token values, themes, i18n and content
 ## Motion
 
 - Tokens: `--d-1` 140 ms and `--d-2` 260 ms for UI feedback, `--d-3` 600 ms for section-level reveals; `--ease-quart` / `--ease-expo` for entering. Animate `transform` and `opacity` only.
-- Section reveals use `<Reveal>` (`components/home/reveal.tsx`), which is CSS scroll-driven behind `@supports (animation-timeline: view())` and `prefers-reduced-motion: no-preference`. Content is visible in the server HTML; never ship `opacity: 0` as an initial server state.
+- Section reveals use `<Reveal>` (`components/home/reveal.tsx`): content is visible in the server HTML, and only an element still below the fold after hydration is hidden until it intersects. Never ship `opacity: 0` as an initial server state, and avoid scroll-driven `animation-timeline` with a backwards fill: tall-viewport renderers such as Googlebot see the hidden state.
 - Framer Motion is for interactive state changes only and runs under `MotionConfig reducedMotion="user"`.
 
 ## Components

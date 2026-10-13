@@ -37,7 +37,7 @@ Rules:
   - `MotionConfig reducedMotion="user"` in the theme provider covers Framer Motion.
   - A `prefers-reduced-motion` block in `globals.css` covers CSS animations.
 - Content must stay fully visible and usable with zero animation. Never hide content behind an entrance animation that reduced-motion users never see.
-- Section reveals (`components/home/reveal.tsx`) are CSS scroll-driven animations behind `@supports (animation-timeline: view())`. The server HTML is fully visible, so crawlers, no-JS visitors and full-page captures never see a blank section.
+- Section reveals (`components/home/reveal.tsx`) keep the server HTML fully visible and hide only elements still below the fold after hydration, until they intersect. Crawlers, no-JS visitors and tall-viewport renderers never see a blank section.
 
 ## i18n
 

@@ -339,28 +339,23 @@
   }
 
   /*
-   * Scroll reveal as progressive enhancement: content is visible in the server HTML and without
-   * JavaScript. Only browsers with scroll-driven animations, and visitors who allow motion, see a
-   * short fade-up tied to the element entering the viewport (transform/opacity only).
+   * Scroll reveal as progressive enhancement (components/home/reveal.tsx). Server HTML is visible;
+   * only an element that is still below the fold after hydration is marked pending, then fades up
+   * when it enters the viewport. Reduced motion keeps the fade but drops the movement.
    */
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      .reveal {
-        animation: reveal-up linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 35%;
-      }
-    }
+  .reveal {
+    transition:
+      opacity var(--d-3) var(--ease-expo),
+      transform var(--d-3) var(--ease-expo);
   }
 
-  @keyframes reveal-up {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
+  .reveal[data-reveal='pending'] {
+    opacity: 0;
+    transform: translateY(24px);
+  }
 
-    to {
-      opacity: 1;
+  @media (prefers-reduced-motion: reduce) {
+    .reveal[data-reveal='pending'] {
       transform: none;
     }
   }
