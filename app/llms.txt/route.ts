@@ -1,13 +1,27 @@
 import { getAllPublishedProducts } from "@/lib/domain/catalog";
 import { markdownText } from "@/lib/markdown/product-markdown";
 import { siteUrl } from "@/lib/seo";
+import { listPostSummaries } from "@/lib/blog/blog-queries";
+import { blogPostPath } from "@/lib/blog/blog-slug-rules";
+
+/** Latest published blog posts in both locales; the blog is optional here, so failures only drop the section. */
+async function blogLines(baseUrl: string): Promise<string[]> {
+  try {
+    const posts = await listPostSummaries({ status: "published", limit: 50, offset: 0 });
+    if (!posts.length) return [];
+    return ["## Blog", ...posts.map((post) => `- [${markdownText(post.title)}](${baseUrl}${blogPostPath(post.locale, post.slug)}) (${post.locale})${post.description ? `: ${markdownText(post.description)}` : ""}`)];
+  } catch (error) {
+    console.error("llms.txt: blog posts unavailable", error instanceof Error ? error.message : error);
+    return [];
+  }
+}
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const baseUrl = siteUrl();
-    const products = await getAllPublishedProducts();
+    const [products, blog] = await Promise.all([getAllPublishedProducts(), blogLines(baseUrl)]);
     const body = [
       "# Next Level Builders",
       "> A builder community and directory of human-reviewed software. Listings and rankings use published content and organic votes.",
@@ -21,6 +35,7 @@ export async function GET() {
       "Vietnamese is unprefixed; English pages use /en. Append .md to any page URL (/.md for the home page). Private Markdown pages preserve sign-in and organization permissions and are never publicly cached.",
       "## Published products",
       ...products.map((product) => `- [${markdownText(product.title)}](${baseUrl}/products/${product.slug}.md): ${markdownText(product.tagline)} (Trust Score: ${product.trustScore}/100)`),
+      ...blog,
     ].join("\n\n");
     return new Response(body + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600, s-maxage=600" } });
   } catch {

@@ -1,6 +1,7 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { ProductDocumentSchema } from "@/packages/contracts/src/product";
 import { trafficPaths, trafficSchemas } from "@/lib/traffic/openapi";
+import { blogPaths, blogSchemas } from "@/lib/blog/blog-openapi";
 
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
@@ -33,6 +34,7 @@ export const openApiSpec = {
     ],
     paths: {
       ...trafficPaths,
+      ...blogPaths,
       "/api/v1/products/{slug}/pulse": {
         get: {
           summary: "Read product website health history",
@@ -336,6 +338,7 @@ export const openApiSpec = {
       },
       schemas: {
         ...trafficSchemas,
+        ...blogSchemas,
         PulseSummary: {
           type: "object",
           properties: {
