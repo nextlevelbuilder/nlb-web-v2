@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, type AppDb } from "@/lib/db";
 import { customers, subscriptions, orders, webhookEvents } from "@/lib/db/schema";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
 import { sendWelcomeEmail } from "@/lib/resend";
 import { sendForm01Email } from "@/lib/email-form01";
 import { sendDiscordSalesNotification } from "@/lib/discord";
@@ -507,7 +507,8 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
     .onConflictDoUpdate({
       target: orders.polarOrderId,
       set: {
-        status: orderStatus,
+        // Refunds are terminal: a late or retried paid/updated event must not resurrect a refunded order.
+        status: sql`case when ${orders.status} in ('refunded', 'partially_refunded') and excluded.status not in ('refunded', 'partially_refunded') then ${orders.status} else excluded.status end`,
         productSlug: productSlug || undefined,
         paidAt: isPaid ? new Date() : undefined,
       },

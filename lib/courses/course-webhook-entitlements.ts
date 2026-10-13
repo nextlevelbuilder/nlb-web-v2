@@ -46,8 +46,11 @@ async function resolveBuyerUserId(order: NonNullable<CourseOrderEvent["data"]>, 
 
 /**
  * Keep the `video:<id>` entitlement in step with a course video order:
- * a paid order grants it (idempotent on userId + featureKey); a fully refunded order deactivates it
- * and marks the stored order refunded so the paid-order fallback in canWatchVideo stops matching.
+ * a paid order grants it (idempotent on userId + featureKey, and re-activates a previously revoked
+ * row so a buyer who purchases again after a refund regains access); a fully refunded order
+ * deactivates it and marks the stored order refunded so the paid-order fallback in canWatchVideo
+ * stops matching. Partial refunds keep access. A late or retried paid event for an order that is
+ * already stored as refunded never grants access again.
  * No-op for orders that are not for a course video product.
  */
 export async function syncCourseVideoEntitlementFromOrder(event: CourseOrderEvent, db: AppDb): Promise<void> {
@@ -62,8 +65,13 @@ export async function syncCourseVideoEntitlementFromOrder(event: CourseOrderEven
     .limit(1);
   if (!video) return;
 
-  const refunded = event.type === "order.refunded" || order.status === "refunded";
-  const paid = !refunded && (order.status === "paid" || order.paid === true || event.type === "order.paid");
+  // Polar sends `order.refunded` for partial refunds too; only a full refund revokes access.
+  const refunded =
+    order.status === "refunded" || (event.type === "order.refunded" && order.status !== "partially_refunded");
+  const paid =
+    !refunded &&
+    order.status !== "partially_refunded" &&
+    (order.status === "paid" || order.paid === true || event.type === "order.paid");
   if (!refunded && !paid) return;
 
   const userId = await resolveBuyerUserId(order, db);
@@ -82,6 +90,16 @@ export async function syncCourseVideoEntitlementFromOrder(event: CourseOrderEven
     return;
   }
 
+  if (order.id) {
+    // Webhooks can arrive late or be retried after a refund; a refunded order stays refunded.
+    const [stored] = await db
+      .select({ status: orders.status })
+      .from(orders)
+      .where(eq(orders.polarOrderId, order.id))
+      .limit(1);
+    if (stored?.status === "refunded") return;
+  }
+
   if (!userId) {
     // The paid order is stored by email; canWatchVideo still matches it once the buyer signs up.
     console.warn("Course video order paid by an email with no account yet:", { orderId: order.id, courseVideoId: video.id });
@@ -90,5 +108,8 @@ export async function syncCourseVideoEntitlementFromOrder(event: CourseOrderEven
   await db
     .insert(entitlements)
     .values({ userId, featureKey, isActive: true })
-    .onConflictDoNothing({ target: [entitlements.userId, entitlements.featureKey] });
+    .onConflictDoUpdate({
+      target: [entitlements.userId, entitlements.featureKey],
+      set: { isActive: true, validUntil: null },
+    });
 }
