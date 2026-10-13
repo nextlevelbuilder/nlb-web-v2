@@ -1,0 +1,2 @@
+# Full-page captures stay local (about 20 MB); key before/after crops and JSON reports are committed.
+*.png
