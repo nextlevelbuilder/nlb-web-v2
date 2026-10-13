@@ -1,0 +1,37 @@
+# Codebase map
+
+Where each concern lives. This page lists entry points only, not inventories. Run `ls` or search to see the current files.
+
+| Concern | Start here | Notes |
+|---|---|---|
+| Pages (localized) | `app/[locale]/` | One folder per route. `home-client.tsx` holds the homepage client sections. |
+| Root layout, fonts, theme | [`app/layout.tsx`](../app/layout.tsx), [`app/globals.css`](../app/globals.css) | See [design-guidelines.md](./design-guidelines.md) |
+| Locale routing | [`middleware.ts`](../middleware.ts), [`i18n/`](../i18n) | EN unprefixed, VI under `/vi` |
+| UI strings | [`messages/en.json`](../messages/en.json), [`messages/vi.json`](../messages/vi.json) | next-intl. Long-form copy lives in `content/` and `lib/*/…-copy.ts` |
+| Policies and legal pages | [`content/policies/`](../content/policies) | EN and VI in the same module. The route is `app/[locale]/policies/[slug]` |
+| Shared UI | `components/ui/` (shadcn/Radix primitives), `components/sections/`, `components/home/` | |
+| Public REST API | `app/api/v1/` | Contract: [`lib/openapi.ts`](../lib/openapi.ts) → `/api/openapi.json`, `/api-docs` |
+| Product document contract | [`packages/contracts/src/`](../packages/contracts/src) | Imported as `@/packages/contracts/...`. Shared shape with the toolkits repo. |
+| Caller auth (API key, session, MCP delegation) | [`lib/auth-api-key.ts`](../lib/auth-api-key.ts), [`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts) | |
+| Better Auth (sign-in, OAuth provider) | [`lib/auth.ts`](../lib/auth.ts), [`lib/mcp-oauth-config.ts`](../lib/mcp-oauth-config.ts), `app/api/auth/[...all]` | |
+| Database | [`lib/db/schema.ts`](../lib/db/schema.ts), [`lib/db/index.ts`](../lib/db/index.ts), `drizzle/migrations/` | |
+| Directory domain (catalog, moderation, trust, rankings, events, Pulse) | [`lib/domain/`](../lib/domain), [`lib/moderation/`](../lib/moderation) | |
+| Payments | [`lib/polar.ts`](../lib/polar.ts), [`app/api/checkout/route.ts`](../app/api/checkout/route.ts), [`app/api/webhooks/polar/route.ts`](../app/api/webhooks/polar/route.ts) | |
+| Homepage data (seats, countdown, activity) | [`lib/home/`](../lib/home), [`lib/constants/`](../lib/constants) | |
+| Blog | [`lib/blog/`](../lib/blog), `components/blog/`, `app/api/v1/blog/`, `app/[locale]/blog/` | [blog-and-agent-management.md](./blog-and-agent-management.md) |
+| Courses | [`lib/courses/`](../lib/courses), `components/courses/`, `app/api/courses/`, `app/[locale]/courses/` | [courses.md](./courses.md) |
+| Markdown twins and discovery | [`lib/markdown/`](../lib/markdown), `app/api/markdown/`, `app/llms.txt/`, `app/llms-full.txt/`, `app/sitemap.ts`, `app/robots.ts` | |
+| Media upload (R2) | [`lib/media/`](../lib/media), `app/api/v1/media/upload/` | |
+| Traffic analytics | [`lib/traffic/`](../lib/traffic), `app/api/traffic/`, `infra/clickhouse/` | Optional PostHog/ClickHouse backends |
+| Studio WebMCP widget | [`lib/webmcp/`](../lib/webmcp) | Vendor provenance in `lib/webmcp/vendor/README.md` |
+| Email, Discord | [`lib/resend.ts`](../lib/resend.ts), [`lib/discord.ts`](../lib/discord.ts) | |
+| Env schema | [`lib/env.ts`](../lib/env.ts), [`cloudflare-env.d.ts`](../cloudflare-env.d.ts) | |
+| Worker config | [`wrangler.jsonc`](../wrangler.jsonc), [`open-next.config.ts`](../open-next.config.ts), [`next.config.ts`](../next.config.ts) | |
+| CI/CD | [`.github/workflows/ci-deploy.yml`](../.github/workflows/ci-deploy.yml) | |
+| Ops scripts | [`scripts/provision-cloudflare.sh`](../scripts/provision-cloudflare.sh), `scripts/dns/`, `scripts/migrate/`, `scripts/setup-polar-products.ts`, `scripts/rename-polar-products.ts` | |
+| Tests | `tests/` (plus colocated `lib/**/*.test.ts`), [`tests/helpers/local-d1.ts`](../tests/helpers/local-d1.ts) | |
+
+## Related repositories
+
+- `nextlevelbuilder/nlb-directory-toolkits`: the `nlb` CLI, the MCP worker (`mcp.nextlevelbuilder.io`) and the contracts consumed by agents. The blog commands and tools are on branch `feat/blog-management`.
+- `mrgoonie/nextlevelbuilder-web` (local checkout `nlb-web`): the old site. Its `origin/main` is the reference for feature parity until cutover.

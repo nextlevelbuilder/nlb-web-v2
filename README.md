@@ -7,7 +7,7 @@ Next Level Builders is the platform for indie hackers, autonomous coding agents,
 - **Live Platform:** [nextlevelbuilder.io](https://nextlevelbuilder.io)
 - **Staging:** [staging.nextlevelbuilder.io](https://staging.nextlevelbuilder.io)
 - **API Documentation:** `/api-docs` (Interactive Scalar OpenAPI)
-- **Deployment Guide:** [`docs/deployment-guide.md`](./docs/deployment-guide.md)
+- **Documentation:** [`docs/README.md`](./docs/README.md) (deployment, architecture, cutover runbook)
 
 ---
 
@@ -28,30 +28,23 @@ Next Level Builders is the platform for indie hackers, autonomous coding agents,
 
 ## Quick Start
 
-### Prerequisites
-
-- Node.js 22+
-- npm
-
-### Local Setup
+Requires Node.js 22 and npm 10.
 
 ```bash
 git clone https://github.com/nextlevelbuilder/nlb-web-v2.git
 cd nlb-web-v2
 npm ci
-# Local secrets for the Worker runtime go in .dev.vars (gitignored); keys are typed in cloudflare-env.d.ts.
 npm run db:migrate:local   # apply D1 migrations to the local Miniflare database (.wrangler/state)
-npm run dev                # next dev with D1/KV/R2 bindings via initOpenNextCloudflareForDev
-npm run preview            # optional: full Worker build served by wrangler
+npm run dev                # http://localhost:3000 (EN) and /vi (VI)
 ```
 
-Visit `http://localhost:3000`.
+Local configuration (`.dev.vars`, `.env`), tests and the branch-to-environment flow: [`docs/getting-started.md`](./docs/getting-started.md). All project docs: [`docs/README.md`](./docs/README.md).
 
 ---
 
 ## Environment Variables
 
-Server configuration is validated in `lib/env.ts`. Non-secret vars live in `wrangler.jsonc`; secrets are Worker secrets (`scripts/provision-cloudflare.sh secrets <env>`) and `.dev.vars` locally.
+Server configuration is validated in `lib/env.ts`, and Worker env keys are typed in `cloudflare-env.d.ts` (`npm run cf-typegen`). Non-secret vars live in `wrangler.jsonc`. Secrets are Worker secrets (`scripts/provision-cloudflare.sh secrets <env>`) and `.dev.vars` locally.
 
 ---
 
@@ -91,7 +84,7 @@ Deployments are automated through GitHub Actions to **Cloudflare Workers**:
 - Pushes to `dev` deploy to **Staging** (`nextlevelbuilder-web-staging` / `staging.nextlevelbuilder.io`).
 - Merges to `main` deploy to **Production** (`nextlevelbuilder-web` / `nextlevelbuilder.io`).
 
-Provisioning, secrets, the Neon → D1 migration ([`scripts/migrate/README.md`](./scripts/migrate/README.md)) and domain cutover are in the deployment guide. For detailed operational runbooks, secrets configuration, database migrations, and rollback procedures, refer to [`docs/deployment-guide.md`](./docs/deployment-guide.md).
+Provisioning, secrets, D1 migrations and rollback: [`docs/deployment-guide.md`](./docs/deployment-guide.md). Neon → D1 data copy: [`docs/data-migration-neon-to-d1.md`](./docs/data-migration-neon-to-d1.md). Domain move: [`docs/cutover-runbook.md`](./docs/cutover-runbook.md).
 
 
 ---
@@ -130,11 +123,11 @@ HTTP MCP remote writes use the MCP operator's authorization token; an `nlb_live_
 
 ## Blog
 
-Posts are ordered lists of typed widget blocks (one catalogue in `lib/blog/blocks/registry.ts`, rendered by `components/blog`). They are managed through `/api/v1/blog/*` (admin API key, session or MCP delegation; optimistic `version`, revisions, `Idempotency-Key`), documented in `/api/openapi.json`, and by the `nlb blog` CLI commands and `blog_*` MCP tools in the toolkits repo. Public pages: `/blog`, `/blog/<slug>` (and `/vi/...`).
+Posts are ordered lists of typed widget blocks (one catalogue in `lib/blog/blocks/registry.ts`, rendered by `components/blog`). They are managed through `/api/v1/blog/*` (admin API key, session or MCP delegation; optimistic `version`, revisions, `Idempotency-Key`), documented in `/api/openapi.json`, and by the `nlb blog` CLI commands and `blog_*` MCP tools in the toolkits repo. Public pages: `/blog`, `/blog/<slug>` (and `/vi/...`). Details: [`docs/blog-and-agent-management.md`](./docs/blog-and-agent-management.md).
 
 ## Courses
 
-Each course video has one Polar product (created on publish) and plays through Cloudflare Stream signed URLs. Access: a `video:<id>` entitlement or paid order, or an active subscription on a plan in `COURSES_ACCESS_PLANS` (VIP by default). `POST /api/courses/videos/<slug>/token` returns 401/403/404/503 or a signed playback URL. Setup: [deployment guide](./docs/deployment-guide.md#courses-cloudflare-stream).
+Each course video has one Polar product (created on publish) and plays through Cloudflare Stream signed URLs. Access: a `video:<id>` entitlement or paid order, or an active subscription on a plan in `COURSES_ACCESS_PLANS` (VIP by default). `POST /api/courses/videos/<slug>/token` returns a signed playback URL or an error status (documented in the route's header comment). Setup and decisions: [`docs/courses.md`](./docs/courses.md).
 
 ---
 
