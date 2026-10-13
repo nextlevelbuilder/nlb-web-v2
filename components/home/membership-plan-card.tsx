@@ -2,29 +2,28 @@
 
 import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import CheckoutButton, { CheckoutError, planName } from '@/components/home/checkout-button';
 import { MEMBERSHIP_PRICES, type BillingCycle, type MembershipPlan } from '@/lib/constants/launch';
 import type { PlanSeats } from '@/lib/home/membership-seats';
 import { cn } from '@/lib/utils';
+import CheckoutButton, { planName } from './checkout-button';
+import PlanSeatStatus from './plan-seat-status';
 
-interface PricingCardProps {
+interface MembershipPlanCardProps {
   plan: MembershipPlan;
   billing: BillingCycle;
   who: string;
   features: string[];
-  /** null when seat counts are unavailable: the meter is hidden instead of guessed. */
+  /** null when seat counts are unavailable: seat status is hidden instead of guessed. */
   seats: PlanSeats | null;
   highlighted?: boolean;
-  hintId?: string;
 }
 
-/** Membership plan card: price for the selected cycle, real seat availability and a direct checkout button. */
-export default function PricingCard({ plan, billing, who, features, seats, highlighted = false, hintId }: PricingCardProps) {
+/** Membership plan card: price for the selected cycle, real seat availability and the pre-checkout CTA. */
+export default function MembershipPlanCard({ plan, billing, who, features, seats, highlighted = false }: MembershipPlanCardProps) {
   const t = useTranslations('home.pricing');
   const prices = MEMBERSHIP_PRICES[plan];
   const price = prices[billing];
   const saving = prices.quarterly.amount * 4 - prices.annual.amount;
-  const source = `pricing-${plan}`;
   const headingId = `plan-${plan}-title`;
 
   return (
@@ -55,17 +54,7 @@ export default function PricingCard({ plan, billing, who, features, seats, highl
         </p>
       </div>
 
-      {seats && (
-        <div>
-          <p className={cn('text-step-sm', seats.soldOut ? 'text-destructive' : 'text-foreground')}>
-            {seats.soldOut ? t('soldOut') : t('seatsLeft', { left: seats.left, total: seats.total })}
-          </p>
-          <div className="mt-2 h-1 overflow-hidden rounded-pill bg-line" aria-hidden="true">
-            <div className="h-full rounded-pill bg-primary" style={{ width: `${(seats.taken / Math.max(seats.total, 1)) * 100}%` }} />
-          </div>
-          <p className="sr-only">{t('seatsMeter', { taken: seats.taken, total: seats.total })}</p>
-        </div>
-      )}
+      {seats && <PlanSeatStatus seats={seats} />}
 
       <ul className="flex flex-1 flex-col gap-3">
         {features.map((feature) => (
@@ -76,17 +65,13 @@ export default function PricingCard({ plan, billing, who, features, seats, highl
         ))}
       </ul>
 
-      <div className="flex flex-col gap-2">
-        <CheckoutButton
-          plan={plan}
-          source={source}
-          label={t('join', { plan: planName(plan) })}
-          hintId={hintId}
-          variant={highlighted ? 'default' : 'outline'}
-          className="w-full"
-        />
-        <CheckoutError source={source} />
-      </div>
+      <CheckoutButton
+        plan={plan}
+        source={`pricing-${plan}`}
+        label={t('join', { plan: planName(plan) })}
+        variant={highlighted ? 'default' : 'outline'}
+        className="w-full"
+      />
     </article>
   );
 }

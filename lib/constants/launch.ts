@@ -8,6 +8,9 @@ export type BillingCycle = "quarterly" | "annual";
 
 export const MEMBERSHIP_PLANS: readonly MembershipPlan[] = ["premium", "vip"] as const;
 
+/** Display names; brand terms, identical in every locale. */
+export const MEMBERSHIP_PLAN_NAMES: Record<MembershipPlan, string> = { premium: "Premium", vip: "VIP" };
+
 /** Seats offered per plan in the current round. Seat counts are real active subscriptions. */
 export const MEMBERSHIP_SEAT_CAPS: Record<MembershipPlan, number> = {
   premium: 30,

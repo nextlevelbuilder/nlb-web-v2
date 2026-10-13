@@ -14,7 +14,7 @@ function Wordmark({ name }: { name: string }) {
   );
 }
 
-/** Partner companies the founders lead. DIGITOP.AI uses a typographic wordmark. */
+/** Partner companies the founders lead. Every card shows the partner's name; DIGITOP.AI uses a typographic wordmark. */
 export default function PartnersSection() {
   const t = useTranslations('home.partners');
   const tShell = useTranslations('shell.footer');
@@ -34,12 +34,15 @@ export default function PartnersSection() {
                 rel="noopener noreferrer"
                 className="group flex h-full flex-col gap-4 p-6 transition-colors duration-base hover:bg-surface"
               >
-                <span className="flex h-11 items-center">
+                <span className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2">
                   {partner.logo ? (
-                    <span className={cn('inline-flex items-center gap-2', partner.logo.plate && 'rounded-sm bg-[#f6f1e6] px-3 py-1.5')}>
-                      <Image src={partner.logo.src} alt="" width={partner.logo.width} height={partner.logo.height} unoptimized className="h-8 w-auto" />
-                      {!partner.logo.plate && <span className="font-mono text-step-sm tracking-[0.08em]">{partner.name}</span>}
-                    </span>
+                    <>
+                      {/* Plate logos sit on a light card so dark artwork stays legible in both themes. */}
+                      <span className={cn('inline-flex items-center', partner.logo.plate && 'rounded-sm bg-[#f6f1e6] px-3 py-1.5')}>
+                        <Image src={partner.logo.src} alt="" width={partner.logo.width} height={partner.logo.height} unoptimized className="h-8 w-auto" />
+                      </span>
+                      <span className="font-mono text-step-sm tracking-[0.08em]">{partner.name}</span>
+                    </>
                   ) : (
                     <Wordmark name={partner.name} />
                   )}

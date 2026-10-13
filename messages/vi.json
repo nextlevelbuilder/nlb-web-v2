@@ -161,7 +161,11 @@
       },
       "refundPolicy": {
         "question": "Chính sách hoàn tiền như thế nào?",
-        "answer": "Đảm bảo hoàn tiền 100% trong 30 ngày, không cần lý do. Nếu cộng đồng và thư viện không phù hợp với bạn trong 30 ngày đầu, gửi yêu cầu hoàn tiền và chúng tôi sẽ xử lý. Chúng tôi đứng sau giá trị mình mang lại."
+        "answer": "Mọi khoản thanh toán, cả lần đầu và mỗi lần gia hạn, đều được bảo đảm hoàn tiền trong 30 ngày, không cần nêu lý do. Gửi email tới hello@nextlevelbuilder.io hoặc trả lời email biên nhận của Polar trong vòng 30 ngày kể từ ngày bị trừ tiền, chúng tôi sẽ hoàn 100% khoản đó qua Polar về phương thức thanh toán ban đầu. Chi tiết đầy đủ có trong Chính sách hoàn tiền."
+      },
+      "billing": {
+        "question": "Ai xử lý thanh toán và việc tính phí diễn ra thế nào?",
+        "answer": "Thanh toán được xử lý bởi Polar (polar.sh) với vai trò merchant of record, Polar cũng xử lý thuế bán hàng hoặc VAT nếu có. Gói thành viên được thanh toán trước theo quý hoặc theo năm và tự động gia hạn cho đến khi bạn hủy. Bạn có thể hủy bất kỳ lúc nào từ cổng khách hàng có trong biên nhận Polar, và vẫn giữ quyền truy cập đến hết kỳ đã thanh toán."
       },
       "timeCommitment": {
         "question": "Tôi cần dành bao nhiêu thời gian?",
@@ -185,7 +189,7 @@
       },
       "tierIncludes": {
         "question": "Mỗi gói bao gồm những gì?",
-        "answer": "Gói Premium bao gồm toàn bộ thư viện 52 tuần video ghi sẵn, kho video eLearning, kho template và các kênh cộng tác cộng đồng. Gói VIP thêm các kênh hỏi đáp ưu tiên, truy cập sớm công cụ và nội dung mới, 1:1 buổi mổ xẻ ra mắt & đánh giá định vị gửi riêng cho bạn, và kho template + prompt AI VIP."
+        "answer": "Gói Premium gồm thư viện 52 tuần video kèm video mới hàng tuần, Discord riêng tư, kênh hỗ trợ ra mắt và phản hồi từ nhà sáng lập. Gói VIP gồm tất cả quyền lợi Premium, thêm kênh VIP câu hỏi ưu tiên, truy cập sớm công cụ & nội dung, 1 buổi review ra mắt 1:1 cùng nhà sáng lập, kho template + prompt AI VIP, và xem toàn bộ Courses miễn phí."
       },
       "howDiscordWorks": {
         "question": "Discord hoạt động như thế nào?",
@@ -197,13 +201,14 @@
       },
       "upgradePlan": {
         "question": "Tôi có thể nâng cấp hoặc hạ cấp gói không?",
-        "answer": "Có! Bạn có thể nâng cấp bất cứ lúc nào và ngay lập tức nhận được quyền truy cập vào lợi ích cấp cao hơn. Hạ cấp cũng dễ dàng - chỉ cần cho chúng tôi biết trước chu kỳ thanh toán tiếp theo. Hoàn tiền theo tỷ lệ khi nâng cấp."
+        "answer": "Có. Bạn có thể nâng cấp từ Premium lên VIP bất kỳ lúc nào: chỉ cần thanh toán phần chênh lệch và quyền lợi VIP có hiệu lực ngay. Hạ cấp cũng dễ dàng, chỉ cần báo cho chúng tôi trước chu kỳ thanh toán tiếp theo."
       },
       "freeTrial": {
         "question": "Có dùng thử miễn phí không?",
         "answer": "Chúng tôi không cung cấp dùng thử miễn phí, nhưng chúng tôi có đảm bảo hoàn tiền 30 ngày thậm chí còn tốt hơn. Điều này cho bạn một tháng đầy đủ để trải nghiệm cộng đồng, khám phá thư viện, và xem nó có phù hợp với bạn không - hoàn toàn không rủi ro."
       }
-    }
+    },
+    "eyebrow": "Hỏi & đáp"
   },
   "finalCTA": {
     "title": "Sẵn sàng xây dựng sản phẩm tiếp theo?",
@@ -796,6 +801,7 @@
       "subQuarterly": "≈ ${perMonth}/tháng · thanh toán mỗi 3 tháng",
       "subAnnual": "${perMonth}/tháng khi trả theo năm · tiết kiệm ${saving}",
       "seatsLeft": "Còn {left}/{total} chỗ",
+      "limited": "Giới hạn {total} thành viên",
       "soldOut": "Đã hết chỗ đợt này",
       "thisRound": "đợt này",
       "seatsMeter": "Đã có {taken}/{total} chỗ được đăng ký",
@@ -826,10 +832,15 @@
       }
     },
     "checkout": {
-      "agree": "Tôi đồng ý với <terms>Điều khoản dịch vụ</terms>",
-      "hint": "Đánh dấu ô để mở thanh toán.",
+      "agree": "Tôi đồng ý với <terms>Điều khoản dịch vụ</terms> và <refund>Chính sách hoàn tiền</refund>",
+      "hint": "Đồng ý với Điều khoản để tiếp tục thanh toán.",
       "processing": "Đang mở trang thanh toán an toàn…",
-      "error": "Không thể bắt đầu thanh toán. Vui lòng thử lại hoặc email hi@nextlevelbuilder.io."
+      "error": "Không thể bắt đầu thanh toán. Vui lòng thử lại hoặc email hello@nextlevelbuilder.io.",
+      "dialogTitle": "Xác nhận gói thành viên",
+      "dialogDescription": "Kiểm tra gói của bạn, đồng ý với Điều khoản, rồi thanh toán an toàn qua Polar.",
+      "planLabel": "Gói của bạn",
+      "continue": "Tiếp tục tới thanh toán Polar",
+      "close": "Đóng"
     },
     "toolkits": {
       "plate": "Tín hiệu",

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import { defaultLocale, isLocale, locales } from "@/i18n/routing";
-import { MEMBERSHIP_PLANS, MEMBERSHIP_PRICES } from "@/lib/constants/launch";
+import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PLANS, MEMBERSHIP_PRICES } from "@/lib/constants/launch";
+import { buildFaqPageJsonLd, HOME_FAQ_KEYS } from "@/lib/home/home-faq";
 import { loadHomePageData } from "@/lib/home/home-page-data";
 import { pageMetadata, serializeJsonLd, siteUrl } from "@/lib/seo";
 import FooterSection from "@/components/sections/footer-section";
@@ -16,6 +17,7 @@ import TeamSection from "@/components/sections/team-section";
 import PartnersSection from "@/components/sections/partners-section";
 import PricingSection from "@/components/sections/pricing-section";
 import BuildWithAgentKitSection from "@/components/sections/build-with-agentkit-section";
+import FaqSection from "@/components/sections/faq-section";
 import CTASection from "@/components/sections/cta-section";
 import HomeClient from "./home-client";
 
@@ -48,7 +50,7 @@ function membershipJsonLd(locale: string) {
   return MEMBERSHIP_PLANS.map((plan) => ({
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `Next Level Builders ${plan === "vip" ? "VIP" : "Premium"} membership`,
+    name: `Next Level Builders ${MEMBERSHIP_PLAN_NAMES[plan]} membership`,
     brand: { "@id": `${siteUrl()}/#org` },
     url: `${url}#pricing`,
     offers: (["quarterly", "annual"] as const).map((cycle) => ({
@@ -67,14 +69,22 @@ function membershipJsonLd(locale: string) {
   }));
 }
 
+/** FAQPage structured data from the same localized Q&A the FAQ section renders. */
+async function faqJsonLd(locale: string) {
+  const t = await getTranslations({ locale, namespace: "faq" });
+  const entries = HOME_FAQ_KEYS.map((key) => ({ question: t(`items.${key}.question`), answer: t(`items.${key}.answer`) }));
+  return buildFaqPageJsonLd(entries, `${homeUrl(locale)}#faq`);
+}
+
 export default async function Home({ params }: { params: Params }) {
   const { locale } = await params;
   if (isLocale(locale)) setRequestLocale(locale);
-  const data = await loadHomePageData();
+  const [data, faq] = await Promise.all([loadHomePageData(), faqJsonLd(locale)]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(membershipJsonLd(locale)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faq) }} />
       <HomeClient productIds={data.productIds} seats={data.seats} activity={data.activity}>
         <main id="main">
           <HeroSection />
@@ -87,6 +97,7 @@ export default async function Home({ params }: { params: Params }) {
           <PartnersSection />
           <PricingSection />
           <BuildWithAgentKitSection launchedProducts={data.launchedProducts} />
+          <FaqSection />
           <CTASection />
         </main>
       </HomeClient>

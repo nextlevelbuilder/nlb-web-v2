@@ -161,7 +161,11 @@
       },
       "refundPolicy": {
         "question": "What's the refund policy?",
-        "answer": "30-day money-back guarantee, no questions asked. If the community and library aren't a fit within your first 30 days, request a 100% refund and we'll process it. We stand behind the value we ship."
+        "answer": "Every payment, the first one and each renewal, is covered by a 30-day money-back guarantee, no reason needed. Email hello@nextlevelbuilder.io or reply to your Polar receipt within 30 days of the charge and we refund 100% of it through Polar to your original payment method. The full details are in our Refund Policy."
+      },
+      "billing": {
+        "question": "Who processes my payment, and how does billing work?",
+        "answer": "Payments are processed by Polar (polar.sh), our merchant of record, which also handles any sales tax or VAT. Memberships are billed in advance, quarterly or annually, and renew automatically until you cancel. You can cancel at any time from the customer portal linked in your Polar receipt, and you keep access until the end of the period you paid for."
       },
       "timeCommitment": {
         "question": "How much time do I need to commit?",
@@ -184,8 +188,8 @@
         "answer": "All levels welcome! We have complete beginners learning to code, experienced developers, and non-technical founders using no-code tools. Our content caters to different skill levels, and the community is very supportive of newcomers."
       },
       "tierIncludes": {
-        "question": "What's included in each tier?",
-        "answer": "Premium tier includes the full 52-week recorded session library, eLearning video treasury, template vault, and community collaboration channels. VIP adds priority Q&A channels, early access to new tools and content, 1:1 private launch teardowns and structured positioning reviews delivered privately to you, and the VIP template + AI prompt vault."
+        "question": "What's included in each plan?",
+        "answer": "Premium includes the 52-week video library with a new video every week, the private Discord, the launch support channel and feedback from the founders. VIP includes everything in Premium, plus a priority VIP question channel, early access to tools and content, a 1:1 launch review with a founder, the VIP template & AI-prompt vault, and every course for free."
       },
       "howDiscordWorks": {
         "question": "How does Discord work?",
@@ -197,13 +201,14 @@
       },
       "upgradePlan": {
         "question": "Can I upgrade or downgrade my plan?",
-        "answer": "Yes! You can upgrade anytime and immediately get access to higher tier benefits. Downgrading is also easy - just let us know before your next billing cycle. Pro-rated refunds available when upgrading."
+        "answer": "Yes. You can upgrade from Premium to VIP at any time: you pay the difference and VIP benefits start immediately. Downgrading is easy too, just let us know before your next billing cycle."
       },
       "freeTrial": {
         "question": "Is there a free trial?",
         "answer": "We don't offer free trials, but we have a 30-day money-back guarantee which is even better. This gives you a full month to experience the community, browse the library, and see if it's right for you - completely risk-free."
       }
-    }
+    },
+    "eyebrow": "Questions & answers"
   },
   "finalCTA": {
     "title": "Ready to Build Your Next Product?",
@@ -796,6 +801,7 @@
       "subQuarterly": "≈ ${perMonth}/mo · billed every 3 months",
       "subAnnual": "${perMonth}/mo billed annually · save ${saving}",
       "seatsLeft": "{left} of {total} seats left",
+      "limited": "Limited to {total} members",
       "soldOut": "Sold out this round",
       "thisRound": "this round",
       "seatsMeter": "{taken} of {total} seats taken",
@@ -826,10 +832,15 @@
       }
     },
     "checkout": {
-      "agree": "I agree to the <terms>Terms of Service</terms>",
-      "hint": "Tick the box to enable checkout.",
+      "agree": "I agree to the <terms>Terms of Service</terms> and the <refund>Refund Policy</refund>",
+      "hint": "Accept the Terms to continue to checkout.",
       "processing": "Opening secure checkout…",
-      "error": "We couldn't start checkout. Please try again or email hi@nextlevelbuilder.io."
+      "error": "We couldn't start checkout. Please try again or email hello@nextlevelbuilder.io.",
+      "dialogTitle": "Confirm your membership",
+      "dialogDescription": "Check your plan, accept the Terms, then pay on Polar's secure checkout.",
+      "planLabel": "Your plan",
+      "continue": "Continue to Polar checkout",
+      "close": "Close"
     },
     "toolkits": {
       "plate": "Transmission",

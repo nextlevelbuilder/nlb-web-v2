@@ -53,8 +53,8 @@ export default async function SuccessPage({ params }: Props) {
 
         <p className="text-center text-step-sm text-ink-3">
           {copy.troublePrefix}{" "}
-          <a href="mailto:hi@nextlevelbuilder.io" className="text-foreground underline underline-offset-4">
-            hi@nextlevelbuilder.io
+          <a href="mailto:hello@nextlevelbuilder.io" className="text-foreground underline underline-offset-4">
+            hello@nextlevelbuilder.io
           </a>
         </p>
       </div>

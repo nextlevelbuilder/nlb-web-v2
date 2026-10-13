@@ -1,12 +1,10 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import EarlyBirdCountdown from '@/components/home/early-bird-countdown';
 import { useCheckout } from '@/components/home/checkout-context';
+import MembershipPlanCard from '@/components/home/membership-plan-card';
 import SectionPlate from '@/components/home/section-plate';
-import TermsAgreementCheckbox from '@/components/home/terms-agreement-checkbox';
-import PricingCard from '@/components/pricing-card';
 import PricingPlanSwitcher from '@/components/pricing-plan-switcher';
 import { MEMBERSHIP_PRICES } from '@/lib/constants/launch';
 
@@ -20,11 +18,10 @@ const ANNUAL_SAVING_PERCENT = Math.floor(
   ),
 );
 
-/** Chapter VI · Join: early-bird countdown, billing toggle, real seat counts and direct checkout. */
+/** Chapter VI · Join: early-bird countdown, billing toggle, real seat counts and the pre-checkout dialog. */
 export default function PricingSection() {
   const t = useTranslations('home.pricing');
   const { billing, setBilling, seats } = useCheckout();
-  const hintId = useId();
 
   return (
     <section id="pricing" aria-labelledby="pricing-title" className="section-pad">
@@ -46,29 +43,24 @@ export default function PricingSection() {
         <p className="sr-only" aria-live="polite">{billing === 'annual' ? t('save', { percent: ANNUAL_SAVING_PERCENT }) : ''}</p>
 
         <div className="mt-12 grid gap-8 md:grid-cols-2">
-          <PricingCard
+          <MembershipPlanCard
             plan="premium"
             billing={billing}
             who={t('premiumWho')}
             features={PREMIUM_FEATURES.map((key) => t(key))}
             seats={seats?.premium ?? null}
-            hintId={hintId}
           />
-          <PricingCard
+          <MembershipPlanCard
             plan="vip"
             billing={billing}
             who={t('vipWho')}
             features={VIP_FEATURES.map((key) => t(key))}
             seats={seats?.vip ?? null}
             highlighted
-            hintId={hintId}
           />
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-          <TermsAgreementCheckbox hintId={hintId} />
-          <p className="mono-label pt-3 text-ink-3">{t('note')}</p>
-        </div>
+        <p className="mono-label mt-8 text-ink-3">{t('note')}</p>
       </div>
     </section>
   );
