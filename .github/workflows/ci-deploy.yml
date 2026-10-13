@@ -1,0 +1,67 @@
+name: CI and Deploy
+
+# dev  -> staging worker  (nextlevelbuilder-web-staging)
+# main -> production worker (nextlevelbuilder-web)
+# Pull requests run checks only.
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+
+  deploy:
+    name: Migrate and deploy (${{ github.ref_name == 'main' && 'production' || 'staging' }})
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      # Token needs Workers Scripts, D1, Workers KV, Queues and R2 edit on account 7ac87c90789159ae1b10b7d78f5dcc08.
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_ENV_FLAG: ${{ github.ref_name == 'main' && '' || '--env staging' }}
+      # Build-time public values (inlined into the client bundle).
+      NEXT_PUBLIC_APP_URL: ${{ github.ref_name == 'main' && 'https://nextlevelbuilder.io' || 'https://staging.nextlevelbuilder.io' }}
+      NEXT_PUBLIC_ASSETS_URL: https://cdn.nextlevelbuilder.io
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ github.ref_name == 'main' && '0x4AAAAAAFVjTy75wVNVWXvG' || '0x4AAAAAAFVjUpt2OL12upHT' }}
+      NEXT_PUBLIC_EARLY_BIRD_DEADLINE: ${{ secrets.NEXT_PUBLIC_EARLY_BIRD_DEADLINE }}
+      NEXT_PUBLIC_DISCORD_URL: ${{ secrets.NEXT_PUBLIC_DISCORD_URL }}
+      NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL }}
+      NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_QUARTERLY: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_QUARTERLY }}
+      NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_ANNUAL: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_ANNUAL }}
+      NEXT_PUBLIC_POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL }}
+      NEXT_PUBLIC_POLAR_PRODUCT_VIP_QUARTERLY: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_VIP_QUARTERLY }}
+      NEXT_PUBLIC_POLAR_PRODUCT_VIP_ANNUAL: ${{ secrets.NEXT_PUBLIC_POLAR_PRODUCT_VIP_ANNUAL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply D1 migrations
+        run: npx wrangler d1 migrations apply DB --remote $WRANGLER_ENV_FLAG
+      - name: Build worker
+        run: npm run build:worker
+      - name: Deploy worker
+        run: npx wrangler deploy $WRANGLER_ENV_FLAG
