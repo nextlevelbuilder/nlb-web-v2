@@ -1,0 +1,122 @@
+{
+  "source": "Public DNS of the Digitop-hosted zone (authoritative emily.ns.cloudflare.com), captured 2026-10-13. The Cloudflare API on that account was not readable (DNS:Read missing), so proxied hosts were mapped from Workers custom domains instead.",
+  "records": [
+    {
+      "type": "MX",
+      "name": "nextlevelbuilder.io",
+      "content": "aspmx.l.google.com",
+      "priority": 1,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "nextlevelbuilder.io",
+      "content": "alt3.aspmx.l.google.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "nextlevelbuilder.io",
+      "content": "alt4.aspmx.l.google.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "nextlevelbuilder.io",
+      "content": "alt1.aspmx.l.google.com",
+      "priority": 5,
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "nextlevelbuilder.io",
+      "content": "alt2.aspmx.l.google.com",
+      "priority": 5,
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "nextlevelbuilder.io",
+      "content": "google-site-verification=Geh-NsQKnCi-kKhavohd5QfFiBmHdhoAT-8YhfQQK1w",
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "nextlevelbuilder.io",
+      "content": "google-site-verification=Q8zGjIe8azJncJ0TLCwXLuVXtQGHPF51GLiaX1tNmCg",
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "nextlevelbuilder.io",
+      "content": "v=spf1 include:_spf.google.com ~all",
+      "ttl": 1
+    },
+    {
+      "type": "MX",
+      "name": "send.nextlevelbuilder.io",
+      "content": "feedback-smtp.ap-northeast-1.amazonses.com",
+      "priority": 10,
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "send.nextlevelbuilder.io",
+      "content": "v=spf1 include:amazonses.com ~all",
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "resend._domainkey.nextlevelbuilder.io",
+      "content": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9KqYUWdpl0SmOIsGE0ICCWkWUMJHTnztLUjrugikG+zZhS4f84jg8DvFO2DRNstH9njfBCZBs0tAIvClcBALkgsBj0+lIAKgMtDJGtxJ3kqKg31yqMmn3AMvVYabTwpk4MiCeMUqGVkHEOL/2fcruERCfRCEcmiT9fyKu5PScqQIDAQAB",
+      "ttl": 1
+    },
+    {
+      "type": "TXT",
+      "name": "google._domainkey.nextlevelbuilder.io",
+      "content": "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1EB+oQI09GEN72wxRBdvL+ZoKrLTytCQwbgp5SFDTkoV/5D+VIe72o5nztmfvmGFtmUkaiafbavxc4jDqf3gMAAx7wAKyjEkV+pAyDP7YesVblGtR45JiZ+wIIJ07aS8UDEpYUu4GaqeBe9RxlSMdEd+swfkI6ys4BKgdgfKmcny3zt+ipuNQ+2zlT4p7x8aIH3I+ScJYjwFchsPkndqKB/sjc+pGhGb9D0k+7JBfnanNsw1HFX3+hhIuSyvb1WyFJrYCk3I++2kROcH5OeYROsFYgUfweiNO5+Nf47iFy2HLM/4jNv4i7hzJdEdgfNMPzfBuls3c15GOp2dftbLaQIDAQAB",
+      "ttl": 1
+    },
+    {
+      "type": "CNAME",
+      "name": "go.nextlevelbuilder.io",
+      "content": "dns.ladipage.com",
+      "proxied": false,
+      "ttl": 1
+    }
+  ],
+  "workerCustomDomains": [
+    {
+      "hostname": "nextlevelbuilder.io",
+      "service": "nextlevelbuilder-web",
+      "note": "attach on hi@ after NS change"
+    },
+    {
+      "hostname": "www.nextlevelbuilder.io",
+      "service": "nextlevelbuilder-web",
+      "note": "attach on hi@ after NS change"
+    },
+    {
+      "hostname": "staging.nextlevelbuilder.io",
+      "service": "nextlevelbuilder-web-staging",
+      "note": "attach on hi@ after NS change"
+    },
+    {
+      "hostname": "mcp.nextlevelbuilder.io",
+      "service": "nlb-directory-mcp",
+      "note": "worker lives on the Digitop account; redeploy on hi@ or it stops resolving after NS change"
+    },
+    {
+      "hostname": "ui-ux-pro-max-skill.nextlevelbuilder.io",
+      "service": "ui-ux-pro-max-skill-redirect",
+      "note": "worker lives on the Digitop account; redeploy on hi@ or it stops resolving after NS change"
+    },
+    {
+      "hostname": "cdn.nextlevelbuilder.io",
+      "service": "R2 custom domain (Digitop bucket)",
+      "note": "connect nlb-media-public on hi@ after copying objects"
+    }
+  ]
+}
