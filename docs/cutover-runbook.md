@@ -69,13 +69,13 @@ Follow the "final cutover sync" in [`scripts/migrate/README.md`](../scripts/migr
 ```bash
 npx tsx scripts/migrate/run-migration.ts dump
 npx tsx scripts/migrate/run-migration.ts convert
-npx tsx scripts/migrate/run-migration.ts import --target production --confirm-production
-npx tsx scripts/migrate/run-migration.ts verify --target production --confirm-production
+npx tsx scripts/migrate/run-migration.ts import --target production --final-sync --confirm-production
+npx tsx scripts/migrate/run-migration.ts verify --target production --final-sync --confirm-production
 npx tsx scripts/migrate/run-migration.ts rekey-jwks --target production --confirm-production
 ```
 
-1. Import replaces the migrated tables. Anything written to v2 production before this point is lost (see [risks](./data-migration-neon-to-d1.md#risks-before-the-final-sync)).
-2. The verify report must show equal counts and hashes for every table. If it fails twice, stop.
+1. `--final-sync` backs up D1, then upserts the snapshot by primary key and never deletes. Rows created only on v2 survive, but v2 edits to rows that also exist in Neon are overwritten (see [risks](./data-migration-neon-to-d1.md#risks-before-the-final-sync)). Never use `--replace` here.
+2. The verify report must show no count, key or value mismatch for any table (`jwks_keys` differs after `rekey-jwks`, by design). `extraTargetRows` lists v2-only rows and is informational. If it fails twice, stop.
 3. Spot-check `orders`, `subscriptions`, `customers` and `users` against Neon.
 4. Confirm that an existing `nlb_live_` API key still works: `GET /api/v1/...` on the workers.dev host.
 5. **[owner]** In the Polar dashboard, point the webhook endpoint to the production worker's workers.dev URL now: `https://nextlevelbuilder-web.hi-7ac.workers.dev/api/webhooks/polar`. The apex still resolves to the old site until propagation finishes. Keep the signing secret equal to the production `POLAR_WEBHOOK_SECRET`. If the endpoint is recreated rather than edited, set the new secret on the worker.
