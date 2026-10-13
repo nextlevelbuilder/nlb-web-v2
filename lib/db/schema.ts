@@ -59,6 +59,8 @@ export const webhookEvents = sqliteTable("webhook_events", {
   processed: integer("processed", { mode: "boolean" }).default(false).notNull(),
   processedAt: integer("processed_at", { mode: "timestamp_ms" }),
   error: text("error"),
+  /** Processing lease; null when free. Taken by insert or by a conditional reclaim once expired. */
+  lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
 });
 
@@ -672,6 +674,8 @@ export const courseVideos = sqliteTable(
     locale: text("locale").$type<"en" | "vi">().notNull().default("vi"),
     weekNumber: integer("week_number"),
     streamUid: text("stream_uid"),
+    /** True once Stream confirmed `requireSignedURLs` for `streamUid`; tokens are only issued when set. */
+    streamSignedOnly: integer("stream_signed_only", { mode: "boolean" }).notNull().default(false),
     durationSec: integer("duration_sec").notNull().default(0),
     priceCents: integer("price_cents").notNull(),
     currency: text("currency").notNull().default("usd"),
