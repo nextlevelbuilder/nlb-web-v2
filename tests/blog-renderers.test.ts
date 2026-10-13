@@ -60,7 +60,7 @@ describe("blog block renderers", () => {
     const html = renderToStaticMarkup(React.createElement(BlogPostLayout, { post, translation: summary }));
     expect(html).toContain("<h1");
     expect(html).toContain("Xin chào");
-    expect(html).toContain('href="/en/blog/hello"');
-    expect(html).toContain('href="/blog?tag=d1"');
+    expect(html).toContain('href="/blog/hello"');
+    expect(html).toContain('href="/vi/blog?tag=d1"');
   });
 });

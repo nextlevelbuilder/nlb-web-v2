@@ -24,3 +24,6 @@ scripts/migrate/dump/
 next-env.d.ts
 .dev.vars
 cloudflare-env.d.ts.bak
+
+# Local media upload fallback (dev only)
+public/uploads/

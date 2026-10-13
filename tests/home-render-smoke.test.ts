@@ -32,6 +32,8 @@ beforeAll(async () => {
   sections = Object.fromEntries(names.map((name, i) => [name, modules[i].default]));
 });
 
+// The providers' prop types declare `children` as required, so it is passed as a prop here.
+/* eslint-disable react/no-children-prop */
 function renderHome(locale: "en" | "vi", seats: SeatAvailability | null = computeSeatAvailability({ premium: 30, vip: 4 })) {
   const messages = locale === "en" ? en : vi;
   const children = Object.entries(sections).map(([name, Section]) =>
@@ -48,6 +50,7 @@ function renderHome(locale: "en" | "vi", seats: SeatAvailability | null = comput
   });
   return renderToStaticMarkup(tree);
 }
+/* eslint-enable react/no-children-prop */
 
 describe("homepage narrative render", () => {
   it.each(["en", "vi"] as const)("renders every section in %s without missing messages", (locale) => {

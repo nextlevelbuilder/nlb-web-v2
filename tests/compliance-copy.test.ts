@@ -16,6 +16,7 @@ describe("Polar AUP Compliance Copy Guardrails", () => {
     { pattern: /promo article/i, name: "promo article" },
     { pattern: /promoting your product/i, name: "promoting your product" },
     { pattern: /bài viết quảng bá/i, name: "bài viết quảng bá" },
+    { pattern: /promotional article/i, name: "promotional article" },
 
     // Guaranteed traffic/exposure claims
     { pattern: /get discovered by thousands/i, name: "get discovered by thousands" },

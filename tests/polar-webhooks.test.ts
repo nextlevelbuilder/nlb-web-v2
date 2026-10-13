@@ -33,11 +33,11 @@ vi.mock("@polar-sh/sdk/webhooks", () => ({
 }));
 
 // Mock database state and tables for webhook routing tests
-let deliveryIntentsStore = new Map<string, any>();
-let webhookEventsStore = new Set<string>();
-let customersStore = new Map<string, any>();
-let subscriptionsStore = new Map<string, any>();
-let ordersStore = new Map<string, any>();
+const deliveryIntentsStore = new Map<string, any>();
+const webhookEventsStore = new Set<string>();
+const customersStore = new Map<string, any>();
+const subscriptionsStore = new Map<string, any>();
+const ordersStore = new Map<string, any>();
 
 function createMockDb() {
   return {
