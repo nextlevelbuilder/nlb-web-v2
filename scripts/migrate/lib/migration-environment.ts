@@ -9,7 +9,10 @@ import path from "node:path";
 export const ROOT = path.resolve(import.meta.dirname, "../../..");
 export const DUMP_DIR = path.join(ROOT, "scripts/migrate/dump");
 export const ROWS_DIR = path.join(DUMP_DIR, "rows");
+/** Full-replace script (deletes every migrated table first). */
 export const IMPORT_SQL = path.join(DUMP_DIR, "import.sql");
+/** Final-sync script (upserts by primary key, never deletes). */
+export const FINAL_SYNC_SQL = path.join(DUMP_DIR, "import-final-sync.sql");
 export const MANIFEST = path.join(DUMP_DIR, "manifest.json");
 export const ACCOUNT_ID = "7ac87c90789159ae1b10b7d78f5dcc08";
 
