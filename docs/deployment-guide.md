@@ -60,7 +60,7 @@ scripts/provision-cloudflare.sh secrets production
 
 - Schema: [`lib/db/schema.ts`](../lib/db/schema.ts). Migrations live in `drizzle/migrations` and are generated with `npm run db:generate`.
 - Apply them with `npm run db:migrate:local`, `npm run db:migrate:staging` or `npm run db:migrate:production`. CI applies them on deploy, before the build, so migrations must be additive ([code-standards.md](./code-standards.md#database-d1)).
-  - The staging and production npm scripts call wrangler directly. Locally, prefer `wr d1 migrations apply DB --remote --env staging` or `--env=""` so the account pin and token rules above apply.
+  - The staging and production npm scripts pin `--env=staging` and `--env=""` but call wrangler directly. Locally, prefer `wr d1 migrations apply DB --remote --env staging` or `--env=""` so the account pin and token rules above also apply.
 - D1 rollback: `wr d1 time-travel restore DB --env=<env> --timestamp=<RFC3339>` (within 30 days).
 - Neon → D1 data copy: [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md).
 
@@ -82,7 +82,7 @@ wr deploy --env=""
 
 Also export the other `NEXT_PUBLIC_*` values the workflow sets (Polar product ids, early-bird deadline, Discord URL). `next build` also reads `.env*` files in the repo, so check that no stale `NEXT_PUBLIC_*` value there overrides your intent.
 
-`npm run deploy:staging` and `npm run deploy:production` build and deploy in one step, but they do not apply the account pin, the token rule or the build-time values above.
+`npm run deploy:staging` (`--env=staging`) and `npm run deploy:production` (`--env=""`) build and deploy in one step with the environment pinned, but they do not apply the account pin, the token rule or the build-time values above.
 
 Roll back a bad deploy with `wr deployments list --env=<env>`, then `wr rollback <version-id> --env=<env>`.
 
