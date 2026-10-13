@@ -8,6 +8,12 @@ let pending: Promise<RealtimeTraffic> | undefined;
 /** Every page view on the site is captured with one date-salted site identifier. */
 const SITE_SURFACE = "site";
 
+/** True when the public PostHog key and host are set; without them page views are not collected. */
+export function isSitePageviewCaptureConfigured(): boolean {
+  const config = trafficConfig();
+  return Boolean(config.NEXT_PUBLIC_POSTHOG_KEY && config.NEXT_PUBLIC_POSTHOG_HOST);
+}
+
 export async function captureSitePageview(input: { visitorId: string; path: string }) {
   const config = trafficConfig();
   const token = config.NEXT_PUBLIC_POSTHOG_KEY;

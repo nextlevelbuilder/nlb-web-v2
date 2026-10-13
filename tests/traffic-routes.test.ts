@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ caller: vi.fn(), getDb: vi.fn(), published: vi.fn(), query: vi.fn(), record: vi.fn(), realtime: vi.fn(), capture: vi.fn() }));
+const mocks = vi.hoisted(() => ({ caller: vi.fn(), getDb: vi.fn(), published: vi.fn(), query: vi.fn(), record: vi.fn(), realtime: vi.fn(), capture: vi.fn(), captureConfigured: vi.fn(() => true) }));
 vi.mock("@/lib/auth-api-key", () => ({ resolveCaller: mocks.caller }));
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
 vi.mock("@/lib/domain/catalog", () => ({ getPublishedProductBySlug: mocks.published }));
 vi.mock("@/lib/traffic/traffic", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/traffic/traffic")>(), queryTraffic: mocks.query, recordTraffic: mocks.record }));
-vi.mock("@/lib/traffic/posthog", () => ({ realtimeTraffic: mocks.realtime, captureSitePageview: mocks.capture }));
+vi.mock("@/lib/traffic/posthog", () => ({ realtimeTraffic: mocks.realtime, captureSitePageview: mocks.capture, isSitePageviewCaptureConfigured: mocks.captureConfigured }));
 
 import { GET as privateGet } from "@/app/api/v1/products/[slug]/traffic/route";
 import { GET as publicGet } from "@/app/api/v1/products/[slug]/traffic/public/route";
@@ -201,6 +201,12 @@ describe("PostHog public routes", () => {
     expect((await posthogCollect(captureRequest({ path: "/leaderboards?page=2" }))).status).toBe(400);
     expect((await posthogCollect(captureRequest({}, { dnt: "1" }))).status).toBe(204);
     expect(mocks.capture).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers 204 without capturing when PostHog is not configured", async () => {
+    mocks.captureConfigured.mockReturnValueOnce(false);
+    expect((await posthogCollect(captureRequest())).status).toBe(204);
+    expect(mocks.capture).not.toHaveBeenCalled();
   });
 
   it("returns real cached aggregates and honest provider errors", async () => {
