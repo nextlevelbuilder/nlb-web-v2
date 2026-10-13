@@ -56,6 +56,14 @@ async function sign(claims: JWTPayload = {}, header = { alg: "HS256", typ: "nlb-
   }).setProtectedHeader(header).sign(new TextEncoder().encode(secret));
 }
 
+/** In-memory stand-in for the MCP_DELEGATION_JTI KV namespace. */
+function fakeKv() {
+  const values = new Map<string, string>();
+  const put = vi.fn(async (key: string, value: string, _options: { expirationTtl: number }) => { values.set(key, value); });
+  const kv = { get: vi.fn(async (key: string) => values.get(key) ?? null), put };
+  return { kv, put };
+}
+
 function database(user: Record<string, unknown> | null = account) {
   const rows = new Map<unknown, any[]>([[users, user ? [user] : []]]);
   const conditions: { table: unknown; sql: string; params: unknown[] }[] = [];
@@ -170,6 +178,34 @@ describe("MCP delegation assertion verification", () => {
     expect(await verifyMcpDelegation(await sign({ [claim]: undefined }), context)).toBeNull();
   });
 
+  it("rejects a replayed assertion (same jti) outside a Worker", async () => {
+    const assertion = await sign();
+    expect(await verifyMcpDelegation(assertion, context)).toBe(account.id);
+    expect(await verifyMcpDelegation(assertion, context)).toBeNull();
+  });
+
+  it("records each jti in KV with the token lifetime as TTL and rejects reuse", async () => {
+    const { kv, put } = fakeKv();
+    mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN, MCP_DELEGATION_JTI: kv } });
+    const jti = crypto.randomUUID();
+    const assertion = await sign({ jti });
+    expect(await verifyMcpDelegation(assertion, context)).toBe(account.id);
+    expect(put).toHaveBeenCalledWith(`mcp-jti:${jti}`, "1", { expirationTtl: 60 });
+    expect(await verifyMcpDelegation(assertion, context)).toBeNull();
+  });
+
+  it("does not consume the jti of an assertion that fails other checks", async () => {
+    const { kv, put } = fakeKv();
+    mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN, MCP_DELEGATION_JTI: kv } });
+    expect(await verifyMcpDelegation(await sign({ path: "/api/v1/other" }), context)).toBeNull();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("fails closed inside a Worker when the replay KV binding is missing", async () => {
+    mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN } });
+    expect(await verifyMcpDelegation(await sign(), context)).toBeNull();
+  });
+
   it("rejects wrong signature, algorithm and exact type", async () => {
     expect(await verifyMcpDelegation(await sign({}, undefined, `${SECRET}-wrong`), context)).toBeNull();
     expect(await verifyMcpDelegation(await sign({}, { alg: "HS384", typ: "nlb-mcp-delegation+jwt" }), context)).toBeNull();
@@ -206,7 +242,7 @@ describe("MCP delegation assertion verification", () => {
 
   it("uses Cloudflare secret and canonical configured origin, never request Host", async () => {
     const cfSecret = `${SECRET}-cloudflare`;
-    mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: cfSecret, NEXT_PUBLIC_APP_URL: "https://staging.example/app" } });
+    mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: cfSecret, NEXT_PUBLIC_APP_URL: "https://staging.example/app", MCP_DELEGATION_JTI: fakeKv().kv } });
     expect(await verifyMcpDelegation(await sign({ aud: "https://staging.example/api" }, undefined, cfSecret), context)).toBe(account.id);
     expect(await resolveCaller(new Headers({ host: "attacker.example", [MCP_ASSERTION_HEADER]: await sign({ aud: "https://attacker.example/api" }, undefined, cfSecret) }), database(), context)).toBeNull();
   });

@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { jwtVerify } from "jose";
 import { getMcpOAuthResource } from "@/lib/mcp-oauth-config";
+import { consumeDelegationJti } from "@/lib/auth-mcp-delegation-replay";
 
 export const MCP_ASSERTION_HEADER = "x-nlb-mcp-assertion";
 
@@ -17,8 +18,10 @@ export async function verifyMcpDelegation(
 ): Promise<string | null> {
   try {
     let bindings: Record<string, unknown> = {};
+    let workerBindings: Record<string, unknown> | null = null;
     try {
       bindings = getCloudflareContext().env as unknown as Record<string, unknown>;
+      workerBindings = bindings;
     } catch {
       // Local development has no Cloudflare request context.
     }
@@ -50,6 +53,8 @@ export async function verifyMcpDelegation(
         payload.path !== context.path) {
       return null;
     }
+    // Checked last so only fully valid assertions consume their nonce.
+    if (!(await consumeDelegationJti(payload.jti, payload.exp, workerBindings, now))) return null;
     return payload.sub;
   } catch {
     // A present but invalid assertion must never fall back to another credential.
