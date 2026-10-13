@@ -1,0 +1,9 @@
+# AGENTS.md
+
+Guidance for coding agents working in nlb-web-v2. Start with [README.md](README.md) and [docs/README.md](docs/README.md).
+
+- Before UI work, read [DESIGN.md](DESIGN.md); review with [REVIEW.md](REVIEW.md).
+- Verify UI changes at 1440×900, 768×1024 and 375×812, plus 320 px for reflow. Check the browser console on home EN (`/`) and VI (`/vi`).
+- Keep discovery surfaces in sync when routes or content change: `app/sitemap.ts`, `app/robots.ts`, `app/llms.txt`, `app/llms-full.txt`, markdown twins (`lib/markdown/page-paths.ts`) and page metadata (`lib/seo.ts`, `lib/blog/blog-seo.ts`).
+- `/api/v1` and the OpenAPI document are a public contract: change them only additively.
+- Never print or commit secrets (`.env*`, `.dev.vars`). Remote wrangler commands follow the account pin in [docs/deployment-guide.md](docs/deployment-guide.md).

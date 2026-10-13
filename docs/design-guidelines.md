@@ -27,7 +27,7 @@ Rules:
 ## Themes
 
 - System, Light and Dark come from `next-themes` in [`components/theme-provider.tsx`](../components/theme-provider.tsx). It uses the class strategy, localStorage key `nlb-theme`, `system` as the default, and transitions disabled during a switch.
-- An inline script sets the theme class before first paint, so there is no flash. Check the browser console on the deployed Worker: a script error there means the stored theme is not applied before paint (see [project-roadmap.md](./project-roadmap.md)).
+- An inline script sets the theme class before first paint, so there is no flash. Check the browser console on the deployed Worker: a script error there means the stored theme is not applied before paint. `keep_names: false` in [`wrangler.jsonc`](../wrangler.jsonc) stops esbuild injecting `__name` into that inline script.
 - The theme toggle is `components/theme-toggle.tsx`.
 
 ## Motion
@@ -37,6 +37,7 @@ Rules:
   - `MotionConfig reducedMotion="user"` in the theme provider covers Framer Motion.
   - A `prefers-reduced-motion` block in `globals.css` covers CSS animations.
 - Content must stay fully visible and usable with zero animation. Never hide content behind an entrance animation that reduced-motion users never see.
+- Section reveals (`components/home/reveal.tsx`) are CSS scroll-driven animations behind `@supports (animation-timeline: view())`. The server HTML is fully visible, so crawlers, no-JS visitors and full-page captures never see a blank section.
 
 ## i18n
 
