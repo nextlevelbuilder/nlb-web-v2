@@ -41,12 +41,12 @@ Repository secrets:
 - `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 - The build-time `NEXT_PUBLIC_*` values the workflow reads: Polar product ids, the early-bird deadline, the Discord URL.
 
-The deploy token needs these permissions on the hi@ account: **Workers Scripts: Edit, D1: Edit, Workers KV Storage: Edit, Queues: Edit, Workers R2 Storage: Edit, Account Settings: Read**. Set it without echoing: `gh secret set CLOUDFLARE_API_TOKEN -R nextlevelbuilder/nlb-web-v2`, then paste at the prompt. Until a token with D1 permission is set, the deploy job fails at the migrate step, and deploys are manual.
+The deploy token needs these permissions on the hi@ account: **Workers Scripts: Edit, D1: Edit, Workers KV Storage: Edit, Workers R2 Storage: Edit, Account Settings: Read**. Set it without echoing: `gh secret set CLOUDFLARE_API_TOKEN -R nextlevelbuilder/nlb-web-v2`, then paste at the prompt. Until a token with D1 permission is set, the deploy job fails at the migrate step, and deploys are manual.
 
 ## Provisioning (idempotent)
 
 ```bash
-scripts/provision-cloudflare.sh resources           # D1, KV, Queues, R2, Turnstile; writes ids and site keys into wrangler.jsonc
+scripts/provision-cloudflare.sh resources           # D1, KV, R2, Turnstile; writes ids and site keys into wrangler.jsonc
 scripts/provision-cloudflare.sh secrets staging     # Worker secrets piped from .env (never echoed)
 scripts/provision-cloudflare.sh secrets production
 ```

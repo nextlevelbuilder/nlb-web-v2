@@ -42,14 +42,6 @@
       "migrations_dir": "drizzle/migrations"
     }
   ],
-  "queues": {
-    "producers": [
-      {
-        "binding": "POLAR_WEBHOOK_QUEUE",
-        "queue": "nlb-polar-webhooks"
-      }
-    ]
-  },
   "r2_buckets": [
     {
       "binding": "MEDIA_STAGING",
@@ -62,17 +54,10 @@
   ],
   "kv_namespaces": [
     {
-      "binding": "GO_REDIRECTS",
-      "id": "30b3be0c131a464a8507c67c92081a5f"
-    },
-    {
       "binding": "MCP_DELEGATION_JTI",
       "id": "fed692ed5b194ab08610acefe758841e"
     }
   ],
-  "ai": {
-    "binding": "AI"
-  },
   "env": {
     "staging": {
       "name": "nextlevelbuilder-web-staging",
@@ -105,14 +90,6 @@
           "migrations_dir": "drizzle/migrations"
         }
       ],
-      "queues": {
-        "producers": [
-          {
-            "binding": "POLAR_WEBHOOK_QUEUE",
-            "queue": "nlb-polar-webhooks-staging"
-          }
-        ]
-      },
       "r2_buckets": [
         {
           "binding": "MEDIA_STAGING",
@@ -125,17 +102,10 @@
       ],
       "kv_namespaces": [
         {
-          "binding": "GO_REDIRECTS",
-          "id": "047128fafc48411bb9a6aa367a2e8a4b"
-        },
-        {
           "binding": "MCP_DELEGATION_JTI",
           "id": "44a2a308a7074708aa9e7fb3f0e381b2"
         }
-      ],
-      "ai": {
-        "binding": "AI"
-      }
+      ]
     }
   }
 }

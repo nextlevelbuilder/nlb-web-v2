@@ -37,11 +37,9 @@ Markdown twins render the HTML page through the `WORKER_SELF_REFERENCE` service 
 | `MEDIA_PUBLIC`, `MEDIA_STAGING` (R2) | Uploaded product media, served from `cdn.nextlevelbuilder.io` | [`app/api/v1/media/upload/route.ts`](../app/api/v1/media/upload/route.ts) |
 | `WORKER_SELF_REFERENCE` (service) | Markdown twins | [`lib/markdown/page-fetch.ts`](../lib/markdown/page-fetch.ts) |
 | `ASSETS` | Static assets emitted by OpenNext | OpenNext runtime |
-| `GO_REDIRECTS` (KV) | Reserved for `/go` redirects | Not referenced. `/go/[slug]` reads D1, the same as the old app. |
-| `POLAR_WEBHOOK_QUEUE` (Queue producer) | Reserved for async webhook processing | Not referenced. [`app/api/webhooks/polar/route.ts`](../app/api/webhooks/polar/route.ts) processes events inline. |
-| `AI` (Workers AI) | Reserved for listing screening | Not referenced. [`lib/moderation/ai.ts`](../lib/moderation/ai.ts) is a deterministic heuristic. |
+| `MCP_DELEGATION_JTI` (KV) | One-time use of MCP delegation assertions: each `jti` is stored until the token expires | [`lib/auth-mcp-delegation-replay.ts`](../lib/auth-mcp-delegation-replay.ts) |
 
-The unused bindings were carried over from the old app for parity. Remove them or wire them up as a deliberate change.
+The old app also declared `GO_REDIRECTS` (KV), `POLAR_WEBHOOK_QUEUE` (Queue) and `AI` (Workers AI), but never used them: `/go/[slug]` reads D1, Polar webhooks are processed inline, and listing screening is a deterministic heuristic. They are not bound here.
 
 Staging and production share the `nlb-media-staging` bucket for `MEDIA_STAGING`. Only the public bucket is split.
 

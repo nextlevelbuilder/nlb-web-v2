@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Idempotent Cloudflare provisioning for nlb-web-v2 on the hi@nextlevelbuilder.io account.
 #
-# Creates (or reuses) D1, KV, Queues, R2 buckets and Turnstile widgets for production and staging,
+# Creates (or reuses) D1, KV, R2 buckets and Turnstile widgets for production and staging,
 # writes the resulting ids into wrangler.jsonc, and optionally sets worker secrets from .env.
 #
 # Usage:
@@ -10,7 +10,7 @@
 #   scripts/provision-cloudflare.sh all              # resources, then secrets for both envs
 #
 # Auth model (see docs/deployment-guide.md):
-# - D1 / KV / Queues / Turnstile / Workers use the wrangler OAuth login. Wrangler auto-loads
+# - D1 / KV / Turnstile / Workers use the wrangler OAuth login. Wrangler auto-loads
 #   CLOUDFLARE_API_TOKEN from ./.env, so OAuth commands run from a neutral directory with the
 #   token unset.
 # - R2 uses the account API token from .env (the OAuth login has no R2 scope).
@@ -97,14 +97,6 @@ ensure_kv() { # title -> prints id
   echo "$id"
 }
 
-ensure_queue() {
-  local name="$1"
-  if cf_api GET "/accounts/$ACCOUNT_ID/queues?per_page=100" | python3 -c 'import json,sys; n=sys.argv[1]; sys.exit(0 if any(q.get("queue_name")==n for q in json.load(sys.stdin)["result"]) else 1)' "$name"; then
-    return 0
-  fi
-  wr_oauth queues create "$name" >/dev/null
-}
-
 ensure_r2() { # uses the account API token from .env (wrangler auto-loads it inside $ROOT)
   local name="$1"
   if (cd "$ROOT" && CLOUDFLARE_ACCOUNT_ID="$ACCOUNT_ID" "$WRANGLER" r2 bucket info "$name" >/dev/null 2>&1); then
@@ -149,8 +141,6 @@ function setKv(target, binding, id) {
   const existing = target.kv_namespaces.find((kv) => kv.binding === binding);
   if (existing) existing.id = id; else target.kv_namespaces.push({ binding, id });
 }
-setKv(cfg, "GO_REDIRECTS", values.KV_PROD);
-setKv(stg, "GO_REDIRECTS", values.KV_STAGING);
 setKv(cfg, "MCP_DELEGATION_JTI", values.KV_JTI_PROD);
 setKv(stg, "MCP_DELEGATION_JTI", values.KV_JTI_STAGING);
 cfg.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY = values.TURNSTILE_PROD;
@@ -161,21 +151,17 @@ JS
 
 cmd_resources() {
   echo "Provisioning on account $ACCOUNT_ID"
-  local d1_prod d1_staging kv_prod kv_staging kv_jti_prod kv_jti_staging sub ts_prod ts_staging
+  local d1_prod d1_staging kv_jti_prod kv_jti_staging sub ts_prod ts_staging
   d1_prod="$(ensure_d1 nlb-prod)"; echo "D1 nlb-prod: $d1_prod"
   d1_staging="$(ensure_d1 nlb-staging)"; echo "D1 nlb-staging: $d1_staging"
-  kv_prod="$(ensure_kv nlb-go-redirects)"; echo "KV nlb-go-redirects: $kv_prod"
-  kv_staging="$(ensure_kv nlb-go-redirects-staging)"; echo "KV nlb-go-redirects-staging: $kv_staging"
   kv_jti_prod="$(ensure_kv nlb-mcp-delegation-jti)"; echo "KV nlb-mcp-delegation-jti: $kv_jti_prod"
   kv_jti_staging="$(ensure_kv nlb-mcp-delegation-jti-staging)"; echo "KV nlb-mcp-delegation-jti-staging: $kv_jti_staging"
-  ensure_queue nlb-polar-webhooks; ensure_queue nlb-polar-webhooks-staging; echo "Queues ok"
   ensure_r2 nlb-media-public; ensure_r2 nlb-media-staging; ensure_r2 nlb-media-staging-public; echo "R2 buckets ok"
   sub="$(workers_subdomain)"; echo "workers.dev subdomain: $sub"
   ts_prod="$(ensure_turnstile nlb-web-production "[\"nextlevelbuilder.io\",\"nextlevelbuilder-web.$sub.workers.dev\"]")"
   ts_staging="$(ensure_turnstile nlb-web-staging "[\"staging.nextlevelbuilder.io\",\"nextlevelbuilder-web-staging.$sub.workers.dev\",\"localhost\"]")"
   echo "Turnstile site keys: production $ts_prod, staging $ts_staging"
-  update_wrangler_config "D1_PROD=$d1_prod" "D1_STAGING=$d1_staging" "KV_PROD=$kv_prod" "KV_STAGING=$kv_staging" \
-    "KV_JTI_PROD=$kv_jti_prod" "KV_JTI_STAGING=$kv_jti_staging" \
+  update_wrangler_config "D1_PROD=$d1_prod" "D1_STAGING=$d1_staging" "KV_JTI_PROD=$kv_jti_prod" "KV_JTI_STAGING=$kv_jti_staging" \
     "TURNSTILE_PROD=$ts_prod" "TURNSTILE_STAGING=$ts_staging"
   echo "wrangler.jsonc updated"
 }
