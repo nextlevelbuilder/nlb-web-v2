@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NLB Homepage Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f6f5f2; --fg:#16161a; --muted:#6b6b72; --line:#dcdad4; --card:#fff; --accent:#2b59ff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111114; --fg:#f2f2f4; --muted:#9a9aa3; --line:#2a2a30; --card:#1a1a1f; --accent:#7d9bff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:"Be Vietnam Pro",system-ui,sans-serif; line-height:1.55; }
+  header, main { max-width:1200px; margin:0 auto; padding:0 16px; }
+  header { padding-top:48px; padding-bottom:24px; }
+  h1 { font-size:clamp(28px,4vw,40px); margin:0 0 8px; font-weight:700; }
+  header p { color:var(--muted); margin:0; max-width:720px; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-top:20px; }
+  .controls button { font:inherit; font-size:14px; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+  .controls button[aria-pressed="true"] { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  .grid { display:grid; gap:24px; padding-bottom:64px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .card-head h2 { margin:0; font-size:18px; font-weight:700; }
+  .card-head p { margin:2px 0 0; color:var(--muted); font-size:14px; }
+  .card-head a { color:var(--accent); font-weight:500; text-decoration:none; font-size:14px; white-space:nowrap; }
+  .card-head a:focus-visible, .controls button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .stage { background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(127,127,127,.06) 10px 20px); display:flex; justify-content:center; padding:16px; overflow:hidden; }
+  .frame-wrap { width:100%; height:640px; overflow:hidden; border-radius:10px; border:1px solid var(--line); background:#fff; position:relative; }
+  iframe { border:0; transform-origin:0 0; position:absolute; top:0; left:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hướng thiết kế homepage NLB</h1>
+  <p>Vòng 2 (06–08) ở trên cùng: concept kể chuyện, có animation, EN/VI và theme sáng/tối. Vòng 1 (01–05) xếp bên dưới để tham khảo. Chọn kích thước màn hình để xem bản desktop, tablet hoặc mobile; bấm "Mở toàn trang" để xem và cuộn thử như thật.</p>
+  <div class="controls" role="group" aria-label="Kích thước xem trước">
+    <button data-w="1440" aria-pressed="true">Desktop 1440</button>
+    <button data-w="820" aria-pressed="false">Tablet 820</button>
+    <button data-w="390" aria-pressed="false">Mobile 390</button>
+  </div>
+</header>
+<main class="grid" id="grid"></main>
+<script>
+  var items = [
+    ["06-constellation.html", "Vòng 2 · 06 · Constellation", "Mỗi builder là một ngôi sao: đốm sáng tách thành chòm sao theo scroll, con trỏ như lực hút. Light = bản đồ thiên văn cổ."],
+    ["07-builders-codex.html", "Vòng 2 · 07 · The Builder's Codex", "Bản thảo giả kim × bản vẽ kỹ thuật tự vẽ theo scroll; đèn lồng con trỏ hé lộ lớp blueprint ẩn bên dưới."],
+    ["08-liquid-portal.html", "Vòng 2 · 08 · Liquid Portal", "Quả cầu kim loại lỏng (shader) phản ứng con trỏ, scroll kéo người xem xuyên qua cổng; chương Courses cuộn ngang."],
+    ["01-editorial-swiss.html", "01 · Editorial / Swiss", "Chữ là nhân vật chính, lưới rõ ràng, nhiều khoảng trắng, serif kết hợp sans."],
+    ["02-dark-terminal.html", "02 · Dark Terminal", "Nền tối, chữ mono, cửa sổ terminal và code snippet, một màu neon nhấn."],
+    ["03-bold-brutalist.html", "03 · Bold Brutalist", "Viền dày, bóng đổ cứng, khối màu phẳng mạnh, chữ display cỡ lớn."],
+    ["04-soft-glass.html", "04 · Soft Glass", "Gradient dịu, card trong mờ, bo tròn lớn, cảm giác SaaS cao cấp."],
+    ["05-community-playful.html", "05 · Community / Playful", "Đặt con người lên trước: avatar, feed hoạt động, màu ấm, minh hoạ nhẹ."]
+  ];
+  var grid = document.getElementById("grid"), width = 1440;
+  grid.innerHTML = items.map(function (it) {
+    return '<article class="card"><div class="card-head"><div><h2>' + it[1] + '</h2><p>' + it[2] + '</p></div>' +
+      '<a href="' + it[0] + '" target="_blank" rel="noopener">Mở toàn trang ↗</a></div>' +
+      '<div class="stage"><div class="frame-wrap"><iframe loading="lazy" allow="autoplay" title="' + it[1] + '" src="' + it[0] + '"></iframe></div></div></article>';
+  }).join("");
+  function fit() {
+    document.querySelectorAll(".frame-wrap").forEach(function (wrap) {
+      var avail = wrap.parentElement.clientWidth - 32, scale = Math.min(1, avail / width);
+      var f = wrap.querySelector("iframe");
+      wrap.style.width = (width * scale) + "px";
+      f.style.width = width + "px";
+      f.style.height = (640 / scale) + "px";
+      f.style.transform = "scale(" + scale + ")";
+    });
+  }
+  document.querySelectorAll(".controls button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      width = +b.dataset.w;
+      document.querySelectorAll(".controls button").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
+      fit();
+    });
+  });
+  window.addEventListener("resize", fit);
+  fit();
+</script>
+</body>
+</html>

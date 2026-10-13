@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next Level Builders — Cộng đồng builder ra mắt sản phẩm thật</title>
+<meta name="description" content="Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord.">
+<!--
+  MOCKUP 02 — DARK TERMINAL / DEVELOPER
+  Art direction: a homepage that reads like a well-kept terminal session.
+  - Every section heading is a shell prompt ("$ nlb ...") so the page scans like a command log.
+  - Type: JetBrains Mono (display, labels, data) + Be Vietnam Pro (body copy). Both ship the Vietnamese subset.
+  - Colour: near-black base, warm-grey text, ONE accent (acid green #B8F25C) reserved for: prompt "$", caret,
+    primary CTA, live indicators and the highlighted pricing tier. Nothing else is green.
+  - Texture: fixed scanline overlay + faint 32px grid in hero. Both pointer-events:none, aria-hidden.
+  - Inline CSS only (no Tailwind) to keep the file small and the tokens explicit.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+/* ---------- Design tokens ---------- */
+:root{
+  --bg:#0a0b0a;           /* page */
+  --bg-1:#111311;         /* raised surface */
+  --bg-2:#171a17;         /* terminal body / cards hover */
+  --line:#262a26;         /* hairlines */
+  --line-2:#363b36;
+  --text:#e9ece6;         /* 16.9:1 on --bg */
+  --muted:#a3aaa1;        /* 8.1:1 on --bg */
+  --dim:#858c84;          /* 5.4:1 on --bg — min for small text */
+  --accent:#b8f25c;       /* acid green, used sparingly */
+  --accent-ink:#0a0b0a;   /* text on accent, 15:1 */
+  --warn:#f2c35c;         /* only in terminal output (yellow tokens) */
+  --info:#7cc7f2;         /* only in terminal output (strings/flags) */
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:6px;
+  --wrap:1200px;
+  --pad:clamp(16px,4vw,32px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 var(--sans);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+.skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--accent);color:var(--accent-ink);padding:8px 12px;font-family:var(--mono)}
+.skip:focus{left:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Scanline overlay — decorative */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--pad)}
+.mono{font-family:var(--mono)}
+.acc{color:var(--accent)}
+.dim{color:var(--dim)}
+.muted{color:var(--muted)}
+
+/* ---------- Primitives ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:0 18px;border-radius:var(--r);
+  font:600 15px/1 var(--mono);letter-spacing:-.01em;border:1px solid var(--line-2);transition:transform .15s,background .15s,border-color .15s,box-shadow .15s;white-space:nowrap}
+.btn:hover{border-color:var(--muted);background:var(--bg-1)}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn-p:hover{background:#c9f77e;border-color:#c9f77e;box-shadow:0 0 0 4px rgba(184,242,92,.14)}
+.kbd{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:4px;font:500 12px/1 var(--mono);
+  border:1px solid currentColor;opacity:.75}
+.btn-p .kbd{border-color:rgba(10,11,10,.45);opacity:1}
+.chip{display:inline-flex;align-items:center;gap:8px;font:500 12px/1 var(--mono);color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:6px 10px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.caret{display:inline-block;width:.55em;height:1em;background:var(--accent);vertical-align:-.12em;margin-left:.08em;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* Section prompt heading:  $ nlb <cmd>  then H2 */
+.sec{padding:clamp(64px,9vw,112px) 0;border-top:1px solid var(--line)}
+.prompt{font:500 14px/1.4 var(--mono);color:var(--dim);margin:0 0 14px;display:flex;flex-wrap:wrap;gap:0 .6ch}
+.prompt b{color:var(--accent);font-weight:700}
+.prompt .cmd{color:var(--text)}
+.h2{font:700 clamp(28px,4vw,44px)/1.15 var(--mono);letter-spacing:-.035em;margin:0 0 14px;max-width:22ch;text-wrap:balance}
+.lead{color:var(--muted);max-width:60ch;margin:0;font-size:17px}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:40px;flex-wrap:wrap}
+.link{font:500 14px/1 var(--mono);color:var(--text);border-bottom:1px solid var(--line-2);padding:10px 0 6px;min-height:44px;display:inline-flex;align-items:flex-end;transition:color .15s,border-color .15s}
+.link:hover{color:var(--accent);border-color:var(--accent)}
+
+/* Terminal window */
+.term{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;box-shadow:0 30px 80px -40px rgba(0,0,0,.9)}
+.term-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font:500 12px/1 var(--mono);color:var(--dim)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:var(--line-2);display:block}
+.term-bar span{margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.term-body{padding:18px 18px 20px;font:400 13.5px/1.75 var(--mono);color:var(--muted);overflow-x:auto}
+.term-body pre{margin:0;font:inherit;white-space:pre}
+.t-p{color:var(--accent)} .t-c{color:var(--text)} .t-s{color:var(--info)} .t-w{color:var(--warn)} .t-d{color:var(--dim)}
+
+/* ---------- Header ---------- */
+.hdr{position:sticky;top:0;z-index:50;background:rgba(10,11,10,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.hdr .wrap{display:flex;align-items:center;gap:24px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font:800 15px/1 var(--mono);letter-spacing:-.02em;white-space:nowrap}
+.logo-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--accent);color:var(--accent);border-radius:5px;font-size:13px}
+.nav{display:flex;gap:4px;margin-left:8px}
+.nav a{font:500 14px/1 var(--mono);color:var(--muted);padding:10px 10px;border-radius:5px;min-height:44px;display:flex;align-items:center;transition:color .15s,background .15s;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg-1)}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.lang{display:flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden;font:500 12px/1 var(--mono)}
+.lang button{padding:0 10px;min-height:32px;color:var(--dim)}
+.lang button[aria-pressed="true"]{background:var(--bg-2);color:var(--text)}
+.login{font:500 14px/1 var(--mono);color:var(--muted);padding:0 10px;min-height:44px;display:flex;align-items:center}
+.login:hover{color:var(--text)}
+.hdr .btn{min-height:38px;font-size:14px}
+.burger{display:none;width:44px;height:44px;border:1px solid var(--line-2);border-radius:5px;place-items:center}
+.burger span,.burger span::before,.burger span::after{display:block;width:18px;height:2px;background:var(--text);position:relative;transition:transform .2s,background .2s}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0}
+.burger span::before{top:-6px} .burger span::after{top:6px}
+.burger[aria-expanded="true"] span{background:transparent}
+.burger[aria-expanded="true"] span::before{transform:translateY(6px) rotate(45deg)}
+.burger[aria-expanded="true"] span::after{transform:translateY(-6px) rotate(-45deg)}
+.mnav{display:none;border-top:1px solid var(--line);background:var(--bg);padding:12px var(--pad) 24px}
+.mnav.open{display:block}
+.mnav>a{display:flex;align-items:center;gap:10px;min-height:48px;font:500 16px/1 var(--mono);border-bottom:1px solid var(--line);color:var(--text)}
+.mnav>a::before{content:">";color:var(--dim)}
+.mnav-r{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;padding:clamp(56px,8vw,104px) 0 clamp(56px,7vw,88px);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 30% 30%,#000 10%,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 30% 30%,#000 10%,transparent 75%);opacity:.55}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:56px;align-items:center}
+.hero-k{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.h1{font:800 clamp(36px,5.6vw,68px)/1.06 var(--mono);letter-spacing:-.05em;margin:0 0 24px;text-wrap:balance}
+.h1 .hl{color:var(--accent)}
+.hero p.sub{font-size:clamp(16px,1.4vw,18px);color:var(--muted);max-width:56ch;margin:0 0 32px}
+.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px}
+.trust{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:10px 22px;font:500 13px/1.4 var(--mono);color:var(--muted)}
+.trust li{display:flex;align-items:center;gap:8px}
+.trust li::before{content:"✓";color:var(--accent);font-weight:700}
+.typed{min-height:1.75em}
+
+/* ---------- Pillars ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.pillar{background:var(--bg);padding:32px 28px 36px;display:flex;flex-direction:column;gap:14px;transition:background .2s}
+.pillar:hover{background:var(--bg-1)}
+.pillar .idx{font:500 13px/1 var(--mono);color:var(--dim)}
+.pillar h3{font:700 22px/1.2 var(--mono);letter-spacing:-.03em;margin:0;display:flex;align-items:center;gap:10px}
+.pillar h3 code{font:500 12px/1 var(--mono);color:var(--accent);border:1px solid rgba(184,242,92,.35);padding:4px 6px;border-radius:4px}
+.pillar p{margin:0;color:var(--muted)}
+.pillar ul{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:8px;font:400 13.5px/1.5 var(--mono);color:var(--text)}
+.pillar li::before{content:"→ ";color:var(--dim)}
+
+/* ---------- Courses ---------- */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.course{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg-1);display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+.course:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.thumb{position:relative;aspect-ratio:16/9;background:#0d0f0d;border-bottom:1px solid var(--line);overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.1) brightness(.45)}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,11,10,.92))}
+.thumb .wk{position:absolute;left:14px;top:12px;z-index:1;font:600 12px/1 var(--mono);background:rgba(10,11,10,.8);border:1px solid var(--line-2);padding:6px 8px;border-radius:4px}
+.thumb .play{position:absolute;right:14px;bottom:14px;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid var(--accent);display:grid;place-items:center;color:var(--accent);background:rgba(10,11,10,.6)}
+.thumb .code{position:absolute;left:14px;bottom:14px;z-index:1;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.course-b{padding:20px 20px 22px;display:flex;flex-direction:column;gap:14px;flex:1}
+.course h3{font:600 17px/1.4 var(--sans);margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:500 12px/1 var(--mono);color:var(--muted)}
+.badge{font:600 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);border:1px dashed rgba(184,242,92,.45);padding:5px 7px;border-radius:4px}
+.course-f{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--line)}
+.course-f .btn{min-height:40px;font-size:14px}
+
+/* ---------- Directory ---------- */
+.dir{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.tbl{width:100%;border-collapse:collapse;font:400 14px/1.4 var(--mono)}
+.tbl th{font:500 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--dim);text-align:left;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tbl td{padding:16px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{transition:background .15s}
+.tbl tbody tr:hover{background:var(--bg-2)}
+.tbl .rk{color:var(--dim);width:48px}
+.tbl tr:first-child .rk{color:var(--accent);font-weight:700}
+.tbl .pn{font-weight:700;color:var(--text);white-space:nowrap}
+.tbl .tg{color:var(--muted);font-family:var(--sans)}
+.tbl .num{text-align:right;white-space:nowrap}
+.trustbar{display:inline-flex;align-items:center;gap:10px}
+.trustbar i{display:block;width:56px;height:4px;background:var(--line-2);border-radius:2px;overflow:hidden;position:relative}
+.trustbar i::after{content:"";position:absolute;inset:0;width:var(--v);background:var(--accent)}
+.vote{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:5px;padding:6px 10px;color:var(--text)}
+.vote::before{content:"▲";font-size:10px;color:var(--dim)}
+.dir-f{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px;border-top:1px solid var(--line);font:500 13px/1.5 var(--mono);color:var(--muted)}
+
+/* ---------- Social proof ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;margin-bottom:40px}
+.stat{padding:28px 24px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat b{display:block;font:800 clamp(30px,3.6vw,44px)/1 var(--mono);letter-spacing:-.05em;margin-bottom:10px}
+.stat span{font:500 13px/1.4 var(--mono);color:var(--muted)}
+.quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.quote{margin:0;border-left:2px solid var(--line-2);padding:4px 0 4px 20px}
+.quote blockquote{margin:0 0 14px;font-size:17px;line-height:1.6}
+.quote figcaption{font:500 13px/1 var(--mono);color:var(--dim)}
+.quote figcaption::before{content:"// ";color:var(--accent)}
+
+/* ---------- Pricing ---------- */
+.toggle{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;padding:4px;gap:4px;font:600 14px/1 var(--mono)}
+.toggle button{min-height:40px;padding:0 16px;border-radius:5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.toggle button[aria-checked="true"]{background:var(--text);color:var(--bg)}
+.toggle .save{font-size:11px;color:var(--accent);font-weight:600}
+.toggle button[aria-checked="true"] .save{color:#3d6b00}
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;max-width:960px}
+.plan{border:1px solid var(--line);border-radius:12px;background:var(--bg-1);padding:30px 28px 28px;display:flex;flex-direction:column;position:relative}
+.plan.vip{border-color:rgba(184,242,92,.55);box-shadow:0 0 0 1px rgba(184,242,92,.12),0 30px 80px -40px rgba(184,242,92,.25)}
+.plan-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px}
+.plan h3{font:800 24px/1 var(--mono);letter-spacing:-.03em;margin:0}
+.seats{font:600 12px/1 var(--mono);color:var(--muted);border:1px solid var(--line-2);border-radius:4px;padding:6px 8px;white-space:nowrap}
+.plan.vip .seats{color:var(--accent);border-color:rgba(184,242,92,.45)}
+.plan .who{color:var(--muted);margin:0 0 24px;font-size:15px}
+.price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.price b{font:800 48px/1 var(--mono);letter-spacing:-.05em}
+.price span{font:500 14px/1 var(--mono);color:var(--muted)}
+.price-n{font:500 13px/1.4 var(--mono);color:var(--dim);margin:0 0 24px;min-height:1.4em}
+.feat{list-style:none;padding:0;margin:0 0 28px;display:grid;gap:10px;font-size:15px}
+.feat li{display:grid;grid-template-columns:20px 1fr;gap:8px}
+.feat li::before{content:"+";font:700 15px/1.6 var(--mono);color:var(--accent)}
+.feat strong{color:var(--accent);font-weight:600}
+.plan .btn{margin-top:auto;width:100%}
+.price-note{margin-top:22px;font:500 13px/1.5 var(--mono);color:var(--muted)}
+
+/* ---------- Build with us ---------- */
+.bwu{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:56px;align-items:center}
+.copy{font:500 12px/1 var(--mono);color:var(--muted);margin-left:auto;border:1px solid var(--line-2);border-radius:4px;padding:6px 8px;min-height:28px}
+.copy:hover{color:var(--text)}
+.mcp{margin-top:24px;border:1px dashed var(--line-2);border-radius:8px;padding:16px 18px}
+.mcp code{font:500 14px/1.6 var(--mono);color:var(--text);word-break:break-all}
+.mcp p{margin:8px 0 0;color:var(--muted);font-size:15px}
+
+/* ---------- Final CTA ---------- */
+.final{text-align:left;padding:clamp(72px,10vw,128px) 0}
+.final .box{border:1px solid var(--line);border-radius:14px;padding:clamp(32px,6vw,72px);background:
+  radial-gradient(600px 240px at 0% 0%,rgba(184,242,92,.08),transparent 70%),var(--bg-1);position:relative;overflow:hidden}
+.final .h2{max-width:20ch;font-size:clamp(30px,5vw,56px)}
+.final p{font:500 14px/1.5 var(--mono);color:var(--muted);margin:20px 0 0}
+
+/* ---------- Footer ---------- */
+.ftr{border-top:1px solid var(--line);padding:48px 0 40px}
+.ftr .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:start}
+.ftr p{margin:14px 0 0;color:var(--muted)}
+.flinks{display:flex;flex-wrap:wrap;gap:4px 18px;font:500 14px/1 var(--mono);justify-content:flex-end;max-width:520px}
+.flinks a{color:var(--muted);min-height:44px;display:flex;align-items:center}
+.flinks a:hover{color:var(--accent)}
+.copyr{grid-column:1/-1;border-top:1px solid var(--line);padding-top:20px;font:500 13px/1 var(--mono);color:var(--dim);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* Mobile sticky CTA */
+.mcta{display:none}
+
+/* ---------- Tablet 768–1279 ---------- */
+@media (max-width:1279px){
+  .nav{margin-left:0;gap:0}
+  .nav a{padding:10px 7px;font-size:13px}
+  .hdr .wrap{gap:14px}
+  .login{display:none}
+}
+@media (max-width:1024px){
+  .hero .wrap,.bwu{grid-template-columns:minmax(0,1fr);gap:40px}
+  .grid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid3 .pillar:last-child{grid-column:1/-1}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cards .course:last-child{display:none} /* tablet: keep grid even, link "Xem tất cả" covers the rest */
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat:nth-child(2){border-right:0}
+  .stat:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .quotes{grid-template-columns:minmax(0,1fr)}
+  .logo-t{display:none}
+  .tbl .tg{font-size:13px}
+}
+/* ---------- Mobile ≤767 ---------- */
+@media (max-width:767px){
+  .nav,.hdr-r .lang,.hdr-r .btn{display:none}
+  .burger{display:grid}
+  .logo-t{display:inline}
+  .grid3,.cards,.plans{grid-template-columns:minmax(0,1fr)}
+  .grid3 .pillar:last-child{grid-column:auto}
+  .cards .course:last-child{display:flex}
+  .ctas .btn{flex:1 1 100%}
+  .ctas .kbd{display:none}
+  .sec-head{margin-bottom:28px}
+  /* Directory table → stacked rows */
+  .tbl thead{display:none}
+  .tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:auto}
+  .tbl tr{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:4px 12px;padding:16px;border-bottom:1px solid var(--line)}
+  .tbl tr:last-child{border-bottom:0}
+  .tbl td{padding:0;border:0}
+  .tbl .rk{grid-row:1/3;width:auto}
+  .tbl .pn{grid-column:2}
+  .tbl .tg{grid-column:2/4;grid-row:2;font-size:14px}
+  .tbl .tr{grid-column:2;grid-row:3;text-align:left}
+  .tbl .vt{grid-column:3;grid-row:1}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat{padding:20px 16px}
+  .ftr .wrap{grid-template-columns:minmax(0,1fr)}
+  .flinks{justify-content:flex-start}
+  .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;gap:10px;align-items:center;padding:10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+    background:rgba(10,11,10,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+  .mcta .btn{flex:1}
+  .mcta small{font:500 11px/1.3 var(--mono);color:var(--muted);max-width:11ch}
+  body{padding-bottom:72px}
+  .term-body{font-size:12.5px;padding:14px}
+}
+@media (max-width:767px){.hero-k .chip:nth-child(3){display:none}}
+@media (max-width:380px){
+  .price b{font-size:40px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua tới nội dung</a>
+
+<!-- ============ HEADER ============ -->
+<header class="hdr">
+  <div class="wrap">
+    <a href="#" class="logo" aria-label="Next Level Builders — trang chủ">
+      <span class="logo-mark" aria-hidden="true">&gt;_</span>
+      <span class="logo-t">Next Level Builders</span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a href="#courses">Courses</a>
+      <a href="#directory">Directory</a>
+      <a href="#directory">Bảng xếp hạng</a>
+      <a href="#pricing">Bảng giá</a>
+      <a href="#build">Build with us</a>
+    </nav>
+    <div class="hdr-r">
+      <div class="lang" role="group" aria-label="Ngôn ngữ">
+        <button type="button" aria-pressed="true">VI</button>
+        <button type="button" aria-pressed="false">EN</button>
+      </div>
+      <a href="#" class="login">Đăng nhập</a>
+      <a href="#pricing" class="btn btn-p">Tham gia</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Mở menu"><span></span></button>
+    </div>
+  </div>
+  <nav id="mnav" class="mnav" aria-label="Điều hướng di động">
+    <a href="#courses">Courses</a>
+    <a href="#directory">Directory</a>
+    <a href="#directory">Bảng xếp hạng</a>
+    <a href="#pricing">Bảng giá</a>
+    <a href="#build">Build with us</a>
+    <div class="mnav-r">
+      <div class="lang" role="group" aria-label="Ngôn ngữ">
+        <button type="button" aria-pressed="true">VI</button>
+        <button type="button" aria-pressed="false">EN</button>
+      </div>
+      <a href="#" class="btn">Đăng nhập</a>
+      <a href="#pricing" class="btn btn-p">Tham gia</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+<!-- ============ HERO ============ -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="wrap">
+    <div>
+      <div class="hero-k">
+        <span class="chip"><span class="dot" aria-hidden="true"></span>Tuần 41 · video mới đã lên</span>
+        <span class="chip">500+ builder</span>
+        <span class="chip">v2026.10</span>
+      </div>
+      <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb init --builder</span></p>
+      <h1 id="hero-h" class="h1">Cộng đồng builder ra mắt sản phẩm thật — <span class="hl">mỗi tuần.</span><span class="caret" aria-hidden="true"></span></h1>
+      <p class="sub">Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord. Từ 0 lên 1 luôn là phần khó nhất — bạn không phải đi một mình.</p>
+      <div class="ctas">
+        <a href="#pricing" class="btn btn-p">Tham gia membership <span class="kbd" aria-hidden="true">J</span></a>
+        <a href="#courses" class="btn">Xem video tuần này <span class="kbd" aria-hidden="true">V</span></a>
+      </div>
+      <ul class="trust">
+        <li>Hoàn tiền 100% trong 30 ngày</li>
+        <li>Thanh toán an toàn qua Polar.sh</li>
+        <li>500+ builder năng động</li>
+      </ul>
+    </div>
+
+    <!-- Hero terminal: live-feel status of the community. Lines after the command are typed in by JS. -->
+    <div class="term" role="img" aria-label="Cửa sổ terminal minh hoạ trạng thái cộng đồng NLB tuần này">
+      <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>~/nextlevelbuilder — zsh</span></div>
+      <div class="term-body" aria-hidden="true">
+<pre><span class="t-p">$</span> <span class="t-c">nlb status --week 41</span>
+<span id="typed">
+<span class="t-d">→ đang kết nối discord.nextlevelbuilder.io…</span>
+<span class="t-p">✓</span> builders online      <span class="t-c">127</span><span class="t-d"> / 500+</span>
+<span class="t-p">✓</span> video tuần này       <span class="t-s">"Agent bán hàng với Claude Code"</span>
+<span class="t-p">✓</span> sản phẩm ra mắt      <span class="t-c">9</span><span class="t-d">  (kiểm duyệt thủ công)</span>
+<span class="t-w">!</span> top directory 24h    <span class="t-c">ClaudeKit</span> <span class="t-d">· trust 96</span>
+
+<span class="t-d"># mỗi tuần một vòng: học → build → ra mắt</span>
+</span><span class="t-p">$</span> <span class="caret"></span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 PILLARS ============ -->
+<section class="sec" aria-labelledby="pil-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb ls</span><span>--pillars</span></p>
+        <h2 id="pil-h" class="h2">Ba thứ bạn cần để đi từ 0 lên 1.</h2>
+      </div>
+    </div>
+    <div class="grid3">
+      <article class="pillar">
+        <span class="idx">01 / cộng đồng</span>
+        <h3>Cộng đồng <code>discord</code></h3>
+        <p>Discord riêng tư cho người thật sự build — nơi bạn được phản hồi và được giữ trách nhiệm.</p>
+        <ul><li>500+ builder năng động</li><li>Phản hồi &amp; trách nhiệm</li><li>Mạng lưới nhà sáng lập</li></ul>
+      </article>
+      <article class="pillar">
+        <span class="idx">02 / courses</span>
+        <h3>Courses <code>weekly</code></h3>
+        <p>Video chia sẻ hàng tuần: AI automation, SEO, phát triển &amp; tăng trưởng sản phẩm.</p>
+        <ul><li>Mua lẻ từng video, xem trọn đời</li><li>VIP xem toàn bộ</li><li>52 tuần video thực chiến</li></ul>
+      </article>
+      <article class="pillar">
+        <span class="idx">03 / directory</span>
+        <h3>Directory <code>verified</code></h3>
+        <p>Sản phẩm được kiểm duyệt thủ công, có Trust Passport. Không trả tiền để lên hạng.</p>
+        <ul><li>Kiểm duyệt thủ công</li><li>Trust Passport</li><li>Bảng xếp hạng tự nhiên 24h UTC</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COURSES ============ -->
+<section class="sec" id="courses" aria-labelledby="crs-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb courses</span><span>--latest 3</span></p>
+        <h2 id="crs-h" class="h2">Video thực chiến, mỗi tuần một bài.</h2>
+        <p class="lead">Mua lẻ từng video và xem trọn đời — hoặc lên VIP để xem toàn bộ thư viện.</p>
+      </div>
+      <a href="#" class="link">Xem tất cả video →</a>
+    </div>
+    <div class="cards">
+      <article class="course">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/nlb-agent/640/360" alt="" loading="lazy" width="640" height="360">
+          <span class="wk">Tuần 41</span>
+          <span class="code" aria-hidden="true">claude --agent sales</span>
+          <span class="play" aria-hidden="true">▶</span>
+        </div>
+        <div class="course-b">
+          <div class="meta"><span>48 phút</span><span aria-hidden="true">·</span><span class="badge">VIP xem miễn phí</span></div>
+          <h3>Dựng agent tự động hoá bán hàng với Claude Code</h3>
+          <div class="course-f"><span class="mono muted">$19</span><a href="#" class="btn">Mua $19</a></div>
+        </div>
+      </article>
+      <article class="course">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/nlb-seo/640/360" alt="" loading="lazy" width="640" height="360">
+          <span class="wk">Tuần 40</span>
+          <span class="code" aria-hidden="true">curl -s sitemap.xml</span>
+          <span class="play" aria-hidden="true">▶</span>
+        </div>
+        <div class="course-b">
+          <div class="meta"><span>36 phút</span><span aria-hidden="true">·</span><span class="badge">VIP xem miễn phí</span></div>
+          <h3>SEO cho micro-SaaS: từ 0 đến 10K visit/tháng</h3>
+          <div class="course-f"><span class="mono muted">$15</span><a href="#" class="btn">Mua $15</a></div>
+        </div>
+      </article>
+      <article class="course">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/nlb-launch/640/360" alt="" loading="lazy" width="640" height="360">
+          <span class="wk">Tuần 39</span>
+          <span class="code" aria-hidden="true">git tag v1.0 &amp;&amp; launch</span>
+          <span class="play" aria-hidden="true">▶</span>
+        </div>
+        <div class="course-b">
+          <div class="meta"><span>29 phút</span><span aria-hidden="true">·</span><span class="badge">VIP xem miễn phí</span></div>
+          <h3>Ra mắt trên Product Hunt &amp; Build with Us: checklist thực chiến</h3>
+          <div class="course-f"><span class="mono muted">$12</span><a href="#" class="btn">Mua $12</a></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIRECTORY ============ -->
+<section class="sec" id="directory" aria-labelledby="dir-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb directory top</span><span>--week --limit 5</span></p>
+        <h2 id="dir-h" class="h2">Top Directory tuần này.</h2>
+        <p class="lead">Xếp hạng tự nhiên theo vote và Trust Score, chốt mỗi 24h UTC.</p>
+      </div>
+      <a href="#" class="link">Bảng xếp hạng đầy đủ →</a>
+    </div>
+    <div class="term">
+      <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>directory.nextlevelbuilder.io — top/week</span></div>
+      <table class="tbl">
+        <caption class="sr">Top 5 sản phẩm trên Directory tuần này (dữ liệu mẫu)</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Sản phẩm</th><th scope="col">Mô tả</th><th scope="col" class="num">Trust</th><th scope="col" class="num">Votes</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">01</td><td class="pn">ClaudeKit</td><td class="tg">Skills &amp; workflows cao cấp cho Claude Code</td><td class="num tr"><span class="trustbar"><i style="--v:96%" aria-hidden="true"></i>96</span></td><td class="num vt"><span class="vote">412</span></td></tr>
+          <tr><td class="rk">02</td><td class="pn">GoClaw</td><td class="tg">Nền tảng AI agent bảo mật cho doanh nghiệp</td><td class="num tr"><span class="trustbar"><i style="--v:93%" aria-hidden="true"></i>93</span></td><td class="num vt"><span class="vote">287</span></td></tr>
+          <tr><td class="rk">03</td><td class="pn">UI UX Pro Max</td><td class="tg">Hệ thống thiết kế UI/UX với AI</td><td class="num tr"><span class="trustbar"><i style="--v:91%" aria-hidden="true"></i>91</span></td><td class="num vt"><span class="vote">254</span></td></tr>
+          <tr><td class="rk">04</td><td class="pn">TOSE</td><td class="tg">Click. Deploy. Xong — production trong 2 phút</td><td class="num tr"><span class="trustbar"><i style="--v:89%" aria-hidden="true"></i>89</span></td><td class="num vt"><span class="vote">198</span></td></tr>
+          <tr><td class="rk">05</td><td class="pn">Agentic Working</td><td class="tg">Framework làm việc với AI agents</td><td class="num tr"><span class="trustbar"><i style="--v:87%" aria-hidden="true"></i>87</span></td><td class="num vt"><span class="vote">163</span></td></tr>
+        </tbody>
+      </table>
+      <div class="dir-f">
+        <span>Kiểm duyệt thủ công • Không trả tiền để lên hạng • Cloudflare Edge</span>
+        <a href="#build" class="btn btn-p">Gửi sản phẩm của bạn</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOCIAL PROOF ============ -->
+<section class="sec" aria-labelledby="sp-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb stats</span><span>--since 2025</span></p>
+        <h2 id="sp-h" class="h2">Được build bởi người đã ra mắt thật.</h2>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>500+</b><span>builder</span></div>
+      <div class="stat"><b>14+</b><span>sản phẩm SaaS sinh lợi của đội ngũ</span></div>
+      <div class="stat"><b>$100K+</b><span>ARR</span></div>
+      <div class="stat"><b>52</b><span>tuần video</span></div>
+    </div>
+    <div class="quotes">
+      <figure class="quote"><blockquote>“Ba tháng tự build một mình không bằng ba tuần trong Discord. Có người review, có deadline, và cuối cùng mình đã ra mắt.”</blockquote><figcaption>Minh — indie hacker</figcaption></figure>
+      <figure class="quote"><blockquote>“Video SEO tuần 40 giúp micro-SaaS của mình có 2.000 visit đầu tiên. Đáng hơn nhiều so với $15.”</blockquote><figcaption>Lan — founder micro-SaaS</figcaption></figure>
+      <figure class="quote"><blockquote>“Đi làm full-time vẫn ship được side project nhờ nhịp mỗi tuần một bước. Directory cho mình những người dùng đầu tiên.”</blockquote><figcaption>Tuấn — developer full-time</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="sec" id="pricing" aria-labelledby="pr-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb join</span><span id="pr-flag">--billing quarterly</span></p>
+        <h2 id="pr-h" class="h2">Chọn gói membership.</h2>
+        <p class="lead">Số chỗ giới hạn để cộng đồng luôn chất lượng.</p>
+      </div>
+      <div class="toggle" role="radiogroup" aria-label="Chu kỳ thanh toán">
+        <button type="button" role="radio" aria-checked="true" data-cycle="q">Quý</button>
+        <button type="button" role="radio" aria-checked="false" data-cycle="y">Năm <span class="save">-20%</span></button>
+      </div>
+    </div>
+    <div class="plans">
+      <article class="plan">
+        <div class="plan-top"><h3>Premium</h3><span class="seats">30 chỗ</span></div>
+        <p class="who">Builder tự học</p>
+        <div class="price" aria-live="polite"><b data-q="$147" data-y="$39">$147</b><span data-q="/quý" data-y="/tháng">/quý</span></div>
+        <p class="price-n" data-q="≈ $49/tháng · thanh toán theo quý" data-y="Trả năm $468/năm">≈ $49/tháng · thanh toán theo quý</p>
+        <ul class="feat">
+          <li>Thư viện 52 tuần video + video mới hàng tuần</li>
+          <li>Discord riêng tư</li>
+          <li>Kênh hỗ trợ ra mắt</li>
+          <li>Phản hồi từ nhà sáng lập</li>
+        </ul>
+        <a href="#" class="btn">Chọn Premium</a>
+      </article>
+      <article class="plan vip">
+        <div class="plan-top"><h3>VIP</h3><span class="seats">10 chỗ</span></div>
+        <p class="who">Builder được hướng dẫn</p>
+        <div class="price" aria-live="polite"><b data-q="$297" data-y="$79">$297</b><span data-q="/quý" data-y="/tháng">/quý</span></div>
+        <p class="price-n" data-q="≈ $99/tháng · thanh toán theo quý" data-y="Trả năm $948/năm">≈ $99/tháng · thanh toán theo quý</p>
+        <ul class="feat">
+          <li>Tất cả quyền lợi Premium</li>
+          <li>Kênh VIP câu hỏi ưu tiên</li>
+          <li>Truy cập sớm công cụ &amp; nội dung</li>
+          <li>1 bài viết quảng bá sản phẩm</li>
+          <li>Kho template + prompt AI VIP</li>
+          <li><strong>Xem toàn bộ Courses miễn phí</strong></li>
+        </ul>
+        <a href="#" class="btn btn-p">Tham gia VIP</a>
+      </article>
+    </div>
+    <p class="price-note"><span class="acc">✓</span> Đảm bảo hoàn tiền 30 ngày · Thanh toán qua Polar.sh</p>
+  </div>
+</section>
+
+<!-- ============ BUILD WITH US ============ -->
+<section class="sec" id="build" aria-labelledby="bwu-h">
+  <div class="wrap bwu">
+    <div>
+      <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb help</span><span>submit</span></p>
+      <h2 id="bwu-h" class="h2">Ra mắt từ terminal.</h2>
+      <p class="lead">Tạo file mô tả sản phẩm, gửi lên Directory bằng một lệnh. Không form dài, không chờ đợi.</p>
+      <div class="mcp">
+        <code>npx -y @nextlevelbuilder/mcp</code>
+        <p>Hoặc kết nối MCP server vào Claude/Cursor để quản lý listing bằng ngôn ngữ tự nhiên.</p>
+      </div>
+      <p style="margin:24px 0 0"><a href="#" class="link">Tài liệu API v1 →</a></p>
+    </div>
+    <div class="term">
+      <div class="term-bar"><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><span>~/my-product — zsh</span>
+        <button class="copy" type="button" data-copy="npx @nextlevelbuilder/cli template developer-cli --out product.json&#10;npx @nextlevelbuilder/cli submit product.json --api-key $NLB_API_KEY" aria-label="Sao chép lệnh">copy</button>
+      </div>
+      <div class="term-body">
+<pre><span class="t-d"># 1. tạo template mô tả sản phẩm</span>
+<span class="t-p">$</span> <span class="t-c">npx @nextlevelbuilder/cli template developer-cli</span> <span class="t-s">--out</span> product.json
+<span class="t-p">✓</span> đã tạo product.json
+
+<span class="t-d"># 2. gửi lên Directory</span>
+<span class="t-p">$</span> <span class="t-c">npx @nextlevelbuilder/cli submit product.json</span> <span class="t-s">--api-key</span> <span class="t-w">$NLB_API_KEY</span>
+<span class="t-p">✓</span> đã nhận · trạng thái: <span class="t-w">chờ kiểm duyệt thủ công</span>
+<span class="t-d">→ theo dõi tại directory.nextlevelbuilder.io/me</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final" aria-labelledby="fin-h">
+  <div class="wrap">
+    <div class="box">
+      <p class="prompt" aria-hidden="true"><b>$</b><span class="cmd">nlb ship</span><span>--next</span></p>
+      <h2 id="fin-h" class="h2">Sẵn sàng ra mắt sản phẩm tiếp theo?<span class="caret" aria-hidden="true"></span></h2>
+      <div class="ctas" style="margin:28px 0 0">
+        <a href="#pricing" class="btn btn-p">Tham gia membership <span class="kbd" aria-hidden="true">J</span></a>
+      </div>
+      <p>Không rủi ro trong 30 ngày · Truy cập ngay</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="ftr">
+  <div class="wrap">
+    <div>
+      <a href="#" class="logo"><span class="logo-mark" aria-hidden="true">&gt;_</span>Next Level Builders</a>
+      <p>Xây dựng tương lai, từng sản phẩm một.</p>
+    </div>
+    <nav class="flinks" aria-label="Liên kết chân trang">
+      <a href="#courses">Courses</a><a href="#directory">Directory</a><a href="#directory">Bảng xếp hạng</a><a href="#build">Tài liệu API</a>
+      <a href="#">Chính sách</a><a href="#">Discord</a><a href="#">GitHub</a><a href="#">X</a>
+    </nav>
+    <div class="copyr"><span>© 2026 Next Level Builders.</span><span>nextlevelbuilder.io · <span class="acc">●</span> mọi hệ thống hoạt động</span></div>
+  </div>
+</footer>
+
+<!-- Mobile sticky CTA (≤767px) -->
+<div class="mcta" role="region" aria-label="Tham gia nhanh">
+  <small>Hoàn tiền 30 ngày</small>
+  <a href="#pricing" class="btn btn-p">Tham gia membership</a>
+</div>
+
+<script>
+(function(){
+  // Hamburger
+  var b=document.querySelector('.burger'),m=document.getElementById('mnav');
+  function setMenu(open){b.setAttribute('aria-expanded',open);b.setAttribute('aria-label',open?'Đóng menu':'Mở menu');m.classList.toggle('open',open)}
+  b.addEventListener('click',function(){setMenu(b.getAttribute('aria-expanded')!=='true')});
+  m.addEventListener('click',function(e){if(e.target.closest('a'))setMenu(false)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&m.classList.contains('open')){setMenu(false);b.focus()}});
+
+  // Pricing toggle (Quý / Năm) — swaps text from data-q / data-y
+  var tg=document.querySelectorAll('.toggle [role=radio]'),flag=document.getElementById('pr-flag');
+  function setCycle(c){
+    tg.forEach(function(x){x.setAttribute('aria-checked',x.dataset.cycle===c)});
+    document.querySelectorAll('[data-q]').forEach(function(el){el.textContent=el.dataset[c]});
+    flag.textContent=c==='q'?'--billing quarterly':'--billing yearly';
+  }
+  tg.forEach(function(x){
+    x.addEventListener('click',function(){setCycle(x.dataset.cycle)});
+    x.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='ArrowLeft'){var n=x.dataset.cycle==='q'?'y':'q';setCycle(n);document.querySelector('[data-cycle='+n+']').focus();e.preventDefault()}});
+  });
+
+  // Copy snippet
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var done=function(){btn.textContent='copied ✓';setTimeout(function(){btn.textContent='copy'},1600)};
+      if(navigator.clipboard)navigator.clipboard.writeText(btn.dataset.copy).then(done,done);else done();
+    });
+  });
+
+  // Keyboard hints: J → pricing, V → courses (ignored while typing or with modifiers)
+  document.addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+    var k=e.key.toLowerCase(),t=k==='j'?'pricing':k==='v'?'courses':null;
+    if(t)document.getElementById(t).scrollIntoView();
+  });
+
+  // Hero terminal: reveal output lines one by one (skipped for reduced motion)
+  var out=document.getElementById('typed');
+  if(out&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var html=out.innerHTML.split('\n');out.innerHTML='';var i=0;
+    (function step(){if(i<html.length){out.innerHTML+=(i?'\n':'')+html[i++];setTimeout(step,i<3?380:240)}})();
+  }
+})();
+</script>
+</body>
+</html>

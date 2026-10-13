@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next Level Builders — Cộng đồng builder ra mắt sản phẩm thật mỗi tuần</title>
+<meta name="description" content="Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord.">
+<!--
+  MOCKUP 04 — Soft Glass / Gradient (modern SaaS)
+  Art direction: calm aurora (lavender / peach / sky) + frosted glass product-UI cards.
+  Signature: the hero "launch week" stack (video player + live leaderboard + toasts)
+  and the 52-week strip that threads Courses through the page.
+  Tokens live in :root. Text on glass always uses --ink / --ink-2 (AA >= 7:1 on white 58%+).
+  Breakpoints: >=1024 desktop nav · 768–1023 compact nav · <768 hamburger + sticky bottom CTA.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+:root{
+  --ink:#17132B; --ink-2:#3B3654; --ink-3:#575170;
+  --violet:#5B3FD9; --violet-d:#4529C2; --violet-50:#EFEAFF;
+  --peach:#FFD2B5; --lav:#D8CBFF; --sky:#BEE2FF; --mint:#C9F0DF;
+  --ember:#B4410F; --ok:#0F7A55;
+  --bg:#F5F2FD;
+  --glass:rgba(255,255,255,.58); --glass-hi:rgba(255,255,255,.8); --glass-lo:rgba(255,255,255,.4);
+  --stroke:rgba(255,255,255,.75); --hair:rgba(23,19,43,.08);
+  --sh-sm:0 1px 0 rgba(255,255,255,.9) inset,0 6px 18px -8px rgba(60,38,140,.18);
+  --sh-md:0 1px 0 rgba(255,255,255,.9) inset,0 24px 60px -24px rgba(60,38,140,.28);
+  --sh-lg:0 1px 0 rgba(255,255,255,.9) inset,0 40px 90px -30px rgba(60,38,140,.35);
+  --r-xl:32px; --r-lg:24px; --r-md:18px; --r-sm:12px;
+  --f-display:"Plus Jakarta Sans",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --wrap:1200px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--f-body);color:var(--ink);background:var(--bg);line-height:1.6;font-size:16px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;letter-spacing:-.022em;line-height:1.18;font-weight:700}
+p{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+figure{margin:0}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:10px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px}
+.skip:focus{top:12px}
+
+/* ---------- Aurora background (fixed, GPU transforms only) ---------- */
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,#F7F3FF 0%,#FBF6F2 55%,#F3F7FD 100%)}
+.aurora i{position:absolute;border-radius:50%;opacity:.9;will-change:transform}
+.aurora .a1{width:62vmax;height:62vmax;left:-18vmax;top:-22vmax;background:radial-gradient(closest-side,#CDBBFF,rgba(205,187,255,0));animation:drift1 26s var(--ease) infinite alternate}
+.aurora .a2{width:56vmax;height:56vmax;right:-20vmax;top:-8vmax;background:radial-gradient(closest-side,#FFCDB0,rgba(255,205,176,0));animation:drift2 30s var(--ease) infinite alternate}
+.aurora .a3{width:58vmax;height:58vmax;left:20vmax;bottom:-30vmax;background:radial-gradient(closest-side,#B9DEFF,rgba(185,222,255,0));animation:drift3 34s var(--ease) infinite alternate}
+.aurora::after{content:"";position:absolute;inset:0;opacity:.35;mix-blend-mode:soft-light;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
+@keyframes drift1{to{transform:translate(10vmax,8vmax) scale(1.08)}}
+@keyframes drift2{to{transform:translate(-8vmax,10vmax) scale(.94)}}
+@keyframes drift3{to{transform:translate(-10vmax,-6vmax) scale(1.1)}}
+
+/* ---------- Primitives ---------- */
+.wrap{width:100%;max-width:var(--wrap);margin:0 auto;padding:0 20px}
+.glass{background:var(--glass);border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--sh-md);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%)}
+.glass-hi{background:var(--glass-hi)}
+section{position:relative;padding:72px 0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 var(--f-display);letter-spacing:.02em;color:var(--violet-d);background:rgba(255,255,255,.7);border:1px solid var(--stroke);padding:8px 12px;border-radius:999px;box-shadow:var(--sh-sm)}
+.dot{width:8px;height:8px;border-radius:50%;background:#16A36F;box-shadow:0 0 0 0 rgba(22,163,111,.5);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(22,163,111,0)}100%{box-shadow:0 0 0 0 rgba(22,163,111,0)}}
+.sec-head{display:flex;flex-direction:column;gap:14px;margin-bottom:36px;max-width:720px}
+.sec-head h2{font-size:clamp(1.85rem,3.6vw,2.75rem)}
+.sec-head p{color:var(--ink-2);font-size:1.0625rem}
+.sec-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:36px}
+.sec-row .sec-head{margin-bottom:0}
+.grad-text{background:linear-gradient(100deg,var(--violet-d) 10%,#8A2BB8 50%,var(--ember) 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sample{font-size:12px;color:var(--ink-3);font-weight:500;white-space:nowrap}
+
+.btn{white-space:nowrap;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:999px;font:700 15px/1 var(--f-display);letter-spacing:-.005em;transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .25s}
+.btn svg{width:18px;height:18px;transition:transform .25s var(--ease)}
+.btn:hover svg{transform:translateX(3px)}
+.btn:active{transform:translateY(1px) scale(.98)}
+.btn-primary{color:#fff;background:linear-gradient(135deg,#6A4BF0,var(--violet-d));box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 12px 28px -10px rgba(69,41,194,.65)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 18px 36px -12px rgba(69,41,194,.75)}
+.btn-ghost{color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--stroke);box-shadow:var(--sh-sm);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.btn-ghost:hover{background:#fff;transform:translateY(-2px)}
+.btn-sm{min-height:44px;padding:0 18px;font-size:14px}
+.link-arrow{display:inline-flex;align-items:center;gap:8px;min-height:44px;font:700 15px var(--f-display);color:var(--violet-d)}
+.link-arrow span{transition:transform .25s var(--ease)}
+.link-arrow:hover span{transform:translateX(4px)}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--f-display);padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--stroke);color:var(--ink-2);white-space:nowrap}
+.chip-vip{background:linear-gradient(135deg,#FFF1E6,#F1EAFF);color:var(--ember);border-color:#FFE0CC}
+
+/* Spotlight that follows the pointer on interactive glass cards */
+.spot{position:relative;isolation:isolate;transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.spot::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.9),transparent 45%)}
+.spot:hover::before{opacity:1}
+.lift:hover{transform:translateY(-4px);box-shadow:var(--sh-lg)}
+
+/* ---------- Header ---------- */
+.hdr{position:sticky;top:0;z-index:50;padding:12px 0;transition:padding .3s var(--ease)}
+.hdr-bar{display:flex;align-items:center;gap:16px;padding:8px 8px 8px 14px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid var(--stroke);box-shadow:var(--sh-sm);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);transition:box-shadow .3s,background .3s}
+.hdr.scrolled .hdr-bar{background:rgba(255,255,255,.78);box-shadow:var(--sh-md)}
+.logo{display:flex;align-items:center;gap:10px;font:800 16px/1.1 var(--f-display);letter-spacing:-.02em;min-height:44px;flex-shrink:0}
+.logo-mark{width:34px;height:34px;flex-shrink:0}
+.nav{display:none;margin-left:auto}
+.nav ul{display:flex;gap:4px}
+.nav a{white-space:nowrap;display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:999px;font:600 14.5px var(--f-display);color:var(--ink-2);transition:background .2s,color .2s}
+.nav a:hover{background:rgba(255,255,255,.85);color:var(--ink)}
+.hdr-actions{display:none;align-items:center;gap:8px}
+.lang{display:flex;padding:3px;border-radius:999px;background:rgba(23,19,43,.06)}
+.lang a{display:grid;place-items:center;min-width:38px;min-height:38px;border-radius:999px;font:700 12px var(--f-display);color:var(--ink-3)}
+.lang a[aria-current]{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(23,19,43,.1)}
+.login{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:999px;font:600 14.5px var(--f-display);color:var(--ink-2)}
+.login:hover{background:rgba(255,255,255,.85)}
+.login svg{width:18px;height:18px}
+.burger{margin-left:auto;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid var(--stroke)}
+.burger span{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .3s var(--ease),opacity .2s;position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .3s var(--ease)}
+.burger span::before{top:-6px}.burger span::after{top:6px}
+.burger[aria-expanded="true"] span{background:transparent}
+.burger[aria-expanded="true"] span::before{transform:translateY(6px) rotate(45deg)}
+.burger[aria-expanded="true"] span::after{transform:translateY(-6px) rotate(-45deg)}
+.mnav{position:absolute;left:20px;right:20px;top:calc(100% + 4px);padding:12px;border-radius:var(--r-lg);opacity:0;visibility:hidden;transform:translateY(-8px) scale(.98);transform-origin:top;transition:opacity .25s,transform .3s var(--ease),visibility .25s;background:rgba(255,255,255,.9)}
+.mnav.open{opacity:1;visibility:visible;transform:none}
+.mnav a{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 14px;border-radius:14px;font:600 16px var(--f-display)}
+.mnav a:hover{background:var(--violet-50)}
+.mnav-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--hair)}
+.mnav-foot .btn{flex:1;justify-content:center;padding:0 16px}
+
+/* ---------- Hero ---------- */
+.hero{padding:40px 0 56px}
+.hero-grid{display:grid;gap:44px;align-items:center}
+.hero h1{font-size:clamp(2.35rem,6.4vw,4.35rem);font-weight:800;letter-spacing:-.035em;line-height:1.1;margin:20px 0 20px}
+.hero-sub{font-size:clamp(1.0625rem,1.6vw,1.2rem);color:var(--ink-2);max-width:560px}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin:30px 0 28px}
+.trust{display:flex;flex-wrap:wrap;gap:10px 18px}
+.trust li{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--ink-2)}
+.trust svg{width:18px;height:18px;color:var(--ok);flex-shrink:0}
+
+/* Hero product stack */
+.stack{position:relative;display:grid;gap:14px}
+.vp{padding:10px;border-radius:var(--r-xl)}
+.vp-screen{position:relative;aspect-ratio:16/9.6;border-radius:24px;overflow:hidden;background:radial-gradient(120% 90% at 85% 10%,#FFB993 0%,rgba(255,185,147,0) 45%),radial-gradient(90% 80% at 10% 100%,#8FCBFF 0%,rgba(143,203,255,0) 55%),linear-gradient(140deg,#2A1E5C,#4B32B8 55%,#7B4FD6)}
+.vp-code{position:absolute;left:7%;top:16%;width:52%;display:grid;gap:9px}
+.vp-code b{display:block;height:8px;border-radius:6px;background:rgba(255,255,255,.28)}
+.vp-code b:nth-child(2){width:80%;background:rgba(255,210,181,.6)}
+.vp-code b:nth-child(3){width:64%}
+.vp-code b:nth-child(4){width:88%;background:rgba(190,226,255,.55)}
+.vp-code b:nth-child(5){width:46%}
+.vp-node{position:absolute;right:9%;top:18%;width:30%;aspect-ratio:1;border-radius:24px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);display:grid;place-items:center}
+.vp-node svg{width:56%;color:#fff;opacity:.92}
+.vp-badge{position:absolute;left:14px;top:14px;display:flex;gap:6px}
+.vp-badge .chip{background:rgba(255,255,255,.88);color:var(--ink)}
+.vp-play{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);box-shadow:0 10px 30px rgba(20,10,60,.35);transition:transform .3s var(--ease)}
+.vp-play svg{width:22px;height:22px;color:var(--violet-d);margin-left:3px}
+.vp-play:hover{transform:scale(1.08)}
+.vp-play::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(255,255,255,.55);animation:ring 2.6s var(--ease) infinite}
+@keyframes ring{from{transform:scale(.9);opacity:1}to{transform:scale(1.35);opacity:0}}
+.vp-ctrl{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;background:rgba(20,12,52,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font:500 12px var(--f-mono)}
+.vp-bar{flex:1;height:5px;border-radius:5px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
+.vp-bar i{position:absolute;inset:0 75% 0 0;border-radius:5px;background:linear-gradient(90deg,#FFD2B5,#fff);animation:prog 14s linear infinite}
+@keyframes prog{from{right:78%}to{right:60%}}
+.vp-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 10px 6px}
+.vp-meta h3{font-size:15.5px;line-height:1.35}
+.vp-meta p{font-size:13px;color:var(--ink-3);margin-top:2px}
+.avs{display:flex;flex-shrink:0}
+.avs span{width:30px;height:30px;border-radius:50%;border:2px solid #fff;margin-left:-8px;display:grid;place-items:center;font:700 11px var(--f-display);color:var(--ink)}
+.avs span:first-child{margin-left:0}
+
+.lb{padding:16px;border-radius:var(--r-lg)}
+.lb-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.lb-head h3{font-size:14px}
+.lb-head .chip{font-size:11px}
+.lb-row{display:grid;grid-template-columns:22px 32px 1fr auto;align-items:center;gap:10px;padding:8px 6px;border-radius:12px;font-size:14px}
+.lb-row+.lb-row{border-top:1px solid var(--hair)}
+.lb-row .n{font:800 13px var(--f-display);color:var(--ink-3)}
+.mono{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font:800 12px var(--f-display);color:var(--ink)}
+.lb-row strong{font:700 14px var(--f-display);display:block;line-height:1.25}
+.lb-row .bar{display:block;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--violet),#C08CFF);margin-top:5px}
+.lb-row .v{font:700 13px var(--f-mono);color:var(--ink-2)}
+.toast{display:none}
+
+/* ---------- Week strip (signature) ---------- */
+.weeks{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:999px;margin-top:8px}
+.weeks-label{font:700 13px var(--f-display);white-space:nowrap}
+.weeks-track{flex:1;display:grid;grid-template-columns:repeat(52,1fr);gap:3px;min-width:0}
+.weeks-track i{height:18px;border-radius:4px;background:rgba(91,63,217,.14)}
+.weeks-track i.on{background:linear-gradient(180deg,#8A6CFF,var(--violet-d))}
+.weeks-track i.now{background:linear-gradient(180deg,#FFB48A,var(--ember));box-shadow:0 0 0 3px rgba(180,65,15,.15)}
+.weeks-now{font:600 13px var(--f-display);color:var(--ember);white-space:nowrap}
+
+/* ---------- Pillars ---------- */
+.pillars{display:grid;gap:18px}
+.pillar{min-width:0;padding:clamp(20px,6vw,28px);display:flex;flex-direction:column;gap:14px}
+.pillar-top{display:flex;align-items:center;justify-content:space-between}
+.p-ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;box-shadow:0 1px 0 rgba(255,255,255,.9) inset}
+.p-ico svg{width:26px;height:26px}
+.p-num{font:800 14px var(--f-mono);color:var(--ink-3)}
+.pillar h3{font-size:1.5rem}
+.pillar p{color:var(--ink-2)}
+.pillar .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+.pillar .tags .chip{white-space:normal;line-height:1.3}
+.p-vis{margin-top:4px;padding:14px;border-radius:var(--r-md);background:rgba(255,255,255,.6);border:1px solid var(--stroke)}
+.msg{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+.msg+.msg{margin-top:10px}
+.msg .mono{width:28px;height:28px;border-radius:50%;font-size:11px;flex-shrink:0}
+.msg b{font:700 13px var(--f-display)}
+.msg p{color:var(--ink-2);line-height:1.45}
+.passport{display:flex;align-items:center;gap:14px}
+.ring{--v:96;width:58px;height:58px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:conic-gradient(var(--violet) calc(var(--v)*1%),rgba(91,63,217,.14) 0)}
+.ring span{width:46px;height:46px;border-radius:50%;background:#fff;display:grid;place-items:center;font:800 15px var(--f-display)}
+.passport ul{display:grid;gap:4px;font-size:13px;color:var(--ink-2)}
+.passport li{display:flex;gap:6px;align-items:center}
+.passport li svg{width:14px;height:14px;color:var(--ok)}
+.mini-weeks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mini-weeks div{border-radius:12px;padding:10px;font:600 12px/1.3 var(--f-display);color:var(--ink-2);background:#fff;border:1px solid var(--hair)}
+.mini-weeks div b{display:block;font-size:15px;color:var(--ink)}
+.mini-weeks div.cur{background:linear-gradient(135deg,#F1EAFF,#FFEDE2);border-color:#E5D9FF}
+
+/* ---------- Courses ---------- */
+.courses{display:grid;gap:18px}
+.course{padding:10px;display:flex;flex-direction:column;border-radius:var(--r-xl)}
+.thumb{position:relative;aspect-ratio:16/10;border-radius:24px;overflow:hidden}
+.thumb .chip{position:absolute;top:12px;background:rgba(255,255,255,.9);color:var(--ink)}
+.thumb .wk{left:12px}.thumb .dur{right:12px}
+.th1{background:radial-gradient(80% 80% at 90% 0%,#FFC2A0,transparent 55%),linear-gradient(145deg,#2F2270,#5B3FD9)}
+.th2{background:radial-gradient(90% 90% at 0% 100%,#FFE1CC,transparent 60%),linear-gradient(150deg,#FFB48A,#F08A6A 60%,#C95A7E)}
+.th3{background:radial-gradient(80% 80% at 100% 100%,#E7DEFF,transparent 60%),linear-gradient(150deg,#9AD4FF,#5FA6F2 60%,#5B6CE0)}
+.th-art{position:absolute;inset:0;display:grid;place-items:center}
+.th-art svg{width:62%;height:auto}
+.course-body{display:flex;flex-direction:column;gap:12px;padding:16px 10px 8px;flex:1}
+.course h3{font-size:1.125rem;line-height:1.35}
+.course-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:auto}
+
+/* ---------- Directory ---------- */
+.dir{padding:10px;border-radius:var(--r-xl)}
+.dir-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px 14px}
+.dir-head h3{font-size:1.0625rem;display:flex;align-items:center;gap:10px}
+.dir-list{display:grid;gap:6px}
+.dir-row{display:grid;grid-template-columns:28px 44px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-md);background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.8);transition:background .25s,transform .25s var(--ease)}
+.dir-row:hover{background:rgba(255,255,255,.92);transform:translateX(2px)}
+.dir-row .rk{font:800 15px var(--f-display);color:var(--ink-3);text-align:center}
+.dir-row:nth-child(1) .rk{color:var(--ember)}
+.dir-row .mono{width:44px;height:44px;border-radius:14px;font-size:14px}
+.dir-name strong{font:700 15.5px var(--f-display);display:block}
+.dir-name span{font-size:13.5px;color:var(--ink-2);display:block;line-height:1.4}
+.dir-trust{display:none}
+.vote{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:56px;min-height:52px;border-radius:14px;background:#fff;border:1px solid var(--hair);font:700 13px var(--f-mono);color:var(--ink);transition:all .25s var(--ease)}
+.vote svg{width:16px;height:16px;color:var(--violet);transition:transform .25s var(--ease)}
+.vote:hover{border-color:#CFC2FF;box-shadow:0 6px 16px -8px rgba(69,41,194,.45)}
+.vote:hover svg{transform:translateY(-2px)}
+.vote[aria-pressed="true"]{background:var(--violet-d);color:#fff;border-color:var(--violet-d)}
+.vote[aria-pressed="true"] svg{color:#fff}
+.dir-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:16px 14px 8px}
+.dir-foot p{font-size:14px;font-weight:500;color:var(--ink-2)}
+
+/* ---------- Social proof ---------- */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:22px}
+.stat{padding:22px 20px}
+.stat b{display:block;font:800 clamp(1.9rem,4vw,2.75rem)/1.1 var(--f-display);letter-spacing:-.03em}
+.stat span{font-size:14px;color:var(--ink-2);display:block;margin-top:6px;line-height:1.4}
+.quotes{display:grid;gap:16px}
+.quote{padding:26px;display:flex;flex-direction:column;gap:18px}
+.quote svg.q{width:28px;height:28px;color:var(--violet)}
+.quote blockquote{margin:0;font:600 1.0625rem/1.55 var(--f-display);letter-spacing:-.01em}
+.quote figcaption{display:flex;align-items:center;gap:12px;margin-top:auto;font-size:14px;color:var(--ink-2)}
+.quote figcaption b{display:block;color:var(--ink);font-family:var(--f-display)}
+.quote .mono{width:40px;height:40px;border-radius:50%}
+
+/* ---------- Pricing ---------- */
+.toggle{display:inline-flex;padding:5px;border-radius:999px;background:rgba(255,255,255,.65);border:1px solid var(--stroke);box-shadow:var(--sh-sm);position:relative}
+.toggle button{position:relative;z-index:1;min-height:44px;padding:0 20px;border-radius:999px;font:700 14px var(--f-display);color:var(--ink-2);display:flex;align-items:center;gap:8px;transition:color .25s}
+.toggle button[aria-pressed="true"]{color:#fff}
+.toggle .pill{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;border-radius:999px;background:var(--ink);transition:transform .35s var(--ease),width .35s var(--ease)}
+.save{font-size:11px;padding:4px 8px;border-radius:999px;background:var(--mint);color:#0B5E41}
+.plans{display:grid;gap:18px;max-width:980px;margin:0 auto}
+.plan{padding:30px;display:flex;flex-direction:column;gap:20px;border-radius:var(--r-xl)}
+.plan-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.plan h3{font-size:1.5rem}
+.plan .who{color:var(--ink-2);font-size:15px;margin-top:2px}
+.price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.price b{font:800 3.25rem/1 var(--f-display);letter-spacing:-.04em}
+.price span{font-weight:600;color:var(--ink-2)}
+.price-note{font-size:14px;color:var(--ink-3);margin-top:6px;min-height:22px}
+.feat{display:grid;gap:12px}
+.feat li{display:flex;gap:10px;align-items:flex-start;font-size:15px;color:var(--ink-2)}
+.feat li svg{width:20px;height:20px;flex-shrink:0;color:var(--violet);margin-top:2px}
+.feat li strong{color:var(--ink)}
+.plan .btn{margin-top:auto;width:100%}
+.plan-vip{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.82),rgba(255,255,255,.6));border:1px solid transparent;background-clip:padding-box}
+.plan-vip::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:linear-gradient(135deg,#8A6CFF,#FFB48A 55%,#8FCBFF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.pricing-note{text-align:center;margin-top:24px;font-size:14px;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.pricing-note svg{width:18px;height:18px;color:var(--ok)}
+.price b,.price-note{transition:opacity .2s}
+.swap{opacity:0}
+
+/* ---------- Build with us ---------- */
+.bwu{display:grid;gap:28px;align-items:center}
+.bwu-copy p{color:var(--ink-2);margin-top:14px}
+.mcp{margin-top:22px;padding:18px;border-radius:var(--r-md)}
+.mcp p{margin-top:10px;font-size:14.5px}
+.term{border-radius:var(--r-xl);overflow:hidden;background:linear-gradient(160deg,rgba(30,22,66,.92),rgba(44,30,98,.9));border:1px solid rgba(255,255,255,.18);box-shadow:var(--sh-lg);color:#ECE8FF}
+.term-bar{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);font:500 12px var(--f-mono);color:#C9C1F2}
+.term-bar i{width:11px;height:11px;border-radius:50%;background:#FF8F7A}.term-bar i:nth-child(2){background:#FFD27A}.term-bar i:nth-child(3){background:#7FE0B0}
+.term-bar span{margin-left:8px}
+.term-body{padding:18px 16px 20px;display:grid;gap:14px}
+.cmd{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.cmd code{flex:1;min-width:0;font:400 13px/1.6 var(--f-mono);overflow-wrap:anywhere;color:#F2EEFF}
+.cmd code .p{color:#FFB48A}.cmd code .k{color:#A9D8FF}.cmd code .s{color:#C9B8FF}
+.cmd-note{font:400 12px var(--f-mono);color:#B9B0E6}
+.copy{flex-shrink:0;min-width:44px;min-height:36px;padding:0 10px;border-radius:10px;font:600 12px var(--f-display);color:#ECE8FF;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);transition:background .2s}
+.copy:hover{background:rgba(255,255,255,.2)}
+.copy.done{background:#16A36F;border-color:#16A36F;color:#fff}
+.inline-code{font:500 13.5px var(--f-mono);padding:3px 8px;border-radius:8px;background:rgba(91,63,217,.1);color:var(--violet-d);overflow-wrap:anywhere}
+
+/* ---------- Final CTA ---------- */
+.final{padding:56px 24px;border-radius:40px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,.45))}
+.final::before{content:"";position:absolute;inset:-40%;z-index:-1;background:conic-gradient(from 90deg at 50% 50%,#D8CBFF,#FFD2B5,#BEE2FF,#D8CBFF);filter:blur(60px);opacity:.75;animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.final h2{font-size:clamp(1.9rem,4.6vw,3.25rem);font-weight:800;letter-spacing:-.03em;max-width:760px;margin:0 auto}
+.final .btn{margin-top:28px;min-height:54px;padding:0 30px;font-size:16px}
+.final p{margin-top:16px;font-size:14.5px;color:var(--ink-2)}
+
+/* ---------- Footer ---------- */
+footer{padding:48px 0 40px}
+.foot{display:grid;gap:28px;padding:32px;border-radius:var(--r-xl)}
+.foot-brand p{color:var(--ink-2);margin-top:12px;max-width:320px}
+.foot-links{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 20px}
+.foot-links a{display:flex;align-items:center;min-height:44px;font-weight:500;color:var(--ink-2)}
+.foot-links a:hover{color:var(--violet-d)}
+.foot-bottom{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--hair);font-size:14px;color:var(--ink-3)}
+
+/* ---------- Mobile sticky CTA ---------- */
+.sticky-cta{position:fixed;left:12px;right:12px;bottom:12px;z-index:40;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:999px;background:rgba(255,255,255,.82);border:1px solid var(--stroke);box-shadow:var(--sh-lg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);transition:transform .35s var(--ease),opacity .3s;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.sticky-cta p{font-size:12.5px;line-height:1.3;color:var(--ink-2)}
+.sticky-cta p b{display:block;color:var(--ink);font-family:var(--f-display);font-size:13.5px}
+.sticky-cta .btn{margin-left:auto;flex-shrink:0;min-height:44px;padding:0 18px;font-size:14px}
+.sticky-cta.hide,.menu-open .sticky-cta{transform:translateY(140%);opacity:0}
+@media (max-width:359px){.sticky-cta p{display:none}.sticky-cta .btn{flex:1}}
+
+/* ---------- Reveal on scroll (only when JS is present) ---------- */
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .rv.in{opacity:1;transform:none}
+
+/* ================= Breakpoints ================= */
+@media (max-width:767px){
+  body{padding-bottom:84px}
+  .hero-sub{font-size:1.0625rem}
+  .weeks{border-radius:var(--r-lg);flex-wrap:wrap;gap:10px}
+  .weeks-track{order:3;flex-basis:100%;grid-template-columns:repeat(26,1fr)}
+  .weeks-track i:nth-child(-n+26){display:none}
+  .weeks-now{margin-left:auto}
+  .vp-meta .avs{display:none}
+  .stack .lb{margin:0 6px}
+  .dir-row{grid-template-columns:20px 38px 1fr auto;gap:10px;padding:12px}
+  .dir-row .mono{width:38px;height:38px;border-radius:12px;font-size:12px}
+  .dir-name span{font-size:13px}
+}
+@media (min-width:480px){
+  .stats{gap:16px}
+}
+@media (min-width:768px){
+  .wrap{padding:0 32px}
+  section{padding:96px 0}
+  .burger,.mnav,.sticky-cta{display:none}
+  .nav{display:block}
+  .hdr-actions{display:flex}
+  .logo-word{display:none}
+  .nav a{padding:0 7px;font-size:13.5px}
+  .hdr-bar{gap:10px}
+  .lang a{min-width:32px;min-height:36px}
+  .login span{display:none}
+  .login{width:44px;justify-content:center;padding:0}
+  .pillars{grid-template-columns:repeat(2,1fr)}
+  .pillars .pillar:last-child{grid-column:1/-1}
+  .courses{grid-template-columns:repeat(2,1fr)}
+  .courses .course:last-child{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:stretch}
+  .courses .course:last-child .thumb{aspect-ratio:auto;min-height:220px}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .quotes{grid-template-columns:repeat(2,1fr)}
+  .quotes .quote:last-child{grid-column:1/-1}
+  .plans{grid-template-columns:1fr 1fr}
+  .dir-row{grid-template-columns:32px 48px 1fr 92px 64px}
+  .dir-trust{display:flex;align-items:center;gap:8px;font:700 13px var(--f-display);color:var(--ink-2)}
+  .dir-trust .ring{width:36px;height:36px}
+  .dir-trust .ring span{width:28px;height:28px;font-size:11.5px}
+  .foot-links{grid-template-columns:repeat(4,auto);justify-content:start;column-gap:40px}
+  .foot-links a{white-space:nowrap}
+  .stack{display:block;max-width:640px;margin:0 auto;padding-bottom:205px}
+  .stack .lb{position:absolute;right:-6px;bottom:0;width:56%}
+  .toast{display:flex;position:absolute;align-items:center;gap:10px;padding:10px 14px 10px 10px;border-radius:18px;font-size:13px;line-height:1.35;max-width:250px}
+  .toast b{font-family:var(--f-display);display:block;font-size:13.5px}
+  .toast .t-ico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+  .toast .t-ico svg{width:18px;height:18px}
+  .toast-a{left:-10px;bottom:60px;animation:float 7s ease-in-out infinite}
+  .toast-b{right:-10px;top:-18px;animation:float 8s ease-in-out -3s infinite}
+}
+@keyframes float{50%{transform:translateY(-8px)}}
+@media (min-width:1024px){
+  .logo-word{display:inline}
+  .nav a{padding:0 12px;font-size:14.5px}
+  .hdr-bar{gap:16px}
+  .lang a{min-width:38px;min-height:38px}
+  .hero{padding:56px 0 72px}
+  .hero-grid{grid-template-columns:1.02fr 1fr;gap:56px}
+  .stack{max-width:none;margin:0}
+  .pillars{grid-template-columns:repeat(3,1fr)}
+  .pillars .pillar:last-child{grid-column:auto}
+  .courses{grid-template-columns:repeat(3,1fr)}
+  .courses .course:last-child{grid-column:auto;display:flex}
+  .courses .course:last-child .thumb{aspect-ratio:16/10;min-height:0}
+  .quotes{grid-template-columns:repeat(3,1fr)}
+  .quotes .quote:last-child{grid-column:auto}
+  .bwu{grid-template-columns:.9fr 1.1fr;gap:56px}
+  .dir-row{grid-template-columns:36px 48px 1fr 120px 68px;padding:14px 18px}
+  .final{padding:88px 40px}
+  .foot{grid-template-columns:1fr auto;column-gap:48px}
+  .foot-bottom{grid-column:1/-1}
+}
+@media (min-width:1024px) and (max-width:1199px){
+  .login span{display:none}
+}
+@media (min-width:1200px){
+  .login span{display:inline}
+  .login{width:auto;padding:0 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .js .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua đến nội dung chính</a>
+<div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+
+<!-- Inline SVG sprite: icons reused across the page -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg-mark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7A5CFF"/><stop offset=".6" stop-color="#4529C2"/><stop offset="1" stop-color="#E07A4F"/></linearGradient>
+  </defs>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10.5V8a4 4 0 018 0v2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.8 19.5c.8-3.3 3.3-5 6.2-5s5.4 1.7 6.2 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 5.2a3.5 3.5 0 010 6.6M18 14.8c1.6.7 2.8 2.3 3.2 4.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4a1 1 0 001.5.86l11.6-7.2a1 1 0 000-1.72L8.5 3.94A1 1 0 007 4.8z" fill="currentColor"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 5l7 8h-4.5v6h-5v-6H5l7-8z" fill="currentColor"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24"><path d="M10 7H6.5A2.5 2.5 0 004 9.5V13a2 2 0 002 2h2.5v3.5L11 15V8a1 1 0 00-1-1zm10 0h-3.5A2.5 2.5 0 0014 9.5V13a2 2 0 002 2h2.5v3.5L21 15V8a1 1 0 00-1-1z" fill="currentColor"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M14.5 4.5c2.8-1 4.9-.9 5.5-.5.4.6.5 2.7-.5 5.5-1 2.8-3.6 5.6-6.5 7.3l-3.3-3.3C11.4 10.6 11.7 5.5 14.5 4.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15.5" cy="8.5" r="1.6" fill="currentColor"/><path d="M8.7 13.4l-3.2.6-2 2.5 3.6.6M10.6 15.3l-.6 3.2-2.5 2-.6-3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v8a2.5 2.5 0 01-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 014 14.5v-8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 10.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 10.5l5-3v9l-5-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="4" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="13" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M14 16.5l2 2 3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- ================= HEADER ================= -->
+<header class="hdr" id="top">
+  <div class="wrap" style="position:relative">
+    <div class="hdr-bar">
+      <a class="logo" href="#top" aria-label="Next Level Builders — Trang chủ">
+        <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="url(#lg-mark)"/><path d="M11 27h6v-5h6v-5h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="29" cy="12" r="2.6" fill="#FFD2B5"/></svg>
+        <span class="logo-word">Next Level Builders</span>
+      </a>
+      <nav class="nav" aria-label="Điều hướng chính">
+        <ul>
+          <li><a href="#courses">Courses</a></li>
+          <li><a href="#directory">Directory</a></li>
+          <li><a href="#directory">Bảng xếp hạng</a></li>
+          <li><a href="#pricing">Bảng giá</a></li>
+          <li><a href="#build">Build with us</a></li>
+        </ul>
+      </nav>
+      <div class="hdr-actions">
+        <div class="lang" role="group" aria-label="Ngôn ngữ"><a href="#" aria-current="true" lang="vi">VI</a><a href="#" lang="en">EN</a></div>
+        <a class="login" href="#" aria-label="Đăng nhập"><svg aria-hidden="true"><use href="#i-user"/></svg><span>Đăng nhập</span></a>
+        <a class="btn btn-primary btn-sm" href="#pricing">Tham gia</a>
+      </div>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Mở menu"><span></span></button>
+    </div>
+    <nav class="mnav glass" id="mnav" aria-label="Menu di động">
+      <a href="#courses">Courses <span aria-hidden="true">→</span></a>
+      <a href="#directory">Directory <span aria-hidden="true">→</span></a>
+      <a href="#directory">Bảng xếp hạng <span aria-hidden="true">→</span></a>
+      <a href="#pricing">Bảng giá <span aria-hidden="true">→</span></a>
+      <a href="#build">Build with us <span aria-hidden="true">→</span></a>
+      <div class="mnav-foot">
+        <div class="lang" role="group" aria-label="Ngôn ngữ"><a href="#" aria-current="true" lang="vi">VI</a><a href="#" lang="en">EN</a></div>
+        <a class="btn btn-ghost btn-sm" href="#">Đăng nhập</a>
+        <a class="btn btn-primary btn-sm" href="#pricing">Tham gia</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<!-- ================= HERO ================= -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Tuần 41 · video mới đã lên sóng</span>
+        <h1 id="hero-title">Cộng đồng builder ra mắt sản phẩm thật — <span class="grad-text">mỗi tuần.</span></h1>
+        <p class="hero-sub">Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord. Từ 0 lên 1 luôn là phần khó nhất — bạn không phải đi một mình.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="#pricing">Tham gia membership <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-ghost" href="#courses"><svg aria-hidden="true" style="color:var(--violet)"><use href="#i-play"/></svg> Xem video tuần này</a>
+        </div>
+        <ul class="trust" aria-label="Cam kết">
+          <li><svg aria-hidden="true"><use href="#i-shield"/></svg>Hoàn tiền 100% trong 30 ngày</li>
+          <li><svg aria-hidden="true"><use href="#i-lock"/></svg>Thanh toán an toàn qua Polar.sh</li>
+          <li><svg aria-hidden="true"><use href="#i-users"/></svg>500+ builder năng động</li>
+        </ul>
+      </div>
+
+      <!-- Product-UI composition: built purely in HTML/CSS (no images) -->
+      <div class="stack rv" aria-label="Xem trước sản phẩm: video tuần này và bảng xếp hạng">
+        <article class="vp glass spot">
+          <div class="vp-screen">
+            <div class="vp-badge"><span class="chip">Tuần 41</span><span class="chip chip-vip">VIP xem miễn phí</span></div>
+            <div class="vp-code" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></div>
+            <div class="vp-node" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="11" cy="35" r="5" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="37" cy="35" r="5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M21 16.5l-7 14M27 16.5l7 14M16 35h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+            <button class="vp-play" type="button" aria-label="Phát video: Dựng agent tự động hoá bán hàng với Claude Code"><svg aria-hidden="true"><use href="#i-play"/></svg></button>
+            <div class="vp-ctrl" aria-hidden="true"><span>12:04</span><span class="vp-bar"><i></i></span><span>48:00</span></div>
+          </div>
+          <div class="vp-meta">
+            <div>
+              <h3>Dựng agent tự động hoá bán hàng với Claude Code</h3>
+              <p>Chương 3/7 · Kết nối CRM và gửi email tự động</p>
+            </div>
+            <div class="avs" aria-hidden="true"><span style="background:#E3D9FF">M</span><span style="background:#FFDCC7">L</span><span style="background:#CDE9FF">T</span></div>
+          </div>
+        </article>
+
+        <aside class="lb glass glass-hi spot" aria-label="Bảng xếp hạng hôm nay">
+          <div class="lb-head"><h3>Bảng xếp hạng</h3><span class="chip"><span class="dot" aria-hidden="true"></span>24h UTC</span></div>
+          <div class="lb-row"><span class="n">1</span><span class="mono" style="background:#E3D9FF">CK</span><div><strong>ClaudeKit</strong><span class="bar" style="width:100%"></span></div><span class="v">412</span></div>
+          <div class="lb-row"><span class="n">2</span><span class="mono" style="background:#CDE9FF">GC</span><div><strong>GoClaw</strong><span class="bar" style="width:70%"></span></div><span class="v">287</span></div>
+          <div class="lb-row"><span class="n">3</span><span class="mono" style="background:#FFDCC7">UX</span><div><strong>UI UX Pro Max</strong><span class="bar" style="width:62%"></span></div><span class="v">254</span></div>
+        </aside>
+
+        <div class="toast toast-a glass glass-hi" aria-hidden="true"><span class="t-ico" style="background:#DDF5EA;color:#0F7A55"><svg><use href="#i-rocket"/></svg></span><div><b>TOSE vừa ra mắt</b>Đã xác minh · Trust 89</div></div>
+        <div class="toast toast-b glass glass-hi" aria-hidden="true"><span class="t-ico" style="background:#EFEAFF;color:#4529C2"><svg><use href="#i-chat"/></svg></span><div><b>#ra-mắt</b>Lan: “Khách trả tiền đầu tiên rồi!”</div></div>
+      </div>
+    </div>
+
+    <!-- Signature: 52-week strip -->
+    <div class="weeks glass rv" role="img" aria-label="Tiến độ năm: 41 trên 52 tuần video đã phát hành">
+      <span class="weeks-label">52 tuần video</span>
+      <div class="weeks-track" aria-hidden="true" id="weeks"></div>
+      <span class="weeks-now">Tuần 41</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 PILLARS ================= -->
+<section aria-labelledby="pillars-title">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow" style="align-self:flex-start">Ba trụ cột</span>
+      <h2 id="pillars-title">Mọi thứ một builder cần để đi từ 0 lên 1</h2>
+      <p>Học, ra mắt và lớn lên — trong cùng một nơi, cùng những người đang làm thật.</p>
+    </div>
+    <div class="pillars">
+      <article class="pillar glass spot lift rv">
+        <div class="pillar-top"><span class="p-ico" style="background:linear-gradient(135deg,#EFEAFF,#DCD0FF);color:#4529C2"><svg aria-hidden="true"><use href="#i-users"/></svg></span><span class="p-num">01</span></div>
+        <h3>Cộng đồng</h3>
+        <p>Discord riêng tư với 500+ builder. Phản hồi thẳng thắn, trách nhiệm mỗi tuần và mạng lưới nhà sáng lập để bạn không bỏ cuộc giữa chừng.</p>
+        <div class="p-vis" aria-hidden="true">
+          <div class="msg"><span class="mono" style="background:#FFDCC7">MN</span><div><b>Minh</b><p>Landing page v2 xong rồi, mọi người góp ý giúp mình nhé.</p></div></div>
+          <div class="msg"><span class="mono" style="background:#E3D9FF">NLB</span><div><b>Founder</b><p>CTA chính nên lên trên màn hình đầu tiên.</p></div></div>
+        </div>
+        <div class="tags"><span class="chip">Discord riêng tư</span><span class="chip">Phản hồi &amp; trách nhiệm</span><span class="chip">Mạng lưới nhà sáng lập</span></div>
+      </article>
+      <article class="pillar glass spot lift rv">
+        <div class="pillar-top"><span class="p-ico" style="background:linear-gradient(135deg,#FFF0E6,#FFD9C2);color:#B4410F"><svg aria-hidden="true"><use href="#i-video"/></svg></span><span class="p-num">02</span></div>
+        <h3>Courses</h3>
+        <p>Video chia sẻ hàng tuần: AI automation, SEO, phát triển &amp; tăng trưởng sản phẩm. Mua lẻ từng video, xem trọn đời. VIP xem toàn bộ.</p>
+        <div class="p-vis mini-weeks" aria-hidden="true">
+          <div>Tuần<b>38</b></div><div>Tuần<b>39</b></div><div>Tuần<b>40</b></div><div class="cur">Tuần<b>41</b></div>
+        </div>
+        <div class="tags"><span class="chip">AI automation</span><span class="chip">SEO</span><span class="chip">Tăng trưởng</span><span class="chip">Xem trọn đời</span></div>
+      </article>
+      <article class="pillar glass spot lift rv">
+        <div class="pillar-top"><span class="p-ico" style="background:linear-gradient(135deg,#EAF6FF,#CDE9FF);color:#1F5FA8"><svg aria-hidden="true"><use href="#i-grid"/></svg></span><span class="p-num">03</span></div>
+        <h3>Directory</h3>
+        <p>Sản phẩm được kiểm duyệt thủ công, có Trust Passport và bảng xếp hạng tự nhiên theo 24h UTC. Không trả tiền để lên hạng.</p>
+        <div class="p-vis passport" aria-hidden="true">
+          <div class="ring" style="--v:96"><span>96</span></div>
+          <ul><li><svg><use href="#i-check"/></svg>Trust Passport đã xác minh</li><li><svg><use href="#i-check"/></svg>Kiểm duyệt thủ công</li><li><svg><use href="#i-check"/></svg>Xếp hạng tự nhiên</li></ul>
+        </div>
+        <div class="tags"><span class="chip">Trust Passport</span><span class="chip">24h UTC</span><span class="chip">Không trả tiền để lên hạng</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COURSES ================= -->
+<section id="courses" aria-labelledby="courses-title">
+  <div class="wrap">
+    <div class="sec-row rv">
+      <div class="sec-head">
+        <span class="eyebrow" style="align-self:flex-start">Courses</span>
+        <h2 id="courses-title">Video thực chiến, mới mỗi tuần</h2>
+        <p>Mua lẻ video bạn cần và xem trọn đời — hoặc lên VIP để xem toàn bộ thư viện. <span class="sample">(Dữ liệu mẫu)</span></p>
+      </div>
+      <a class="link-arrow" href="#">Xem tất cả video <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="courses">
+      <article class="course glass spot lift rv">
+        <div class="thumb th1">
+          <div class="th-art" aria-hidden="true"><svg viewBox="0 0 200 120"><rect x="10" y="14" width="120" height="92" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.35)"/><rect x="24" y="32" width="60" height="7" rx="3.5" fill="#FFD2B5"/><rect x="24" y="48" width="86" height="7" rx="3.5" fill="rgba(255,255,255,.5)"/><rect x="24" y="64" width="44" height="7" rx="3.5" fill="#BEE2FF"/><rect x="24" y="80" width="72" height="7" rx="3.5" fill="rgba(255,255,255,.35)"/><circle cx="160" cy="34" r="14" fill="rgba(255,255,255,.9)"/><circle cx="160" cy="88" r="14" fill="#FFD2B5"/><path d="M130 50l22-10M130 76l22 8" stroke="rgba(255,255,255,.7)" stroke-width="3" stroke-linecap="round"/></svg></div>
+          <span class="chip wk">Tuần 41</span><span class="chip dur">48 phút</span>
+        </div>
+        <div class="course-body">
+          <h3>Dựng agent tự động hoá bán hàng với Claude Code</h3>
+          <div class="course-foot"><a class="btn btn-primary btn-sm" href="#">Mua $19</a><span class="chip chip-vip">VIP xem miễn phí</span></div>
+        </div>
+      </article>
+      <article class="course glass spot lift rv">
+        <div class="thumb th2">
+          <div class="th-art" aria-hidden="true"><svg viewBox="0 0 200 120"><path d="M14 104h172" stroke="rgba(255,255,255,.55)" stroke-width="2"/><rect x="24" y="78" width="20" height="26" rx="6" fill="rgba(255,255,255,.45)"/><rect x="56" y="64" width="20" height="40" rx="6" fill="rgba(255,255,255,.55)"/><rect x="88" y="50" width="20" height="54" rx="6" fill="rgba(255,255,255,.65)"/><rect x="120" y="32" width="20" height="72" rx="6" fill="rgba(255,255,255,.8)"/><rect x="152" y="14" width="20" height="90" rx="6" fill="#fff"/><path d="M22 70L66 52l32-14 32-12 40-14" fill="none" stroke="#5B3FD9" stroke-width="3.5" stroke-linecap="round"/></svg></div>
+          <span class="chip wk">Tuần 40</span><span class="chip dur">36 phút</span>
+        </div>
+        <div class="course-body">
+          <h3>SEO cho micro-SaaS: từ 0 đến 10K visit/tháng</h3>
+          <div class="course-foot"><a class="btn btn-primary btn-sm" href="#">Mua $15</a><span class="chip chip-vip">VIP xem miễn phí</span></div>
+        </div>
+      </article>
+      <article class="course glass spot lift rv">
+        <div class="thumb th3">
+          <div class="th-art" aria-hidden="true"><svg viewBox="0 0 200 120"><rect x="40" y="10" width="120" height="100" rx="16" fill="rgba(255,255,255,.88)"/><g stroke-linecap="round" stroke-linejoin="round"><path d="M58 36l6 6 12-12" stroke="#0F7A55" stroke-width="4" fill="none"/><path d="M58 62l6 6 12-12" stroke="#0F7A55" stroke-width="4" fill="none"/></g><rect x="58" y="80" width="18" height="18" rx="5" fill="none" stroke="#5B3FD9" stroke-width="3"/><rect x="88" y="33" width="56" height="7" rx="3.5" fill="#C9B8FF"/><rect x="88" y="59" width="44" height="7" rx="3.5" fill="#C9B8FF"/><rect x="88" y="86" width="50" height="7" rx="3.5" fill="#E2E7F3"/></svg></div>
+          <span class="chip wk">Tuần 39</span><span class="chip dur">29 phút</span>
+        </div>
+        <div class="course-body">
+          <h3>Ra mắt trên Product Hunt &amp; Build with Us: checklist thực chiến</h3>
+          <div class="course-foot"><a class="btn btn-primary btn-sm" href="#">Mua $12</a><span class="chip chip-vip">VIP xem miễn phí</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DIRECTORY ================= -->
+<section id="directory" aria-labelledby="dir-title">
+  <div class="wrap">
+    <div class="sec-row rv">
+      <div class="sec-head">
+        <span class="eyebrow" style="align-self:flex-start">Directory</span>
+        <h2 id="dir-title">Top tuần này trên Directory</h2>
+        <p>Thứ hạng do cộng đồng bình chọn, tính lại mỗi 24h UTC. <span class="sample">(Dữ liệu mẫu)</span></p>
+      </div>
+    </div>
+    <div class="dir glass rv">
+      <div class="dir-head">
+        <h3><span class="dot" aria-hidden="true"></span>Bảng xếp hạng tuần</h3>
+        <span class="chip">Trust · Lượt bình chọn</span>
+      </div>
+      <ol class="dir-list">
+        <li class="dir-row"><span class="rk">1</span><span class="mono" style="background:#E3D9FF">CK</span><div class="dir-name"><strong>ClaudeKit</strong><span>Skills &amp; workflows cao cấp cho Claude Code</span></div><span class="dir-trust"><span class="ring" style="--v:96"><span>96</span></span>Trust</span><button class="vote" type="button" aria-pressed="false" aria-label="Bình chọn ClaudeKit, hiện có 412 phiếu"><svg aria-hidden="true"><use href="#i-up"/></svg><span>412</span></button></li>
+        <li class="dir-row"><span class="rk">2</span><span class="mono" style="background:#CDE9FF">GC</span><div class="dir-name"><strong>GoClaw</strong><span>Nền tảng AI agent bảo mật cho doanh nghiệp</span></div><span class="dir-trust"><span class="ring" style="--v:93"><span>93</span></span>Trust</span><button class="vote" type="button" aria-pressed="false" aria-label="Bình chọn GoClaw, hiện có 287 phiếu"><svg aria-hidden="true"><use href="#i-up"/></svg><span>287</span></button></li>
+        <li class="dir-row"><span class="rk">3</span><span class="mono" style="background:#FFDCC7">UX</span><div class="dir-name"><strong>UI UX Pro Max</strong><span>Hệ thống thiết kế UI/UX với AI</span></div><span class="dir-trust"><span class="ring" style="--v:91"><span>91</span></span>Trust</span><button class="vote" type="button" aria-pressed="false" aria-label="Bình chọn UI UX Pro Max, hiện có 254 phiếu"><svg aria-hidden="true"><use href="#i-up"/></svg><span>254</span></button></li>
+        <li class="dir-row"><span class="rk">4</span><span class="mono" style="background:#DDF5EA">TO</span><div class="dir-name"><strong>TOSE</strong><span>Click. Deploy. Xong — production trong 2 phút</span></div><span class="dir-trust"><span class="ring" style="--v:89"><span>89</span></span>Trust</span><button class="vote" type="button" aria-pressed="false" aria-label="Bình chọn TOSE, hiện có 198 phiếu"><svg aria-hidden="true"><use href="#i-up"/></svg><span>198</span></button></li>
+        <li class="dir-row"><span class="rk">5</span><span class="mono" style="background:#FFE9F1">AW</span><div class="dir-name"><strong>Agentic Working</strong><span>Framework làm việc với AI agents</span></div><span class="dir-trust"><span class="ring" style="--v:87"><span>87</span></span>Trust</span><button class="vote" type="button" aria-pressed="false" aria-label="Bình chọn Agentic Working, hiện có 163 phiếu"><svg aria-hidden="true"><use href="#i-up"/></svg><span>163</span></button></li>
+      </ol>
+      <div class="dir-foot">
+        <p>Kiểm duyệt thủ công • Không trả tiền để lên hạng • Cloudflare Edge</p>
+        <a class="btn btn-ghost btn-sm" href="#build">Gửi sản phẩm của bạn <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SOCIAL PROOF ================= -->
+<section aria-labelledby="proof-title">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow" style="align-self:flex-start">Kết quả thật</span>
+      <h2 id="proof-title">Được xây bởi những người đang vận hành sản phẩm sinh lợi</h2>
+    </div>
+    <div class="stats">
+      <div class="stat glass rv"><b data-count="500" data-suffix="+">500+</b><span>builder trong cộng đồng</span></div>
+      <div class="stat glass rv"><b data-count="14" data-suffix="+">14+</b><span>sản phẩm SaaS sinh lợi của đội ngũ</span></div>
+      <div class="stat glass rv"><b data-count="100" data-prefix="$" data-suffix="K+">$100K+</b><span>ARR</span></div>
+      <div class="stat glass rv"><b data-count="52">52</b><span>tuần video</span></div>
+    </div>
+    <div class="quotes">
+      <figure class="quote glass spot rv"><svg class="q" aria-hidden="true"><use href="#i-quote"/></svg><blockquote>“Ba tháng tự làm một mình không bằng hai tuần có người hỏi ‘tuần này ra mắt gì?’. Sản phẩm của mình đã có khách trả tiền.”</blockquote><figcaption><span class="mono" style="background:#FFDCC7">M</span><span><b>Minh</b>indie hacker</span></figcaption></figure>
+      <figure class="quote glass spot rv"><svg class="q" aria-hidden="true"><use href="#i-quote"/></svg><blockquote>“Video SEO tuần 40 giúp mình sửa lại cấu trúc trang — traffic tự nhiên tăng rõ chỉ sau một tháng.”</blockquote><figcaption><span class="mono" style="background:#E3D9FF">L</span><span><b>Lan</b>founder micro-SaaS</span></figcaption></figure>
+      <figure class="quote glass spot rv"><svg class="q" aria-hidden="true"><use href="#i-quote"/></svg><blockquote>“Làm full-time vẫn ship được side project nhờ checklist và phản hồi nhanh trong Discord.”</blockquote><figcaption><span class="mono" style="background:#CDE9FF">T</span><span><b>Tuấn</b>developer full-time</span></figcaption></figure>
+    </div>
+    <p class="sample" style="margin-top:14px">Lời chứng thực minh hoạ (mẫu).</p>
+  </div>
+</section>
+
+<!-- ================= PRICING ================= -->
+<section id="pricing" aria-labelledby="pricing-title">
+  <div class="wrap">
+    <div class="sec-head rv" style="margin-left:auto;margin-right:auto;text-align:center;align-items:center">
+      <span class="eyebrow">Membership</span>
+      <h2 id="pricing-title">Chọn cách bạn muốn lớn lên</h2>
+      <p>Số chỗ có giới hạn để mỗi thành viên đều được phản hồi thật sự.</p>
+      <div class="toggle" role="group" aria-label="Chu kỳ thanh toán">
+        <span class="pill" aria-hidden="true"></span>
+        <button type="button" aria-pressed="true" data-cycle="q">Theo quý</button>
+        <button type="button" aria-pressed="false" data-cycle="y">Theo năm <span class="save">−20%</span></button>
+      </div>
+    </div>
+    <div class="plans">
+      <article class="plan glass spot rv">
+        <div class="plan-top"><div><h3>Premium</h3><p class="who">Builder tự học</p></div><span class="chip">30 chỗ</span></div>
+        <div>
+          <div class="price" aria-live="polite"><b data-q="$147" data-y="$39">$147</b><span data-q="/quý" data-y="/tháng">/quý</span></div>
+          <p class="price-note" data-q="≈ $49/tháng" data-y="Trả năm $468/năm">≈ $49/tháng</p>
+        </div>
+        <ul class="feat">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Thư viện 52 tuần video + video mới hàng tuần</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Discord riêng tư</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Kênh hỗ trợ ra mắt</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Phản hồi từ nhà sáng lập</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Chọn Premium</a>
+      </article>
+      <article class="plan plan-vip glass spot rv">
+        <div class="plan-top"><div><h3>VIP</h3><p class="who">Builder được hướng dẫn</p></div><span class="chip chip-vip">10 chỗ</span></div>
+        <div>
+          <div class="price" aria-live="polite"><b data-q="$297" data-y="$79">$297</b><span data-q="/quý" data-y="/tháng">/quý</span></div>
+          <p class="price-note" data-q="≈ $99/tháng" data-y="Trả năm $948/năm">≈ $99/tháng</p>
+        </div>
+        <ul class="feat">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Tất cả quyền lợi Premium</strong></span></li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Kênh VIP câu hỏi ưu tiên</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Truy cập sớm công cụ &amp; nội dung</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>1 bài viết quảng bá sản phẩm</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Kho template + prompt AI VIP</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Xem toàn bộ Courses miễn phí</strong></span></li>
+        </ul>
+        <a class="btn btn-primary" href="#">Chọn VIP <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </article>
+    </div>
+    <p class="pricing-note rv"><svg aria-hidden="true"><use href="#i-shield"/></svg>Đảm bảo hoàn tiền 30 ngày · Thanh toán qua Polar.sh</p>
+  </div>
+</section>
+
+<!-- ================= BUILD WITH US ================= -->
+<section id="build" aria-labelledby="build-title">
+  <div class="wrap">
+    <div class="bwu">
+      <div class="bwu-copy rv">
+        <span class="eyebrow">Build with us</span>
+        <h2 id="build-title" style="font-size:clamp(1.85rem,3.6vw,2.75rem);margin-top:14px">Ra mắt từ terminal</h2>
+        <p>Tạo file mô tả sản phẩm và gửi lên Directory chỉ với hai lệnh — không cần mở trình duyệt.</p>
+        <div class="mcp glass">
+          <code class="inline-code">npx -y @nextlevelbuilder/mcp</code>
+          <p>Hoặc kết nối MCP server vào Claude/Cursor để quản lý listing bằng ngôn ngữ tự nhiên.</p>
+        </div>
+        <a class="link-arrow" href="#" style="margin-top:12px">Tài liệu API v1 <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="term rv" role="region" aria-label="Ví dụ dòng lệnh">
+        <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>~/my-product — zsh</span></div>
+        <div class="term-body">
+          <span class="cmd-note"># 1. Tạo file mô tả sản phẩm</span>
+          <div class="cmd"><code><span class="p">$</span> npx <span class="k">@nextlevelbuilder/cli</span> template developer-cli --out <span class="s">product.json</span></code><button class="copy" type="button" data-copy="npx @nextlevelbuilder/cli template developer-cli --out product.json">Chép</button></div>
+          <span class="cmd-note"># 2. Gửi lên Directory</span>
+          <div class="cmd"><code><span class="p">$</span> npx <span class="k">@nextlevelbuilder/cli</span> submit <span class="s">product.json</span> --api-key <span class="s">$NLB_API_KEY</span></code><button class="copy" type="button" data-copy="npx @nextlevelbuilder/cli submit product.json --api-key $NLB_API_KEY">Chép</button></div>
+          <span class="cmd-note"># MCP server cho Claude / Cursor</span>
+          <div class="cmd"><code><span class="p">$</span> npx -y <span class="k">@nextlevelbuilder/mcp</span></code><button class="copy" type="button" data-copy="npx -y @nextlevelbuilder/mcp">Chép</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section aria-labelledby="final-title" style="padding-top:24px">
+  <div class="wrap">
+    <div class="final glass rv" id="final">
+      <h2 id="final-title">Sẵn sàng ra mắt sản phẩm tiếp theo?</h2>
+      <a class="btn btn-primary" href="#pricing">Tham gia membership <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      <p>Không rủi ro trong 30 ngày · Truy cập ngay</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot glass">
+      <div class="foot-brand">
+        <a class="logo" href="#top"><svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="url(#lg-mark)"/><path d="M11 27h6v-5h6v-5h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="29" cy="12" r="2.6" fill="#FFD2B5"/></svg>Next Level Builders</a>
+        <p>Xây dựng tương lai, từng sản phẩm một.</p>
+      </div>
+      <nav aria-label="Liên kết chân trang">
+        <ul class="foot-links">
+          <li><a href="#courses">Courses</a></li>
+          <li><a href="#directory">Directory</a></li>
+          <li><a href="#directory">Bảng xếp hạng</a></li>
+          <li><a href="#build">Tài liệu API</a></li>
+          <li><a href="#">Chính sách</a></li>
+          <li><a href="#">Discord</a></li>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">X</a></li>
+        </ul>
+      </nav>
+      <div class="foot-bottom"><span>© 2026 Next Level Builders.</span><span>nextlevelbuilder.io</span></div>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile-only sticky CTA (hidden >=768px and when final CTA is on screen) -->
+<div class="sticky-cta" id="sticky">
+  <p><b>Hoàn tiền 30 ngày</b>500+ builder đang chờ bạn</p>
+  <a class="btn btn-primary" href="#pricing">Tham gia membership</a>
+</div>
+
+<script>
+(function(){
+  var d=document, root=d.documentElement;
+  root.classList.add('js');
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 52-week strip */
+  var wk=d.getElementById('weeks'), html='';
+  for(var i=1;i<=52;i++) html+='<i class="'+(i<41?'on':i===41?'now':'')+'"></i>';
+  wk.innerHTML=html;
+
+  /* Header elevation on scroll */
+  var hdr=d.querySelector('.hdr');
+  var onScroll=function(){hdr.classList.toggle('scrolled',window.scrollY>8)};
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+  /* Hamburger menu */
+  var burger=d.querySelector('.burger'), mnav=d.getElementById('mnav');
+  function setMenu(open){
+    burger.setAttribute('aria-expanded',open); mnav.classList.toggle('open',open);
+    burger.setAttribute('aria-label',open?'Đóng menu':'Mở menu');
+    d.body.classList.toggle('menu-open',open);
+  }
+  burger.addEventListener('click',function(){setMenu(burger.getAttribute('aria-expanded')!=='true')});
+  mnav.addEventListener('click',function(e){if(e.target.closest('a'))setMenu(false)});
+  d.addEventListener('keydown',function(e){if(e.key==='Escape'&&mnav.classList.contains('open')){setMenu(false);burger.focus()}});
+
+  /* Pricing toggle: Quý / Năm */
+  var tg=d.querySelector('.toggle'), pill=tg.querySelector('.pill'), btns=tg.querySelectorAll('button');
+  function movePill(b){pill.style.width=b.offsetWidth+'px';pill.style.transform='translateX('+(b.offsetLeft-5)+'px)'}
+  function setCycle(b){
+    btns.forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+    movePill(b);
+    var c=b.dataset.cycle, els=d.querySelectorAll('#pricing [data-q]');
+    els.forEach(function(el){el.classList.add('swap')});
+    setTimeout(function(){els.forEach(function(el){el.textContent=el.dataset[c];el.classList.remove('swap')})},reduce?0:180);
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){setCycle(b)})});
+  var syncPill=function(){movePill(tg.querySelector('[aria-pressed="true"]'))};
+  window.addEventListener('resize',syncPill); syncPill();
+  if(d.fonts&&d.fonts.ready)d.fonts.ready.then(syncPill);
+
+  /* Upvote micro-interaction (local only) */
+  d.querySelectorAll('.vote').forEach(function(v){
+    v.addEventListener('click',function(){
+      var on=v.getAttribute('aria-pressed')!=='true', n=v.querySelector('span');
+      n.textContent=(+n.textContent)+(on?1:-1); v.setAttribute('aria-pressed',on);
+    });
+  });
+
+  /* Copy-to-clipboard for CLI snippets */
+  d.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var done=function(){b.textContent='Đã chép';b.classList.add('done');setTimeout(function(){b.textContent='Chép';b.classList.remove('done')},1600)};
+      if(navigator.clipboard)navigator.clipboard.writeText(b.dataset.copy).then(done,done);else done();
+    });
+  });
+
+  /* Pointer spotlight on glass cards */
+  if(!reduce&&window.matchMedia('(hover:hover)').matches){
+    d.querySelectorAll('.spot').forEach(function(el){
+      el.addEventListener('pointermove',function(e){
+        var r=el.getBoundingClientRect();
+        el.style.setProperty('--mx',(e.clientX-r.left)+'px'); el.style.setProperty('--my',(e.clientY-r.top)+'px');
+      });
+    });
+  }
+
+  if(!('IntersectionObserver' in window)){d.querySelectorAll('.rv').forEach(function(el){el.classList.add('in')});return}
+
+  /* Reveal on scroll */
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px'});
+  d.querySelectorAll('.rv').forEach(function(el){io.observe(el)});
+
+  /* Count-up stats */
+  var co=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(!e.isIntersecting)return; co.unobserve(e.target);
+    var el=e.target, to=+el.dataset.count, p=el.dataset.prefix||'', s=el.dataset.suffix||'';
+    if(reduce)return; var t0=null;
+    (function step(t){t0=t0||t;var k=Math.min((t-t0)/1100,1),v=Math.round(to*(1-Math.pow(1-k,3)));el.textContent=p+v+s;if(k<1)requestAnimationFrame(step)})(performance.now());
+  })},{threshold:.6});
+  d.querySelectorAll('[data-count]').forEach(function(el){co.observe(el)});
+
+  /* Hide mobile sticky CTA while the final CTA is visible */
+  var sticky=d.getElementById('sticky');
+  new IntersectionObserver(function(es){sticky.classList.toggle('hide',es[0].isIntersecting)},{threshold:.2}).observe(d.getElementById('final'));
+})();
+</script>
+</body>
+</html>

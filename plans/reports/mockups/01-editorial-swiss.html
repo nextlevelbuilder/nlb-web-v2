@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Next Level Builders — Cộng đồng builder ra mắt sản phẩm thật, mỗi tuần</title>
+<meta name="description" content="Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord.">
+<!--
+  MOCKUP 01 — Editorial / Swiss
+  Art direction: a weekly print publication. 12-column grid made visible with hairlines,
+  Fraunces (serif display, Vietnamese subset) + Inter Tight (grotesk, Vietnamese subset)
+  + JetBrains Mono for metadata. Near-monochrome paper/ink palette, one accent: signal red.
+  Sections are numbered like magazine departments (§01–§07). Items marked "mẫu" in the
+  content spec are illustrative sample data.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --paper:#F5F3EE;      /* warm newsprint white */
+  --paper-2:#ECE9E1;    /* tinted panel */
+  --ink:#121212;        /* body ink */
+  --mute:#55534D;       /* secondary text, 7:1 on paper */
+  --rule:rgba(18,18,18,.16);
+  --red:#C8281B;        /* single accent — signal red, 5.3:1 on paper */
+  --red-ink:#A51F14;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Inter Tight',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --pad:40px; --gap:24px; --sec:128px; --header:64px;
+  --max:1360px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:calc(var(--header) + 16px)}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+h1,h2,h3,h4,p,ul,ol,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:1px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--ink);color:var(--paper);padding:10px 14px;text-decoration:none}
+.skip:focus{top:12px}
+
+/* ---------- Grid system (visible) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
+.g12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--gap)}
+.g12>*{min-width:0}
+.gridlines{position:fixed;inset:0;pointer-events:none;z-index:0}
+.gridlines .wrap{height:100%}
+.gridlines .g12{height:100%}
+.gridlines span{border-left:1px solid rgba(18,18,18,.045);border-right:1px solid rgba(18,18,18,.045)}
+header,main,footer{position:relative;z-index:1}
+
+/* ---------- Type primitives ---------- */
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
+.serif{font-family:var(--serif)}
+.display{font-family:var(--serif);font-weight:380;font-variation-settings:'opsz' 144;letter-spacing:-.025em;line-height:1.06}
+.rule{border:0;border-top:1px solid var(--rule);margin:0}
+
+/* ---------- Buttons & links ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;
+  font:500 15px/1 var(--sans);text-decoration:none;border:1px solid var(--ink);border-radius:0;
+  transition:background .2s,color .2s,border-color .2s}
+.btn .arr{transition:transform .25s}
+.btn:hover .arr{transform:translateX(4px)}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-ink);border-color:var(--red-ink)}
+.btn-ink{background:var(--ink);color:var(--paper)}
+.btn-ink:hover{background:var(--red);border-color:var(--red)}
+.btn-line{background:transparent}
+.btn-line:hover{background:var(--ink);color:var(--paper)}
+.link{font-weight:500;text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/100% 1px no-repeat;padding-bottom:3px;transition:color .2s}
+.link:hover{color:var(--red)}
+
+/* ---------- Masthead strip ---------- */
+.masthead{border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);position:relative;z-index:2;background:var(--paper)}
+.masthead .wrap{display:flex;justify-content:space-between;gap:16px;height:34px;align-items:center}
+.masthead b{color:var(--ink);font-weight:500}
+.masthead .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:8px;vertical-align:1px}
+
+/* ---------- Header ---------- */
+.site-header{position:sticky;top:0;z-index:50;background:rgba(245,243,238,.94);backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--ink)}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;height:var(--header);gap:24px}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;flex-shrink:0}
+.logo .mark{width:32px;height:32px;background:var(--red);color:#fff;display:grid;place-items:center;font:600 11px/1 var(--mono);letter-spacing:.02em}
+.logo .word{font:500 21px/1 var(--serif);letter-spacing:-.01em;white-space:nowrap}
+.logo .word em{font-style:italic;font-weight:400}
+.nav ul{display:flex;gap:28px}
+.nav a{font-size:14.5px;font-weight:500;text-decoration:none;padding:10px 0;position:relative;white-space:nowrap}
+.nav a::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:1px;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .25s}
+.nav a:hover::after{transform:scaleX(1)}
+.actions{display:flex;align-items:center;gap:18px;flex-shrink:0}
+.lang{display:flex;font-family:var(--mono);font-size:12px;border:1px solid var(--rule)}
+.lang button{background:none;border:0;padding:6px 9px;min-height:32px;color:var(--mute)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.login{font-size:14.5px;font-weight:500;text-decoration:none}
+.login:hover{color:var(--red)}
+.actions .btn{min-height:40px;padding:0 18px;font-size:14px}
+.burger{display:none;width:44px;height:44px;border:1px solid var(--ink);background:none;align-items:center;justify-content:center}
+.burger i{display:block;width:18px;height:1.5px;background:var(--ink);position:relative;transition:background .2s}
+.burger i::before,.burger i::after{content:"";position:absolute;left:0;width:18px;height:1.5px;background:var(--ink);transition:transform .25s}
+.burger i::before{top:-6px}.burger i::after{top:6px}
+.burger[aria-expanded="true"] i{background:transparent}
+.burger[aria-expanded="true"] i::before{transform:translateY(6px) rotate(45deg)}
+.burger[aria-expanded="true"] i::after{transform:translateY(-6px) rotate(-45deg)}
+
+/* Mobile drawer */
+.drawer{position:fixed;left:0;right:0;top:var(--header);bottom:0;background:var(--paper);z-index:49;padding:24px 20px 120px;overflow-y:auto;display:none}
+.drawer.open{display:block}
+.drawer ol{counter-reset:d;border-top:1px solid var(--ink)}
+.drawer li{border-bottom:1px solid var(--rule)}
+.drawer li a{display:flex;align-items:baseline;gap:16px;padding:16px 0;font:400 30px/1.15 var(--serif);text-decoration:none;letter-spacing:-.01em}
+.drawer li a::before{counter-increment:d;content:"0" counter(d);font:12px var(--mono);color:var(--red)}
+.drawer .drawer-foot{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:16px}
+
+/* ---------- Section scaffold ---------- */
+.sec{padding:var(--sec) 0 0}
+.sec-head{border-top:2px solid var(--ink);padding-top:20px;margin-bottom:64px;row-gap:16px}
+.sec-num{grid-column:1/4;display:flex;flex-direction:column;gap:6px}
+.sec-num .n{font:400 13px/1 var(--mono);color:var(--red);letter-spacing:.04em}
+.sec-num .t{font:500 12px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.sec-head h2{grid-column:4/13;text-wrap:balance;max-width:16ch;font-size:clamp(36px,4.6vw,68px)}
+.sec-head h2 em{font-style:italic;color:var(--red)}
+.sec-dek{grid-column:4/10;color:var(--mute);font-size:18px;max-width:60ch}
+.sec-side{grid-column:11/13;justify-self:end;align-self:end}
+
+/* ---------- Hero ---------- */
+.hero{padding-top:56px}
+.hero-main{grid-column:1/10}
+.hero-aside{grid-column:10/13;border-left:1px solid var(--ink);padding-left:24px;align-self:start;margin-top:8px}
+.hero .issue{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:32px}
+.hero h1{font-size:clamp(46px,7.4vw,112px);font-weight:340;line-height:1.04;letter-spacing:-.035em}
+.hero h1 em{font-style:italic;color:var(--red);font-weight:330}
+.hero h1 .dash{color:var(--mute);font-weight:300}
+.hero-lede{margin-top:48px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:var(--gap);align-items:end}
+.hero-lede p{font-size:20px;line-height:1.55;max-width:46ch}
+.hero-lede p::first-letter{font:400 3.3em/.82 var(--serif);float:left;margin:6px 10px 0 0;color:var(--red)}
+.ctas{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center}
+.ctas .link{display:inline-flex;align-items:center;gap:8px;min-height:44px;background-position:0 calc(100% - 8px)}
+.play{width:22px;height:22px;border:1px solid currentColor;border-radius:50%;display:inline-grid;place-items:center}
+.play::before{content:"";border-left:7px solid currentColor;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;margin-left:2px}
+.toc-title{font:500 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+.toc li a{display:grid;grid-template-columns:36px 1fr;gap:4px;padding:10px 0;border-top:1px solid var(--rule);text-decoration:none;font-size:15px;line-height:1.35}
+.toc li a span{font:12px var(--mono);color:var(--red);padding-top:3px}
+.toc li a:hover{color:var(--red)}
+.toc-note{margin-top:20px;font:italic 400 15px/1.45 var(--serif);color:var(--mute)}
+.trust{grid-column:1/13;margin-top:72px;border-top:1px solid var(--ink);display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.trust li{padding:18px 24px 18px 0;display:flex;gap:14px;align-items:baseline;font-size:15px}
+.trust li+li{padding-left:24px;border-left:1px solid var(--rule)}
+.trust li span{font:12px var(--mono);color:var(--red)}
+
+/* ---------- Pillars ---------- */
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--gap)}
+.pillar{border-top:1px solid var(--ink);padding-top:24px;display:flex;flex-direction:column;gap:18px}
+.pillar .num{font:300 96px/0.9 var(--serif);font-variation-settings:'opsz' 144;letter-spacing:-.04em;color:var(--ink)}
+.pillar .num sup{font:12px var(--mono);color:var(--red);vertical-align:top;margin-left:6px;letter-spacing:.04em}
+.pillar h3{font:400 34px/1.1 var(--serif);letter-spacing:-.015em}
+.pillar p{color:var(--mute)}
+.pillar ul li{border-top:1px solid var(--rule);padding:10px 0;font-size:15px;display:flex;gap:12px}
+.pillar ul li::before{content:"—";color:var(--red)}
+.pillar ul li.em{font-weight:600}
+
+/* ---------- Courses ---------- */
+.courses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--gap);row-gap:56px}
+.course{display:flex;flex-direction:column;gap:16px}
+.thumb{display:block;position:relative;overflow:hidden;aspect-ratio:16/10;background:var(--paper-2);border:1px solid var(--ink)}
+.thumb img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.08);transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(18,18,18,.55))}
+.course:hover .thumb img{transform:scale(1.04)}
+.thumb .wk{position:absolute;left:0;top:0;z-index:1;background:var(--red);color:#fff;font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:8px 10px}
+.thumb .dur{position:absolute;right:12px;bottom:12px;z-index:1;color:#fff;font:12px var(--mono);display:flex;gap:8px;align-items:center}
+.thumb .dur .play{width:28px;height:28px}
+.course .meta{display:flex;gap:16px;color:var(--mute)}
+.course h3{font:400 26px/1.2 var(--serif);letter-spacing:-.01em;flex:1}
+.course h3 a{text-decoration:none}
+.course h3 a:hover{color:var(--red)}
+.course .buy{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--rule);padding-top:16px;flex-wrap:wrap}
+.course .buy .btn{min-height:44px;padding:0 18px;font-size:14px}
+.badge{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--red);color:var(--red);padding:7px 9px}
+.sec-foot{margin-top:48px;display:flex;justify-content:flex-end}
+
+/* ---------- Directory ---------- */
+.dir-meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--ink);color:var(--mute)}
+.board{width:100%;border-collapse:collapse}
+.board th{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mute);text-align:left;padding:16px 12px 12px 0;border-bottom:1px solid var(--rule)}
+.board td{padding:22px 12px 22px 0;border-bottom:1px solid var(--rule);vertical-align:middle}
+.board tbody tr{transition:background .2s}
+.board tbody tr:hover{background:rgba(18,18,18,.035)}
+.board .rank{font:300 52px/1 var(--serif);font-variation-settings:'opsz' 144;width:96px;letter-spacing:-.03em}
+.board tr:first-child .rank{color:var(--red)}
+.board .name a{font:500 24px/1.2 var(--serif);text-decoration:none;letter-spacing:-.01em}
+.board .name a:hover{color:var(--red)}
+.board .tag{color:var(--mute);font-size:16px}
+.board .trust-c{width:200px}
+.meter{display:flex;align-items:center;gap:12px;font:500 14px var(--mono)}
+.meter .bar{flex:1;height:4px;background:var(--rule);position:relative;max-width:110px}
+.meter .bar i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
+.board .votes{font:500 15px var(--mono);text-align:right;width:96px;padding-right:0;white-space:nowrap}
+.board .votes::before{content:"▲ ";color:var(--red);font-size:11px}
+.board th:last-child{text-align:right;padding-right:0}
+.dir-foot{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.dir-foot p{font:500 12px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.dir-foot p b{color:var(--red);font-weight:500}
+
+/* ---------- Proof ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.stat{padding:32px 24px 28px 0}
+.stat+.stat{padding-left:24px;border-left:1px solid var(--rule)}
+.stat b{display:block;font:300 clamp(48px,6.4vw,96px)/1 var(--serif);font-variation-settings:'opsz' 144;letter-spacing:-.04em}
+.stat b em{font-style:normal;color:var(--red)}
+.stat span{display:block;margin-top:14px;font-size:15px;color:var(--mute);max-width:22ch}
+.quotes{margin-top:72px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--gap);row-gap:40px}
+.quote{display:flex;flex-direction:column;gap:20px}
+.quote blockquote{font:italic 360 23px/1.42 var(--serif);letter-spacing:-.005em;position:relative;padding-top:44px}
+.quote blockquote::before{content:"“";position:absolute;top:-14px;left:-4px;font:400 88px/1 var(--serif);color:var(--red)}
+.quote figcaption{border-top:1px solid var(--rule);padding-top:12px;display:flex;gap:10px;align-items:center;font-size:15px}
+.quote figcaption b{font-weight:600}
+.quote figcaption span{color:var(--mute)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font:500 13px var(--serif);flex-shrink:0}
+
+/* ---------- Pricing ---------- */
+.toggle{display:inline-flex;border:1px solid var(--ink);padding:3px}
+.toggle button{background:none;border:0;min-height:42px;padding:0 18px;font-weight:500;font-size:15px;display:flex;align-items:center;gap:8px}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.toggle .save{font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--red);color:#fff;padding:4px 6px}
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--gap)}
+.plan{border:1px solid var(--ink);padding:40px;display:flex;flex-direction:column;gap:28px;background:var(--paper)}
+.plan.vip{background:var(--ink);color:var(--paper)}
+.plan-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.plan h3{font:400 44px/1 var(--serif);letter-spacing:-.02em}
+.plan h3 em{font-style:italic;color:var(--red)}
+.plan .who{margin-top:10px;color:var(--mute)}
+.plan.vip .who{color:#B9B6AE}
+.seats{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;padding:8px 10px;white-space:nowrap}
+.price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:24px}
+.plan.vip .price{border-color:rgba(245,243,238,.2)}
+.price .amt{font:300 clamp(64px,7vw,104px)/.9 var(--serif);font-variation-settings:'opsz' 144;letter-spacing:-.045em}
+.price .per{font:500 15px var(--sans)}
+.price .eq{flex-basis:100%;font:13px var(--mono);color:var(--mute);margin-top:8px}
+.plan.vip .price .eq{color:#B9B6AE}
+.feats li{display:grid;grid-template-columns:28px 1fr;padding:11px 0;border-top:1px solid var(--rule);font-size:16px}
+.plan.vip .feats li{border-color:rgba(245,243,238,.16)}
+.feats li::before{content:"+";font:500 15px var(--mono);color:var(--red)}
+.feats li.hl{font-weight:600}
+.feats li.hl span{background:linear-gradient(var(--red),var(--red)) 0 100%/100% 2px no-repeat;padding-bottom:2px}
+.plan .btn{margin-top:auto;width:100%;min-height:52px}
+.plan.vip .btn-line{border-color:var(--paper)}
+.price-note{margin-top:24px;text-align:center;color:var(--mute);font:13px var(--mono);letter-spacing:.02em}
+
+/* ---------- Build with us ---------- */
+.bwu{margin-top:var(--sec);background:var(--ink);color:var(--paper);padding:96px 0}
+.bwu .sec-head{border-top-color:var(--paper);margin-bottom:0}
+.bwu .sec-head h2{grid-column:4/13}
+.bwu-copy{grid-column:1/6;margin-top:48px;display:flex;flex-direction:column;gap:24px}
+.bwu-copy p{color:#C9C6BE;font-size:18px;max-width:42ch}
+.bwu-copy .link:hover{color:#FF6A5C}
+.bwu-term{grid-column:6/13;margin-top:48px;display:flex;flex-direction:column;gap:16px}
+.term{border:1px solid rgba(245,243,238,.28);background:#0A0A0A}
+.term-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(245,243,238,.18);font:12px var(--mono);color:#9C998F}
+.term-bar i{display:inline-block;width:9px;height:9px;border:1px solid #6F6C64;border-radius:50%;margin-right:5px}
+.term pre{margin:0;padding:20px 18px;font:13.5px/1.75 var(--mono);color:#ECE9E1;overflow-x:auto;tab-size:2}
+.term pre .c{color:#8B887F}
+.term pre .p{color:#FF6A5C;user-select:none}
+.term pre .v{color:#F5D28A}
+
+/* ---------- Final CTA ---------- */
+.final{padding:var(--sec) 0}
+.final .g12{border-top:2px solid var(--ink);padding-top:20px;row-gap:40px}
+.final h2{grid-column:4/13;text-wrap:balance;font-size:clamp(48px,8vw,128px);font-weight:330;letter-spacing:-.04em;line-height:1.02}
+.final h2 em{font-style:italic;color:var(--red)}
+.final-act{grid-column:4/13;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.final-act .btn{min-height:56px;padding:0 28px;font-size:16px}
+.final-act p{color:var(--mute);font:13px var(--mono)}
+
+/* ---------- Footer ---------- */
+.site-footer{border-top:1px solid var(--ink);padding:56px 0 40px}
+.foot-brand{grid-column:1/6}
+.foot-brand .word{font:400 clamp(36px,4vw,56px)/1.02 var(--serif);letter-spacing:-.025em}
+.foot-brand .word em{font-style:italic}
+.foot-brand p{margin-top:16px;color:var(--mute);font:italic 400 19px/1.4 var(--serif)}
+.foot-cols{grid-column:7/13;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap)}
+.foot-cols h4{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin-bottom:14px}
+.foot-cols a{display:inline-block;padding:6px 0;text-decoration:none;font-size:15px}
+.foot-cols a:hover{color:var(--red)}
+.colophon{grid-column:1/13;margin-top:56px;padding-top:16px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--mute);font:12px var(--mono)}
+
+/* ---------- Mobile sticky CTA ---------- */
+.mcta{display:none}
+
+/* ================= Tablet 768–1279 ================= */
+@media (max-width:1279px){
+  :root{--pad:32px;--gap:20px;--sec:104px}
+  .nav ul{gap:20px}
+  .login{display:none}
+}
+@media (max-width:1100px){
+  .logo .word{display:none}
+  .nav a{font-size:14px}
+  .nav ul{gap:16px}
+  .actions{gap:12px}
+}
+@media (max-width:1024px){
+  .masthead .mid{display:none}
+  :root{--pad:28px;--sec:88px}
+  .hero-main{grid-column:1/13}
+  .hero-aside{grid-column:1/13;border-left:0;padding-left:0;margin-top:56px;border-top:1px solid var(--ink);padding-top:16px}
+  .toc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--gap)}
+  .toc-note{display:none}
+  .hero-lede{grid-template-columns:1fr;gap:32px}
+  .trust{margin-top:48px}
+  .sec-num{grid-column:1/13;flex-direction:row;gap:16px;align-items:baseline}
+  .sec-head h2,.sec-dek{grid-column:1/13}
+  .sec-side{grid-column:1/13;justify-self:start}
+  .sec-head{margin-bottom:48px}
+  .pillars{grid-template-columns:1fr;row-gap:40px}
+  .pillar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);column-gap:var(--gap);row-gap:14px}
+  .pillar .num{grid-row:1/4}
+  .courses{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .course:first-child{grid-column:1/3;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);column-gap:var(--gap);row-gap:14px;align-content:start}
+  .course:first-child .thumb{grid-row:1/5}
+  .board .tag{font-size:15px}
+  .board .trust-c{width:150px}
+  .board .rank{width:72px;font-size:44px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat:nth-child(3){padding-left:0;border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--rule)}
+  .quotes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quote:last-child{grid-column:1/3;max-width:66%}
+  .plan{padding:32px 28px}
+  .bwu .sec-head h2{grid-column:1/13}
+  .bwu-copy,.bwu-term{grid-column:1/13}
+  .bwu-term{margin-top:32px}
+  .final h2,.final-act{grid-column:1/13}
+  .foot-brand{grid-column:1/13}
+  .foot-cols{grid-column:1/13;margin-top:40px}
+}
+
+/* ================= Mobile ≤767 ================= */
+@media (max-width:767px){
+  :root{--pad:20px;--gap:16px;--sec:72px;--header:60px}
+  body{font-size:16px;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .g12{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .gridlines span:nth-child(n+5){display:none}
+  .masthead .mid,.masthead .right{display:none}
+  .nav,.lang,.actions .btn{display:none}
+  .burger{display:inline-flex}
+  .logo .word{display:inline;font-size:19px}
+  .hero{padding-top:36px}
+  .hero .issue{margin-bottom:22px}
+  .hero-main,.hero-aside,.trust,.sec-num,.sec-head h2,.sec-dek,.sec-side,.bwu .sec-head h2,.bwu-copy,.bwu-term,.final h2,.final-act,.foot-brand,.foot-cols,.colophon{grid-column:1/-1}
+  .hero h1{font-size:clamp(40px,11.4vw,52px);line-height:1.07}
+  .hero-lede{margin-top:28px}
+  .hero-lede p{font-size:18px}
+  .ctas .btn{width:100%}
+  .hero-aside{display:none}
+  .trust{grid-template-columns:1fr}
+  .trust li,.trust li+li{padding:14px 0;border-left:0}
+  .trust li+li{border-top:1px solid var(--rule)}
+  .sec-head{margin-bottom:36px}
+  .sec-head h2{font-size:clamp(32px,9vw,40px)}
+  .sec-dek{font-size:16.5px}
+  .pillar{display:flex}
+  .pillar .num{font-size:72px}
+  .pillar h3{font-size:30px}
+  .courses{grid-template-columns:1fr;row-gap:44px}
+  .course:first-child{grid-column:auto;display:flex}
+  .course h3{font-size:23px}
+  .sec-foot{justify-content:flex-start}
+  /* Directory table → stacked rows */
+  .board thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .board tbody tr{display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:12px;row-gap:4px;padding:18px 0;border-bottom:1px solid var(--rule)}
+  .board td{padding:0;border:0}
+  .board .rank{grid-row:1/4;font-size:36px;width:auto}
+  .board .name{grid-column:2}
+  .board .name a{font-size:21px}
+  .board .tag{grid-column:2/4;font-size:14.5px;line-height:1.45}
+  .board .trust-c{grid-column:2/4;width:auto;margin-top:6px}
+  .board .votes{grid-column:3;grid-row:1;width:auto;align-self:center}
+  .dir-foot{flex-direction:column;align-items:flex-start}
+  .dir-foot .btn{width:100%}
+  .stat,.stat+.stat{padding:22px 12px 20px 0}
+  .stat:nth-child(even){padding-left:14px}
+  .stat b{font-size:clamp(38px,11vw,48px)}
+  .stat span{font-size:14px}
+  .quotes{grid-template-columns:1fr;margin-top:48px}
+  .quote:last-child{grid-column:auto;max-width:none}
+  .quote blockquote{font-size:21px}
+  .pricing-head-toggle{width:100%}
+  .toggle{width:100%}
+  .toggle button{flex:1;justify-content:center;padding:0 10px}
+  .plans{grid-template-columns:1fr;row-gap:20px}
+  .plan{padding:28px 20px;gap:22px}
+  .plan h3{font-size:38px}
+  .price .amt{font-size:72px}
+  .bwu{padding:72px 0}
+  .bwu-copy{margin-top:32px}
+  .term pre{font-size:12.5px;padding:16px 14px}
+  .final h2{font-size:clamp(40px,11.5vw,52px)}
+  .final-act .btn{width:100%}
+  .foot-cols{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:28px}
+  .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(245,243,238,.97);border-top:1px solid var(--ink);padding:12px var(--pad) calc(12px + env(safe-area-inset-bottom));gap:12px;align-items:center}
+  .mcta .btn{flex:1;min-height:50px}
+  .mcta small{font:11px/1.3 var(--mono);color:var(--mute);max-width:84px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua đến nội dung chính</a>
+
+<!-- Visible 12-column grid (4 on mobile). Decorative only. -->
+<div class="gridlines" aria-hidden="true"><div class="wrap"><div class="g12"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div></div>
+
+<!-- Masthead strip: publication metadata -->
+<div class="masthead" role="note">
+  <div class="wrap">
+    <span><b>Số 41</b> — Thứ Hai, 13.10.2026</span>
+    <span class="mid">Tạp chí của những người ra mắt sản phẩm</span>
+    <span class="right live">Bảng xếp hạng làm mới lúc 00:00 UTC</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Next Level Builders — Trang chủ">
+      <span class="mark" aria-hidden="true">NLB</span>
+      <span class="word">Next Level <em>Builders</em></span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <ul>
+        <li><a href="#courses">Courses</a></li>
+        <li><a href="#directory">Directory</a></li>
+        <li><a href="#directory">Bảng xếp hạng</a></li>
+        <li><a href="#pricing">Bảng giá</a></li>
+        <li><a href="#build">Build with us</a></li>
+      </ul>
+    </nav>
+    <div class="actions">
+      <div class="lang" role="group" aria-label="Ngôn ngữ">
+        <button type="button" aria-pressed="true">VI</button>
+        <button type="button" aria-pressed="false">EN</button>
+      </div>
+      <a class="login" href="#">Đăng nhập</a>
+      <a class="btn btn-ink" href="#pricing">Tham gia</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="drawer" aria-label="Mở menu"><i></i></button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile drawer -->
+<div class="drawer" id="drawer" aria-label="Menu di động">
+  <nav aria-label="Điều hướng di động">
+    <ol>
+      <li><a href="#courses">Courses</a></li>
+      <li><a href="#directory">Directory</a></li>
+      <li><a href="#directory">Bảng xếp hạng</a></li>
+      <li><a href="#pricing">Bảng giá</a></li>
+      <li><a href="#build">Build with us</a></li>
+    </ol>
+  </nav>
+  <div class="drawer-foot">
+    <a class="link" href="#">Đăng nhập</a>
+    <div class="lang" role="group" aria-label="Ngôn ngữ" style="display:flex">
+      <button type="button" aria-pressed="true">VI</button>
+      <button type="button" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="wrap g12">
+    <div class="hero-main">
+      <div class="issue">
+        <span class="kicker">Ấn bản tuần 41</span>
+        <span class="mono" style="color:var(--mute)">Cộng đồng · Courses · Directory</span>
+      </div>
+      <h1 id="hero-title" class="display">Cộng đồng builder ra mắt sản phẩm <em>thật</em> <span class="dash">—</span> mỗi&nbsp;tuần.</h1>
+      <div class="hero-lede">
+        <p>Học từ video thực chiến hàng tuần, ra mắt trên Directory đã xác minh, và lớn lên cùng 500+ builder trong Discord. Từ 0 lên 1 luôn là phần khó nhất — bạn không phải đi một mình.</p>
+        <div class="ctas">
+          <a class="btn btn-red" href="#pricing">Tham gia membership <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link" href="#courses"><span class="play" aria-hidden="true"></span>Xem video tuần này</a>
+        </div>
+      </div>
+    </div>
+
+    <aside class="hero-aside" aria-label="Mục lục">
+      <p class="toc-title">Trong số này</p>
+      <ol class="toc">
+        <li><a href="#pillars"><span>01</span>Ba trụ cột</a></li>
+        <li><a href="#courses"><span>02</span>Video thực chiến</a></li>
+        <li><a href="#directory"><span>03</span>Top tuần trên Directory</a></li>
+        <li><a href="#proof"><span>04</span>Con số &amp; tiếng nói</a></li>
+        <li><a href="#pricing"><span>05</span>Bảng giá</a></li>
+        <li><a href="#build"><span>06</span>Ra mắt từ terminal</a></li>
+      </ol>
+      <p class="toc-note">Mỗi thứ Hai, một video mới. Mỗi ngày, một bảng xếp hạng mới.</p>
+    </aside>
+
+    <ul class="trust" aria-label="Cam kết">
+      <li><span>A</span>Hoàn tiền 100% trong 30 ngày</li>
+      <li><span>B</span>Thanh toán an toàn qua Polar.sh</li>
+      <li><span>C</span>500+ builder năng động</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ §01 PILLARS ============ -->
+<section class="sec" id="pillars" aria-labelledby="pillars-title">
+  <div class="wrap">
+    <div class="sec-head g12">
+      <div class="sec-num"><span class="n">§ 01</span><span class="t">Ba trụ cột</span></div>
+      <h2 id="pillars-title" class="display">Một nơi để học, ra mắt <em>và</em> lớn lên.</h2>
+    </div>
+    <div class="pillars">
+      <article class="pillar">
+        <div class="num" aria-hidden="true">I<sup>Cộng đồng</sup></div>
+        <h3>Cộng đồng</h3>
+        <p>Discord riêng tư dành cho người đang thật sự xây sản phẩm — nơi tiến độ được nhìn thấy và được hỏi han.</p>
+        <ul>
+          <li>Discord riêng tư, 500+ builder</li>
+          <li>Phản hồi &amp; trách nhiệm hàng tuần</li>
+          <li>Mạng lưới nhà sáng lập</li>
+        </ul>
+      </article>
+      <article class="pillar">
+        <div class="num" aria-hidden="true">II<sup>Courses</sup></div>
+        <h3>Courses</h3>
+        <p>Video chia sẻ hàng tuần: AI automation, SEO, phát triển &amp; tăng trưởng sản phẩm.</p>
+        <ul>
+          <li>Mua lẻ từng video, xem trọn đời</li>
+          <li>Thực chiến từ sản phẩm đang có doanh thu</li>
+          <li class="em">VIP xem toàn bộ</li>
+        </ul>
+      </article>
+      <article class="pillar">
+        <div class="num" aria-hidden="true">III<sup>Directory</sup></div>
+        <h3>Directory</h3>
+        <p>Sản phẩm được kiểm duyệt thủ công, có Trust Passport và bảng xếp hạng tự nhiên theo chu kỳ 24h UTC.</p>
+        <ul>
+          <li>Kiểm duyệt thủ công từng sản phẩm</li>
+          <li>Trust Passport cho mỗi listing</li>
+          <li class="em">Không trả tiền để lên hạng</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §02 COURSES (sample data) ============ -->
+<section class="sec" id="courses" aria-labelledby="courses-title">
+  <div class="wrap">
+    <div class="sec-head g12">
+      <div class="sec-num"><span class="n">§ 02</span><span class="t">Courses</span></div>
+      <h2 id="courses-title" class="display">Video thực chiến, <em>mỗi tuần</em> một bài.</h2>
+      <p class="sec-dek">Mua lẻ từng video và xem trọn đời — hoặc lên VIP để mở khoá toàn bộ thư viện.</p>
+    </div>
+    <div class="courses">
+      <article class="course">
+        <a class="thumb" href="#" tabindex="-1" aria-hidden="true">
+          <img src="https://picsum.photos/seed/nlb-agent-41/960/600" alt="" width="960" height="600" loading="lazy">
+          <span class="wk">Tuần 41</span>
+          <span class="dur"><span class="play"></span>48:00</span>
+        </a>
+        <div class="meta mono"><span>Tuần 41</span><span>48 phút</span></div>
+        <h3><a href="#">Dựng agent tự động hoá bán hàng với Claude Code</a></h3>
+        <div class="buy">
+          <a class="btn btn-ink" href="#">Mua $19</a>
+          <span class="badge">VIP xem miễn phí</span>
+        </div>
+      </article>
+      <article class="course">
+        <a class="thumb" href="#" tabindex="-1" aria-hidden="true">
+          <img src="https://picsum.photos/seed/nlb-seo-40/960/600" alt="" width="960" height="600" loading="lazy">
+          <span class="wk">Tuần 40</span>
+          <span class="dur"><span class="play"></span>36:00</span>
+        </a>
+        <div class="meta mono"><span>Tuần 40</span><span>36 phút</span></div>
+        <h3><a href="#">SEO cho micro-SaaS: từ 0 đến 10K visit/tháng</a></h3>
+        <div class="buy">
+          <a class="btn btn-ink" href="#">Mua $15</a>
+          <span class="badge">VIP xem miễn phí</span>
+        </div>
+      </article>
+      <article class="course">
+        <a class="thumb" href="#" tabindex="-1" aria-hidden="true">
+          <img src="https://picsum.photos/seed/nlb-launch-39/960/600" alt="" width="960" height="600" loading="lazy">
+          <span class="wk">Tuần 39</span>
+          <span class="dur"><span class="play"></span>29:00</span>
+        </a>
+        <div class="meta mono"><span>Tuần 39</span><span>29 phút</span></div>
+        <h3><a href="#">Ra mắt trên Product Hunt &amp; Build with Us: checklist thực chiến</a></h3>
+        <div class="buy">
+          <a class="btn btn-ink" href="#">Mua $12</a>
+          <span class="badge">VIP xem miễn phí</span>
+        </div>
+      </article>
+    </div>
+    <div class="sec-foot"><a class="link" href="#">Xem tất cả video →</a></div>
+  </div>
+</section>
+
+<!-- ============ §03 DIRECTORY (sample data) ============ -->
+<section class="sec" id="directory" aria-labelledby="dir-title">
+  <div class="wrap">
+    <div class="sec-head g12">
+      <div class="sec-num"><span class="n">§ 03</span><span class="t">Directory</span></div>
+      <h2 id="dir-title" class="display">Top tuần này — <em>xếp hạng tự nhiên</em>.</h2>
+      <p class="sec-dek">Mỗi sản phẩm được kiểm duyệt bằng tay và có Trust Passport. Thứ hạng đến từ cộng đồng, không đến từ ngân sách quảng cáo.</p>
+    </div>
+    <div class="dir-meta mono"><span>Bảng xếp hạng · Tuần 41</span><span>Làm mới mỗi 24h · 00:00 UTC</span></div>
+    <table class="board">
+      <caption class="sr-only">Top 5 sản phẩm trên Directory tuần này</caption>
+      <thead>
+        <tr><th scope="col">#</th><th scope="col">Sản phẩm</th><th scope="col">Mô tả</th><th scope="col">Trust</th><th scope="col">Votes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rank">01</td><td class="name"><a href="#">ClaudeKit</a></td><td class="tag">Skills &amp; workflows cao cấp cho Claude Code</td><td class="trust-c"><div class="meter"><span>96</span><span class="bar" aria-hidden="true"><i style="width:96%"></i></span></div></td><td class="votes">412</td></tr>
+        <tr><td class="rank">02</td><td class="name"><a href="#">GoClaw</a></td><td class="tag">Nền tảng AI agent bảo mật cho doanh nghiệp</td><td class="trust-c"><div class="meter"><span>93</span><span class="bar" aria-hidden="true"><i style="width:93%"></i></span></div></td><td class="votes">287</td></tr>
+        <tr><td class="rank">03</td><td class="name"><a href="#">UI UX Pro Max</a></td><td class="tag">Hệ thống thiết kế UI/UX với AI</td><td class="trust-c"><div class="meter"><span>91</span><span class="bar" aria-hidden="true"><i style="width:91%"></i></span></div></td><td class="votes">254</td></tr>
+        <tr><td class="rank">04</td><td class="name"><a href="#">TOSE</a></td><td class="tag">Click. Deploy. Xong — production trong 2 phút</td><td class="trust-c"><div class="meter"><span>89</span><span class="bar" aria-hidden="true"><i style="width:89%"></i></span></div></td><td class="votes">198</td></tr>
+        <tr><td class="rank">05</td><td class="name"><a href="#">Agentic Working</a></td><td class="tag">Framework làm việc với AI agents</td><td class="trust-c"><div class="meter"><span>87</span><span class="bar" aria-hidden="true"><i style="width:87%"></i></span></div></td><td class="votes">163</td></tr>
+      </tbody>
+    </table>
+    <div class="dir-foot">
+      <p>Kiểm duyệt thủ công <b>•</b> Không trả tiền để lên hạng <b>•</b> Cloudflare Edge</p>
+      <a class="btn btn-line" href="#">Gửi sản phẩm của bạn <span class="arr" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §04 SOCIAL PROOF (testimonials = sample) ============ -->
+<section class="sec" id="proof" aria-labelledby="proof-title">
+  <div class="wrap">
+    <div class="sec-head g12">
+      <div class="sec-num"><span class="n">§ 04</span><span class="t">Con số &amp; tiếng nói</span></div>
+      <h2 id="proof-title" class="display">Được xây bởi người <em>đã ra mắt</em>.</h2>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>500<em>+</em></b><span>builder trong cộng đồng</span></div>
+      <div class="stat"><b>14<em>+</em></b><span>sản phẩm SaaS sinh lợi của đội ngũ</span></div>
+      <div class="stat"><b>$100K<em>+</em></b><span>ARR từ các sản phẩm của đội ngũ</span></div>
+      <div class="stat"><b>52</b><span>tuần video thực chiến</span></div>
+    </div>
+    <div class="quotes">
+      <figure class="quote">
+        <blockquote><p>Ba tháng tự làm một mình không ra nổi bản beta. Vào NLB sáu tuần, sản phẩm đã có những khách hàng trả tiền đầu tiên.</p></blockquote>
+        <figcaption><span class="avatar" aria-hidden="true">M</span><b>Minh</b><span>— indie hacker</span></figcaption>
+      </figure>
+      <figure class="quote">
+        <blockquote><p>Video SEO tuần 40 đổi hẳn cách mình viết landing page. Traffic tự nhiên tăng gấp đôi chỉ sau một tháng.</p></blockquote>
+        <figcaption><span class="avatar" aria-hidden="true">L</span><b>Lan</b><span>— founder micro-SaaS</span></figcaption>
+      </figure>
+      <figure class="quote">
+        <blockquote><p>Làm full-time vẫn ship được side project nhờ nhịp check-in hàng tuần. Có người hỏi tiến độ là khác hẳn.</p></blockquote>
+        <figcaption><span class="avatar" aria-hidden="true">T</span><b>Tuấn</b><span>— developer full-time</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §05 PRICING ============ -->
+<section class="sec" id="pricing" aria-labelledby="pricing-title">
+  <div class="wrap">
+    <div class="sec-head g12">
+      <div class="sec-num"><span class="n">§ 05</span><span class="t">Bảng giá</span></div>
+      <h2 id="pricing-title" class="display">Chọn nhịp <em>phù hợp</em> với bạn.</h2>
+      <p class="sec-dek">Số chỗ có giới hạn để giữ chất lượng phản hồi. Đổi gói hoặc huỷ bất cứ lúc nào.</p>
+      <div class="sec-side pricing-head-toggle">
+        <div class="toggle" role="group" aria-label="Chu kỳ thanh toán">
+          <button type="button" data-period="q" aria-pressed="true">Quý</button>
+          <button type="button" data-period="y" aria-pressed="false">Năm <span class="save">−20%</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="plans" aria-live="polite">
+      <article class="plan" aria-labelledby="p-premium">
+        <div class="plan-top">
+          <div><h3 id="p-premium">Premium</h3><p class="who">Builder tự học</p></div>
+          <span class="seats">30 chỗ</span>
+        </div>
+        <div class="price">
+          <span class="amt" data-q="$147" data-y="$39">$147</span>
+          <span class="per" data-q="/ quý" data-y="/ tháng, trả năm">/ quý</span>
+          <span class="eq" data-q="≈ $49/tháng" data-y="Thanh toán $468/năm">≈ $49/tháng</span>
+        </div>
+        <ul class="feats">
+          <li>Thư viện 52 tuần video + video mới hàng tuần</li>
+          <li>Discord riêng tư</li>
+          <li>Kênh hỗ trợ ra mắt</li>
+          <li>Phản hồi từ nhà sáng lập</li>
+        </ul>
+        <a class="btn btn-line" href="#">Chọn Premium <span class="arr" aria-hidden="true">→</span></a>
+      </article>
+
+      <article class="plan vip" aria-labelledby="p-vip">
+        <div class="plan-top">
+          <div><h3 id="p-vip"><em>VIP</em></h3><p class="who">Builder được hướng dẫn</p></div>
+          <span class="seats">10 chỗ</span>
+        </div>
+        <div class="price">
+          <span class="amt" data-q="$297" data-y="$79">$297</span>
+          <span class="per" data-q="/ quý" data-y="/ tháng, trả năm">/ quý</span>
+          <span class="eq" data-q="≈ $99/tháng" data-y="Thanh toán $948/năm">≈ $99/tháng</span>
+        </div>
+        <ul class="feats">
+          <li>Tất cả quyền lợi Premium</li>
+          <li>Kênh VIP — câu hỏi được ưu tiên</li>
+          <li>Truy cập sớm công cụ &amp; nội dung</li>
+          <li>1 bài viết quảng bá sản phẩm</li>
+          <li>Kho template + prompt AI VIP</li>
+          <li class="hl"><span>Xem toàn bộ Courses miễn phí</span></li>
+        </ul>
+        <a class="btn btn-red" href="#">Chọn VIP <span class="arr" aria-hidden="true">→</span></a>
+      </article>
+    </div>
+    <p class="price-note">Đảm bảo hoàn tiền 30 ngày · Thanh toán qua Polar.sh</p>
+  </div>
+</section>
+
+<!-- ============ §06 BUILD WITH US ============ -->
+<section class="bwu" id="build" aria-labelledby="build-title">
+  <div class="wrap g12">
+    <div class="sec-head g12" style="grid-column:1/-1">
+      <div class="sec-num"><span class="n" style="color:#FF6A5C">§ 06</span><span class="t">Build with us</span></div>
+      <h2 id="build-title" class="display">Ra mắt từ <em style="color:#FF6A5C">terminal</em>.</h2>
+    </div>
+    <div class="bwu-copy">
+      <p>Tạo file mô tả sản phẩm, gửi lên Directory bằng một lệnh. Hoặc kết nối MCP server vào Claude/Cursor để quản lý listing bằng ngôn ngữ tự nhiên.</p>
+      <div><a class="link" href="#">Tài liệu API v1 →</a></div>
+    </div>
+    <div class="bwu-term">
+      <div class="term">
+        <div class="term-bar"><span><i></i><i></i><i></i></span><span>~/my-product — CLI</span></div>
+        <pre tabindex="0" aria-label="Lệnh CLI để gửi sản phẩm"><code><span class="c"># 1. Tạo file mô tả sản phẩm</span>
+<span class="p">$ </span>npx @nextlevelbuilder/cli template developer-cli --out product.json
+<span class="c"># 2. Gửi lên Directory</span>
+<span class="p">$ </span>npx @nextlevelbuilder/cli submit product.json --api-key <span class="v">$NLB_API_KEY</span></code></pre>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span><i></i><i></i><i></i></span><span>MCP server</span></div>
+        <pre tabindex="0" aria-label="Lệnh chạy MCP server"><code><span class="p">$ </span>npx -y @nextlevelbuilder/mcp</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §07 FINAL CTA ============ -->
+<section class="final" aria-labelledby="final-title">
+  <div class="wrap">
+    <div class="g12">
+      <div class="sec-num"><span class="n">§ 07</span><span class="t">Bắt đầu</span></div>
+      <h2 id="final-title" class="display">Sẵn sàng ra mắt sản phẩm <em>tiếp theo</em>?</h2>
+      <div class="final-act">
+        <a class="btn btn-red" href="#pricing">Tham gia membership <span class="arr" aria-hidden="true">→</span></a>
+        <p>Không rủi ro trong 30 ngày · Truy cập ngay</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap g12">
+    <div class="foot-brand">
+      <p class="word">Next Level <em>Builders</em></p>
+      <p>Xây dựng tương lai, từng sản phẩm một.</p>
+    </div>
+    <nav class="foot-cols" aria-label="Liên kết chân trang">
+      <div><h4>Sản phẩm</h4><ul><li><a href="#courses">Courses</a></li><li><a href="#directory">Directory</a></li><li><a href="#directory">Bảng xếp hạng</a></li></ul></div>
+      <div><h4>Tài nguyên</h4><ul><li><a href="#build">Tài liệu API</a></li><li><a href="#">Chính sách</a></li></ul></div>
+      <div><h4>Cộng đồng</h4><ul><li><a href="#">Discord</a></li><li><a href="#">GitHub</a></li><li><a href="#">X</a></li></ul></div>
+    </nav>
+    <div class="colophon"><span>© 2026 Next Level Builders.</span><span>nextlevelbuilder.io</span></div>
+  </div>
+</footer>
+
+<!-- Mobile sticky CTA bar -->
+<div class="mcta">
+  <small>Hoàn tiền 30 ngày</small>
+  <a class="btn btn-red" href="#pricing">Tham gia membership</a>
+</div>
+
+<script>
+/* Hamburger drawer: toggles aria-expanded, locks scroll, closes on link/Escape/resize. */
+(function(){
+  var btn=document.querySelector('.burger'),drawer=document.getElementById('drawer');
+  function set(open){
+    btn.setAttribute('aria-expanded',open);
+    btn.setAttribute('aria-label',open?'Đóng menu':'Mở menu');
+    drawer.classList.toggle('open',open);
+    document.body.style.overflow=open?'hidden':'';
+  }
+  btn.addEventListener('click',function(){set(btn.getAttribute('aria-expanded')!=='true')});
+  drawer.addEventListener('click',function(e){if(e.target.closest('a'))set(false)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&drawer.classList.contains('open')){set(false);btn.focus()}});
+  window.addEventListener('resize',function(){if(window.innerWidth>767)set(false)});
+})();
+
+/* Pricing toggle: swaps every [data-q]/[data-y] text between quarterly and yearly. */
+(function(){
+  var btns=document.querySelectorAll('.toggle button');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      var p=b.dataset.period;
+      btns.forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+      document.querySelectorAll('.plans [data-q]').forEach(function(el){el.textContent=el.dataset[p]});
+    });
+  });
+})();
+
+/* Language switch (visual only in mockup). */
+document.querySelectorAll('.lang').forEach(function(g){
+  g.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    g.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+  });
+});
+</script>
+</body>
+</html>
