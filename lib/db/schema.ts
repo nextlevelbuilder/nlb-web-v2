@@ -623,7 +623,7 @@ export const blogPosts = sqliteTable(
     blocks: text("blocks", { mode: "json" }).$type<unknown[]>().notNull().default([]),
     coverUrl: text("cover_url"),
     tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
-    seo: text("seo", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+    seo: text("seo", { mode: "json" }).$type<Record<string, string | boolean>>().notNull().default({}),
     authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
     authorName: text("author_name"),
     status: text("status").$type<"draft" | "published" | "archived">().notNull().default("draft"),
@@ -683,4 +683,28 @@ export const courseVideos = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
   },
   (t) => [index("course_videos_listing_idx").on(t.status, t.publishedAt)]
+);
+
+// ==========================================
+// 11. API idempotency (Idempotency-Key replay store)
+// ==========================================
+
+/**
+ * Stored responses for write requests that carried an `Idempotency-Key` header.
+ * Keyed per caller so two callers can reuse the same key value. `requestHash` detects a reused
+ * key with a different body (rejected with 422). Rows older than 24h are ignored and overwritten.
+ */
+export const apiIdempotencyKeys = sqliteTable(
+  "api_idempotency_keys",
+  {
+    callerId: text("caller_id").notNull(),
+    key: text("key").notNull(),
+    method: text("method").notNull(),
+    path: text("path").notNull(),
+    requestHash: text("request_hash").notNull(),
+    statusCode: integer("status_code").notNull(),
+    responseBody: text("response_body").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.callerId, t.key] })]
 );

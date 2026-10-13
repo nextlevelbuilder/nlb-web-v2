@@ -29,6 +29,18 @@ CREATE TABLE `analytics_events` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `analytics_events_event_id_unique` ON `analytics_events` (`event_id`);--> statement-breakpoint
+CREATE TABLE `api_idempotency_keys` (
+	`caller_id` text NOT NULL,
+	`key` text NOT NULL,
+	`method` text NOT NULL,
+	`path` text NOT NULL,
+	`request_hash` text NOT NULL,
+	`status_code` integer NOT NULL,
+	`response_body` text NOT NULL,
+	`created_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
+	PRIMARY KEY(`caller_id`, `key`)
+);
+--> statement-breakpoint
 CREATE TABLE `api_keys` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
