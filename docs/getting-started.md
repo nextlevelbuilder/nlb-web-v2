@@ -26,7 +26,7 @@ Variable names:
 - [`cloudflare-env.d.ts`](../cloudflare-env.d.ts) types the Worker env. Regenerate it with `npm run cf-typegen` after you change `wrangler.jsonc` or `.dev.vars`.
 - [`lib/env.ts`](../lib/env.ts) holds the `process.env` schema.
 
-No `.dev.vars.example` is committed yet. Ask a maintainer for the values. Never commit `.dev.vars` or `.env`. Both are gitignored.
+[`.dev.vars.example`](../.dev.vars.example) lists every variable name with a one-line comment. Copy it to `.dev.vars` and ask a maintainer for the values you need. Never commit `.dev.vars` or `.env`. Both are gitignored.
 
 Nothing is required just to boot the site. D1, KV and R2 run locally in Miniflare, and `BETTER_AUTH_SECRET` falls back to a dev-only value outside production (see [`lib/auth.ts`](../lib/auth.ts)). Checkout, email, OAuth sign-in and course playback need their real keys.
 
@@ -38,7 +38,7 @@ Nothing is required just to boot the site. D1, KV and R2 run locally in Miniflar
 npm run db:migrate:local   # applies drizzle/migrations to the local D1 in .wrangler/state
 ```
 
-`npm run db:seed:local` refers to `drizzle/seed/dev-seed.sql`, which does not exist yet. To work with realistic data, import a migration snapshot into the local D1. See [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md).
+The local database starts empty; there is no seed script. To work with realistic data, import a migration snapshot into the local D1. See [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md).
 
 ## Run
 
