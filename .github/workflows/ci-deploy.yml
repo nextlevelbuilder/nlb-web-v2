@@ -39,7 +39,9 @@ jobs:
       # Token needs Workers Scripts, D1, Workers KV, Queues and R2 edit on account 7ac87c90789159ae1b10b7d78f5dcc08.
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      WRANGLER_ENV_FLAG: ${{ github.ref_name == 'main' && '' || '--env staging' }}
+      # `cond && '' || x` always yields x in Actions expressions ('' is falsy), so production must use a
+      # non-empty flag. `--env=` selects wrangler's top-level (production) environment explicitly.
+      WRANGLER_ENV_FLAG: ${{ github.ref_name == 'main' && '--env=' || '--env=staging' }}
       # Build-time public values (inlined into the client bundle).
       NEXT_PUBLIC_APP_URL: ${{ github.ref_name == 'main' && 'https://nextlevelbuilder.io' || 'https://staging.nextlevelbuilder.io' }}
       NEXT_PUBLIC_ASSETS_URL: https://cdn.nextlevelbuilder.io
