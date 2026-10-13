@@ -46,8 +46,7 @@ function createMockDb() {
         const row = Array.isArray(vals) ? vals[0] : vals;
         return {
           onConflictDoNothing: vi.fn((opts?: any) => {
-            return {
-              returning: vi.fn().mockImplementation(async () => {
+            const claim = async () => {
                 // Table: deliveryIntents
                 if (row.idempotencyKey) {
                   if (deliveryIntentsStore.has(row.idempotencyKey)) {
@@ -65,7 +64,11 @@ function createMockDb() {
                   return [{ ...row, id: `evt_row_${Date.now()}` }];
                 }
                 return [{ ...row, id: "gen_id" }];
-              }),
+            };
+            // D1 reports affected rows through `run().meta.changes`, like the real driver.
+            return {
+              returning: vi.fn().mockImplementation(claim),
+              run: vi.fn().mockImplementation(async () => ({ meta: { changes: (await claim()).length } })),
             };
           }),
           onConflictDoUpdate: vi.fn((opts?: any) => {
@@ -106,7 +109,9 @@ function createMockDb() {
     })),
     update: vi.fn((table: any) => ({
       set: vi.fn((vals: any) => ({
-        where: vi.fn().mockResolvedValue([{ ...vals }]),
+        where: vi.fn(() =>
+          Object.assign(Promise.resolve([{ ...vals }]), { run: vi.fn().mockResolvedValue({ meta: { changes: 0 } }) })
+        ),
       })),
     })),
   };

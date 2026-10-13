@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDb, type AppDb } from "@/lib/db";
-import { customers, subscriptions, orders, webhookEvents } from "@/lib/db/schema";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { customers, subscriptions, orders } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { sendWelcomeEmail } from "@/lib/resend";
 import { sendForm01Email } from "@/lib/email-form01";
 import { sendDiscordSalesNotification } from "@/lib/discord";
 import { claimDeliveryIntent, markDeliveryComplete } from "@/lib/domain/events";
+import { claimWebhookEvent, completeWebhookEvent, failWebhookEvent } from "@/lib/domain/webhook-event-lock";
 import { env } from "@/lib/env";
 import { resolveDiscordInvite } from "@/lib/constants/socials";
 import {
@@ -95,62 +96,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, skipped: true });
     }
 
-    // 3. Claim webhook event atomically in database
-    let claimedEvent = null;
-    try {
-      const [inserted] = await db
-        .insert(webhookEvents)
-        .values({
-          eventId,
-          eventType: event.type,
-          payload: event,
-          processed: false,
-        })
-        .onConflictDoNothing({ target: webhookEvents.eventId })
-        .returning();
-      claimedEvent = inserted;
-    } catch (error) {
-      console.error("Error claiming webhook event:", error);
+    // 3. Claim the event with a processing lease (atomic insert, or conditional reclaim).
+    const claim = await claimWebhookEvent(db, { eventId, eventType: event.type, payload: event });
+    if (claim === "duplicate") {
+      console.log(`Webhook event ${eventId} already processed, skipping duplicate`);
+      return NextResponse.json({ received: true, duplicate: true });
     }
-
-    // If not claimed on initial insert, inspect existing event state
-    if (!claimedEvent) {
-      const [existingEvent] = await db
-        .select()
-        .from(webhookEvents)
-        .where(eq(webhookEvents.eventId, eventId))
-        .limit(1);
-
-      if (existingEvent?.processed) {
-        console.log(
-          `Webhook event ${eventId} already processed, skipping duplicate`
-        );
-        return NextResponse.json({ received: true, duplicate: true });
-      }
-
-      // Atomic stale lock reclaim: if claim is older than 5 minutes, attempt to reclaim atomically
-      const [reclaimed] = await db
-        .update(webhookEvents)
-        .set({ processedAt: new Date() })
-        .where(
-          and(
-            eq(webhookEvents.eventId, eventId),
-            eq(webhookEvents.processed, false),
-            lt(webhookEvents.createdAt, new Date(Date.now() - 5 * 60 * 1000))
-          )
-        )
-        .returning();
-
-      if (!reclaimed && !existingEvent?.error) {
-        // Event is currently actively being processed by another worker -> return 500 so Polar retries
-        console.log(
-          `Webhook event ${eventId} currently locked by active in-flight worker`
-        );
-        return NextResponse.json(
-          { error: "event_locked" },
-          { status: 500 }
-        );
-      }
+    if (claim === "locked") {
+      // Another delivery holds an unexpired lease -> 500 so Polar retries later.
+      console.log(`Webhook event ${eventId} currently locked by active in-flight worker`);
+      return NextResponse.json({ error: "event_locked" }, { status: 500 });
     }
 
     // 4. Execute domain event handler
@@ -178,11 +133,7 @@ export async function POST(request: Request) {
           console.log(`Unhandled event type: ${event.type}`);
       }
 
-      // Mark event as processed
-      await db
-        .update(webhookEvents)
-        .set({ processed: true, processedAt: new Date(), error: null })
-        .where(eq(webhookEvents.eventId, eventId));
+      await completeWebhookEvent(db, eventId);
 
       return NextResponse.json({ received: true });
     } catch (error) {
@@ -190,13 +141,7 @@ export async function POST(request: Request) {
 
       // Log error to DB
       try {
-        await db
-          .update(webhookEvents)
-          .set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            processedAt: new Date(),
-          })
-          .where(eq(webhookEvents.eventId, eventId));
+        await failWebhookEvent(db, eventId, error instanceof Error ? error.message : "Unknown error");
       } catch (dbError) {
         console.error("Error logging webhook error to DB:", dbError);
       }
