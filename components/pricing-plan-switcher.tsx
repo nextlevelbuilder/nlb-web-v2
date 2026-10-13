@@ -1,94 +1,56 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, type KeyboardEvent } from 'react';
+import type { BillingCycle } from '@/lib/constants/launch';
+import { cn } from '@/lib/utils';
 
 interface PricingPlanSwitcherProps {
-  selected: 'quarterly' | 'yearly';
-  onChange: (plan: 'quarterly' | 'yearly') => void;
-  quarterlyLabel?: string;
-  yearlyLabel?: string;
-  savingsLabel?: string;
+  value: BillingCycle;
+  onChange: (value: BillingCycle) => void;
+  label: string;
+  options: Record<BillingCycle, string>;
+  /** Short note shown next to the annual option, e.g. "Save 20%". */
+  annualNote?: string;
+  className?: string;
 }
 
-export default function PricingPlanSwitcher({
-  selected,
-  onChange,
-  quarterlyLabel = 'Quarterly',
-  yearlyLabel = 'Yearly',
-  savingsLabel = 'Save 26%',
-}: PricingPlanSwitcherProps) {
-  const quarterlyRef = useRef<HTMLButtonElement>(null);
-  const yearlyRef = useRef<HTMLButtonElement>(null);
-  const [dimensions, setDimensions] = useState({ left: 0, width: 0 });
+const ORDER: BillingCycle[] = ['quarterly', 'annual'];
 
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (selected === 'quarterly' && quarterlyRef.current) {
-        setDimensions({
-          left: quarterlyRef.current.offsetLeft,
-          width: quarterlyRef.current.offsetWidth,
-        });
-      } else if (selected === 'yearly' && yearlyRef.current) {
-        setDimensions({
-          left: yearlyRef.current.offsetLeft,
-          width: yearlyRef.current.offsetWidth,
-        });
-      }
-    };
+/** Billing-cycle radio group (Quarterly · Annual) with roving focus and arrow-key support. */
+export default function PricingPlanSwitcher({ value, onChange, label, options, annualNote, className }: PricingPlanSwitcherProps) {
+  const refs = useRef<Record<BillingCycle, HTMLButtonElement | null>>({ quarterly: null, annual: null });
 
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, [selected]);
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const next = ORDER[(ORDER.indexOf(value) + 1) % ORDER.length];
+    onChange(next);
+    refs.current[next]?.focus();
+  };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="relative inline-flex items-center gap-2 bg-card border-2 border-border rounded-full p-1.5">
-        {/* Sliding background indicator */}
-        <motion.div
-          className="absolute top-1.5 h-[calc(100%-12px)] bg-primary rounded-full"
-          initial={false}
-          animate={{
-            left: dimensions.left,
-            width: dimensions.width,
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
-          }}
-        />
-
-        {/* Quarterly button */}
+    <div role="radiogroup" aria-label={label} className={cn('seg', className)} onKeyDown={onKeyDown}>
+      {ORDER.map((option) => (
         <button
-          ref={quarterlyRef}
-          onClick={() => onChange('quarterly')}
-          className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-            selected === 'quarterly'
-              ? 'text-white'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
+          key={option}
+          ref={(node) => {
+            refs.current[option] = node;
+          }}
+          type="button"
+          role="radio"
+          aria-checked={value === option}
+          tabIndex={value === option ? 0 : -1}
+          onClick={() => onChange(option)}
+          className="seg-option gap-2 px-4"
         >
-          {quarterlyLabel}
+          {options[option]}
+          {option === 'annual' && annualNote && (
+            <span className={cn('rounded-pill px-1.5 py-0.5 text-[10px]', value === option ? 'bg-background/20' : 'text-primary')}>
+              {annualNote}
+            </span>
+          )}
         </button>
-
-        {/* Yearly button */}
-        <button
-          ref={yearlyRef}
-          onClick={() => onChange('yearly')}
-          className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-1.5 whitespace-nowrap ${
-            selected === 'yearly'
-              ? 'text-white'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span>{yearlyLabel}</span>
-          <span className="text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-            {savingsLabel}
-          </span>
-        </button>
-      </div>
+      ))}
     </div>
   );
 }

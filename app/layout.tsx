@@ -1,41 +1,59 @@
-import { Inter, Bricolage_Grotesque } from "next/font/google";
-import type { Metadata } from "next";
-import Script from "next/script";
+import { Be_Vietnam_Pro, Cormorant_Garamond, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { getLocale } from "next-intl/server";
 import { siteUrl, serializeJsonLd } from "@/lib/seo";
+import { ThemeProvider } from "@/components/theme-provider";
+import GoogleAnalyticsConsentAware from "@/components/analytics/google-analytics-consent-aware";
+import { SOCIAL_LINKS, X_HANDLE } from "@/lib/constants/socials";
 import "./globals.css";
-import "./headings.css";
 
-const GA_MEASUREMENT_ID = "G-MJ62DM021G";
-
-const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter", display: "swap" });
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-heading",
+// Every family ships the `vietnamese` subset so VI diacritics render in the brand faces.
+const display = Cormorant_Garamond({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
   display: "swap",
 });
+const sans = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+const DESCRIPTION =
+  "Next Level Builders is a community of 500+ builders who ship real products: weekly build videos, a hand-reviewed product Directory with a Trust Passport, and a private Discord.";
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#06070d" },
+    { media: "(prefers-color-scheme: light)", color: "#efe7d6" },
+  ],
+  colorScheme: "light dark",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "Next Level Builders | Premium Discord Community for Micro SaaS Builders",
+    default: "Next Level Builders — Every product starts as a single point of light",
     template: "%s | Next Level Builders",
   },
-  description: "Join 500+ solo-founders building profitable micro-SaaS products. Get access to proven playbooks, recorded sessions, and a supportive community.",
-  keywords: ["micro saas", "indie hacker", "solo founder", "community", "discord", "ai automation", "seo", "marketing", "solopreneur", "startup"],
+  description: DESCRIPTION,
+  keywords: ["micro saas", "indie hacker", "solo founder", "builder community", "discord", "ai automation", "product directory", "build in public"],
   authors: [{ name: "Next Level Builders", url: "https://nextlevelbuilder.io" }],
   creator: "Next Level Builders",
   publisher: "Next Level Builders",
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
+    googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
   icons: {
     icon: [
@@ -48,59 +66,49 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
-    locale: "vi_VN",
-    alternateLocale: ["en_US"],
+    locale: "en_US",
+    alternateLocale: ["vi_VN"],
     url: "https://nextlevelbuilder.io",
     siteName: "Next Level Builders",
-    title: "Next Level Builders | Premium Discord Community for Micro SaaS Builders",
-    description: "Join 500+ solo-founders building profitable micro-SaaS products. Get access to proven playbooks, recorded sessions, and a supportive community.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 673,
-        alt: "Next Level Builders - Premium Discord Community",
-        type: "image/png",
-      },
-    ],
+    title: "Next Level Builders — Find your constellation",
+    description: DESCRIPTION,
+    images: [{ url: "/og-image.png", width: 1200, height: 673, alt: "Next Level Builders", type: "image/png" }],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@nextlevelbuilders",
-    creator: "@nextlevelbuilders",
-    title: "Next Level Builders | Premium Discord Community",
-    description: "Join 500+ solo-founders building profitable micro-SaaS products. Proven playbooks, recorded sessions, supportive community.",
+    site: `@${X_HANDLE}`,
+    creator: `@${X_HANDLE}`,
+    title: "Next Level Builders — Find your constellation",
+    description: DESCRIPTION,
     images: ["/og-image.png"],
   },
   category: "technology",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${siteUrl()}/#org`,
+    name: "Next Level Builders",
+    alternateName: "NLB",
+    url: siteUrl(),
+    logo: `${siteUrl()}/icon-512.png`,
+    slogan: "Building the future, one product at a time.",
+    sameAs: Object.values(SOCIAL_LINKS),
+  };
+
   return (
-    <html lang={locale} suppressHydrationWarning className="dark">
+    // suppressHydrationWarning: next-themes sets the theme class on <html> before hydration.
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="AI index" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd({ "@context": "https://schema.org", "@type": "Organization", name: "Next Level Builders", url: siteUrl(), logo: `${siteUrl()}/icon-512.png` }) }} />
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="lazyOnload"
-        />
-        <Script id="google-analytics" strategy="lazyOnload">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organization) }} />
       </head>
-      <body className={`${inter.variable} ${bricolage.variable} font-sans`}>
-        {children}
+      <body className={`${display.variable} ${sans.variable} ${mono.variable} font-sans`}>
+        <ThemeProvider>{children}</ThemeProvider>
+        <GoogleAnalyticsConsentAware />
       </body>
     </html>
   );

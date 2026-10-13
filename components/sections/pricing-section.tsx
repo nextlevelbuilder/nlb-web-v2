@@ -1,137 +1,75 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { Shield, Zap, Users } from 'lucide-react';
+import EarlyBirdCountdown from '@/components/home/early-bird-countdown';
+import { useCheckout } from '@/components/home/checkout-context';
+import SectionPlate from '@/components/home/section-plate';
+import TermsAgreementCheckbox from '@/components/home/terms-agreement-checkbox';
 import PricingCard from '@/components/pricing-card';
 import PricingPlanSwitcher from '@/components/pricing-plan-switcher';
-import { env } from '@/lib/env';
+import { MEMBERSHIP_PRICES } from '@/lib/constants/launch';
 
+const PREMIUM_FEATURES = ['p1', 'p2', 'p3', 'p4'] as const;
+const VIP_FEATURES = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'] as const;
+
+/** Smallest annual saving across plans, so the "Save N%" badge never overstates. */
+const ANNUAL_SAVING_PERCENT = Math.floor(
+  Math.min(
+    ...Object.values(MEMBERSHIP_PRICES).map(({ quarterly, annual }) => (1 - annual.amount / (quarterly.amount * 4)) * 100),
+  ),
+);
+
+/** Chapter VI · Join: early-bird countdown, billing toggle, real seat counts and direct checkout. */
 export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<'quarterly' | 'yearly'>('yearly');
-  const t = useTranslations('pricing');
+  const t = useTranslations('home.pricing');
+  const { billing, setBilling, seats } = useCheckout();
+  const hintId = useId();
 
   return (
-    <section id="pricing" className="py-section px-6 relative">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent pointer-events-none" />
+    <section id="pricing" aria-labelledby="pricing-title" className="section-pad">
+      <div className="wrap">
+        <SectionPlate numeral="VI" name={t('plate')} />
+        <h2 id="pricing-title" className="h-section max-w-[18ch]">{t.rich('title', { em: (chunks) => <em>{chunks}</em> })}</h2>
 
-      <div className="container mx-auto max-w-6xl relative">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <span className="inline-block text-sm font-medium text-primary mb-4 tracking-wide uppercase">
-            Investment
-          </span>
-          <h2 className="heading-section text-3xl sm:text-h1 lg:text-display-lg text-foreground mb-6">
-            {t('title')}
-          </h2>
-          <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-            {t('subtitle')}
-          </p>
-
-          {/* Unified billing toggle */}
+        <div className="mt-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <EarlyBirdCountdown />
           <PricingPlanSwitcher
-            selected={billingCycle}
-            onChange={setBillingCycle}
+            value={billing}
+            onChange={setBilling}
+            label={t('period')}
+            options={{ quarterly: t('quarterly'), annual: t('annual') }}
+            annualNote={`−${ANNUAL_SAVING_PERCENT}%`}
+            className="self-start"
           />
-        </motion.div>
+        </div>
+        <p className="sr-only" aria-live="polite">{billing === 'annual' ? t('save', { percent: ANNUAL_SAVING_PERCENT }) : ''}</p>
 
-        {/* Pricing Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto mb-12">
-          {/* Premium Package */}
+        <div className="mt-12 grid gap-8 md:grid-cols-2">
           <PricingCard
-            name={billingCycle === 'quarterly'
-              ? t('premium.quarterly.name')
-              : t('premium.annual.name')
-            }
-            price={billingCycle === 'quarterly' ? 147 : 39}
-            period={billingCycle === 'quarterly'
-              ? t('premium.quarterly.period')
-              : t('premium.annual.period')
-            }
-            productId={billingCycle === 'quarterly'
-              ? env.NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_QUARTERLY
-              : env.NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_ANNUAL
-            }
-            originalPrice={billingCycle === 'yearly' ? 147 : undefined}
-            originalPeriod={billingCycle === 'yearly' ? t('premium.quarterly.period') : undefined}
-            billingNote={billingCycle === 'quarterly'
-              ? t('premium.quarterly.billingNote')
-              : t('premium.annual.billingNote')
-            }
-            features={[
-              t('premium.features.workshops'),
-              t('premium.features.discord'),
-              t('premium.features.videos'),
-              t('premium.features.support'),
-              t('premium.features.consult'),
-            ]}
+            plan="premium"
+            billing={billing}
+            who={t('premiumWho')}
+            features={PREMIUM_FEATURES.map((key) => t(key))}
+            seats={seats?.premium ?? null}
+            hintId={hintId}
           />
-
-          {/* VIP Package */}
           <PricingCard
-            name={billingCycle === 'quarterly'
-              ? t('vip.quarterly.name')
-              : t('vip.annual.name')
-            }
-            price={billingCycle === 'quarterly' ? 297 : 79}
-            period={billingCycle === 'quarterly'
-              ? t('vip.quarterly.period')
-              : t('vip.annual.period')
-            }
-            productId={billingCycle === 'quarterly'
-              ? env.NEXT_PUBLIC_POLAR_PRODUCT_VIP_QUARTERLY
-              : env.NEXT_PUBLIC_POLAR_PRODUCT_VIP_ANNUAL
-            }
-            originalPrice={billingCycle === 'yearly' ? 297 : undefined}
-            originalPeriod={billingCycle === 'yearly' ? t('vip.quarterly.period') : undefined}
-            billingNote={billingCycle === 'quarterly'
-              ? t('vip.quarterly.billingNote')
-              : t('vip.annual.billingNote')
-            }
-            popular={billingCycle === 'yearly'}
-            features={[
-              t('vip.features.allPremium'),
-              t('vip.features.vipChannel'),
-              t('vip.features.earlyAccess'),
-              t('vip.features.article'),
-              t('vip.features.vault'),
-            ]}
+            plan="vip"
+            billing={billing}
+            who={t('vipWho')}
+            features={VIP_FEATURES.map((key) => t(key))}
+            seats={seats?.vip ?? null}
+            highlighted
+            hintId={hintId}
           />
         </div>
 
-        {/* Trust Signals */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-8"
-        >
-          <TrustSignal icon={Shield} text={t('trustMoneyBack')} />
-          <TrustSignal icon={Zap} text={t('trustPayment')} />
-          <TrustSignal icon={Users} text={t('trustMembers')} />
-        </motion.div>
+        <div className="mt-8 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <TermsAgreementCheckbox hintId={hintId} />
+          <p className="mono-label pt-3 text-ink-3">{t('note')}</p>
+        </div>
       </div>
     </section>
-  );
-}
-
-function TrustSignal({ icon: Icon, text }: { icon: typeof Shield; text: string }) {
-  return (
-    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-      <div className="w-9 h-9 rounded-full bg-success/10 border border-success/20
-                      flex items-center justify-center">
-        <Icon className="w-4 h-4 text-success" />
-      </div>
-      <span>{text}</span>
-    </div>
   );
 }

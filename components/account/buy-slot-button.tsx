@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { PRODUCT_IDS } from '@/lib/polar';
 import { useTranslations } from 'next-intl';
 
@@ -40,8 +40,9 @@ export default function BuySlotButton({ userEmail, className = '' }: BuySlotButt
         return;
       }
       throw new Error('No checkout URL returned by Polar.');
-    } catch (err: any) {
-      setError(err.message || 'Checkout failed.');
+    } catch (err) {
+      console.error('Publishing toolkit checkout failed:', err);
+      setError(err instanceof Error && err.message ? err.message : 'Checkout failed.');
       setLoading(false);
     }
   };
@@ -49,8 +50,8 @@ export default function BuySlotButton({ userEmail, className = '' }: BuySlotButt
   return (
     <div className="flex flex-col items-end gap-1.5">
       {error && (
-        <div className="text-[11px] text-rose-400 flex items-center gap-1 font-medium">
-          <AlertCircle className="w-3 h-3" />
+        <div role="alert" className="flex items-center gap-1 text-step-xs font-medium text-destructive">
+          <AlertCircle className="h-3 w-3" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
@@ -59,16 +60,16 @@ export default function BuySlotButton({ userEmail, className = '' }: BuySlotButt
         type="button"
         onClick={handleBuy}
         disabled={loading}
-        className={`rounded-full gap-2 px-6 shadow-lg btn-premium font-bold text-xs ${className}`}
+        className={`gap-2 px-6 ${className}`}
       >
         {loading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
             <span>{t('redirectingPolar')}</span>
           </>
         ) : (
           <>
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{t('buySlotBtn')}</span>
           </>
         )}

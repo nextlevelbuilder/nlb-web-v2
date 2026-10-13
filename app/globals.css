@@ -1,84 +1,171 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   CONSTELLATION design tokens
+   Light (:root)  = vintage star-atlas plate: warm rag paper, prussian ink, vermillion.
+   Dark  (.dark)  = deep-space observatory: starlight on indigo-black, pale-gold accent.
+   Colours are HSL triplets (use as hsl(var(--x)) or via Tailwind: bg-background, text-ink-2 ...).
+   Token names are stable; inner pages depend on them.
+   ========================================================================== */
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
-    --radius: 0.5rem;
+    color-scheme: light;
 
-    /* Dark mode design system colors */
-    --bg-primary: 222 47% 11%;
-    --bg-surface: 222 30% 15%;
-    --bg-elevated: 222 24% 20%;
+    /* layout + motion (theme independent) */
+    --wrap: 1240px;
+    --gutter: clamp(1.25rem, 4vw, 3rem);
+    --header-h: 64px;
+    --radius: 0.375rem;
+    --radius-sm: 2px;
+    --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --d-1: 140ms;
+    --d-2: 260ms;
+    --d-3: 600ms;
+    --d-4: 1000ms;
 
-    --text-primary: 0 0% 100%;
-    --text-secondary: 217 16% 67%;
-    --text-muted: 217 9% 45%;
+    /* surfaces */
+    --background: 41 44% 89%;          /* #efe7d6 paper */
+    --canvas-deep: 41 40% 84%;         /* #e6dbc4 */
+    --card: 41 51% 93%;                /* #f6f0e3 */
+    --card-foreground: 222 43% 19%;
+    --surface-raised: 43 58% 95%;      /* #faf6ec */
+    --popover: 43 58% 95%;
+    --popover-foreground: 222 43% 19%;
 
-    --accent-primary: 199 89% 48%;
-    --accent-hover: 188 86% 53%;
-    --accent-pressed: 201 84% 38%;
+    /* ink */
+    --foreground: 222 43% 19%;         /* #1c2947 prussian ink, 11.7:1 */
+    --ink-2: 224 26% 31%;              /* #3a4563, 7.7:1 */
+    --muted-foreground: 226 17% 40%;   /* #545c76, 5.4:1 */
 
-    --success: 158 64% 52%;
-    --warning: 38 92% 50%;
-    --error: 4 90% 58%;
-    --info: 217 91% 60%;
+    /* lines */
+    --border: 43 13% 78%;              /* hairline */
+    --line-strong: 36 3% 68%;
+    --input: 226 17% 40%;              /* form-field outlines need >= 3:1 */
 
-    --border-subtle: 222 19% 20%;
-    --border-emphasis: 217 15% 28%;
+    /* signature accent (vermillion) */
+    --primary: 12 68% 38%;             /* #a3391f, 5.4:1 on paper */
+    --primary-foreground: 41 51% 93%;
+    --ring: 12 68% 38%;
 
-    /* Premium gradient stops */
-    --gradient-start: 222 47% 11%;
-    --gradient-mid: 222 35% 13%;
-    --gradient-end: 222 30% 15%;
+    /* call to action (ink button on paper) */
+    --cta: 222 43% 19%;
+    --cta-foreground: 41 51% 93%;
+    --cta-hover: 223 39% 28%;
 
-    /* Subtle accent variations */
-    --accent-muted: 199 70% 40%;
-    --accent-subtle: 199 50% 30%;
+    /* shadcn compatibility */
+    --secondary: 41 40% 84%;
+    --secondary-foreground: 222 43% 19%;
+    --muted: 41 40% 84%;
+    --accent: 41 40% 84%;              /* subtle hover surface (shadcn semantics) */
+    --accent-foreground: 222 43% 19%;
+    --destructive: 5 72% 37%;
+    --destructive-foreground: 41 51% 93%;
+    --success: 142 39% 30%;
+    --warning: 30 80% 32%;
+    --chart-1: 12 68% 38%;
+    --chart-2: 222 43% 19%;
+    --chart-3: 142 39% 30%;
+    --chart-4: 39 60% 45%;
+    --chart-5: 226 17% 40%;
 
-    /* Premium border */
-    --border-premium: 217 15% 25%;
+    /* effects (full colours, not triplets) */
+    --glow: rgba(163, 57, 31, 0.25);
+    --star-rgb: 163 57 31;
+    --selection: rgba(163, 57, 31, 0.18);
+    --shadow: 0 24px 40px -28px rgba(60, 40, 10, 0.45);
+  }
 
-    /* Glow colors */
-    --glow-primary: 199 89% 48%;
-    --glow-success: 158 64% 52%;
+  .dark {
+    color-scheme: dark;
 
-    --card: 222 30% 15%;
-    --card-foreground: 0 0% 100%;
-    --popover: 222 30% 15%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 24% 20%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 222 24% 20%;
-    --muted-foreground: 217 16% 67%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 222 19% 20%;
-    --input: 222 19% 20%;
-    --ring: 199 89% 48%;
+    --background: 231 37% 4%;          /* #06070d */
+    --canvas-deep: 231 37% 7%;         /* #0b0d18 */
+    --card: 232 37% 8%;                /* #0d0f1c */
+    --card-foreground: 44 37% 88%;
+    --surface-raised: 232 38% 12%;     /* #13162a */
+    --popover: 232 38% 12%;
+    --popover-foreground: 44 37% 88%;
+
+    --foreground: 44 37% 88%;          /* #ece6d6 starlight, 16:1 */
+    --ink-2: 41 13% 70%;               /* #bdb7aa, 10:1 */
+    --muted-foreground: 249 10% 58%;   /* #8d8a9f, 6:1 */
+
+    --border: 225 6% 13%;
+    --line-strong: 300 1% 22%;
+    --input: 249 10% 45%;
+
+    --primary: 39 71% 70%;             /* #e9c47e pale gold */
+    --primary-foreground: 35 38% 6%;
+    --ring: 39 71% 70%;
+
+    --cta: 39 71% 70%;
+    --cta-foreground: 35 38% 6%;
+    --cta-hover: 41 77% 81%;
+
+    --secondary: 232 38% 12%;
+    --secondary-foreground: 44 37% 88%;
+    --muted: 232 38% 12%;
+    --accent: 232 38% 12%;
+    --accent-foreground: 44 37% 88%;
+    --destructive: 8 80% 71%;
+    --destructive-foreground: 35 38% 6%;
+    --success: 142 44% 69%;
+    --warning: 39 85% 65%;
+    --chart-1: 39 71% 70%;
+    --chart-2: 44 37% 88%;
+    --chart-3: 142 44% 69%;
+    --chart-4: 8 80% 71%;
+    --chart-5: 249 10% 58%;
+
+    --glow: rgba(233, 196, 126, 0.5);
+    --star-rgb: 255 246 228;
+    --selection: rgba(233, 196, 126, 0.3);
+    --shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
   }
 
   * {
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
   html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
   }
 
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    overflow-x: clip;
+    font-variant-numeric: lining-nums;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--selection);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Vietnamese stacks diacritics above cap height: give display type more leading. */
+  html[lang="vi"] .font-display {
+    line-height: 1.15;
+  }
+
+  /* Reduced motion: content stays fully visible and usable with zero animation. */
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
@@ -90,29 +177,165 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
+}
 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
-    --card: 222 30% 15%;
-    --card-foreground: 0 0% 100%;
-    --popover: 222 30% 15%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 24% 20%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 222 24% 20%;
-    --muted-foreground: 217 16% 67%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 222 19% 20%;
-    --input: 222 19% 20%;
-    --ring: 199 89% 48%;
+/* ==========================================================================
+   Constellation components (stable class names, usable on every page)
+   ========================================================================== */
+@layer components {
+  /* centred content column with fluid gutters */
+  .wrap {
+    width: min(var(--wrap), 100% - 2 * var(--gutter));
+    margin-inline: auto;
+  }
+
+  /* mono micro-label (eyebrows, plate captions, meta) */
+  .mono-label {
+    @apply font-mono text-step-xs font-normal uppercase tracking-[0.08em];
+  }
+
+  .eyebrow {
+    @apply mono-label inline-flex items-center gap-3 text-ink-2;
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: hsl(var(--primary));
+  }
+
+  /* chapter header: roman numeral, name, hairline rule */
+  .plate {
+    @apply mono-label mb-8 flex items-center gap-4 text-ink-3;
+  }
+
+  .plate-numeral {
+    @apply font-display text-[1.35rem] normal-case italic leading-none tracking-normal text-primary;
+  }
+
+  .plate-rule {
+    @apply h-px flex-1 bg-line-strong;
+  }
+
+  /* display headings: serif, emphasis in the signature accent */
+  .h-display {
+    @apply font-display text-step-4xl font-light;
+    text-wrap: balance;
+  }
+
+  .h-section {
+    @apply font-display text-step-3xl font-normal;
+    text-wrap: balance;
+  }
+
+  .h-display em,
+  .h-section em {
+    @apply font-normal italic text-primary;
+  }
+
+  html[lang="vi"] .h-display,
+  html[lang="vi"] .h-section {
+    line-height: 1.12;
+  }
+
+  .lede {
+    @apply max-w-[40ch] text-step-lg text-ink-2;
+    text-wrap: pretty;
+  }
+
+  /* vertical rhythm for content sections */
+  .section-pad {
+    padding-block: clamp(6rem, 12vw, 10rem);
+  }
+
+  /* panel */
+  .surface-panel {
+    @apply rounded-sm border border-line bg-surface;
+  }
+
+  /* underlined arrow link */
+  .link-arrow {
+    @apply inline-flex min-h-[44px] items-center gap-2 border-b border-line-strong text-foreground transition-[border-color,gap] duration-base ease-expo hover:gap-3 hover:border-primary;
+  }
+
+  /* pill segmented control (language, theme, billing) */
+  .seg {
+    @apply inline-flex h-11 items-center gap-0.5 rounded-pill border border-line-strong p-[3px];
+  }
+
+  .seg-option {
+    @apply inline-flex h-9 min-w-9 items-center justify-center rounded-pill px-2 font-mono text-step-xs tracking-[0.06em] text-ink-3 transition-colors duration-base hover:text-foreground;
+  }
+
+  .seg-option[aria-pressed="true"],
+  .seg-option[aria-checked="true"] {
+    @apply bg-foreground text-background;
+  }
+
+  /* static atlas graticule backdrop for inner pages (decorative) */
+  .sky-backdrop {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .sky-backdrop::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.45;
+    background-image:
+      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: calc(100% / 12) 120px;
+    mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 75%);
+  }
+
+  .dark .sky-backdrop::before {
+    opacity: 0.6;
+  }
+
+  /* skip link: hidden until focused */
+  .skip-link {
+    @apply fixed left-4 z-[200] rounded-pill bg-cta px-5 py-3 font-medium text-cta-foreground;
+    top: -80px;
+    transition: top var(--d-2) var(--ease-expo);
+  }
+
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  /* ---------- legacy class names, restyled onto Constellation tokens ---------- */
+  .heading-display {
+    @apply font-display font-normal tracking-tight;
+  }
+
+  .heading-section {
+    @apply font-display font-medium tracking-tight;
+  }
+
+  .body-relaxed {
+    @apply font-sans leading-relaxed text-muted-foreground;
+  }
+
+  .card-premium {
+    @apply rounded-sm border border-line bg-surface transition-colors duration-slow ease-expo hover:border-line-strong;
+  }
+
+  .btn-premium {
+    @apply relative rounded-pill font-medium transition-[background-color,box-shadow] duration-base ease-quart hover:shadow-glow;
+  }
+
+  .shimmer {
+    position: relative;
+    overflow: hidden;
   }
 }
 
@@ -121,16 +344,33 @@
     text-wrap: balance;
   }
 
-  /* Glass morphism utilities */
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .num-tab {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* consistent visible focus for custom controls */
+  .focus-ring:focus-visible,
+  .focus-premium:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
   .glass {
-    @apply bg-white/5 backdrop-blur-md border border-white/10;
+    @apply border border-line bg-surface/80 backdrop-blur-md;
   }
 
   .glass-strong {
-    @apply bg-white/10 backdrop-blur-xl border border-white/15;
+    @apply border border-line-strong bg-surface-raised/90 backdrop-blur-xl;
   }
 
-  /* Subtle gradient backgrounds */
+  .text-gradient-primary {
+    @apply text-primary;
+  }
+
   .bg-gradient-radial {
     background: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
   }
@@ -139,102 +379,10 @@
     background: radial-gradient(ellipse at top, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
   }
 
-  /* Premium text gradient */
-  .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-cyan-400 to-primary;
-  }
-
-  /* Refined focus states */
-  .focus-premium:focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
-  }
-
-  /* Line clamp utilities */
   .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  /* Responsive display text overrides */
-  @media (max-width: 639px) {
-    .text-display-xl {
-      font-size: 36px;
-      line-height: 1.15;
-    }
-    .text-display-2xl {
-      font-size: 40px;
-      line-height: 1.15;
-    }
-  }
-}
-
-@layer components {
-  /* Premium heading styles */
-  .heading-display {
-    @apply font-heading font-bold tracking-tight;
-  }
-
-  .heading-section {
-    @apply font-heading font-semibold tracking-tight;
-  }
-
-  /* Premium body text */
-  .body-relaxed {
-    @apply font-sans text-muted-foreground leading-relaxed;
-  }
-
-  /* Premium card base */
-  .card-premium {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl;
-    @apply hover:border-primary/30 hover:shadow-premium transition-all duration-350;
-  }
-
-  /* Premium button base */
-  .btn-premium {
-    @apply relative overflow-hidden font-semibold;
-    @apply transition-all duration-250 ease-premium;
-    @apply hover:shadow-glow-primary hover:-translate-y-0.5;
-    @apply active:translate-y-0 active:shadow-none;
-  }
-
-  /* Inner highlight for premium button */
-  .btn-premium::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      transparent 50%
-    );
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-
-  .btn-premium:hover::before {
-    opacity: 1;
-  }
-
-  /* Shimmer effect for CTAs */
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .shimmer::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 100%
-    );
-    transform: translateX(-100%);
-    animation: shimmer 2s infinite;
   }
 }

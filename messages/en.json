@@ -638,5 +638,237 @@
     "trustPassportScore": "Trust Passport Score",
     "humanReviewedBy": "Human-reviewed by Next Level Builders Management Board.",
     "contentHash": "Content Hash:"
+  },
+  "shell": {
+    "skip": "Skip to content",
+    "home": "Next Level Builders — home",
+    "navPrimary": "Primary",
+    "navMobile": "Mobile",
+    "nav": {
+      "courses": "Courses",
+      "directory": "Directory",
+      "leaderboard": "Leaderboard",
+      "blog": "Blog",
+      "pricing": "Pricing",
+      "buildWithUs": "Build with us",
+      "signIn": "Sign in",
+      "signOut": "Sign out",
+      "profile": "Your builder profile",
+      "join": "Join",
+      "joinAria": "Join the membership"
+    },
+    "menu": {
+      "open": "Open menu",
+      "close": "Close menu"
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "en": "English",
+      "vi": "Tiếng Việt"
+    },
+    "footer": {
+      "tagline": "Building the future, one product at a time.",
+      "navLabel": "Footer",
+      "explore": "Explore",
+      "community": "Community",
+      "policies": "Policies",
+      "apiDocs": "API docs",
+      "copyright": "© {year} Next Level Builders",
+      "newTab": "(opens in a new tab)",
+      "backToTop": "Back to top"
+    },
+    "policies": {
+      "overview": "Community guidelines",
+      "shipPolicy": "SHIP policy",
+      "contributorPolicy": "Contributor policy",
+      "membershipTiers": "Membership tiers",
+      "onboarding": "Onboarding",
+      "violations": "Violations",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "refund": "Refund Policy",
+      "cookies": "Cookie Policy"
+    }
+  },
+  "home": {
+    "meta": {
+      "title": "Next Level Builders — Every product starts as a single point of light",
+      "description": "A community of 500+ builders shipping real products: weekly build videos, a hand-reviewed Directory with a Trust Passport, and a private Discord."
+    },
+    "chapter": "Chapter {numeral}",
+    "hook": {
+      "eyebrow": "The builder community shipping real products — every week",
+      "title": "Every product starts as a single <em>point of light.</em>",
+      "sub": "Going from 0 to 1 is the hardest part. You don't have to do it alone.",
+      "ctaSecondary": "Watch this week's video",
+      "scroll": "Scroll to ignite"
+    },
+    "trust": {
+      "moneyBack": "30-day 100% money-back",
+      "polar": "Secure checkout by Polar.sh",
+      "builders": "500+ active builders"
+    },
+    "dark": {
+      "plate": "The dark",
+      "title": "Most builders ship in the dark — no feedback, no audience, <em>no momentum.</em>",
+      "caption": "Coalsack Nebula — a cloud so dense it hides the stars behind it."
+    },
+    "community": {
+      "plate": "Constellation",
+      "title": "Find your <em>constellation.</em>",
+      "body": "500+ builders in a private Discord — people who answer your question at 2 a.m. because they're building too.",
+      "label": "NLB · the builders' constellation · 500+ stars",
+      "f1t": "Feedback",
+      "f1d": "Post a build, get honest notes from people who ship.",
+      "f2t": "Accountability",
+      "f2d": "Weekly check-ins that keep your momentum alive.",
+      "f3t": "Founder network",
+      "f3d": "Founders who've already crossed 0 → 1, one message away."
+    },
+    "courses": {
+      "plate": "Observatory",
+      "title": "Learn from what's <em>actually shipping.</em>",
+      "body": "One new video every week — AI automation, SEO, product development and growth. Buy any single video and keep it forever. VIP watches everything.",
+      "dropTitle": "New video every Monday",
+      "dropSub": "{days, plural, =0 {Drops today} one {Next drop in # day} other {Next drop in # days}} · free for VIP the moment it lands",
+      "s1t": "One video a week",
+      "s1d": "Recorded from real launches: AI automation, SEO, product development and growth.",
+      "s2t": "Buy any single video",
+      "s2d": "Pay once and keep it forever. No subscription needed.",
+      "s3t": "VIP watches everything",
+      "s3d": "Every past and future video is included with VIP.",
+      "cta": "Browse the videos"
+    },
+    "directory": {
+      "plate": "Magnitude",
+      "title": "Launch where trust is <em>earned, not bought.</em>",
+      "body": "Every product is hand-reviewed and carries a Trust Passport. The leaderboard is organic and resets every 24 hours UTC — nobody can pay to rank.",
+      "p1t": "Hand-reviewed",
+      "p1d": "A person checks every listing before it goes live.",
+      "p2t": "Trust Passport",
+      "p2d": "Verified signals travel with your product, not paid placements.",
+      "p3t": "Organic leaderboard",
+      "p3d": "Daily, weekly and monthly rankings built only from real activity.",
+      "resetsIn": "Leaderboard resets in",
+      "foot": "Hand-reviewed • No pay-to-rank • Cloudflare Edge",
+      "ctaSubmit": "Submit your product",
+      "ctaBoard": "See the leaderboard"
+    },
+    "proof": {
+      "plate": "Brightest",
+      "title": "Proof, measured <em>in light.</em>",
+      "s1": "builders in the community",
+      "s2": "profitable SaaS built by the team",
+      "s3": "ARR across the team's products",
+      "s4": "weeks of build videos",
+      "productsTitle": "What the founders ship",
+      "formerly": "Formerly {name}",
+      "visit": "Visit {name}"
+    },
+    "team": {
+      "title": "Learn from founders <em>who've done it.</em>",
+      "subtitle": "The people behind NLB run real companies and ship real products. They share what works, in the open.",
+      "avatarAlt": "Portrait of {name}",
+      "company": "Company: {name}"
+    },
+    "partners": {
+      "title": "Partners",
+      "subtitle": "Companies the founders lead and build with.",
+      "visit": "Visit {name}"
+    },
+    "pricing": {
+      "plate": "Ignition",
+      "title": "Your seat is waiting. <em>Not for long.</em>",
+      "period": "Billing period",
+      "quarterly": "Quarterly",
+      "annual": "Annual",
+      "save": "Save {percent}% with annual",
+      "premiumWho": "Self-paced builder",
+      "vipWho": "Guided builder",
+      "perQuarter": "/quarter",
+      "perYear": "/year",
+      "subQuarterly": "≈ ${perMonth}/mo · billed every 3 months",
+      "subAnnual": "${perMonth}/mo billed annually · save ${saving}",
+      "seatsLeft": "{left} of {total} seats left",
+      "soldOut": "Sold out this round",
+      "thisRound": "this round",
+      "seatsMeter": "{taken} of {total} seats taken",
+      "p1": "52-week video library + a new video every week",
+      "p2": "Private Discord",
+      "p3": "Launch support channel",
+      "p4": "Feedback from the founders",
+      "v1": "Everything in Premium",
+      "v2": "Priority VIP question channel",
+      "v3": "Early access to tools & content",
+      "v4": "1 promotional article for your product",
+      "v5": "VIP template & AI-prompt vault",
+      "v6": "All Courses free",
+      "ribbon": "Brightest",
+      "join": "Join {plan}",
+      "risk": "30-day money-back guarantee",
+      "note": "30-day money-back guarantee · Payments by Polar.sh",
+      "selected": "{plan} · {price}{per}",
+      "changePlan": "Change plan",
+      "countdown": {
+        "label": "Early-bird pricing ends in",
+        "ended": "Early-bird pricing has ended",
+        "aria": "Early-bird pricing ends on {date}",
+        "days": "days",
+        "hours": "hrs",
+        "minutes": "min",
+        "seconds": "sec"
+      }
+    },
+    "checkout": {
+      "agree": "I agree to the <terms>Terms of Service</terms>",
+      "hint": "Tick the box to enable checkout.",
+      "processing": "Opening secure checkout…",
+      "error": "We couldn't start checkout. Please try again or email hi@nextlevelbuilder.io."
+    },
+    "toolkits": {
+      "plate": "Transmission",
+      "title": "Launch from your <em>terminal.</em>",
+      "body": "Generate a listing template, validate it, then submit it with your API key. Your product enters the hand-review queue — no forms, no waiting on email.",
+      "mcp": "Or connect the MCP server to Claude or Cursor and manage your listing in plain language. Agents can also use the /nlb-submit skill.",
+      "docs": "API docs v1",
+      "terminalLabel": "Directory CLI commands",
+      "step1": "# 1 · generate a listing template",
+      "step2": "# 2 · validate and preview it",
+      "step3": "# 3 · submit it for hand review",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyCli": "Copy CLI commands",
+      "copyMcp": "Copy MCP command",
+      "copyFailed": "Copy failed — select the text instead",
+      "liveTitle": "Launched by members",
+      "liveEmpty": "Be the next one — submit from your terminal",
+      "trust": "Trust {score}",
+      "viewProduct": "View {name}",
+      "teamTitle": "Built by the NLB team"
+    },
+    "finale": {
+      "coord": "RA ??h ??m · Dec ??° — uncharted. For now.",
+      "title": "Light your <em>first star.</em>",
+      "risk": "No risk for 30 days · Instant access"
+    },
+    "sticky": {
+      "text": "30-day money-back · 500+ builders",
+      "cta": "Choose your plan"
+    },
+    "activity": {
+      "label": "Recent activity",
+      "joined": "{name} joined {plan}",
+      "someone": "A builder",
+      "minutesAgo": "{count, plural, one {# min ago} other {# min ago}}",
+      "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+      "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+      "dismiss": "Dismiss notification"
+    }
   }
 }

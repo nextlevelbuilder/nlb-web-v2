@@ -1,50 +1,47 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { locales, type Locale } from '@/i18n/routing';
+import { cn } from '@/lib/utils';
 
-export default function LanguageSwitcher() {
+/**
+ * EN · VI segmented control. Switching keeps the current path and query string; next-intl's
+ * router also updates the NEXT_LOCALE cookie so detection respects the explicit choice afterwards.
+ */
+export default function LanguageSwitcher({ className }: { className?: string }) {
+  const t = useTranslations('shell.language');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
-  const switchLanguage = (newLocale: string) => {
-    if (newLocale === locale) return;
+  const switchTo = (next: Locale) => {
+    if (next === locale) return;
+    const query = Object.fromEntries(new URLSearchParams(window.location.search));
     startTransition(() => {
-      router.replace(pathname, { locale: newLocale });
+      router.replace({ pathname, query }, { locale: next, scroll: false });
     });
   };
 
   return (
-    <div className="flex items-center rounded-full bg-white/[0.04] border border-white/10 p-0.5 text-xs font-mono shrink-0">
-      <button
-        type="button"
-        onClick={() => switchLanguage('vi')}
-        disabled={isPending}
-        title="Tiếng Việt"
-        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
-          locale === 'vi'
-            ? 'bg-primary text-primary-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
-      >
-        VI
-      </button>
-      <button
-        type="button"
-        onClick={() => switchLanguage('en')}
-        disabled={isPending}
-        title="English"
-        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
-          locale === 'en'
-            ? 'bg-primary text-primary-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
-      >
-        EN
-      </button>
+    <div role="group" aria-label={t('label')} className={cn('seg', className)} aria-busy={isPending || undefined}>
+      {locales.map((option) => (
+        <button
+          key={option}
+          type="button"
+          lang={option}
+          className="seg-option px-2.5"
+          aria-pressed={option === locale}
+          aria-label={t(option)}
+          title={t(option)}
+          disabled={isPending}
+          onClick={() => switchTo(option)}
+        >
+          {option.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }

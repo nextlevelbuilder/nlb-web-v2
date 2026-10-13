@@ -1,121 +1,56 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Facebook, Twitter } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { pick, type Founder } from '@/lib/constants/home-content';
 
-interface TeamMemberCardProps {
-  name: string;
-  title: string;
-  photo: string;
-  expertise: string[];
-  trackRecord: string;
-  social?: {
-    twitter?: string;
-    facebook?: string;
-  };
-}
+/** Founder card: portrait, role, short bio, three facts and outbound links. */
+export default function TeamMemberCard({ founder }: { founder: Founder }) {
+  const t = useTranslations('home.team');
+  const tShell = useTranslations('shell.footer');
+  const locale = useLocale();
 
-export default function TeamMemberCard({
-  name,
-  title,
-  photo,
-  expertise,
-  trackRecord,
-  social,
-}: TeamMemberCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="group"
-    >
-      <div className="relative h-full rounded-2xl overflow-hidden
-                      bg-card/60 backdrop-blur-sm
-                      border border-border/50
-                      shadow-premium-sm
-                      transition-all duration-350 ease-premium
-                      group-hover:border-primary/30
-                      group-hover:shadow-premium">
-
-        {/* Photo section */}
-        <div className="relative h-64 overflow-hidden">
-          <Image
-            src={photo}
-            alt={name}
-            fill
-            className="object-cover object-top
-                       transition-transform duration-500 ease-premium
-                       group-hover:scale-105"
-          />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t
-                          from-card via-card/20 to-transparent" />
-
-          {/* Social links overlay */}
-          {social && (
-            <div className="absolute bottom-4 right-4 flex gap-2
-                            opacity-0 translate-y-2
-                            group-hover:opacity-100 group-hover:translate-y-0
-                            transition-all duration-300">
-              {social.twitter && (
-                <SocialLink href={social.twitter} icon={Twitter} />
-              )}
-              {social.facebook && (
-                <SocialLink href={social.facebook} icon={Facebook} />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Content section */}
-        <div className="p-6">
-          <h3 className="text-xl font-semibold text-foreground mb-1">
-            {name}
-          </h3>
-          <p className="text-sm text-primary mb-4">{title}</p>
-
-          {/* Expertise tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {expertise.map((skill, idx) => (
-              <span
-                key={idx}
-                className="px-2.5 py-1 text-xs font-medium
-                           bg-primary/10 text-primary
-                           rounded-full border border-primary/20"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-
-          {/* Track record */}
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-            {trackRecord}
-          </p>
+    <article className="flex h-full flex-col gap-5 rounded-sm border border-line bg-surface p-6">
+      <div className="flex items-center gap-4">
+        <Image
+          src={founder.avatar}
+          alt={t('avatarAlt', { name: founder.name })}
+          width={96}
+          height={96}
+          sizes="96px"
+          unoptimized
+          className="h-20 w-20 shrink-0 rounded-full border border-line-strong object-cover"
+        />
+        <div>
+          <h3 className="font-display text-step-xl leading-tight">{founder.name}</h3>
+          <p className="mt-1 text-step-xs text-ink-3">{pick(founder.role, locale)}</p>
         </div>
       </div>
-    </motion.div>
-  );
-}
-
-function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Twitter }) {
-  return (
-    <Link
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="w-9 h-9 rounded-full
-                 bg-card/80 backdrop-blur-sm
-                 border border-border/50
-                 flex items-center justify-center
-                 hover:bg-primary hover:border-primary
-                 transition-all duration-200"
-    >
-      <Icon className="w-4 h-4 text-foreground" />
-    </Link>
+      <p className="text-step-sm text-ink-2">{pick(founder.bio, locale)}</p>
+      <ul className="flex flex-1 flex-col gap-2 border-t border-line pt-4">
+        {pick(founder.facts, locale).map((fact) => (
+          <li key={fact} className="flex gap-2 text-step-sm text-foreground">
+            <span className="text-primary" aria-hidden="true">✦</span>
+            {fact}
+          </li>
+        ))}
+      </ul>
+      <p className="flex flex-wrap gap-x-4 gap-y-1">
+        {[{ label: founder.company.name, href: founder.company.url }, ...founder.links].map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center font-mono text-step-xs text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-foreground"
+          >
+            {link.label}
+            <span className="sr-only">
+              {' '}
+              {link.label === founder.company.name ? `(${t('company', { name: founder.company.name })})` : `(${founder.name})`} {tShell('newTab')}
+            </span>
+          </a>
+        ))}
+      </p>
+    </article>
   );
 }

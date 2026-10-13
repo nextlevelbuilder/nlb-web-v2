@@ -1,178 +1,92 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Check, Sparkles } from 'lucide-react';
-import TcModal from '@/components/tc-modal';
+import { useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
+import CheckoutButton, { CheckoutError, planName } from '@/components/home/checkout-button';
+import { MEMBERSHIP_PRICES, type BillingCycle, type MembershipPlan } from '@/lib/constants/launch';
+import type { PlanSeats } from '@/lib/home/membership-seats';
+import { cn } from '@/lib/utils';
 
 interface PricingCardProps {
-  name: string;
-  price: number;
-  period: string;
+  plan: MembershipPlan;
+  billing: BillingCycle;
+  who: string;
   features: string[];
-  productId: string;
-  popular?: boolean;
-  originalPrice?: number;
-  originalPeriod?: string;
-  billingNote?: string;
-  packageType?: 'premium' | 'vip';
+  /** null when seat counts are unavailable: the meter is hidden instead of guessed. */
+  seats: PlanSeats | null;
+  highlighted?: boolean;
+  hintId?: string;
 }
 
-export default function PricingCard({
-  name,
-  price,
-  period,
-  features,
-  productId,
-  popular = false,
-  originalPrice,
-  originalPeriod,
-  billingNote,
-}: PricingCardProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showTcModal, setShowTcModal] = useState(false);
-
-  const handleCheckout = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
-      });
-      if (!response.ok) throw new Error('Failed to create checkout session');
-      const { url } = await response.json();
-      window.location.href = url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-      setLoading(false);
-    }
-  };
+/** Membership plan card: price for the selected cycle, real seat availability and a direct checkout button. */
+export default function PricingCard({ plan, billing, who, features, seats, highlighted = false, hintId }: PricingCardProps) {
+  const t = useTranslations('home.pricing');
+  const prices = MEMBERSHIP_PRICES[plan];
+  const price = prices[billing];
+  const saving = prices.quarterly.amount * 4 - prices.annual.amount;
+  const source = `pricing-${plan}`;
+  const headingId = `plan-${plan}-title`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative"
+    <article
+      aria-labelledby={headingId}
+      className={cn(
+        'relative flex h-full flex-col gap-6 rounded-sm border bg-surface p-6 sm:p-8',
+        highlighted ? 'border-primary shadow-glow' : 'border-line',
+      )}
     >
-      {/* Popular badge */}
-      {popular && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full
-                          bg-gradient-to-r from-primary to-cyan-500
-                          text-white text-sm font-semibold
-                          shadow-lg shadow-primary/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            Most Popular
+      {highlighted && (
+        <p className="mono-label absolute -top-3 left-6 rounded-pill bg-primary px-3 py-1 text-primary-foreground">{t('ribbon')}</p>
+      )}
+      <header>
+        <h3 id={headingId} className="font-display text-step-2xl">{planName(plan)}</h3>
+        <p className="mono-label mt-1 text-ink-3">{who}</p>
+      </header>
+
+      <div>
+        <p className="flex items-baseline gap-1">
+          <span className="num-tab font-display text-step-3xl leading-none">${price.amount}</span>
+          <span className="text-step-sm text-ink-2">{billing === 'annual' ? t('perYear') : t('perQuarter')}</span>
+        </p>
+        <p className="mt-2 text-step-sm text-ink-2">
+          {billing === 'annual'
+            ? t('subAnnual', { perMonth: price.perMonth, saving })
+            : t('subQuarterly', { perMonth: price.perMonth })}
+        </p>
+      </div>
+
+      {seats && (
+        <div>
+          <p className={cn('text-step-sm', seats.soldOut ? 'text-destructive' : 'text-foreground')}>
+            {seats.soldOut ? t('soldOut') : t('seatsLeft', { left: seats.left, total: seats.total })}
+          </p>
+          <div className="mt-2 h-1 overflow-hidden rounded-pill bg-line" aria-hidden="true">
+            <div className="h-full rounded-pill bg-primary" style={{ width: `${(seats.taken / Math.max(seats.total, 1)) * 100}%` }} />
           </div>
+          <p className="sr-only">{t('seatsMeter', { taken: seats.taken, total: seats.total })}</p>
         </div>
       )}
 
-      {/* Card */}
-      <div className={`relative h-full rounded-2xl overflow-hidden
-                       transition-all duration-350 ease-premium
-                       ${popular
-                         ? 'bg-card border-2 border-primary shadow-xl shadow-primary/20'
-                         : 'bg-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-premium'
-                       }`}>
+      <ul className="flex flex-1 flex-col gap-3">
+        {features.map((feature) => (
+          <li key={feature} className="flex gap-3 text-step-sm text-ink-2">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
 
-        {/* Inner highlight for popular */}
-        {popular && (
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        )}
-
-        <div className="relative p-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-foreground mb-6">
-              {name}
-            </h3>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-2xl text-muted-foreground">$</span>
-              <span className="text-6xl font-bold text-foreground tracking-tight">
-                {price}
-              </span>
-              <span className="text-lg text-muted-foreground ml-1">
-                /{period}
-              </span>
-            </div>
-
-            {/* Original price / savings */}
-            {originalPrice && (
-              <div className="flex items-center gap-3 mt-3">
-                <span className="text-base text-muted-foreground line-through">
-                  ${originalPrice}/{originalPeriod || period}
-                </span>
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold
-                                 bg-success/20 text-success border border-success/30">
-                  Save ${originalPrice - price}
-                </span>
-              </div>
-            )}
-
-            {/* Billing note */}
-            {billingNote && (
-              <p className="text-sm text-muted-foreground mt-3">
-                {billingNote}
-              </p>
-            )}
-          </div>
-
-          {/* Features */}
-          <ul className="space-y-4 mb-8">
-            {features.map((feature, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full
-                                bg-success/20 flex items-center justify-center mt-0.5">
-                  <Check className="w-3 h-3 text-success" strokeWidth={3} />
-                </div>
-                <span className="text-base text-muted-foreground leading-relaxed">
-                  {feature}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* CTA */}
-          <div className="space-y-3">
-            <Button
-              onClick={() => setShowTcModal(true)}
-              disabled={loading}
-              className={`w-full h-13 text-base font-semibold
-                          transition-all duration-250 ease-premium
-                          ${popular
-                            ? 'btn-premium bg-primary shadow-lg shadow-primary/30'
-                            : 'bg-primary/90 hover:bg-primary hover:shadow-glow-primary'
-                          }`}
-            >
-              {loading ? 'Processing...' : `Get ${name}`}
-            </Button>
-
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
-            )}
-
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              30-day money-back guarantee
-            </p>
-          </div>
-
-          {/* T&C Modal — user must scroll to end before proceeding */}
-          <TcModal
-            open={showTcModal}
-            onOpenChange={setShowTcModal}
-            onAccept={handleCheckout}
-            loading={loading}
-          />
-        </div>
+      <div className="flex flex-col gap-2">
+        <CheckoutButton
+          plan={plan}
+          source={source}
+          label={t('join', { plan: planName(plan) })}
+          hintId={hintId}
+          variant={highlighted ? 'default' : 'outline'}
+          className="w-full"
+        />
+        <CheckoutError source={source} />
       </div>
-    </motion.div>
+    </article>
   );
 }

@@ -638,5 +638,237 @@
     "trustPassportScore": "Điểm Hộ Chiếu Tin Cậy",
     "humanReviewedBy": "Được kiểm duyệt thủ công bởi Ban Quản Trị Next Level Builders.",
     "contentHash": "Mã Hash Nội Dung:"
+  },
+  "shell": {
+    "skip": "Bỏ qua, đến nội dung",
+    "home": "Next Level Builders — trang chủ",
+    "navPrimary": "Điều hướng chính",
+    "navMobile": "Điều hướng di động",
+    "nav": {
+      "courses": "Courses",
+      "directory": "Directory",
+      "leaderboard": "Bảng xếp hạng",
+      "blog": "Blog",
+      "pricing": "Bảng giá",
+      "buildWithUs": "Build with us",
+      "signIn": "Đăng nhập",
+      "signOut": "Đăng xuất",
+      "profile": "Hồ sơ builder của bạn",
+      "join": "Tham gia",
+      "joinAria": "Tham gia membership"
+    },
+    "menu": {
+      "open": "Mở menu",
+      "close": "Đóng menu"
+    },
+    "theme": {
+      "label": "Giao diện",
+      "system": "Hệ thống",
+      "light": "Sáng",
+      "dark": "Tối"
+    },
+    "language": {
+      "label": "Ngôn ngữ",
+      "en": "English",
+      "vi": "Tiếng Việt"
+    },
+    "footer": {
+      "tagline": "Xây dựng tương lai, từng sản phẩm một.",
+      "navLabel": "Liên kết cuối trang",
+      "explore": "Khám phá",
+      "community": "Cộng đồng",
+      "policies": "Chính sách",
+      "apiDocs": "Tài liệu API",
+      "copyright": "© {year} Next Level Builders",
+      "newTab": "(mở trong tab mới)",
+      "backToTop": "Về đầu trang"
+    },
+    "policies": {
+      "overview": "Tổng quan quy chế",
+      "shipPolicy": "Quy chế SHIP",
+      "contributorPolicy": "Quy chế Contributor",
+      "membershipTiers": "Hạng thành viên",
+      "onboarding": "Quy trình xét duyệt",
+      "violations": "Xử lý vi phạm",
+      "terms": "Điều khoản dịch vụ",
+      "privacy": "Chính sách bảo mật",
+      "refund": "Chính sách hoàn tiền",
+      "cookies": "Chính sách cookie"
+    }
+  },
+  "home": {
+    "meta": {
+      "title": "Next Level Builders — Mọi sản phẩm đều bắt đầu từ một đốm sáng",
+      "description": "Cộng đồng 500+ builder ra mắt sản phẩm thật: video thực chiến hàng tuần, Directory kiểm duyệt thủ công với Trust Passport và Discord riêng tư."
+    },
+    "chapter": "Chương {numeral}",
+    "hook": {
+      "eyebrow": "Cộng đồng builder ra mắt sản phẩm thật — mỗi tuần",
+      "title": "Mọi sản phẩm đều bắt đầu từ <em>một đốm sáng.</em>",
+      "sub": "Từ 0 lên 1 luôn là phần khó nhất. Bạn không phải đi một mình.",
+      "ctaSecondary": "Xem video tuần này",
+      "scroll": "Cuộn để thắp sáng"
+    },
+    "trust": {
+      "moneyBack": "Hoàn tiền 100% trong 30 ngày",
+      "polar": "Thanh toán an toàn qua Polar.sh",
+      "builders": "500+ builder năng động"
+    },
+    "dark": {
+      "plate": "Bóng tối",
+      "title": "Phần lớn builder làm trong bóng tối — không phản hồi, không khán giả, <em>không đà.</em>",
+      "caption": "Tinh vân Túi Than — đám mây dày đến mức che khuất những ngôi sao phía sau."
+    },
+    "community": {
+      "plate": "Chòm sao",
+      "title": "Tìm <em>chòm sao</em> của bạn.",
+      "body": "500+ builder trong Discord riêng tư — những người trả lời câu hỏi của bạn lúc 2 giờ sáng, vì họ cũng đang build.",
+      "label": "NLB · chòm sao của những builder · 500+ ngôi sao",
+      "f1t": "Phản hồi",
+      "f1d": "Đăng bản build, nhận góp ý thẳng thắn từ những người thực sự ra mắt sản phẩm.",
+      "f2t": "Trách nhiệm",
+      "f2d": "Check-in hằng tuần để giữ đà không tắt.",
+      "f3t": "Mạng lưới nhà sáng lập",
+      "f3d": "Những nhà sáng lập đã đi từ 0 lên 1, chỉ cách bạn một tin nhắn."
+    },
+    "courses": {
+      "plate": "Đài quan sát",
+      "title": "Học từ những gì <em>đang thực sự ra mắt.</em>",
+      "body": "Mỗi tuần một video mới — AI automation, SEO, phát triển & tăng trưởng sản phẩm. Mua lẻ từng video, xem trọn đời. VIP xem toàn bộ.",
+      "dropTitle": "Video mới mỗi thứ Hai",
+      "dropSub": "{days, plural, =0 {Ra mắt hôm nay} other {Video tiếp theo sau # ngày}} · VIP xem miễn phí ngay khi ra mắt",
+      "s1t": "Mỗi tuần một video",
+      "s1d": "Ghi lại từ những lần ra mắt thật: AI automation, SEO, phát triển và tăng trưởng sản phẩm.",
+      "s2t": "Mua lẻ từng video",
+      "s2d": "Trả một lần, xem trọn đời. Không cần đăng ký gói.",
+      "s3t": "VIP xem toàn bộ",
+      "s3d": "Mọi video đã và sẽ ra mắt đều nằm trong gói VIP.",
+      "cta": "Xem các video"
+    },
+    "directory": {
+      "plate": "Cấp sao",
+      "title": "Ra mắt nơi niềm tin được xây, <em>không phải mua.</em>",
+      "body": "Mọi sản phẩm đều được kiểm duyệt thủ công và có Trust Passport. Bảng xếp hạng tự nhiên, làm mới mỗi 24h UTC — không ai trả tiền để lên hạng.",
+      "p1t": "Kiểm duyệt thủ công",
+      "p1d": "Mỗi listing đều được người thật kiểm tra trước khi lên sóng.",
+      "p2t": "Trust Passport",
+      "p2d": "Tín hiệu đã xác minh đi cùng sản phẩm của bạn, không phải vị trí trả tiền.",
+      "p3t": "Bảng xếp hạng tự nhiên",
+      "p3d": "Xếp hạng ngày, tuần, tháng chỉ dựa trên hoạt động thật.",
+      "resetsIn": "Bảng xếp hạng làm mới sau",
+      "foot": "Kiểm duyệt thủ công • Không trả tiền để lên hạng • Cloudflare Edge",
+      "ctaSubmit": "Gửi sản phẩm của bạn",
+      "ctaBoard": "Xem bảng xếp hạng"
+    },
+    "proof": {
+      "plate": "Sáng nhất",
+      "title": "Bằng chứng, đo bằng <em>ánh sáng.</em>",
+      "s1": "builder trong cộng đồng",
+      "s2": "sản phẩm SaaS sinh lợi của đội ngũ",
+      "s3": "ARR từ các sản phẩm của đội ngũ",
+      "s4": "tuần video thực chiến",
+      "productsTitle": "Những gì các nhà sáng lập đang làm",
+      "formerly": "Tiền thân {name}",
+      "visit": "Truy cập {name}"
+    },
+    "team": {
+      "title": "Học từ những nhà sáng lập <em>đã làm được.</em>",
+      "subtitle": "Những người đứng sau NLB điều hành công ty thật và ra mắt sản phẩm thật. Họ chia sẻ công khai những gì hiệu quả.",
+      "avatarAlt": "Ảnh chân dung {name}",
+      "company": "Công ty: {name}"
+    },
+    "partners": {
+      "title": "Đối tác",
+      "subtitle": "Những công ty mà các nhà sáng lập dẫn dắt và cùng xây dựng.",
+      "visit": "Truy cập {name}"
+    },
+    "pricing": {
+      "plate": "Bùng sáng",
+      "title": "Chỗ của bạn đang chờ. <em>Không lâu nữa đâu.</em>",
+      "period": "Chu kỳ thanh toán",
+      "quarterly": "Theo quý",
+      "annual": "Theo năm",
+      "save": "Tiết kiệm {percent}% khi trả theo năm",
+      "premiumWho": "Builder tự học",
+      "vipWho": "Builder được hướng dẫn",
+      "perQuarter": "/quý",
+      "perYear": "/năm",
+      "subQuarterly": "≈ ${perMonth}/tháng · thanh toán mỗi 3 tháng",
+      "subAnnual": "${perMonth}/tháng khi trả theo năm · tiết kiệm ${saving}",
+      "seatsLeft": "Còn {left}/{total} chỗ",
+      "soldOut": "Đã hết chỗ đợt này",
+      "thisRound": "đợt này",
+      "seatsMeter": "Đã có {taken}/{total} chỗ được đăng ký",
+      "p1": "Thư viện 52 tuần video + video mới hàng tuần",
+      "p2": "Discord riêng tư",
+      "p3": "Kênh hỗ trợ ra mắt",
+      "p4": "Phản hồi từ nhà sáng lập",
+      "v1": "Tất cả quyền lợi Premium",
+      "v2": "Kênh VIP câu hỏi ưu tiên",
+      "v3": "Truy cập sớm công cụ & nội dung",
+      "v4": "1 bài viết quảng bá sản phẩm",
+      "v5": "Kho template + prompt AI VIP",
+      "v6": "Xem toàn bộ Courses miễn phí",
+      "ribbon": "Sáng nhất",
+      "join": "Tham gia {plan}",
+      "risk": "Đảm bảo hoàn tiền 30 ngày",
+      "note": "Đảm bảo hoàn tiền 30 ngày · Thanh toán qua Polar.sh",
+      "selected": "{plan} · {price}{per}",
+      "changePlan": "Đổi gói",
+      "countdown": {
+        "label": "Giá ưu đãi sớm kết thúc sau",
+        "ended": "Giá ưu đãi sớm đã kết thúc",
+        "aria": "Giá ưu đãi sớm kết thúc vào {date}",
+        "days": "ngày",
+        "hours": "giờ",
+        "minutes": "phút",
+        "seconds": "giây"
+      }
+    },
+    "checkout": {
+      "agree": "Tôi đồng ý với <terms>Điều khoản dịch vụ</terms>",
+      "hint": "Đánh dấu ô để mở thanh toán.",
+      "processing": "Đang mở trang thanh toán an toàn…",
+      "error": "Không thể bắt đầu thanh toán. Vui lòng thử lại hoặc email hi@nextlevelbuilder.io."
+    },
+    "toolkits": {
+      "plate": "Tín hiệu",
+      "title": "Ra mắt từ <em>terminal.</em>",
+      "body": "Tạo template listing, kiểm tra, rồi gửi bằng API key của bạn. Sản phẩm vào hàng chờ kiểm duyệt thủ công — không form, không chờ email.",
+      "mcp": "Hoặc kết nối MCP server vào Claude/Cursor để quản lý listing bằng ngôn ngữ tự nhiên. Agent cũng có thể dùng skill /nlb-submit.",
+      "docs": "Tài liệu API v1",
+      "terminalLabel": "Các lệnh CLI của Directory",
+      "step1": "# 1 · tạo template listing",
+      "step2": "# 2 · kiểm tra và xem trước",
+      "step3": "# 3 · gửi để kiểm duyệt thủ công",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "copyCli": "Sao chép các lệnh CLI",
+      "copyMcp": "Sao chép lệnh MCP",
+      "copyFailed": "Không sao chép được — hãy chọn văn bản",
+      "liveTitle": "Do thành viên ra mắt",
+      "liveEmpty": "Hãy là người tiếp theo — gửi sản phẩm ngay từ terminal",
+      "trust": "Trust {score}",
+      "viewProduct": "Xem {name}",
+      "teamTitle": "Do đội ngũ NLB xây dựng"
+    },
+    "finale": {
+      "coord": "RA ??h ??m · Dec ??° — chưa có trên bản đồ. Chưa thôi.",
+      "title": "Thắp <em>đốm sáng đầu tiên.</em>",
+      "risk": "Không rủi ro trong 30 ngày · Truy cập ngay"
+    },
+    "sticky": {
+      "text": "Hoàn tiền trong 30 ngày · 500+ builder",
+      "cta": "Chọn gói của bạn"
+    },
+    "activity": {
+      "label": "Hoạt động gần đây",
+      "joined": "{name} vừa tham gia {plan}",
+      "someone": "Một builder",
+      "minutesAgo": "{count} phút trước",
+      "hoursAgo": "{count} giờ trước",
+      "daysAgo": "{count} ngày trước",
+      "dismiss": "Đóng thông báo"
+    }
   }
 }

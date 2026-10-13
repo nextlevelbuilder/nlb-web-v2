@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { env } from "./env";
 import crypto from "crypto";
+import { resolveDiscordInvite } from "./constants/socials";
 
 export const resend = new Resend(env.RESEND_API_KEY || "dummy_key_for_build");
 const formUrl = env.FORM01_LARK_URL;
@@ -28,7 +29,7 @@ export async function sendWelcomeEmail({ name, email, discordInvite, idempotency
           <h1 style="color: #2563eb; font-size: 24px; margin-bottom: 16px;">Chào mừng ${name || "bạn"} đến với Next Level Builders!</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">Cảm ơn bạn đã đăng ký thành viên. Hãy tham gia Discord cộng đồng ngay:</p>
           <div style="margin: 24px 0;">
-            <a href="${discordInvite}" style="background-color: #5865F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Tham gia Discord</a>
+            <a href="${resolveDiscordInvite(discordInvite)}" style="background-color: #5865F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Tham gia Discord</a>
           </div>
           <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">Nếu có bất kỳ câu hỏi nào, hãy phản hồi trực tiếp email này.</p>
         </div>
