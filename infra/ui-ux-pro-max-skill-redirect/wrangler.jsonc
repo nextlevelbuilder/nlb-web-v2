@@ -1,0 +1,15 @@
+// Redirect worker for ui-ux-pro-max-skill.nextlevelbuilder.io (see worker.js).
+// Deploy, with the account pinned and the repo token unset (docs/deployment-guide.md#wrangler-access):
+//   env -u CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID=7ac87c90789159ae1b10b7d78f5dcc08 \
+//     npx wrangler deploy --config infra/ui-ux-pro-max-skill-redirect/wrangler.jsonc
+// The custom domain is attached in the dashboard once the nextlevelbuilder.io zone is active on this account
+// (docs/cutover-runbook.md step 5). It is not declared here.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ui-ux-pro-max-skill-redirect",
+  "account_id": "7ac87c90789159ae1b10b7d78f5dcc08",
+  "main": "worker.js",
+  "compatibility_date": "2024-09-23",
+  "workers_dev": true,
+  "preview_urls": false
+}
