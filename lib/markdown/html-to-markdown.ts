@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import rehypeParse from "rehype-parse";
 import rehypeRemark from "rehype-remark";
+import remarkGfm from "remark-gfm";
 import remarkStringify from "remark-stringify";
 
 type HtmlNode = { type: string; tagName?: string; properties?: Record<string, unknown>; children?: HtmlNode[] };
@@ -29,8 +30,8 @@ function cleanHtml(baseUrl: string) {
   };
 }
 
-/** Parse HTML structurally, discard executable/RSC payloads, retain semantic page content. */
+/** Parse HTML structurally, discard executable/RSC payloads, retain semantic page content (GFM tables included). */
 export async function htmlToMarkdown(html: string, baseUrl: string) {
-  const result = await unified().use(rehypeParse).use(cleanHtml(baseUrl)).use(rehypeRemark).use(remarkStringify, { bullet: "-" }).process(html);
+  const result = await unified().use(rehypeParse).use(cleanHtml(baseUrl)).use(rehypeRemark).use(remarkGfm).use(remarkStringify, { bullet: "-" }).process(html);
   return String(result).trim() + "\n";
 }

@@ -31,6 +31,12 @@ describe("Markdown page representations", () => {
     expect(result).not.toMatch(/secret-rsc|private-rsc|hidden-css/);
   });
 
+  it("converts HTML tables to GFM tables instead of failing the page", async () => {
+    const result = await htmlToMarkdown("<table><thead><tr><th>Tool</th><th>License</th></tr></thead><tbody><tr><td>anymd</td><td>MIT</td></tr></tbody></table>", "https://example.test/blog/post");
+    expect(result).toContain("| Tool  | License |");
+    expect(result).toContain("| anymd | MIT     |");
+  });
+
   it("forwards the session only to allowed same-origin pages and makes rendering read-only", async () => {
     const fetcher = vi.fn(async () => new Response("<main><h1>My account</h1><p>Private org</p></main>", { headers: { "Content-Type": "text/html" } }));
     const result = await fetchPageMarkdown("https://example.test", "/en/account", "?tab=orders", new Headers({ cookie: "better-auth.session_token=private; NEXT_LOCALE=vi", authorization: "Bearer secret" }), fetcher);
