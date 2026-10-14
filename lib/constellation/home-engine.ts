@@ -8,6 +8,9 @@ import { buildSkyFallbackMarkup, FALLBACK_VIEWBOX } from './sky-fallback';
 import { createSky, type SkyHandle } from './sky-renderer';
 import { scrollToTarget, setLenis } from './smooth-scroll';
 
+/** How long a /#hash arrival keeps re-aligning to its target while late refreshes reshape the page. */
+const HASH_ALIGN_WINDOW_MS = 4000;
+
 export interface HomeEngineElements {
   /** <main> holding the chapters. */
   root: HTMLElement;
@@ -89,6 +92,32 @@ export function initHomeEngine({ root, canvas, fallback }: HomeEngineElements): 
   cleanups.push(() => document.removeEventListener('click', onAnchorClick));
 
   if (!reduce) {
+    /* ---- smooth scroll + pinned chapters ----
+       Set up in its own task after first paint, not inside React's hydration commit: the measuring
+       (split lines, pin spacers) would otherwise extend one long blocking task. At scroll 0 the page
+       looks the same with or without pins, so the one-frame delay is invisible. Runs before the sky task. */
+    let motionTimer: ReturnType<typeof setTimeout> | undefined;
+    let stopMotionStack: (() => void) | null = null;
+    const motionRaf = requestAnimationFrame(() => {
+      motionTimer = setTimeout(() => {
+        if (disposed) return;
+        try {
+          stopMotionStack = startMotion();
+        } catch (error) {
+          // Content stays readable without motion; everything is server-rendered and visible.
+          console.error('[constellation] motion failed to start:', error);
+        }
+      }, 0);
+    });
+    cleanups.push(() => { cancelAnimationFrame(motionRaf); clearTimeout(motionTimer); stopMotionStack?.(); stopMotionStack = null; });
+  } else {
+    // Reduced motion: the orbit illustrations' SMIL loops are not covered by the CSS kill switch.
+    const smil = Array.from(root.querySelectorAll<SVGSVGElement>('svg'));
+    smil.forEach((svg) => { svg.pauseAnimations(); svg.setCurrentTime(0); });
+    cleanups.push(() => smil.forEach((svg) => svg.unpauseAnimations()));
+  }
+
+  function startMotion(): () => void {
     const lenis = new Lenis({ lerp: 0.1, smoothWheel: true, wheelMultiplier: 1 });
     const onScroll = () => ScrollTrigger.update();
     const tick = (time: number) => lenis.raf(time * 1000);
@@ -96,26 +125,47 @@ export function initHomeEngine({ root, canvas, fallback }: HomeEngineElements): 
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
     setLenis(lenis);
-    const stopMotion = initChapterMotion(root, S);
-    cleanups.push(() => {
+    let stopMotion: () => void;
+    try {
+      stopMotion = initChapterMotion(root, S);
+    } catch (error) {
+      gsap.ticker.remove(tick);
+      gsap.ticker.lagSmoothing(500, 33);
+      lenis.destroy();
+      setLenis(null);
+      throw error;
+    }
+
+    // Arriving at /#pricing: pin spacers move the target after the browser's own jump, and later
+    // refreshes (fonts ready, window load) move it again. Re-align after every refresh until the
+    // visitor scrolls themselves or the page has settled.
+    const hashTarget = window.location.hash.length > 1 ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
+    let stopHashAlign = () => {};
+    if (hashTarget) {
+      const align = () => {
+        lenis.resize();
+        lenis.scrollTo(hashTarget, { offset: -8, immediate: true, force: true });
+      };
+      const userEvents = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+      const settleTimer = setTimeout(() => stopHashAlign(), HASH_ALIGN_WINDOW_MS);
+      stopHashAlign = () => {
+        clearTimeout(settleTimer);
+        ScrollTrigger.removeEventListener('refresh', align);
+        userEvents.forEach((type) => window.removeEventListener(type, stopHashAlign));
+      };
+      ScrollTrigger.addEventListener('refresh', align);
+      userEvents.forEach((type) => window.addEventListener(type, stopHashAlign, { passive: true, once: true }));
+      ScrollTrigger.refresh();
+    }
+
+    return () => {
+      stopHashAlign();
       stopMotion();
       gsap.ticker.remove(tick);
       gsap.ticker.lagSmoothing(500, 33);
       lenis.destroy();
       setLenis(null);
-    });
-
-    // Arriving at /#pricing: pin spacers moved the target after the browser's own jump.
-    const hashTarget = window.location.hash.length > 1 ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
-    if (hashTarget) {
-      ScrollTrigger.refresh();
-      lenis.scrollTo(hashTarget, { offset: -8, immediate: true, force: true });
-    }
-  } else {
-    // Reduced motion: the orbit illustrations' SMIL loops are not covered by the CSS kill switch.
-    const smil = Array.from(root.querySelectorAll<SVGSVGElement>('svg'));
-    smil.forEach((svg) => { svg.pauseAnimations(); svg.setCurrentTime(0); });
-    cleanups.push(() => smil.forEach((svg) => svg.unpauseAnimations()));
+    };
   }
 
   if (reduce && 'IntersectionObserver' in window) {
