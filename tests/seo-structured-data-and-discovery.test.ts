@@ -5,7 +5,7 @@ import { discoveryLinkHeader } from "@/lib/discovery/discovery-link-header";
 import { clampText, starField, titleFontSize } from "@/lib/og/constellation-og-card";
 import { fontUrlFromCss, googleFontCssUrl, uniqueGlyphs } from "@/lib/og/og-google-fonts";
 import { markdownPath } from "@/lib/seo";
-import { blogPostJsonLd, blogPostMetadata } from "@/lib/blog/blog-seo";
+import { blogIndexJsonLd, blogPostJsonLd, blogPostMetadata } from "@/lib/blog/blog-seo";
 import type { BlogPost } from "@/lib/blog/blog-types";
 
 beforeEach(() => {
@@ -90,6 +90,15 @@ describe("blog post SEO", () => {
     expect(article.author).toMatchObject({ "@id": "https://example.test/#person-duy", name: "Duy Nguyen" });
     expect(article.image).toBe("https://example.test/blog/hello-world/opengraph-image");
     expect(article.timeRequired).toBe("PT2M");
+    expect(graph.find((node) => node["@type"] === "BreadcrumbList")).toBeTruthy();
+  });
+
+  it("lists index posts in a Blog node with breadcrumbs", () => {
+    const graph = graphOf(blogIndexJsonLd("vi", [{ ...post, locale: "vi", slug: "xin-chao" }]));
+    const blog = graph.find((node) => node["@type"] === "Blog")!;
+    expect(blog.url).toBe("https://example.test/vi/blog");
+    expect(blog.publisher).toEqual({ "@id": "https://example.test/#organization" });
+    expect(blog.blogPost).toEqual([expect.objectContaining({ "@id": "https://example.test/vi/blog/xin-chao#article", headline: "Hello world" })]);
     expect(graph.find((node) => node["@type"] === "BreadcrumbList")).toBeTruthy();
   });
 

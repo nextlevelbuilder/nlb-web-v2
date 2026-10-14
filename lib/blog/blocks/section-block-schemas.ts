@@ -133,7 +133,7 @@ export const SECTION_BLOCKS = {
     title: "Image",
     description: "One image with alt text and optional caption. `src` must be https:// or a site /images/ or /media/ path.",
     schema: image,
-    example: { src: "https://cdn.nextlevelbuilder.io/public/blog/example.webp", alt: "Directory dashboard in dark mode", caption: "The builder dashboard", width: "wide" },
+    example: { src: "/media/blog/example.webp", alt: "Directory dashboard in dark mode", caption: "The builder dashboard", width: "wide" },
   },
   gallery: {
     title: "Gallery",
@@ -141,8 +141,8 @@ export const SECTION_BLOCKS = {
     schema: gallery,
     example: {
       images: [
-        { src: "https://cdn.nextlevelbuilder.io/public/blog/one.webp", alt: "Submission form" },
-        { src: "https://cdn.nextlevelbuilder.io/public/blog/two.webp", alt: "Review queue" },
+        { src: "/media/blog/one.webp", alt: "Submission form" },
+        { src: "/media/blog/two.webp", alt: "Review queue" },
       ],
       columns: 2,
     },
@@ -195,7 +195,7 @@ export const SECTION_BLOCKS = {
           name: "AK Render",
           tagline: "HTML pages for coding agents, compiled from a short Page Spec.",
           href: "/products/ak-render",
-          logo: "https://cdn.nextlevelbuilder.io/public/products/ak-render/logo.png",
+          logo: "/media/products/ak-render/logo.png",
           tags: ["cli", "html"],
           maker: "Duy Nguyen",
         },

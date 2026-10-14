@@ -106,3 +106,40 @@ export function blogPostJsonLd(post: BlogPost): Record<string, unknown> {
     ],
   };
 }
+
+/** Blog node listing the posts shown on an index page, plus its BreadcrumbList, as one @graph. */
+export function blogIndexJsonLd(locale: BlogLocale, posts: BlogPostSummary[]): Record<string, unknown> {
+  const copy = BLOG_COPY[locale];
+  const url = absolute(blogIndexPath(locale));
+  const { "@context": _context, ...breadcrumb } = breadcrumbJsonLd(
+    [{ name: "Next Level Builders", path: "/" }, { name: copy.indexTitle, path: "/blog" }],
+    locale,
+  );
+  void _context;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Blog",
+        "@id": `${url}#blog`,
+        name: copy.indexTitle,
+        description: copy.indexLede,
+        url,
+        inLanguage: locale,
+        publisher: { "@id": organizationId() },
+        blogPost: posts.map((post) => {
+          const postUrl = absolute(blogPostPath(post.locale, post.slug));
+          return {
+            "@type": "BlogPosting",
+            "@id": `${postUrl}#article`,
+            headline: post.title,
+            url: postUrl,
+            ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+            ...(post.authorName ? { author: { "@type": "Person", name: post.authorName } } : {}),
+          };
+        }),
+      },
+      breadcrumb,
+    ],
+  };
+}

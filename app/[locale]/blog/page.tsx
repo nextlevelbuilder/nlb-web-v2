@@ -5,7 +5,8 @@ import { BLOG_NUMERAL, BlogPlate } from "@/components/blog/blog-plate";
 import { BlogFeaturedPost, BlogPostCard } from "@/components/blog/blog-post-card";
 import { BLOG_COPY } from "@/lib/blog/blog-copy";
 import { listPublishedPostItems, listPublishedTags } from "@/lib/blog/blog-queries";
-import { blogIndexMetadata } from "@/lib/blog/blog-seo";
+import { blogIndexJsonLd, blogIndexMetadata } from "@/lib/blog/blog-seo";
+import { serializeJsonLd } from "@/lib/seo";
 import { isBlogLocale, type BlogLocale } from "@/lib/blog/blog-types";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,7 @@ export default async function BlogIndexPage({ params, searchParams }: BlogIndexP
 
   return (
     <main id="main" className="blog-index">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogIndexJsonLd(locale, posts)) }} />
       <div className="wrap">
         <div className="page-head blog-index-head">
           <BlogPlate numeral={BLOG_NUMERAL} name={copy.plateName} coord={INDEX_COORD} />
