@@ -4,12 +4,12 @@ Where each concern lives. This page lists entry points only, not inventories. Ru
 
 | Concern | Start here | Notes |
 |---|---|---|
-| Pages (localized) | `app/[locale]/` | One folder per route. `home-client.tsx` holds the homepage client sections. |
+| Pages (localized) | `app/[locale]/` | One folder per route. `home-client.tsx` wraps the homepage chapters with checkout state, the sky engine, sticky CTA, toast and orbit progress. |
 | Root layout, fonts, theme | [`app/layout.tsx`](../app/layout.tsx), [`app/globals.css`](../app/globals.css) | See [design-guidelines.md](./design-guidelines.md) |
 | Locale routing | [`middleware.ts`](../middleware.ts), [`i18n/`](../i18n) | EN unprefixed, VI under `/vi` |
 | UI strings | [`messages/en.json`](../messages/en.json), [`messages/vi.json`](../messages/vi.json) | next-intl. Long-form copy lives in `content/` and `lib/*/…-copy.ts` |
 | Policies and legal pages | [`content/policies/`](../content/policies) | EN and VI in the same module. The route is `app/[locale]/policies/[slug]` |
-| Shared UI | `components/ui/` (shadcn/Radix primitives), `components/sections/`, `components/home/` | |
+| Shared UI | `components/ui/` (shadcn/Radix primitives), `components/site/` (site shell), `components/constellation/` (home chapters), `components/home/` (checkout state) | Motion engine: `lib/constellation/`. |
 | Public REST API | `app/api/v1/` | Contract: [`lib/openapi.ts`](../lib/openapi.ts) → `/api/openapi.json`, `/api-docs` |
 | Product document contract | [`packages/contracts/src/`](../packages/contracts/src) | Imported as `@/packages/contracts/...`. Shared shape with the toolkits repo. |
 | Caller auth (API key, session, MCP delegation) | [`lib/auth-api-key.ts`](../lib/auth-api-key.ts), [`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts) | |
