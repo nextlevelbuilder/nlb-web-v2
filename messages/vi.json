@@ -686,7 +686,9 @@
       "apiDocs": "Tài liệu API",
       "copyright": "© {year} Next Level Builders",
       "newTab": "(mở trong tab mới)",
-      "backToTop": "Về đầu trang"
+      "backToTop": "Về đầu trang",
+      "origin": "điểm gốc",
+      "topAria": "Next Level Builders — về đầu trang"
     },
     "policies": {
       "overview": "Tổng quan quy chế",
@@ -712,7 +714,9 @@
       "title": "Mọi sản phẩm đều bắt đầu từ <em>một đốm sáng.</em>",
       "sub": "Từ 0 lên 1 luôn là phần khó nhất. Bạn không phải đi một mình.",
       "ctaSecondary": "Xem video tuần này",
-      "scroll": "Cuộn để thắp sáng"
+      "scroll": "Cuộn để thắp sáng",
+      "metaL": "Ch. 0 — Ánh sáng đầu tiên",
+      "metaR": "Vị trí con trỏ"
     },
     "trust": {
       "moneyBack": "Hoàn tiền 100% trong 30 ngày",
@@ -726,7 +730,7 @@
     },
     "community": {
       "plate": "Chòm sao",
-      "title": "Tìm <em>chòm sao</em> của bạn.",
+      "title": "Tìm <em>chòm sao</em> của bạn.",
       "body": "500+ builder trong Discord riêng tư — những người trả lời câu hỏi của bạn lúc 2 giờ sáng, vì họ cũng đang build.",
       "label": "NLB · chòm sao của những builder · 500+ ngôi sao",
       "f1t": "Phản hồi",
@@ -748,7 +752,18 @@
       "s2d": "Trả một lần, xem trọn đời. Không cần đăng ký gói.",
       "s3t": "VIP xem toàn bộ",
       "s3d": "Mọi video đã và sẽ ra mắt đều nằm trong gói VIP.",
-      "cta": "Xem các video"
+      "cta": "Xem các video",
+      "all": "Xem tất cả video",
+      "badge": "VIP xem miễn phí",
+      "keep": "Xem trọn đời",
+      "buy": "Mua {price}",
+      "buyAria": "Mua {price} — video: {title}",
+      "watch": "Xem",
+      "week": "Tuần {week}",
+      "minutes": "{minutes} phút",
+      "dropToday": "Video mới ra mắt hôm nay",
+      "dropMonday": "Video mới ra mắt thứ Hai",
+      "sampleMeta": "Mỗi thứ Hai"
     },
     "directory": {
       "plate": "Cấp sao",
@@ -763,7 +778,18 @@
       "resetsIn": "Bảng xếp hạng làm mới sau",
       "foot": "Kiểm duyệt thủ công • Không trả tiền để lên hạng • Cloudflare Edge",
       "ctaSubmit": "Gửi sản phẩm của bạn",
-      "ctaBoard": "Xem bảng xếp hạng"
+      "ctaBoard": "Xem bảng xếp hạng",
+      "chart": "Bản đồ sao · hôm nay",
+      "axes": "Trust ↑ · Phiếu →",
+      "chartAlt": "Biểu đồ cấp sao: sao càng sáng thì Trust score càng cao. {name} dẫn đầu với Trust {trust}.",
+      "chartAltEmpty": "Biểu đồ cấp sao: chưa có sản phẩm nào trên bản đồ.",
+      "legend": "Sao càng sáng = Trust score càng cao",
+      "top": "Top hôm nay",
+      "resets": "Làm mới sau",
+      "trust": "Trust",
+      "votes": "phiếu",
+      "openTitle": "Cấp sao còn trống",
+      "openSub": "Gửi sản phẩm của bạn để nhận ngôi sao này"
     },
     "proof": {
       "plate": "Sáng nhất",
@@ -785,7 +811,9 @@
     "partners": {
       "title": "Đối tác",
       "subtitle": "Những công ty mà các nhà sáng lập dẫn dắt và cùng xây dựng.",
-      "visit": "Truy cập {name}"
+      "visit": "Truy cập {name}",
+      "plate": "Liên minh",
+      "heading": "Đối tác <em>cùng xây dựng.</em>"
     },
     "pricing": {
       "plate": "Bùng sáng",
@@ -829,7 +857,10 @@
         "hours": "giờ",
         "minutes": "phút",
         "seconds": "giây"
-      }
+      },
+      "perMonth": "/tháng",
+      "subAnnualTotal": "thanh toán theo năm · ${total}/năm · tiết kiệm ${saving}",
+      "joinAria": "Tham gia gói {plan} — {price}{per}"
     },
     "checkout": {
       "agree": "Tôi đồng ý với <terms>Điều khoản dịch vụ</terms> và <refund>Chính sách hoàn tiền</refund>",
@@ -880,6 +911,20 @@
       "hoursAgo": "{count} giờ trước",
       "daysAgo": "{count} ngày trước",
       "dismiss": "Đóng thông báo"
+    },
+    "cta": {
+      "primary": "Tham gia membership"
+    },
+    "founders": {
+      "plate": "Hoa tiêu"
+    },
+    "faq": {
+      "plate": "Hỏi đáp",
+      "title": "Câu hỏi trước khi <em>bạn bắt đầu.</em>"
+    },
+    "logbook": {
+      "title": "Từ nhật ký hành trình",
+      "all": "Đọc blog"
     }
   }
 }

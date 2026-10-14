@@ -5,7 +5,7 @@
 /* ==========================================================================
    CONSTELLATION design tokens
    Light (:root)  = vintage star-atlas plate: warm rag paper, prussian ink, vermillion.
-   Dark  (.dark)  = deep-space observatory: starlight on indigo-black, pale-gold accent.
+   Dark  ([data-theme="dark"]) = deep-space observatory: starlight on indigo-black, pale-gold accent.
    Colours are HSL triplets (use as hsl(var(--x)) or via Tailwind: bg-background, text-ink-2 ...).
    Token names are stable; inner pages depend on them.
    ========================================================================== */
@@ -37,7 +37,7 @@
 
     /* ink */
     --foreground: 222 43% 19%;         /* #1c2947 prussian ink, 11.7:1 */
-    --ink-2: 224 26% 31%;              /* #3a4563, 7.7:1 */
+    --ink-soft: 224 26% 31%;              /* #3a4563, 7.7:1 */
     --muted-foreground: 226 17% 40%;   /* #545c76, 5.4:1 */
 
     /* lines */
@@ -59,7 +59,7 @@
     --secondary: 41 40% 84%;
     --secondary-foreground: 222 43% 19%;
     --muted: 41 40% 84%;
-    --accent: 41 40% 84%;              /* subtle hover surface (shadcn semantics) */
+    --accent-surface: 41 40% 84%;              /* subtle hover surface (shadcn semantics) */
     --accent-foreground: 222 43% 19%;
     --destructive: 5 72% 37%;
     --destructive-foreground: 41 51% 93%;
@@ -78,7 +78,7 @@
     --shadow: 0 24px 40px -28px rgba(60, 40, 10, 0.45);
   }
 
-  .dark {
+  [data-theme="dark"] {
     color-scheme: dark;
 
     --background: 231 37% 4%;          /* #06070d */
@@ -90,7 +90,7 @@
     --popover-foreground: 44 37% 88%;
 
     --foreground: 44 37% 88%;          /* #ece6d6 starlight, 16:1 */
-    --ink-2: 41 13% 70%;               /* #bdb7aa, 10:1 */
+    --ink-soft: 41 13% 70%;               /* #bdb7aa, 10:1 */
     --muted-foreground: 249 10% 58%;   /* #8d8a9f, 6:1 */
 
     --border: 225 6% 13%;
@@ -108,7 +108,7 @@
     --secondary: 232 38% 12%;
     --secondary-foreground: 44 37% 88%;
     --muted: 232 38% 12%;
-    --accent: 232 38% 12%;
+    --accent-surface: 232 38% 12%;
     --accent-foreground: 44 37% 88%;
     --destructive: 8 80% 71%;
     --destructive-foreground: 35 38% 6%;
@@ -186,32 +186,14 @@
    Constellation components (stable class names, usable on every page)
    ========================================================================== */
 @layer components {
-  /* centred content column with fluid gutters */
-  .wrap {
-    width: min(var(--wrap), 100% - 2 * var(--gutter));
-    margin-inline: auto;
-  }
 
   /* mono micro-label (eyebrows, plate captions, meta) */
   .mono-label {
     @apply font-mono text-step-xs font-normal uppercase tracking-[0.08em];
   }
 
-  .eyebrow {
-    @apply mono-label inline-flex items-center gap-3 text-ink-2;
-  }
 
-  .eyebrow::before {
-    content: "";
-    width: 28px;
-    height: 1px;
-    background: hsl(var(--primary));
-  }
 
-  /* chapter header: roman numeral, name, hairline rule */
-  .plate {
-    @apply mono-label mb-8 flex items-center gap-4 text-ink-3;
-  }
 
   .plate-numeral {
     @apply font-display text-[1.35rem] normal-case italic leading-none tracking-normal text-primary;
@@ -242,10 +224,6 @@
     line-height: 1.12;
   }
 
-  .lede {
-    @apply max-w-[40ch] text-step-lg text-ink-2;
-    text-wrap: pretty;
-  }
 
   /* vertical rhythm for content sections */
   .section-pad {
@@ -257,15 +235,7 @@
     @apply rounded-sm border border-line bg-surface;
   }
 
-  /* underlined arrow link */
-  .link-arrow {
-    @apply inline-flex min-h-[44px] items-center gap-2 border-b border-line-strong text-foreground transition-[border-color,gap] duration-base ease-expo hover:gap-3 hover:border-primary;
-  }
 
-  /* pill segmented control (language, theme, billing) */
-  .seg {
-    @apply inline-flex h-11 items-center gap-0.5 rounded-pill border border-line-strong p-[3px];
-  }
 
   .seg-option {
     @apply inline-flex h-9 min-w-9 items-center justify-center rounded-pill px-2 font-mono text-step-xs tracking-[0.06em] text-ink-3 transition-colors duration-base hover:text-foreground;
@@ -276,40 +246,10 @@
     @apply bg-foreground text-background;
   }
 
-  /* static atlas graticule backdrop for inner pages (decorative) */
+  /* inner-page main: the global .graticule + static sky (app/constellation-shell.css) draw the atlas backdrop */
   .sky-backdrop {
     position: relative;
     isolation: isolate;
-  }
-
-  .sky-backdrop::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.45;
-    background-image:
-      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: calc(100% / 12) 120px;
-    mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 75%);
-  }
-
-  .dark .sky-backdrop::before {
-    opacity: 0.6;
-  }
-
-  /* skip link: hidden until focused */
-  .skip-link {
-    @apply fixed left-4 z-[200] rounded-pill bg-cta px-5 py-3 font-medium text-cta-foreground;
-    top: -80px;
-    transition: top var(--d-2) var(--ease-expo);
-  }
-
-  .skip-link:focus {
-    top: 1rem;
   }
 
   /* ---------- legacy class names, restyled onto Constellation tokens ---------- */

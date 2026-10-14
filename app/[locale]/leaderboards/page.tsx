@@ -5,8 +5,6 @@ import { Trophy, TrendingUp, ThumbsUp, ArrowUpRight, Hash } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { directoryCopy } from "@/content/pages/directory-copy";
 import { toPageLocale } from "@/content/pages/page-locale";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { pageMetadata } from "@/lib/seo";
@@ -51,7 +49,6 @@ export default async function LeaderboardsPage({ params }: LeaderboardsPageProps
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap max-w-4xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
           <header className="space-y-5">
@@ -137,7 +134,6 @@ export default async function LeaderboardsPage({ params }: LeaderboardsPageProps
           )}
         </div>
       </main>
-      <FooterSection />
     </div>
   );
 }

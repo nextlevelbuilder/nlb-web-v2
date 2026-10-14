@@ -1,7 +1,5 @@
 import React, { cache } from "react";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { BlogPostLayout } from "@/components/blog/blog-post-layout";
 import { BLOG_SLUG_RE, MAX_BLOG_SLUG_LENGTH } from "@/lib/blog/blog-slug-rules";
 import { findPublishedTranslation, getPublishedPost } from "@/lib/blog/blog-queries";
@@ -37,12 +35,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostJsonLd(loaded.post)) }} />
-      <main className="flex-1 pb-section-sm pt-28">
+      <main id="main" className="flex-1 pb-section-sm pt-28">
         <BlogPostLayout post={loaded.post} translation={loaded.translation} />
       </main>
-      <FooterSection />
     </div>
   );
 }

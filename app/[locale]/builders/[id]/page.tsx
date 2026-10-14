@@ -5,8 +5,6 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { users, products, members, organizations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import ProductLogo from "@/components/product-logo";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, CheckCircle2, Calendar, Layers, ArrowUpRight, Globe } from "lucide-react";
@@ -85,8 +83,6 @@ export default async function BuilderPublicProfilePage({ params }: BuilderProfil
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
           <header className="flex flex-col justify-between gap-6 border-b border-line pb-8 md:flex-row md:items-end">
@@ -203,8 +199,6 @@ export default async function BuilderPublicProfilePage({ params }: BuilderProfil
           </section>
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }

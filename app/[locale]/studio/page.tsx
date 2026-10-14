@@ -7,8 +7,6 @@ import { headers } from "next/headers";
 import { getDb } from "@/lib/db";
 import { products, members, organizations } from "@/lib/db/schema";
 import { eq, inArray, desc } from "drizzle-orm";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,8 +85,6 @@ export default async function StudioPage({ params }: { params: Promise<{ locale:
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
           <header className="max-w-3xl space-y-5">
@@ -221,8 +217,6 @@ export default async function StudioPage({ params }: { params: Promise<{ locale:
           )}
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }

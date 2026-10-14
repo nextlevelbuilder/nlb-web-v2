@@ -686,7 +686,9 @@
       "apiDocs": "API docs",
       "copyright": "© {year} Next Level Builders",
       "newTab": "(opens in a new tab)",
-      "backToTop": "Back to top"
+      "backToTop": "Back to top",
+      "origin": "origin",
+      "topAria": "Next Level Builders — back to top"
     },
     "policies": {
       "overview": "Community guidelines",
@@ -712,7 +714,9 @@
       "title": "Every product starts as a single <em>point of light.</em>",
       "sub": "Going from 0 to 1 is the hardest part. You don't have to do it alone.",
       "ctaSecondary": "Watch this week's video",
-      "scroll": "Scroll to ignite"
+      "scroll": "Scroll to ignite",
+      "metaL": "Ch. 0 — First light",
+      "metaR": "Cursor position"
     },
     "trust": {
       "moneyBack": "30-day 100% money-back",
@@ -748,7 +752,18 @@
       "s2d": "Pay once and keep it forever. No subscription needed.",
       "s3t": "VIP watches everything",
       "s3d": "Every past and future video is included with VIP.",
-      "cta": "Browse the videos"
+      "cta": "Browse the videos",
+      "all": "See all videos",
+      "badge": "Free for VIP",
+      "keep": "Yours forever",
+      "buy": "Buy {price}",
+      "buyAria": "Buy {price} — video: {title}",
+      "watch": "Watch",
+      "week": "Week {week}",
+      "minutes": "{minutes} min",
+      "dropToday": "New video drops today",
+      "dropMonday": "New video drops Monday",
+      "sampleMeta": "Every Monday"
     },
     "directory": {
       "plate": "Magnitude",
@@ -763,7 +778,18 @@
       "resetsIn": "Leaderboard resets in",
       "foot": "Hand-reviewed • No pay-to-rank • Cloudflare Edge",
       "ctaSubmit": "Submit your product",
-      "ctaBoard": "See the leaderboard"
+      "ctaBoard": "See the leaderboard",
+      "chart": "Sky chart · today",
+      "axes": "Trust ↑ · Votes →",
+      "chartAlt": "Star-magnitude chart: brighter stars have higher Trust scores. {name} leads with Trust {trust}.",
+      "chartAltEmpty": "Star-magnitude chart: no products have been charted yet.",
+      "legend": "Brighter star = higher Trust score",
+      "top": "Top today",
+      "resets": "Resets in",
+      "trust": "Trust",
+      "votes": "votes",
+      "openTitle": "Open magnitude",
+      "openSub": "Submit your product to claim this star"
     },
     "proof": {
       "plate": "Brightest",
@@ -785,7 +811,9 @@
     "partners": {
       "title": "Partners",
       "subtitle": "Companies the founders lead and build with.",
-      "visit": "Visit {name}"
+      "visit": "Visit {name}",
+      "plate": "Alliance",
+      "heading": "Partners who <em>build with us.</em>"
     },
     "pricing": {
       "plate": "Ignition",
@@ -829,7 +857,10 @@
         "hours": "hrs",
         "minutes": "min",
         "seconds": "sec"
-      }
+      },
+      "perMonth": "/mo",
+      "subAnnualTotal": "billed annually · ${total}/yr · save ${saving}",
+      "joinAria": "Join {plan} membership — {price}{per}"
     },
     "checkout": {
       "agree": "I agree to the <terms>Terms of Service</terms> and the <refund>Refund Policy</refund>",
@@ -880,6 +911,20 @@
       "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
       "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
       "dismiss": "Dismiss notification"
+    },
+    "cta": {
+      "primary": "Join the membership"
+    },
+    "founders": {
+      "plate": "Navigators"
+    },
+    "faq": {
+      "plate": "Queries",
+      "title": "Questions before <em>you launch.</em>"
+    },
+    "logbook": {
+      "title": "From the logbook",
+      "all": "Read the blog"
     }
   }
 }

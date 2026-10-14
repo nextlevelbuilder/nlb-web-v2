@@ -4,14 +4,14 @@ import animate from "tailwindcss-animate";
 /**
  * Constellation design system.
  * Colours are HSL triplets defined as CSS variables in app/globals.css (:root = light "star atlas",
- * .dark = "deep space observatory"), so every token supports opacity modifiers (e.g. bg-primary/10).
+ * [data-theme="dark"] = "deep space observatory"), so every token supports opacity modifiers (e.g. bg-primary/10).
  * The shadcn names (background, primary, muted, ...) are kept so existing components keep working;
  * the Constellation names (ink, line, surface, cta, canvas) describe the editorial palette directly.
  */
 const token = (name: string) => `hsl(var(--${name}) / <alpha-value>)`;
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -25,7 +25,7 @@ const config: Config = {
         foreground: token("foreground"),
         primary: { DEFAULT: token("primary"), foreground: token("primary-foreground") },
         secondary: { DEFAULT: token("secondary"), foreground: token("secondary-foreground") },
-        accent: { DEFAULT: token("accent"), foreground: token("accent-foreground") },
+        accent: { DEFAULT: token("accent-surface"), foreground: token("accent-foreground") },
         muted: { DEFAULT: token("muted"), foreground: token("muted-foreground") },
         card: { DEFAULT: token("card"), foreground: token("card-foreground") },
         popover: { DEFAULT: token("popover"), foreground: token("popover-foreground") },
@@ -44,7 +44,7 @@ const config: Config = {
         },
         // Constellation editorial tokens
         canvas: { DEFAULT: token("background"), deep: token("canvas-deep") },
-        ink: { DEFAULT: token("foreground"), 2: token("ink-2"), 3: token("muted-foreground") },
+        ink: { DEFAULT: token("foreground"), 2: token("ink-soft"), 3: token("muted-foreground") },
         line: { DEFAULT: token("border"), strong: token("line-strong") },
         surface: { DEFAULT: token("card"), raised: token("surface-raised") },
         star: token("primary"),

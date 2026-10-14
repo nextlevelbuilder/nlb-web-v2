@@ -7,8 +7,6 @@ import { headers } from "next/headers";
 import { getDb } from "@/lib/db";
 import { products, members, organizations, orders, customers, entitlements } from "@/lib/db/schema";
 import { eq, inArray, desc, and } from "drizzle-orm";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +47,6 @@ export default async function AccountDashboardPage({ params }: AccountPageProps)
   if (!session || !session.user) {
     return (
       <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <Navbar />
         <main id="main" className="sky-backdrop flex flex-1 items-center justify-center px-4 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
           <section aria-labelledby="account-login" className="surface-panel w-full max-w-md space-y-6 p-8 text-center shadow-constellation sm:p-10">
             <span aria-hidden className="mx-auto flex h-14 w-14 items-center justify-center rounded-sm border border-line text-primary">
@@ -66,7 +63,6 @@ export default async function AccountDashboardPage({ params }: AccountPageProps)
             </Button>
           </section>
         </main>
-        <FooterSection />
       </div>
     );
   }
@@ -159,8 +155,6 @@ export default async function AccountDashboardPage({ params }: AccountPageProps)
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
           <AccountIdentityHeader
@@ -321,8 +315,6 @@ export default async function AccountDashboardPage({ params }: AccountPageProps)
           </section>
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }

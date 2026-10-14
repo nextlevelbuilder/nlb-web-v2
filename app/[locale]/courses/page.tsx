@@ -1,5 +1,3 @@
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { CourseVideoCard } from "@/components/courses/course-video-card";
 import { getDb } from "@/lib/db";
 import { listPublishedVideos, toPublicCourseVideo } from "@/lib/courses/course-video-service";
@@ -25,7 +23,6 @@ export default async function CoursesPage({ params }: CoursesPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
-      <Navbar />
       <main id="main" className="wrap flex-1 pb-20 pt-28">
         <header className="max-w-2xl">
           <p className="eyebrow">NLB · {copy.listTitle}</p>
@@ -44,7 +41,6 @@ export default async function CoursesPage({ params }: CoursesPageProps) {
           </ul>
         )}
       </main>
-      <FooterSection />
     </div>
   );
 }

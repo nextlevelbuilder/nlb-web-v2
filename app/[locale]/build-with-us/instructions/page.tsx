@@ -1,6 +1,4 @@
 import React from "react";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -135,8 +133,6 @@ export default function BuildWithUsInstructionsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap max-w-5xl space-y-16 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
           <header className="max-w-3xl space-y-5">
@@ -313,8 +309,6 @@ export default function BuildWithUsInstructionsPage() {
           </section>
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }

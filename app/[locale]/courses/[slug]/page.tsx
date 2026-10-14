@@ -2,8 +2,6 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { CourseLockedPanel } from "@/components/courses/course-locked-panel";
 import { CourseVideoPlayer } from "@/components/courses/course-video-player";
 import { resolveCaller } from "@/lib/auth-api-key";
@@ -46,7 +44,6 @@ export default async function CourseVideoPage({ params, searchParams }: CourseVi
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
-      <Navbar />
       <main id="main" className="wrap max-w-4xl flex-1 pb-20 pt-28">
         <Link
           href={localizedPath("/courses", locale)}
@@ -81,7 +78,6 @@ export default async function CourseVideoPage({ params, searchParams }: CourseVi
           <p className="mt-10 max-w-[65ch] whitespace-pre-line text-step-md text-ink-2">{video.description}</p>
         )}
       </main>
-      <FooterSection />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { getPublishedProducts } from "@/lib/domain/catalog";
 import { getLatestRankingSnapshot, computeRankingSnapshot } from "@/lib/domain/rankings";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import BuildWithUsClient, { type RankEntry } from "./build-with-us-client";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
@@ -57,7 +55,6 @@ export default async function BuildWithUsPage({ params }: BuildWithUsProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
           <header className="max-w-3xl space-y-5">
@@ -76,7 +73,6 @@ export default async function BuildWithUsPage({ params }: BuildWithUsProps) {
           />
         </div>
       </main>
-      <FooterSection />
     </div>
   );
 }

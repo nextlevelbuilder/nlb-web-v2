@@ -10,8 +10,6 @@ import Link from "next/link";
 import { directoryCopy } from "@/content/pages/directory-copy";
 import { toPageLocale } from "@/content/pages/page-locale";
 import type { ProductDocument } from "@/packages/contracts/src";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { getTranslations } from "next-intl/server";
 import { pageMetadata, serializeJsonLd, localizedPath, siteUrl } from "@/lib/seo";
 
@@ -63,7 +61,6 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
       <main id="main" className="sky-backdrop flex-1">
@@ -141,7 +138,6 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
           </footer>
         </div>
       </main>
-      <FooterSection />
     </div>
   );
 }

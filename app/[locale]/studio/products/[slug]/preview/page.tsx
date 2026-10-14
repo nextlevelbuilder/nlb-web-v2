@@ -11,8 +11,6 @@ import { BlockRenderer } from "@/components/blocks/block-renderer";
 import ProductLogo from "@/components/product-logo";
 import { Badge } from "@/components/ui/badge";
 import { Eye, ArrowLeft, ArrowUpRight } from "lucide-react";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import type { ProductDocument } from "@/packages/contracts/src";
@@ -86,8 +84,6 @@ export default async function StudioProductPreviewPage({ params }: StudioPreview
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-
       <main id="main" className="flex-1">
         <div className="wrap max-w-5xl space-y-8 pb-section-sm pt-[calc(var(--header-h)+2rem)] md:pt-[calc(var(--header-h)+3rem)]">
           <nav aria-label={t("backToStudio")} className="flex flex-wrap items-center justify-between gap-3">
@@ -141,8 +137,6 @@ export default async function StudioProductPreviewPage({ params }: StudioPreview
           </article>
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }

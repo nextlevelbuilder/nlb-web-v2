@@ -1,8 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/navbar";
-import FooterSection from "@/components/sections/footer-section";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
 import { BLOG_COPY } from "@/lib/blog/blog-copy";
 import { listPostSummaries } from "@/lib/blog/blog-queries";
@@ -58,8 +56,7 @@ export default async function BlogIndexPage({ params, searchParams }: BlogIndexP
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Navbar />
-      <main className="flex-1 px-gutter pb-section-sm pt-28">
+      <main id="main" className="flex-1 px-gutter pb-section-sm pt-28">
         <div className="mx-auto max-w-wrap">
           <header className="max-w-3xl border-b border-line pb-10">
             <h1 className="font-display text-step-3xl text-ink">{copy.indexHeading}</h1>
@@ -94,7 +91,6 @@ export default async function BlogIndexPage({ params, searchParams }: BlogIndexP
           )}
         </div>
       </main>
-      <FooterSection />
     </div>
   );
 }

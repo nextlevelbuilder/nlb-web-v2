@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import GoogleAnalyticsConsentAware from "@/components/analytics/google-analytics-consent-aware";
 import { SOCIAL_LINKS, X_HANDLE } from "@/lib/constants/socials";
 import "./globals.css";
+import "./constellation-shell.css";
 
 // Every family ships the `vietnamese` subset so VI diacritics render in the brand faces.
 const display = Cormorant_Garamond({
@@ -100,13 +101,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   };
 
   return (
-    // suppressHydrationWarning: next-themes sets the theme class on <html> before hydration.
-    <html lang={locale} suppressHydrationWarning>
+    // suppressHydrationWarning: next-themes sets data-theme on <html> before hydration.
+    // The font variables live on <html> so the :root design tokens (--f-display …) can resolve them.
+    <html lang={locale} className={`${display.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="AI index" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organization) }} />
       </head>
-      <body className={`${display.variable} ${sans.variable} ${mono.variable} font-sans`}>
+      <body className="font-sans">
         <ThemeProvider>{children}</ThemeProvider>
         <GoogleAnalyticsConsentAware />
       </body>

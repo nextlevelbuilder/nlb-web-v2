@@ -1,6 +1,10 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import SiteCursor from '@/components/site/site-cursor';
+import SiteFooter from '@/components/site/site-footer';
+import SiteHeader from '@/components/site/site-header';
+import StaticSky from '@/components/site/static-sky';
 import { SiteTrafficTracker } from '@/components/traffic/site-traffic-tracker';
 import { isLocale, locales } from '@/i18n/routing';
 
@@ -9,8 +13,9 @@ export function generateStaticParams() {
 }
 
 /**
- * Locale shell. The header (components/navbar.tsx, which also renders the skip link) and the footer
- * are rendered by each page so the homepage can place them inside its own narrative layout.
+ * Locale shell shared by every page: static sky + graticule, custom cursor, the Constellation header
+ * (with the skip link to #main) and footer. Each page renders its own <main id="main">; the home page
+ * adds the live WebGL sky on top of the static one.
  */
 export default async function LocaleLayout({ children, params }: {
   children: React.ReactNode;
@@ -23,7 +28,11 @@ export default async function LocaleLayout({ children, params }: {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SiteTrafficTracker />
+      <StaticSky />
+      <SiteCursor />
+      <SiteHeader />
       {children}
+      <SiteFooter />
     </NextIntlClientProvider>
   );
 }

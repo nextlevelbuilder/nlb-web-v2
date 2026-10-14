@@ -9,18 +9,17 @@ export const THEME_STORAGE_KEY = 'nlb-theme';
 
 /**
  * Theme + motion context for every page.
- * next-themes writes the `light` / `dark` class on <html> from an inline script before first paint
- * (no flash). MotionConfig makes every framer-motion animation honour prefers-reduced-motion.
+ * next-themes writes `data-theme="light|dark"` on <html> from an inline script before first paint
+ * (no flash); app/constellation-shell.css keys every colour token off that attribute. MotionConfig makes every framer-motion animation honour prefers-reduced-motion.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemesProvider
-      attribute="class"
+      attribute="data-theme"
       defaultTheme="system"
       enableSystem
       themes={['light', 'dark']}
       storageKey={THEME_STORAGE_KEY}
-      disableTransitionOnChange
     >
       <MotionConfig reducedMotion="user">{children}</MotionConfig>
     </NextThemesProvider>
