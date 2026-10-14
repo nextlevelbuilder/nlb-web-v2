@@ -49,23 +49,34 @@ export default function FoundersChapter() {
                 <Image src={founder.avatar} alt={t('avatarAlt', { name: founder.name })} width={104} height={104} sizes="104px" unoptimized />
               </div>
               <div className="founder-body">
-                <h3>{founder.name}</h3>
+                <h3>
+                  {founder.name}
+                  {founder.pronunciation && (
+                    <span className="founder-phonetic">
+                      <span className="sr-only">{t('pronounced')} </span>
+                      {founder.pronunciation}
+                    </span>
+                  )}
+                </h3>
                 <p className="founder-role mono">{pick(founder.role, locale)}</p>
                 <p className="founder-bio">{pick(founder.bio, locale)}</p>
                 <ul className="feats">
                   {pick(founder.facts, locale).map((fact) => <li key={fact}>{fact}</li>)}
                 </ul>
-                <p className="founder-links mono">
-                  {[{ label: founder.company.name, href: founder.company.url }, ...founder.links].map((link) => (
-                    <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer">
-                      {link.label}
-                      <span className="sr-only">
-                        {' '}
-                        {link.label === founder.company.name ? `(${t('company', { name: founder.company.name })})` : `(${founder.name})`} {tShell('newTab')}
-                      </span>
-                    </a>
+                <ul className="founder-links mono">
+                  {founder.links.map((link) => (
+                    <li key={link.href}>
+                      <a href={link.href} target="_blank" rel="noopener noreferrer">
+                        {link.label}
+                        {link.handle && <span className="founder-handle">{link.handle}</span>}
+                        <span className="sr-only">
+                          {' '}
+                          {link.href === founder.company.url ? `(${t('company', { name: founder.company.name })})` : `(${founder.name})`} {tShell('newTab')}
+                        </span>
+                      </a>
+                    </li>
                   ))}
-                </p>
+                </ul>
               </div>
             </article>
           ))}

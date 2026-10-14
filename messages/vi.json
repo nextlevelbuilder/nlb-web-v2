@@ -806,7 +806,8 @@
       "title": "Học từ những nhà sáng lập <em>đã làm được.</em>",
       "subtitle": "Những người đứng sau NLB điều hành công ty thật và ra mắt sản phẩm thật. Họ chia sẻ công khai những gì hiệu quả.",
       "avatarAlt": "Ảnh chân dung {name}",
-      "company": "Công ty: {name}"
+      "company": "Công ty: {name}",
+      "pronounced": "phát âm là"
     },
     "partners": {
       "title": "Đối tác",

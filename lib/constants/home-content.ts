@@ -11,22 +11,39 @@ export function pick<T>(value: Bilingual<T>, locale: string): T {
   return locale === "vi" ? value.vi : value.en;
 }
 
+export interface FounderLink {
+  /** Visible label, rendered in mono caps. */
+  label: string;
+  href: string;
+  /** Optional visible handle shown after the label in its original case, e.g. "@goon_nguyen". */
+  handle?: string;
+}
+
 export interface Founder {
   id: "duy" | "cuong" | "viet";
   name: string;
+  /** Dictionary-style phonetic shown next to the name, e.g. "/zuey/". */
+  pronunciation?: string;
   /** 384px square WebP derived from public/docs/assets/{id}.png. */
   avatar: string;
   role: Bilingual;
   bio: Bilingual;
   facts: Bilingual<string[]>;
   company: { name: string; url: string };
-  links: { label: string; href: string }[];
+  /** Link row in display order. The company link is listed explicitly where it belongs. */
+  links: FounderLink[];
+}
+
+/** Every public profile of a founder, for Person JSON-LD `sameAs`. */
+export function founderSameAs(founder: Founder): string[] {
+  return [...new Set(founder.links.map((link) => link.href))];
 }
 
 export const FOUNDERS: Founder[] = [
   {
     id: "duy",
     name: "Duy Nguyen",
+    pronunciation: "/zuey/",
     avatar: "/img/founders/duy.webp",
     role: { en: "Co-founder · Product & engineering", vi: "Đồng sáng lập · Sản phẩm & kỹ thuật" },
     bio: {
@@ -39,8 +56,11 @@ export const FOUNDERS: Founder[] = [
     },
     company: { name: "T.O.P Group", url: "https://wearetopgroup.com" },
     links: [
-      { label: "X", href: "https://x.com/goon_nguyen" },
+      { label: "zuey.me", href: "https://zuey.me" },
+      { label: "digitop.ai", href: "https://digitop.ai" },
+      { label: "T.O.P Group", href: "https://wearetopgroup.com" },
       { label: "Facebook", href: "https://facebook.com/mrgoonie" },
+      { label: "X", href: "https://x.com/goon_nguyen", handle: "@goon_nguyen" },
     ],
   },
   {
@@ -57,7 +77,7 @@ export const FOUNDERS: Founder[] = [
       vi: ["11 năm dẫn dắt EGANY", "Phục vụ 10.000+ doanh nghiệp", "Tự động hoá bán hàng & chuyển đổi"],
     },
     company: { name: "EGANY", url: "https://egany.com" },
-    links: [{ label: "Facebook", href: "https://www.facebook.com/voquoccuong007" }],
+    links: [{ label: "EGANY", href: "https://egany.com" }, { label: "Facebook", href: "https://www.facebook.com/voquoccuong007" }],
   },
   {
     id: "viet",
@@ -73,7 +93,7 @@ export const FOUNDERS: Founder[] = [
       vi: ["Hơn 15 năm làm phần mềm", "Đỉnh ~400 nghìn người dùng đồng thời", "Đào tạo 3.000+ kỹ sư"],
     },
     company: { name: "200lab", url: "https://200lab.io" },
-    links: [{ label: "Facebook", href: "https://www.facebook.com/viettranx" }],
+    links: [{ label: "200lab", href: "https://200lab.io" }, { label: "Facebook", href: "https://www.facebook.com/viettranx" }],
   },
 ];
 

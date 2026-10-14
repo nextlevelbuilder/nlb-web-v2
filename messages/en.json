@@ -806,7 +806,8 @@
       "title": "Learn from founders <em>who've done it.</em>",
       "subtitle": "The people behind NLB run real companies and ship real products. They share what works, in the open.",
       "avatarAlt": "Portrait of {name}",
-      "company": "Company: {name}"
+      "company": "Company: {name}",
+      "pronounced": "pronounced"
     },
     "partners": {
       "title": "Partners",
