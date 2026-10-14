@@ -31,9 +31,15 @@ export async function captureSitePageview(input: { visitorId: string; path: stri
   if (!response.ok) throw new Error("PostHog capture failed");
 }
 
+/** True when the PostHog query credentials needed for live traffic are present. */
+export function isRealtimeTrafficConfigured(): boolean {
+  const {POSTHOG_HOST, POSTHOG_API_KEY, POSTHOG_PROJECT_ID} = trafficConfig();
+  return Boolean(POSTHOG_HOST && POSTHOG_API_KEY && POSTHOG_PROJECT_ID && /^\d+$/.test(POSTHOG_PROJECT_ID));
+}
+
 async function fetchRealtime(): Promise<RealtimeTraffic> {
   const {POSTHOG_HOST, POSTHOG_API_KEY, POSTHOG_PROJECT_ID} = trafficConfig();
-  if (!POSTHOG_HOST || !POSTHOG_API_KEY || !POSTHOG_PROJECT_ID || !/^\d+$/.test(POSTHOG_PROJECT_ID)) throw new Error("PostHog query is not configured");
+  if (!isRealtimeTrafficConfigured()) throw new Error("PostHog query is not configured");
   const url = new URL(`/api/projects/${POSTHOG_PROJECT_ID}/query/`, POSTHOG_HOST);
   if (url.protocol !== "https:") throw new Error("PostHog requires HTTPS");
   const response = await fetch(url, {

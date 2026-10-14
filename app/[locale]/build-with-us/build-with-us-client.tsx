@@ -33,6 +33,8 @@ export type RankEntry = { productId: string; rank: number; voteCount: number };
 export interface BuildWithUsClientProps {
   initialProducts: ProductItem[];
   totalPublishedCount: number;
+  /** Render the live traffic card; false when no traffic provider is configured, so it never polls a 503. */
+  showLiveTraffic?: boolean;
   dailyRanks?: RankEntry[];
   weeklyRanks?: RankEntry[];
   monthlyRanks?: RankEntry[];
@@ -88,6 +90,7 @@ function getTurnstile(): TurnstileApi | undefined {
 export default function BuildWithUsClient({
   initialProducts,
   totalPublishedCount,
+  showLiveTraffic = true,
   dailyRanks = [],
   weeklyRanks = [],
   monthlyRanks = [],
@@ -389,7 +392,7 @@ export default function BuildWithUsClient({
       </section>
 
       <aside className="bwu-aside">
-        <RealtimeTrafficCard />
+        {showLiveTraffic && <RealtimeTrafficCard />}
 
         <div className="surface bwu-panel bwu-panel-launch">
           <p className="eyebrow">{copy.publishedCount(totalPublishedCount)}</p>

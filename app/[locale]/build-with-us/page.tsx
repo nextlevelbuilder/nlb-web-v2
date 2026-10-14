@@ -7,6 +7,7 @@ import ChapterPlate from "@/components/constellation/chapter-plate";
 import { buildWithUsCopy } from "@/content/pages/build-with-us-copy";
 import { toPageLocale } from "@/content/pages/page-locale";
 import { pageMetadata } from "@/lib/seo";
+import { isRealtimeTrafficConfigured } from "@/lib/traffic/posthog";
 import "./build-with-us.css";
 
 // Reads D1 (products and ranking snapshots) on every request.
@@ -91,6 +92,7 @@ export default async function BuildWithUsPage({ params, searchParams }: BuildWit
           initialQuery={initialQuery}
           initialProducts={publishedProducts}
           totalPublishedCount={publishedProducts.length}
+          showLiveTraffic={isRealtimeTrafficConfigured()}
           dailyRanks={toRankEntries(dailySnapshot?.ranks)}
           weeklyRanks={toRankEntries(weeklySnapshot?.ranks)}
           monthlyRanks={toRankEntries(monthlySnapshot?.ranks)}

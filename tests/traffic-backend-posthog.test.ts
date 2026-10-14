@@ -13,6 +13,16 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe("Build with Us PostHog integration", () => {
+  it("reports live traffic as configured only with complete query credentials", async () => {
+    const { isRealtimeTrafficConfigured } = await import("@/lib/traffic/posthog");
+    expect(isRealtimeTrafficConfigured()).toBe(true);
+    vi.stubEnv("POSTHOG_PROJECT_ID", "not-a-number");
+    expect(isRealtimeTrafficConfigured()).toBe(false);
+    vi.stubEnv("POSTHOG_PROJECT_ID", "42");
+    vi.stubEnv("POSTHOG_API_KEY", "");
+    expect(isRealtimeTrafficConfigured()).toBe(false);
+  });
+
   it("captures only the fixed page event with a hashed identifier and no person profile", async () => {
     const { captureSitePageview } = await import("@/lib/traffic/posthog");
     fetchMock.mockResolvedValue(new Response(""));
