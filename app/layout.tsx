@@ -58,14 +58,16 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
   icons: {
+    // The SVG follows prefers-color-scheme (gold star at night, vermillion on paper); the ICO covers 16/32/48.
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
     locale: "en_US",
