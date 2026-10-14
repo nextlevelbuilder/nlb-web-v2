@@ -19,12 +19,13 @@ vi.mock("react", async (importOriginal) => {
 });
 vi.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 
-import BuildWithUsClient from "@/app/[locale]/build-with-us/build-with-us-client";
+import BuildWithUsClient, { matchesQuery, productCategories } from "@/app/[locale]/build-with-us/build-with-us-client";
 
 const now = Date.parse("2026-09-12T00:00:00Z");
-function render(votes = 5) {
+function render(votes = 5, initialQuery?: string) {
   hooks.cursor = 0;
   return BuildWithUsClient({
+    initialQuery,
     totalPublishedCount: 1,
     initialProducts: [projectProductTrust({
       id: "example", slug: "example", title: "Example", tagline: "A product",
@@ -42,7 +43,7 @@ function elements(node: ReactNode): ReactElement<Record<string, unknown>>[] {
 }
 
 function trustValue(tree: ReactNode) {
-  return elements(tree).find((element) => element.type === "strong" && element.props.className === "text-foreground ml-1")?.props.children;
+  return elements(tree).find((element) => element.type === "strong" && String(element.props.className).split(" ").includes("bwu-trust-value"))?.props.children;
 }
 
 async function vote(tree: ReactNode) {
@@ -77,5 +78,38 @@ describe("Build with Us trust after voting", () => {
     expect(trustValue(initial)).toBe(84);
     await vote(initial);
     expect(trustValue(render(100))).toBe(84);
+  });
+});
+
+describe("Build with Us search and categories", () => {
+  function titles(tree: ReactNode) {
+    return elements(tree).filter((element) => element.props.className === "bwu-card-link").map((element) => element.props.children);
+  }
+
+  it("renders a plain GET search form whose input is named q and seeded from ?q=", () => {
+    const tree = render(5, "exam");
+    const form = elements(tree).find((element) => element.type === "form");
+    expect(form?.props).toMatchObject({ method: "get", action: "/build-with-us", role: "search" });
+    const input = elements(tree).find((element) => element.type === "input" && element.props.name === "q");
+    expect(input?.props).toMatchObject({ value: "exam", maxLength: 100, type: "search" });
+    expect(titles(tree)).toEqual(["Example"]);
+  });
+
+  it("filters the server-rendered list by the initial query", () => {
+    expect(titles(render(5, "nothing-like-this"))).toEqual([]);
+  });
+
+  it("matches title, tagline and slug case-insensitively and ignores surrounding space", () => {
+    const product = { title: "AnyMD", tagline: "Web pages to Markdown", slug: "anymd" };
+    expect(matchesQuery(product, "  MARKDOWN ")).toBe(true);
+    expect(matchesQuery(product, "anym")).toBe(true);
+    expect(matchesQuery(product, "")).toBe(true);
+    expect(matchesQuery(product, "video")).toBe(false);
+  });
+
+  it("derives categories from whole words only", () => {
+    expect(productCategories({ title: "Multix CLI", tagline: "Run AI agents from one terminal" })).toEqual(["AI Agents", "Developer Tools"]);
+    expect(productCategories({ title: "Cloud Harness MCP", tagline: "Cloud sandboxes for agents" })).toEqual(["AI Agents", "Developer Tools", "Cloud Infrastructure"]);
+    expect(productCategories({ title: "Maintain", tagline: "Email detail retained" })).toEqual([]);
   });
 });

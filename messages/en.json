@@ -623,7 +623,17 @@
     "sidebarDesc": "Publish your autonomous agents, micro-SaaS, or developer tooling to reach active builders and early adopters.",
     "submitBtn": "Submit Your Product",
     "instructionsBtn": "View Submission Guide",
-    "trustGuarantee": "Human-Reviewed • Zero Pay-to-Rank • Cloudflare Edge"
+    "trustGuarantee": "Human-Reviewed • Zero Pay-to-Rank • Cloudflare Edge",
+    "plateName": "Directory",
+    "headingLead": "Build ",
+    "headingAccent": "with us",
+    "searchSubmit": "Search",
+    "searchClear": "Clear search",
+    "searchResults": "{count, plural, one {# product} other {# products}} matching “{query}”",
+    "catalogueHead": "{count, plural, one {# product in view} other {# products in view}}",
+    "sortLabel": "Sort",
+    "statReview": "Human-reviewed",
+    "statRanking": "Zero pay-to-rank"
   },
   "leaderboards": {
     "badge": "Transparent Organic Rankings",
@@ -642,7 +652,29 @@
     "visitWebsite": "Visit Website",
     "trustPassportScore": "Trust Passport Score",
     "humanReviewedBy": "Human-reviewed by Next Level Builders Management Board.",
-    "contentHash": "Content Hash:"
+    "contentHash": "Content Hash:",
+    "plateName": "Directory listing",
+    "breadcrumbLabel": "Breadcrumb",
+    "breadcrumbHome": "Home",
+    "breadcrumbDirectory": "Directory",
+    "backToDirectory": "Back to the directory",
+    "makerLabel": "Maker",
+    "badgesLabel": "Badges",
+    "listingLabel": "Listing",
+    "trustOutOf": "out of 100",
+    "blocks": {
+      "gallery": "Gallery",
+      "features": "Features",
+      "techStack": "Technology stack",
+      "pricing": "Pricing",
+      "faq": "Questions",
+      "founder": "Maker",
+      "popular": "Popular",
+      "opensInNewTab": "(opens in a new tab)",
+      "linkedin": "LinkedIn profile",
+      "openImage": "Open image {n} full size",
+      "imageAlt": "Screenshot {n}"
+    }
   },
   "shell": {
     "skip": "Skip to content",

@@ -1,30 +1,38 @@
 import React from "react";
 import type { TechStackBlock } from "@/packages/contracts/src";
-import { Badge } from "@/components/ui/badge";
-import { Layers } from "lucide-react";
+import { BlockSection } from "./block-section";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 
-export function TechStackBlockView({ block }: { block: TechStackBlock }) {
-  const { technologies } = block.props;
+/** Group technologies by their declared category, keeping first-seen order. */
+export function groupTechnologies(technologies: TechStackBlock["props"]["technologies"]): Array<{ category: string; names: string[] }> {
+  const groups = new Map<string, string[]>();
+  for (const tech of technologies) {
+    const category = tech.category.trim() || "—";
+    const names = groups.get(category) ?? [];
+    names.push(tech.name);
+    groups.set(category, names);
+  }
+  return [...groups].map(([category, names]) => ({ category, names }));
+}
+
+/** Instrument list: one row per category (mono label) with the technologies as hairline pills. */
+export function TechStackBlockView({ block, labels = DEFAULT_BLOCK_LABELS }: { block: TechStackBlock; labels?: BlockLabels }) {
+  const groups = groupTechnologies(block.props.technologies);
 
   return (
-    <div className="w-full my-6 p-8 rounded-sm border border-line bg-surface space-y-6">
-      <div className="flex items-center gap-2 border-b border-line pb-3">
-        <Layers className="w-5 h-5 text-primary" />
-        <h3 className="font-display text-step-xl text-foreground">Technology Stack</h3>
-      </div>
-      <div className="flex flex-wrap gap-3">
-        {technologies.map((tech, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-2 px-4 py-2 rounded-sm bg-surface-raised border border-line hover:border-primary/40 transition-colors"
-          >
-            <span className="font-semibold text-sm text-foreground">{tech.name}</span>
-            <Badge variant="outline" className="text-step-xs text-ink-2 bg-canvas-deep border-line px-1.5 py-0.5">
-              {tech.category}
-            </Badge>
+    <BlockSection blockId={block.id} kicker={labels.techStack} className="blk-stack">
+      <dl className="blk-stack-list surface">
+        {groups.map((group) => (
+          <div key={group.category} className="blk-stack-row">
+            <dt className="mono">{group.category}</dt>
+            <dd>
+              <ul className="blk-pills">
+                {group.names.map((name, index) => <li key={`${name}-${index}`}>{name}</li>)}
+              </ul>
+            </dd>
           </div>
         ))}
-      </div>
-    </div>
+      </dl>
+    </BlockSection>
   );
 }

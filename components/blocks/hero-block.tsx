@@ -1,38 +1,29 @@
 import React from "react";
 import type { HeroBlock } from "@/packages/contracts/src";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
+import { OrbitMotif } from "./orbit-motif";
 
-export function HeroBlockView({ block }: { block: HeroBlock }) {
+/** Epigraph plate: the product's own headline in display type beside an orbit engraving. */
+export function HeroBlockView({ block, labels = DEFAULT_BLOCK_LABELS }: { block: HeroBlock; labels?: BlockLabels }) {
   const { headline, subheadline, primaryCtaText, primaryCtaUrl, badge } = block.props;
 
   return (
-    <section className="surface-panel flex flex-col items-center px-6 py-12 text-center">
-      {badge && (
-        <Badge className="mb-4">
-          {badge}
-        </Badge>
-      )}
-      {/* The product page owns the h1; block headlines start at h2. */}
-      <h2 className="mb-4 max-w-3xl break-words font-display text-step-3xl font-light text-foreground">
-        {headline}
-      </h2>
-      {subheadline && (
-        <p className="lede mb-8 max-w-2xl">
-          {subheadline}
-        </p>
-      )}
-      {primaryCtaText && primaryCtaUrl && (
-        <Button asChild size="lg" className="gap-2">
-          <Link href={primaryCtaUrl} target="_blank" rel="noopener noreferrer">
+    <section className="blk blk-hero surface">
+      <OrbitMotif className="blk-orbit blk-hero-orbit" />
+      <div className="blk-hero-body">
+        {badge && <p className="badge">{badge}</p>}
+        {/* The product page owns the h1; block headlines start at h2. */}
+        <h2 className="blk-hero-title">{headline}</h2>
+        {subheadline && <p className="blk-hero-sub">{subheadline}</p>}
+        {primaryCtaText && primaryCtaUrl && (
+          <a className="btn btn-primary blk-hero-cta" href={primaryCtaUrl} target="_blank" rel="noopener noreferrer">
             {primaryCtaText}
-            <ArrowRight aria-hidden className="w-4 h-4" />
-            <span className="sr-only">(opens in a new tab)</span>
-          </Link>
-        </Button>
-      )}
+            <ArrowUpRight aria-hidden className="arrow" />
+            <span className="sr-only">{labels.opensInNewTab}</span>
+          </a>
+        )}
+      </div>
     </section>
   );
 }

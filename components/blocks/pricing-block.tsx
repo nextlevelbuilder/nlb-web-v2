@@ -1,58 +1,49 @@
 import React from "react";
 import type { PricingBlock } from "@/packages/contracts/src";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { BlockSection } from "./block-section";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 
-export function PricingBlockView({ block }: { block: PricingBlock }) {
+/** Pricing plates: tier name as a kicker, the price in display type, diamond feature list, CTA. */
+export function PricingBlockView({ block, labels = DEFAULT_BLOCK_LABELS }: { block: PricingBlock; labels?: BlockLabels }) {
   const { tiers } = block.props;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full my-6">
-      {tiers.map((tier, index) => (
-        <Card
-          key={index}
-          className={`relative flex flex-col p-8 rounded-sm border ${
-            tier.isPopular ? "border-primary bg-primary/[0.03]" : "border-line bg-surface"
-          }`}
-        >
-          {tier.isPopular && (
-            <Badge className="absolute -top-3 right-6 bg-primary text-primary-foreground text-xs font-semibold px-3 py-0.5">
-              Popular
-            </Badge>
-          )}
-          <div className="mb-6">
-            <h3 className="font-display text-step-xl text-foreground mb-2">{tier.name}</h3>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-display font-light tracking-tight text-foreground">{tier.price}</span>
-              {tier.period && <span className="text-sm text-ink-2">/{tier.period}</span>}
+    <BlockSection blockId={block.id} kicker={labels.pricing} className="blk-pricing">
+      <ul className="blk-pricing-list" data-count={tiers.length}>
+        {tiers.map((tier, index) => (
+          <li key={index} className={`blk-tier surface${tier.isPopular ? " is-popular" : ""}`}>
+            <div className="blk-tier-head">
+              <h3 className="blk-tier-name mono">{tier.name}</h3>
+              {tier.isPopular && <span className="badge">{labels.popular}</span>}
             </div>
-          </div>
-
-          <ul className="flex-1 space-y-3 mb-8">
-            {tier.features.map((feature, fIndex) => (
-              <li key={fIndex} className="flex items-center gap-3 text-sm text-ink-2">
-                <Check className="w-4 h-4 text-primary shrink-0" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          {tier.ctaUrl ? (
-            <Button asChild className="w-full rounded-sm" variant={tier.isPopular ? "default" : "outline"}>
-              <Link href={tier.ctaUrl} target="_blank" rel="noopener noreferrer">
+            <p className="blk-tier-price">
+              <span className="num-tab">{tier.price}</span>
+              {tier.period && <span className="blk-tier-period">/{tier.period}</span>}
+            </p>
+            {tier.features.length > 0 && (
+              <ul className="feats blk-tier-feats">
+                {tier.features.map((feature, fIndex) => <li key={fIndex}>{feature}</li>)}
+              </ul>
+            )}
+            {tier.ctaUrl ? (
+              <a
+                className={`btn btn-sm ${tier.isPopular ? "btn-primary" : "btn-ghost"} blk-tier-cta`}
+                href={tier.ctaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {tier.ctaText}
-              </Link>
-            </Button>
-          ) : (
-            <Button className="w-full rounded-sm" variant={tier.isPopular ? "default" : "outline"}>
-              {tier.ctaText}
-            </Button>
-          )}
-        </Card>
-      ))}
-    </div>
+                <ArrowUpRight aria-hidden className="arrow" />
+                <span className="sr-only">{labels.opensInNewTab}</span>
+              </a>
+            ) : (
+              // Without a destination the CTA text is a note, not a control that does nothing.
+              tier.ctaText && <p className="blk-tier-note mono">{tier.ctaText}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </BlockSection>
   );
 }

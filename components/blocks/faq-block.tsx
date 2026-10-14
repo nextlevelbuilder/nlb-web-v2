@@ -1,28 +1,28 @@
 import React from "react";
 import type { Block } from "@/packages/contracts/src";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BlockSection } from "./block-section";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 
-export function FaqBlockView({ block }: { block: Extract<Block, { type: "faq" }> }) {
+const GREEK = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ"] as const;
+
+/** Star-catalogue FAQ: native <details> disclosures, readable and operable without JavaScript. */
+export function FaqBlockView({ block, labels = DEFAULT_BLOCK_LABELS }: { block: Extract<Block, { type: "faq" }>; labels?: BlockLabels }) {
   const { items } = block.props;
 
   return (
-    <div className="w-full max-w-3xl mx-auto my-6">
-      <Accordion type="single" collapsible className="w-full space-y-4">
+    <BlockSection blockId={block.id} kicker={labels.faq} className="blk-faq">
+      <div className="blk-faq-list">
         {items.map((item, index) => (
-          <AccordionItem
-            key={index}
-            value={`item-${index}`}
-            className="border border-line bg-surface rounded-sm px-6"
-          >
-            <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
-              {item.question}
-            </AccordionTrigger>
-            <AccordionContent className="text-ink-2 pb-4 leading-relaxed">
-              {item.answer}
-            </AccordionContent>
-          </AccordionItem>
+          <details key={index} className="blk-faq-item">
+            <summary>
+              <span className="blk-faq-greek" aria-hidden="true">{GREEK[index % GREEK.length]}</span>
+              <span className="blk-faq-q">{item.question}</span>
+              <span className="blk-faq-pm" aria-hidden="true" />
+            </summary>
+            <p className="blk-faq-a">{item.answer}</p>
+          </details>
         ))}
-      </Accordion>
-    </div>
+      </div>
+    </BlockSection>
   );
 }

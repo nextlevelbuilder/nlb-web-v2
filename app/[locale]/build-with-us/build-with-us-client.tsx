@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import EditorialDisclosure from '@/components/editorial-disclosure';
 import ProductLogo from '@/components/product-logo';
+import { OrbitMotif } from '@/components/blocks/orbit-motif';
 import { RealtimeTrafficCard } from '@/components/traffic/realtime-traffic-card';
-import { Sparkles, Search, ArrowUpRight, ArrowRight, ShieldCheck, ThumbsUp, BookOpen, ExternalLink } from 'lucide-react';
+import { Search, ArrowUpRight, ArrowRight, ThumbsUp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { calculateTrustScore, getProductTrustFactors } from '@/lib/domain/trust';
@@ -20,6 +19,8 @@ export interface ProductItem {
   tagline: string;
   websiteUrl: string;
   logoUrl?: string | null;
+  /** First mediaGallery image of the published document; null when the listing has none. */
+  coverUrl?: string | null;
   trustScore: number;
   status: string;
   isFeatured: boolean;
@@ -37,6 +38,8 @@ export interface BuildWithUsClientProps {
   monthlyRanks?: RankEntry[];
   /** Active locale; next-intl's client hook is not used so the component stays testable without a provider. */
   locale?: string;
+  /** Search text from `?q=` (already trimmed and length-capped by the page). */
+  initialQuery?: string;
 }
 
 type SortKey = 'trust' | 'votes' | 'newest';
@@ -48,11 +51,34 @@ type TurnstileApi = {
 };
 
 const SORT_KEYS: readonly SortKey[] = ['trust', 'votes', 'newest'];
-const CATEGORIES = ['All', 'AI Agents', 'Developer Tools', 'Productivity', 'Cloud Infrastructure', 'Documentation'];
-const chipBase =
-  'inline-flex min-h-10 items-center rounded-pill border px-3.5 text-step-xs transition-colors duration-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-const chipActive = 'border-primary bg-primary text-primary-foreground';
-const chipIdle = 'border-line bg-surface text-ink-2 hover:border-line-strong hover:text-foreground';
+export const DIRECTORY_CATEGORIES = ['AI Agents', 'Developer Tools', 'Productivity', 'Cloud Infrastructure', 'Documentation'] as const;
+export type DirectoryCategory = (typeof DIRECTORY_CATEGORIES)[number];
+const CATEGORIES: ReadonlyArray<'All' | DirectoryCategory> = ['All', ...DIRECTORY_CATEGORIES];
+/** Upper bound of the search text, shared with the page's `?q=` parsing. */
+export const MAX_QUERY_LENGTH = 100;
+
+/**
+ * Keyword heuristic until products carry a category column: whole-word matches on title and tagline
+ * (so "ai" does not match "maintain"). Cards show the same categories the filter uses.
+ */
+const CATEGORY_PATTERNS: Record<DirectoryCategory, RegExp> = {
+  'AI Agents': /\bagents?\b|\bagentic\b|\bai\b/i,
+  'Developer Tools': /\btools?\b|\btoolkits?\b|\bcli\b|\bframeworks?\b|\bsdk\b|\bmcp\b/i,
+  Productivity: /\bworkflows?\b|\bautomation\b|\bautomate\b/i,
+  'Cloud Infrastructure': /\bcloud\b|\bengines?\b|\bmicroservices?\b|\bedge\b/i,
+  Documentation: /\bwiki\b|\bdocs?\b|\bdocumentation\b|\bmarkdown\b/i,
+};
+
+export function productCategories(product: Pick<ProductItem, 'title' | 'tagline'>): DirectoryCategory[] {
+  const content = `${product.title} ${product.tagline}`;
+  return DIRECTORY_CATEGORIES.filter((category) => CATEGORY_PATTERNS[category].test(content));
+}
+
+export function matchesQuery(product: Pick<ProductItem, 'title' | 'tagline' | 'slug'>, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return [product.title, product.tagline, product.slug].some((field) => field.toLowerCase().includes(needle));
+}
 
 function getTurnstile(): TurnstileApi | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -66,14 +92,16 @@ export default function BuildWithUsClient({
   weeklyRanks = [],
   monthlyRanks = [],
   locale = 'en',
+  initialQuery = '',
 }: BuildWithUsClientProps) {
   const t = useTranslations('buildWithUs');
   const pageLocale = toPageLocale(locale);
   const copy = buildWithUsCopy[pageLocale];
   // English is the unprefixed default locale (localePrefix 'as-needed').
   const localePrefix = pageLocale === 'vi' ? '/vi' : '';
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const directoryPath = `${localePrefix}/build-with-us`;
+  const [searchQuery, setSearchQuery] = useState(initialQuery.slice(0, MAX_QUERY_LENGTH));
+  const [selectedCategory, setSelectedCategory] = useState<'All' | DirectoryCategory>('All');
   const [sortBy, setSortBy] = useState<SortKey>('trust');
   const [rankingWindow, setRankingWindow] = useState<RankingWindow>('today');
   const [votedMap, setVotedMap] = useState<Record<string, number>>({});
@@ -148,8 +176,27 @@ export default function BuildWithUsClient({
     }
   };
 
+  /** Keep `?q=` in the address bar in sync so filtered views stay shareable (the form still works without JS). */
+  const syncQueryToUrl = (query: string) => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (query.trim()) url.searchParams.set('q', query.trim());
+    else url.searchParams.delete('q');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    syncQueryToUrl(searchQuery);
+  };
+
+  const handleClearSearch = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setSearchQuery('');
+    syncQueryToUrl('');
+  };
+
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.toLowerCase();
     return initialProducts
       .map((product) => {
         const additionalVotes = votedMap[product.id] || 0;
@@ -157,20 +204,7 @@ export default function BuildWithUsClient({
         const updatedProduct = { ...product, votesCount: product.votesCount + additionalVotes };
         return { ...updatedProduct, trustScore: calculateTrustScore(getProductTrustFactors(updatedProduct)) };
       })
-      .filter((p) => {
-        const matchesSearch =
-          p.title.toLowerCase().includes(query) || p.tagline.toLowerCase().includes(query) || p.slug.toLowerCase().includes(query);
-        if (selectedCategory === 'All') return matchesSearch;
-
-        // Simple keyword heuristic; products carry no category column yet.
-        const content = `${p.title} ${p.tagline}`.toLowerCase();
-        if (selectedCategory === 'AI Agents') return matchesSearch && (content.includes('agent') || content.includes('ai'));
-        if (selectedCategory === 'Developer Tools') return matchesSearch && (content.includes('tool') || content.includes('cli') || content.includes('framework'));
-        if (selectedCategory === 'Productivity') return matchesSearch && (content.includes('workflow') || content.includes('automation'));
-        if (selectedCategory === 'Cloud Infrastructure') return matchesSearch && (content.includes('cloud') || content.includes('engine') || content.includes('microservice'));
-        if (selectedCategory === 'Documentation') return matchesSearch && (content.includes('wiki') || content.includes('doc'));
-        return matchesSearch;
-      })
+      .filter((p) => matchesQuery(p, searchQuery) && (selectedCategory === 'All' || productCategories(p).includes(selectedCategory)))
       .sort((a, b) => {
         if (sortBy === 'trust') return (b.trustScore || 0) - (a.trustScore || 0);
         if (sortBy === 'votes') {
@@ -184,202 +218,202 @@ export default function BuildWithUsClient({
 
   const dateFormat = new Intl.DateTimeFormat(pageLocale === 'vi' ? 'vi-VN' : 'en-US', { dateStyle: 'medium', timeZone: 'UTC' });
   const windows: Array<[RankingWindow, string]> = [['today', t('today')], ['week', t('thisWeek')], ['month', t('thisMonth')]];
+  const trimmedQuery = searchQuery.trim();
 
   return (
-    <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12">
-      <section aria-labelledby="bwu-catalog-title" className="min-w-0 space-y-8 lg:col-span-8">
-        <h2 id="bwu-catalog-title" className="sr-only">{copy.catalogLabel}</h2>
-        <div className="space-y-4">
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
-            <div className="relative flex-1">
-              <label htmlFor="bwu-search" className="mono-label mb-2 block text-ink-3">{copy.searchLabel}</label>
-              <Search aria-hidden className="pointer-events-none absolute bottom-3.5 left-3.5 h-4 w-4 text-ink-3" />
+    <div className="bwu-layout">
+      <section aria-labelledby="bwu-catalog-title" className="bwu-main">
+        <div className="bwu-controls">
+          {/* Plain GET form: server-rendered with the `?q=` value, so search works before or without hydration. */}
+          <form method="get" action={directoryPath} role="search" className="bwu-search" onSubmit={handleSearchSubmit}>
+            <label htmlFor="bwu-search" className="mono bwu-label">{copy.searchLabel}</label>
+            <div className="bwu-search-field">
+              <Search aria-hidden className="bwu-search-icon" />
               <input
                 id="bwu-search"
+                name="q"
                 type="search"
+                maxLength={MAX_QUERY_LENGTH}
+                autoComplete="off"
                 placeholder={t('searchPlaceholder')}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 w-full rounded-sm border border-input bg-surface pl-10 pr-4 text-step-sm text-foreground placeholder:text-ink-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onChange={(e) => setSearchQuery(e.target.value.slice(0, MAX_QUERY_LENGTH))}
               />
+              <button type="submit" className="btn btn-primary btn-sm bwu-search-submit">{t('searchSubmit')}</button>
             </div>
-            <div className="shrink-0">
-              <label htmlFor="bwu-sort" className="mono-label mb-2 block text-ink-3">{t('sort').replace(/:\s*$/, '')}</label>
-              <select
-                id="bwu-sort"
-                value={sortBy}
-                onChange={(e) => {
-                  const next = SORT_KEYS.find((key) => key === e.target.value);
-                  if (next) setSortBy(next);
-                }}
-                className="h-11 w-full rounded-sm border border-input bg-surface px-3 text-step-sm text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
-              >
-                <option value="trust">{t('highestTrust')}</option>
-                <option value="votes">{t('mostUpvoted')}</option>
-                <option value="newest">{t('newestLaunches')}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <div role="group" aria-label={copy.categoryGroupLabel} className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  aria-pressed={selectedCategory === cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`${chipBase} ${selectedCategory === cat ? chipActive : chipIdle}`}
-                >
-                  {cat === 'All' ? t('all') : copy.categories[cat] ?? cat}
-                </button>
-              ))}
-            </div>
-            <div role="group" aria-label={copy.windowGroupLabel} className="seg">
-              {windows.map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={rankingWindow === key}
-                  onClick={() => setRankingWindow(key)}
-                  className="seg-option min-h-10"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          </form>
+          <div className="bwu-sort">
+            <label htmlFor="bwu-sort" className="mono bwu-label">{t('sortLabel')}</label>
+            <select
+              id="bwu-sort"
+              value={sortBy}
+              onChange={(e) => {
+                const next = SORT_KEYS.find((key) => key === e.target.value);
+                if (next) setSortBy(next);
+              }}
+            >
+              <option value="trust">{t('highestTrust')}</option>
+              <option value="votes">{t('mostUpvoted')}</option>
+              <option value="newest">{t('newestLaunches')}</option>
+            </select>
           </div>
         </div>
 
-        <EditorialDisclosure />
+        <div className="bwu-filters">
+          <div role="group" aria-label={copy.categoryGroupLabel} className="bwu-chip-row">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                aria-pressed={selectedCategory === cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="bwu-chip"
+              >
+                {cat === 'All' ? t('all') : copy.categories[cat] ?? cat}
+              </button>
+            ))}
+          </div>
+          <div role="group" aria-label={copy.windowGroupLabel} className="seg bwu-window">
+            {windows.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={rankingWindow === key}
+                onClick={() => setRankingWindow(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="catalogue-head mono bwu-catalogue-head">
+          <h2 id="bwu-catalog-title">{copy.catalogLabel}</h2>
+          <span className="rule" aria-hidden="true" />
+          <p aria-live="polite" className="bwu-count">
+            {trimmedQuery
+              ? t('searchResults', { count: filteredProducts.length, query: trimmedQuery })
+              : t('catalogueHead', { count: filteredProducts.length })}
+          </p>
+          {trimmedQuery && (
+            <a href={directoryPath} onClick={handleClearSearch} className="bwu-clear">{t('searchClear')}</a>
+          )}
+        </div>
 
         {filteredProducts.length === 0 ? (
-          <div className="surface-panel space-y-3 px-6 py-16 text-center">
-            <ShieldCheck aria-hidden className="mx-auto h-10 w-10 text-ink-3" strokeWidth={1.25} />
-            <h2 className="font-display text-step-xl font-light">{t('noProductsTitle')}</h2>
-            <p className="mx-auto max-w-sm text-step-sm text-ink-2">{t('noProductsDesc')}</p>
+          <div className="bwu-empty">
+            <OrbitMotif className="bwu-orbit bwu-empty-orbit" />
+            <h3 className="bwu-empty-title">{t('noProductsTitle')}</h3>
+            <p className="bwu-empty-text">{t('noProductsDesc')}</p>
+            {trimmedQuery && (
+              <a href={directoryPath} onClick={handleClearSearch} className="link-arrow">{t('searchClear')}</a>
+            )}
           </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {filteredProducts.map((p) => {
+          <ul className="bwu-grid">
+            {filteredProducts.map((p, index) => {
               const totalVotes = (rankMap.get(p.id)?.voteCount || 0) + (votedMap[p.id] || 0);
+              const rank = rankMap.get(p.id)?.rank;
+              const categories = productCategories(p);
+              const href = `${localePrefix}/products/${p.slug}`;
+              const created = new Date(p.createdAt);
               return (
-                <li
-                  key={p.id}
-                  className="group flex flex-col justify-between rounded-sm border border-line bg-surface p-6 transition-colors duration-base hover:border-line-strong"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3.5">
-                        <Link
-                          href={`${localePrefix}/products/${p.slug}`}
-                          aria-hidden
-                          tabIndex={-1}
-                          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-surface-raised text-primary"
-                        >
-                          <ProductLogo src={p.logoUrl} name={p.title} />
-                        </Link>
-                        <div className="min-w-0">
-                          <h3 className="font-display text-step-lg leading-tight">
-                            <Link
-                              href={`${localePrefix}/products/${p.slug}`}
-                              className="rounded-sm break-words hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                              {p.title}
-                            </Link>
+                <li key={p.id} className={index === 0 ? 'bwu-item is-feature' : 'bwu-item'}>
+                  <article className="bwu-card surface">
+                    <div className="bwu-cover" aria-hidden="true">
+                      {p.coverUrl ? (
+                        <img src={p.coverUrl} alt="" width={1600} height={900} loading={index < 2 ? 'eager' : 'lazy'} decoding="async" />
+                      ) : (
+                        <OrbitMotif className="bwu-orbit" />
+                      )}
+                    </div>
+                    <div className="bwu-card-body">
+                      <div className="bwu-card-id">
+                        <span className="bwu-logo">
+                          <ProductLogo src={p.logoUrl} name={p.title} imgWidth={44} imgHeight={44} imgClassName="bwu-logo-img" />
+                        </span>
+                        <div className="bwu-card-heading">
+                          <h3 className="bwu-card-title">
+                            <Link href={href} className="bwu-card-link">{p.title}</Link>
                           </h3>
-                          <p className="mt-1 font-mono text-step-xs text-ink-3">
-                            {copy.launched}{' '}
-                            <time dateTime={new Date(p.createdAt).toISOString()}>{dateFormat.format(new Date(p.createdAt))}</time>
+                          <p className="bwu-card-meta mono">
+                            <span>
+                              {copy.launched}{' '}
+                              <time dateTime={created.toISOString()}>{dateFormat.format(created)}</time>
+                            </span>
+                            {rank !== undefined && <span className="bwu-rank num-tab">{t('rank')} #{rank}</span>}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="shrink-0 font-mono">
-                        {copy.trust}: <strong className="text-foreground ml-1">{p.trustScore}</strong>/100
-                      </Badge>
+                      {p.isFeatured && (
+                        <p className="badge bwu-pick" title={copy.editorsPickTitle}>✦ {copy.editorsPick}</p>
+                      )}
+                      <p className="bwu-card-tagline">{p.tagline}</p>
+                      {categories.length > 0 && (
+                        <ul className="bwu-tags">
+                          {categories.map((category) => <li key={category}>{copy.categories[category] ?? category}</li>)}
+                        </ul>
+                      )}
+                      <div className="bwu-card-foot">
+                        <p className="bwu-trust mono">
+                          {copy.trust} <strong className="bwu-trust-value num-tab">{p.trustScore}</strong>/100
+                        </p>
+                        <div className="bwu-card-actions">
+                          <a href={`/go/${p.slug}`} target="_blank" rel="noopener noreferrer" className="bwu-visit">
+                            {t('visitWebsite')}
+                            <ExternalLink aria-hidden className="bwu-visit-icon" />
+                            <span className="sr-only">{copy.opensInNewTab}</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleVote(p.id)}
+                            disabled={votingLoading[p.id]}
+                            aria-label={copy.voteFor(p.title, totalVotes)}
+                            aria-pressed={Boolean(votedMap[p.id])}
+                            className="bwu-vote"
+                          >
+                            <ThumbsUp aria-hidden className="bwu-vote-icon" />
+                            <span className="num-tab">{totalVotes}</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    {p.isFeatured && (
-                      <Badge variant="secondary" title={copy.editorsPickTitle} className="gap-1">
-                        <Sparkles aria-hidden className="h-3 w-3" />
-                        {copy.editorsPick}
-                      </Badge>
-                    )}
-                    <p className="line-clamp-2 text-step-sm leading-relaxed text-ink-2">{p.tagline}</p>
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                    <div className="flex flex-wrap items-center gap-4 text-step-xs">
-                      <Link href={`${localePrefix}/products/${p.slug}`} className="link-arrow">
-                        {t('viewDetails')}
-                        <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
-                      </Link>
-                      <a
-                        href={`/go/${p.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-ink-2 underline-offset-4 hover:text-foreground hover:underline"
-                      >
-                        {t('visitWebsite')}
-                        <ExternalLink aria-hidden className="h-3 w-3" />
-                        <span className="sr-only">{copy.opensInNewTab}</span>
-                      </a>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleVote(p.id)}
-                      disabled={votingLoading[p.id]}
-                      aria-label={copy.voteFor(p.title, totalVotes)}
-                      aria-pressed={Boolean(votedMap[p.id])}
-                      className={`${chipBase} gap-1.5 font-mono disabled:opacity-60 ${votedMap[p.id] ? chipActive : chipIdle}`}
-                    >
-                      <ThumbsUp aria-hidden className="h-3.5 w-3.5" />
-                      <span>{totalVotes}</span>
-                    </button>
-                  </div>
+                  </article>
                 </li>
               );
             })}
           </ul>
         )}
+
+        <EditorialDisclosure className="bwu-disclosure" />
       </section>
 
-      <aside className="min-w-0 space-y-6 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:col-span-4">
+      <aside className="bwu-aside">
         <RealtimeTrafficCard />
 
-        <div className="surface-panel space-y-4 p-6">
+        <div className="surface bwu-panel bwu-panel-launch">
           <p className="eyebrow">{copy.publishedCount(totalPublishedCount)}</p>
-          <h2 className="font-display text-step-xl font-light">{t('sidebarTitle')}</h2>
-          <p className="text-step-sm leading-relaxed text-ink-2">{t('sidebarDesc')}</p>
-          <Button asChild className="w-full gap-2">
-            <Link href={`${localePrefix}/studio`}>
-              {t('submitBtn')}
-              <ArrowUpRight aria-hidden className="h-4 w-4" />
-            </Link>
-          </Button>
-          <p className="mono-label text-ink-3">{t('trustGuarantee')}</p>
+          <h2 className="bwu-panel-title">{t('sidebarTitle')}</h2>
+          <p className="bwu-panel-text">{t('sidebarDesc')}</p>
+          <Link href={`${localePrefix}/studio`} className="btn btn-primary btn-sm bwu-panel-cta">
+            {t('submitBtn')}
+            <ArrowUpRight aria-hidden className="arrow" />
+          </Link>
+          <p className="mono bwu-panel-note">{t('trustGuarantee')}</p>
         </div>
 
-        <div className="surface-panel space-y-4 p-6">
-          <div className="flex items-center gap-3">
-            <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-sm border border-line text-primary">
-              <BookOpen className="h-4 w-4" />
-            </span>
-            <div>
-              <h2 className="text-step-base font-medium text-foreground">{copy.howToSubmitTitle}</h2>
-              <p className="mono-label text-ink-3">{copy.howToSubmitSubtitle}</p>
-            </div>
-          </div>
-          <p className="text-step-sm leading-relaxed text-ink-2">{copy.howToSubmitDesc}</p>
-          <Button asChild variant="outline" className="w-full gap-1.5">
-            <Link href={`${localePrefix}/build-with-us/instructions`}>
-              {t('instructionsBtn')}
-              <ArrowRight aria-hidden className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+        <div className="surface bwu-panel">
+          <p className="mono bwu-panel-kicker">{copy.howToSubmitSubtitle}</p>
+          <h2 className="bwu-panel-title">{copy.howToSubmitTitle}</h2>
+          <p className="bwu-panel-text">{copy.howToSubmitDesc}</p>
+          <Link href={`${localePrefix}/build-with-us/instructions`} className="btn btn-ghost btn-sm bwu-panel-cta">
+            {t('instructionsBtn')}
+            <ArrowRight aria-hidden className="arrow" />
+          </Link>
         </div>
 
         {/* Cloudflare Turnstile invisible container */}
-        <div id="cf-turnstile-widget" className="hidden" />
+        <div id="cf-turnstile-widget" hidden />
       </aside>
     </div>
   );

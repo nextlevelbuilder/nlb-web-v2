@@ -1,0 +1,91 @@
+/* ==========================================================================
+   PRODUCT — /products/<slug> (directory listing, chapter IV)
+   Masthead (breadcrumb, chapter plate, logo, display title, tagline, website CTA) beside a
+   trust passport surface (orbit ring, badges, makers), then the document blocks
+   (components/blocks/product-blocks.css). Reuses .page-head, .plate, .h1-page, .lede,
+   .surface, .badge, .btn and .link-arrow. Everything new is prefixed `pp-`.
+   Tokens only, both themes; transitions only (zeroed by the global reduced-motion rule).
+   ========================================================================== */
+
+.product-page { padding-bottom: clamp(4rem, 9vw, 7rem); }
+.pp-icon { width: 14px; height: 14px; flex: none; }
+
+/* ---------- breadcrumb ---------- */
+.pp-crumbs { margin-bottom: var(--s-4); color: var(--ink-3); }
+.pp-crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); }
+.pp-crumbs li { display: inline-flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.pp-crumbs li + li::before { content: "/"; color: var(--line-2); }
+.pp-crumbs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-3); transition: color var(--d-2); }
+.pp-crumbs a:hover { color: var(--accent); }
+.pp-crumbs [aria-current="page"] { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 28ch; }
+
+/* ---------- masthead ---------- */
+.pp-head { padding-top: calc(var(--header-h) + clamp(1.5rem, 4vw, 3rem)); }
+.pp-mast { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); align-items: start; }
+@media (min-width: 1024px) { .pp-mast { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: var(--s-7); } }
+.pp-id { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-5); align-items: start; }
+.pp-logo {
+  position: relative; width: 88px; height: 88px; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line-2); border-radius: var(--r-1);
+  background: radial-gradient(circle at 50% 55%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%), var(--surface-2);
+  font-family: var(--f-display); font-style: italic; font-size: 2.4rem; line-height: 1; color: var(--accent);
+}
+.pp-logo::after { content: ""; position: absolute; top: 6px; right: 6px; width: 5px; height: 5px; transform: rotate(45deg); background: var(--accent); }
+.pp-logo .pp-logo-img { width: 72%; height: 72%; object-fit: contain; }
+.pp-id-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-4); }
+.pp-verified { align-self: flex-start; }
+.pp-title { max-width: 16ch; overflow-wrap: anywhere; }
+.pp-tagline { margin-top: 0; max-width: 52ch; }
+.pp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3) var(--s-6); margin-top: var(--s-3); }
+.pp-back { font-size: var(--t-sm); color: var(--ink-2); }
+@media (max-width: 599px) {
+  .pp-id { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+  .pp-logo { width: 64px; height: 64px; font-size: 1.8rem; }
+  .pp-actions .btn { width: 100%; white-space: normal; text-align: center; }
+}
+
+/* ---------- trust passport surface ---------- */
+.pp-facts { display: flex; flex-direction: column; min-width: 0; box-shadow: var(--shadow); }
+@media (min-width: 1024px) { .pp-facts { position: sticky; top: calc(var(--header-h) + var(--s-5)); } }
+.pp-facts > * { padding: var(--s-5); }
+.pp-facts > * + * { border-top: 1px solid var(--line); }
+.pp-facts-label { color: var(--ink-3); margin-bottom: var(--s-3); }
+.pp-trust { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: var(--s-4); align-items: center; }
+.pp-trust .pp-facts-label { margin-bottom: var(--s-1); }
+.pp-ring { width: 64px; height: 64px; overflow: visible; }
+.pp-ring-track { fill: none; stroke: var(--line-2); stroke-width: 2; }
+.pp-ring-fill { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.pp-ring-core { fill: var(--star); }
+.pp-trust-value { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); }
+.pp-trust-value .num-tab { font-family: var(--f-display); font-size: var(--t-2xl); line-height: 1; color: var(--ink); }
+.pp-trust-value .mono { color: var(--ink-3); }
+.pp-badges { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.pp-badges li {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  font-size: var(--t-sm); color: var(--ink-2);
+}
+.pp-badges .pp-icon { color: var(--accent); }
+.pp-makers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.pp-maker { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s-3); align-items: center; }
+.pp-maker-avatar {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-2); overflow: hidden; display: grid; place-items: center;
+  font-family: var(--f-display); font-style: italic; font-size: 1.2rem; color: var(--accent);
+}
+.pp-maker-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pp-maker-text { display: flex; flex-direction: column; min-width: 0; }
+.pp-maker-text strong { font-family: var(--f-display); font-weight: 500; font-size: var(--t-lg); line-height: 1.2; overflow-wrap: anywhere; }
+.pp-maker-text a { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; margin: -10px 0; font-family: var(--f-mono); font-size: var(--t-xs); letter-spacing: .06em; color: var(--accent); }
+.pp-maker-text a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- document blocks ---------- */
+.pp-blocks { padding-top: clamp(1rem, 3vw, 2rem); }
+.product-page .blk-stack-flow { max-width: none; }
+
+/* ---------- footer ---------- */
+.pp-foot {
+  margin-top: clamp(3rem, 7vw, 5rem); padding-top: var(--s-5); border-top: 1px solid var(--line-2);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3) var(--s-6); color: var(--ink-3);
+}
+.pp-foot-review { display: inline-flex; align-items: center; gap: var(--s-2); text-transform: none; letter-spacing: .02em; }
+.pp-foot-star { color: var(--accent); }
+.pp-foot-hash { overflow-wrap: anywhere; }
+.pp-foot .link-arrow { text-transform: none; letter-spacing: 0; font-family: var(--f-sans); font-size: var(--t-sm); }

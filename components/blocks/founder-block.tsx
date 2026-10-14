@@ -1,50 +1,57 @@
 import React from "react";
 import type { FounderBlock } from "@/packages/contracts/src";
-import { Card } from "@/components/ui/card";
-import { User, Globe } from "lucide-react";
-import Link from "next/link";
+import { BlockSection } from "./block-section";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 
-export function FounderBlockView({ block }: { block: FounderBlock }) {
+/** Normalise an X handle ("@name", "name") to the bare handle. */
+export function bareXHandle(handle: string | null | undefined): string | null {
+  const raw = handle?.trim() ?? "";
+  // Accept a pasted profile URL as well as "@name" / "name".
+  const fromUrl = raw.match(/^(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\/@?([A-Za-z0-9_]{1,15})\/?$/i)?.[1];
+  const bare = fromUrl ?? raw.replace(/^@+/, "");
+  return /^[A-Za-z0-9_]{1,15}$/.test(bare) ? bare : null;
+}
+
+/** Maker card: portrait (or an italic monogram), name in display type, bio and profile links. */
+export function FounderBlockView({ block, labels = DEFAULT_BLOCK_LABELS }: { block: FounderBlock; labels?: BlockLabels }) {
   const { name, bio, avatarUrl, xHandle, linkedinUrl } = block.props;
+  const handle = bareXHandle(xHandle);
 
   return (
-    <Card className="p-8 rounded-sm border border-line bg-surface my-6 flex flex-col md:flex-row items-center md:items-start gap-6">
-      <div className="w-20 h-20 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center font-medium text-2xl text-primary overflow-hidden shrink-0">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-        ) : (
-          <User className="w-10 h-10" />
-        )}
-      </div>
-
-      <div className="space-y-3 text-center md:text-left flex-1">
-        <h3 className="font-display text-step-xl text-foreground">{name}</h3>
-        <p className="text-sm text-ink-2 leading-relaxed">{bio}</p>
-
-        <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
-          {xHandle && (
-            <Link
-              href={`https://x.com/${xHandle.replace("@", "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline"
-            >
-              @{xHandle.replace("@", "")}
-            </Link>
+    <BlockSection blockId={block.id} kicker={labels.founder} className="blk-founder">
+      <div className="blk-founder-card surface">
+        <div className="blk-founder-avatar">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" width={96} height={96} loading="lazy" decoding="async" />
+          ) : (
+            <span className="blk-founder-monogram" aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>
           )}
-          {linkedinUrl && (
-            <Link
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-ink-2 hover:text-foreground flex items-center gap-1"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              LinkedIn Profile
-            </Link>
+        </div>
+        <div className="blk-founder-body">
+          <h3 className="blk-founder-name">{name}</h3>
+          <p className="blk-founder-bio">{bio}</p>
+          {(handle || linkedinUrl) && (
+            <ul className="blk-founder-links">
+              {handle && (
+                <li>
+                  <a className="link-arrow" href={`https://x.com/${handle}`} target="_blank" rel="noopener noreferrer">
+                    @{handle}
+                    <span className="sr-only">{labels.opensInNewTab}</span>
+                  </a>
+                </li>
+              )}
+              {linkedinUrl && (
+                <li>
+                  <a className="link-arrow" href={linkedinUrl} target="_blank" rel="noopener noreferrer">
+                    {labels.linkedin}
+                    <span className="sr-only">{labels.opensInNewTab}</span>
+                  </a>
+                </li>
+              )}
+            </ul>
           )}
         </div>
       </div>
-    </Card>
+    </BlockSection>
   );
 }

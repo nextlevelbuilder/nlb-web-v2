@@ -3,13 +3,28 @@ import { getLatestRankingSnapshot, computeRankingSnapshot } from "@/lib/domain/r
 import BuildWithUsClient, { type RankEntry } from "./build-with-us-client";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
+import ChapterPlate from "@/components/constellation/chapter-plate";
+import { buildWithUsCopy } from "@/content/pages/build-with-us-copy";
+import { toPageLocale } from "@/content/pages/page-locale";
 import { pageMetadata } from "@/lib/seo";
+import "./build-with-us.css";
 
 // Reads D1 (products and ranking snapshots) on every request.
 export const dynamic = "force-dynamic";
 
 interface BuildWithUsProps {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ q?: string | string[] }>;
+}
+
+/** Same bound as the client's MAX_QUERY_LENGTH (a "use client" module cannot export values to the server). */
+const MAX_QUERY_LENGTH = 100;
+const PLATE_COORD = "Polaris · RA 02h 31m · Dec +89° 15′";
+
+/** Untrusted `?q=` (the WebSite SearchAction target): first value only, trimmed, at most 100 characters. */
+function parseQuery(raw: string | string[] | undefined): string {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === "string" ? value.trim().slice(0, MAX_QUERY_LENGTH).trim() : "";
 }
 
 export async function generateMetadata({ params }: BuildWithUsProps) {
@@ -18,9 +33,11 @@ export async function generateMetadata({ params }: BuildWithUsProps) {
   return pageMetadata({ title: t("heroTitle"), description: t("heroDesc"), path: "/build-with-us", locale });
 }
 
-export default async function BuildWithUsPage({ params }: BuildWithUsProps) {
+export default async function BuildWithUsPage({ params, searchParams }: BuildWithUsProps) {
   const { locale } = await params;
+  const initialQuery = parseQuery((await searchParams).q);
   const t = await getTranslations({ locale, namespace: "buildWithUs" });
+  const copy = buildWithUsCopy[toPageLocale(locale)];
   const isMarkdown = (await headers()).get("x-nlb-markdown") === "1";
   // 1. Fetch published products
   const publishedProducts = await getPublishedProducts({ limit: 50 });
@@ -54,26 +71,32 @@ export default async function BuildWithUsPage({ params }: BuildWithUsProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <main id="main" className="sky-backdrop flex-1">
-        <div className="wrap space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
-          <header className="max-w-3xl space-y-5">
-            <p className="eyebrow">{t("heroBadge")}</p>
-            <h1 className="h-display">{t("heroTitle")}</h1>
-            <p className="lede">{t("heroDesc")}</p>
-          </header>
+    <main id="main" className="bwu-page">
+      <div className="wrap">
+        <header className="page-head bwu-head">
+          <ChapterPlate numeral="IV" name={t("plateName")} coord={PLATE_COORD} />
+          <h1 className="h1-page">
+            {t("headingLead")}<em>{t("headingAccent")}</em>
+          </h1>
+          <p className="lede">{t("heroDesc")}</p>
+          <ul className="bwu-stats mono">
+            <li><span className="bwu-stat-star" aria-hidden="true">✦</span>{copy.publishedCount(publishedProducts.length)}</li>
+            <li><span className="bwu-stat-star" aria-hidden="true">✦</span>{t("statReview")}</li>
+            <li><span className="bwu-stat-star" aria-hidden="true">✦</span>{t("statRanking")}</li>
+          </ul>
+        </header>
 
-          <BuildWithUsClient
-            locale={locale}
-            initialProducts={publishedProducts}
-            totalPublishedCount={publishedProducts.length}
-            dailyRanks={toRankEntries(dailySnapshot?.ranks)}
-            weeklyRanks={toRankEntries(weeklySnapshot?.ranks)}
-            monthlyRanks={toRankEntries(monthlySnapshot?.ranks)}
-          />
-        </div>
-      </main>
-    </div>
+        <BuildWithUsClient
+          locale={locale}
+          initialQuery={initialQuery}
+          initialProducts={publishedProducts}
+          totalPublishedCount={publishedProducts.length}
+          dailyRanks={toRankEntries(dailySnapshot?.ranks)}
+          weeklyRanks={toRankEntries(weeklySnapshot?.ranks)}
+          monthlyRanks={toRankEntries(monthlySnapshot?.ranks)}
+        />
+      </div>
+    </main>
   );
 }
 

@@ -623,7 +623,17 @@
     "sidebarDesc": "Xuất bản AI agents, micro-SaaS hoặc công cụ lập trình của bạn để tiếp cận hàng nghìn builders và người dùng sớm.",
     "submitBtn": "Gửi Sản Phẩm Của Bạn",
     "instructionsBtn": "Xem Hướng Dẫn Đăng Ký",
-    "trustGuarantee": "Kiểm Duyệt Thủ Công • Không Trả Tiền Để Lên Hạng • Cloudflare Edge"
+    "trustGuarantee": "Kiểm Duyệt Thủ Công • Không Trả Tiền Để Lên Hạng • Cloudflare Edge",
+    "plateName": "Danh mục",
+    "headingLead": "Build ",
+    "headingAccent": "with us",
+    "searchSubmit": "Tìm kiếm",
+    "searchClear": "Xoá tìm kiếm",
+    "searchResults": "{count} sản phẩm khớp với “{query}”",
+    "catalogueHead": "{count} sản phẩm đang hiển thị",
+    "sortLabel": "Sắp xếp",
+    "statReview": "Kiểm duyệt thủ công",
+    "statRanking": "Không trả tiền để lên hạng"
   },
   "leaderboards": {
     "badge": "Bảng Xếp Hạng Tự Nhiên Minh Bạch",
@@ -642,7 +652,29 @@
     "visitWebsite": "Truy Cập Trang Web",
     "trustPassportScore": "Điểm Hộ Chiếu Tin Cậy",
     "humanReviewedBy": "Được kiểm duyệt thủ công bởi Ban Quản Trị Next Level Builders.",
-    "contentHash": "Mã Hash Nội Dung:"
+    "contentHash": "Mã Hash Nội Dung:",
+    "plateName": "Hồ sơ sản phẩm",
+    "breadcrumbLabel": "Đường dẫn",
+    "breadcrumbHome": "Trang chủ",
+    "breadcrumbDirectory": "Danh mục",
+    "backToDirectory": "Quay lại danh mục",
+    "makerLabel": "Người tạo",
+    "badgesLabel": "Huy hiệu",
+    "listingLabel": "Hồ sơ",
+    "trustOutOf": "trên 100",
+    "blocks": {
+      "gallery": "Thư viện ảnh",
+      "features": "Tính năng",
+      "techStack": "Công nghệ sử dụng",
+      "pricing": "Bảng giá",
+      "faq": "Câu hỏi thường gặp",
+      "founder": "Người sáng lập",
+      "popular": "Phổ biến",
+      "opensInNewTab": "(mở trong tab mới)",
+      "linkedin": "Hồ sơ LinkedIn",
+      "openImage": "Mở ảnh {n} kích thước đầy đủ",
+      "imageAlt": "Ảnh chụp màn hình {n}"
+    }
   },
   "shell": {
     "skip": "Bỏ qua, đến nội dung",

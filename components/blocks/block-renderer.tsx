@@ -18,47 +18,54 @@ import { CaseStudyBlockView } from "./case-study-block";
 import { AnalyticsBlockView } from "./analytics-block";
 import { ActivitiesBlockView } from "./activities-block";
 import { PulseBlockView } from "./pulse-block";
+import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
+import "./product-blocks.css";
+
+export type { BlockLabels } from "./block-labels";
 
 export interface BlockRendererProps {
   blocks: Block[];
   productSlug?: string;
+  /** Localised kickers and link suffixes; English defaults when omitted. */
+  labels?: Partial<BlockLabels>;
 }
 
-export function BlockRenderer({ blocks, productSlug }: BlockRendererProps) {
+export function BlockRenderer({ blocks, productSlug, labels: labelOverrides }: BlockRendererProps) {
   if (!blocks || blocks.length === 0) {
     return null;
   }
+  const labels: BlockLabels = { ...DEFAULT_BLOCK_LABELS, ...labelOverrides };
 
   return (
-    <div className="flex flex-col gap-12 w-full max-w-5xl mx-auto">
+    <div className="blk-stack-flow flex flex-col w-full max-w-5xl mx-auto">
       {blocks.map((block) => {
         switch (block.type) {
           case "hero":
-            return <HeroBlockView key={block.id} block={block} />;
+            return <HeroBlockView key={block.id} block={block} labels={labels} />;
           case "grid":
-            return <GridBlockView key={block.id} block={block} />;
+            return <GridBlockView key={block.id} block={block} labels={labels} />;
           case "pricing":
-            return <PricingBlockView key={block.id} block={block} />;
+            return <PricingBlockView key={block.id} block={block} labels={labels} />;
           case "quote":
             return <QuoteBlockView key={block.id} block={block} />;
           case "faq":
-            return <FaqBlockView key={block.id} block={block} />;
+            return <FaqBlockView key={block.id} block={block} labels={labels} />;
           case "liveDemo":
             return <LiveDemoBlockView key={block.id} block={block} />;
           case "mediaGallery":
-            return <MediaGalleryBlockView key={block.id} block={block} />;
+            return <MediaGalleryBlockView key={block.id} block={block} labels={labels} />;
           case "carousel":
-            return <MediaGalleryBlockView key={block.id} block={{ id: block.id, type: "mediaGallery", props: { images: block.props.items.map(i => ({ url: i.imageUrl, caption: i.title, aspectRatio: "16:9" })) } }} />;
+            return <MediaGalleryBlockView key={block.id} block={{ id: block.id, type: "mediaGallery", props: { images: block.props.items.map(i => ({ url: i.imageUrl, caption: i.title, aspectRatio: "16:9" })) } }} labels={labels} />;
           case "changelog":
             return <ChangelogBlockView key={block.id} block={block} />;
           case "roadmap":
             return <RoadmapBlockView key={block.id} block={block} />;
           case "techStack":
-            return <TechStackBlockView key={block.id} block={block} />;
+            return <TechStackBlockView key={block.id} block={block} labels={labels} />;
           case "cta":
-            return <CtaBlockView key={block.id} block={block} />;
+            return <CtaBlockView key={block.id} block={block} labels={labels} />;
           case "founder":
-            return <FounderBlockView key={block.id} block={block} />;
+            return <FounderBlockView key={block.id} block={block} labels={labels} />;
           case "verification":
             return <VerificationBlockView key={block.id} block={block} />;
           case "milestones":
