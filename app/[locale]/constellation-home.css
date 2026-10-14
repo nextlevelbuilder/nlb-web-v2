@@ -448,7 +448,7 @@ html[data-theme="light"] .plan-star .phalo { fill: none; stroke: var(--accent); 
 .orbit-progress .op-track { fill: none; stroke: var(--line-2); stroke-width: 1; }
 .orbit-progress .op-arc { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 163.36; stroke-dashoffset: 163.36; }
 .orbit-progress .op-planet { fill: var(--accent); }
-.orbit-progress span { font-family: var(--f-display); font-style: italic; font-size: 1rem; color: var(--ink-2); }
+.orbit-progress .op-num::after { content: attr(data-n); font-family: var(--f-display); font-style: italic; font-size: 1rem; color: var(--ink-2); }
 @media (max-width: 1023px) { .orbit-progress { display: none; } }
 
 /* checkout dialog error line inside plan cards */

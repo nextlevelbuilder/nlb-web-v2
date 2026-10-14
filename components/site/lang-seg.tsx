@@ -33,11 +33,12 @@ export default function LangSeg() {
           lang={option}
           data-set-lang={option}
           aria-pressed={option === locale}
-          aria-label={t(option)}
           disabled={isPending}
           onClick={() => switchTo(option)}
         >
+          {/* The accessible name keeps the visible code first ("EN English") so voice control matches what is shown. */}
           {option.toUpperCase()}
+          <span className="sr-only"> {t(option)}</span>
         </button>
       ))}
     </div>

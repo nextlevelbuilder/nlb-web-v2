@@ -27,7 +27,8 @@ export default function OrbitProgress() {
       let current = 0;
       for (const ch of chapters) if (ch.getBoundingClientRect().top < mid) current = Number(ch.dataset.ch) || 0;
       const label = ROMAN[current] ?? '0';
-      if (num.current && num.current.textContent !== label) num.current.textContent = label;
+      // The numeral is drawn by CSS from data-n so it is not text content competing with the button's accessible name.
+      if (num.current && num.current.dataset.n !== label) num.current.dataset.n = label;
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -47,7 +48,7 @@ export default function OrbitProgress() {
         <circle className="op-arc" r="26" transform="rotate(-90)" ref={arc} />
         <g className="op-pg" ref={planet}><circle className="op-planet" cx="0" cy="-26" r="3" /></g>
       </svg>
-      <span ref={num} aria-hidden="true">0</span>
+      <span className="op-num" ref={num} data-n="0" aria-hidden="true" />
     </button>
   );
 }
