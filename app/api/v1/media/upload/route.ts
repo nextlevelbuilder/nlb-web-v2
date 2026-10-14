@@ -3,6 +3,7 @@ import { getAuth } from "@/lib/auth";
 import { resolveCaller } from "@/lib/auth-api-key";
 import { MCP_ASSERTION_HEADER } from "@/lib/auth-mcp-delegation";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { publicMediaUrl } from "@/lib/media/public-media-url";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs/promises";
@@ -44,7 +45,9 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const folder = (formData.get("folder") as string) || "uploads";
+    const requestedFolder = formData.get("folder");
+    // Folder becomes part of the R2 key and the public /media URL: keep it to safe path segments.
+    const folder = typeof requestedFolder === "string" && /^[a-z0-9-]{1,40}(?:\/[a-z0-9-]{1,40}){0,2}$/.test(requestedFolder) ? requestedFolder : "uploads";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided in form data." }, { status: 400 });
@@ -87,8 +90,8 @@ export async function POST(request: Request) {
           },
         });
 
-        const assetsBase = cfEnv?.NEXT_PUBLIC_ASSETS_URL || process.env.NEXT_PUBLIC_ASSETS_URL || "https://cdn.nextlevelbuilder.io";
-        publicUrl = `${assetsBase.replace(/\/+$/, "")}/${storageKey}`;
+        // Served by app/media/[...key] on the origin that received the upload; the bucket has no public domain of its own.
+        publicUrl = publicMediaUrl(storageKey, new URL(request.url).origin);
 
         return NextResponse.json({
           success: true,
