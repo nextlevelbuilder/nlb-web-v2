@@ -52,6 +52,17 @@ describe("Published catalog boundary", () => {
     expect(draft.trustScore).toBeLessThanOrEqual(40);
     expect(calls).toHaveLength(0);
   });
+  it("adds the first published gallery image as coverUrl without changing existing fields", () => {
+    const withGallery = { ...revision, document: { ...revision.document as object, blocks: [{ id: "g", type: "mediaGallery", props: { images: [{ url: "https://public.test/cover.webp", aspectRatio: "16:9" }] } }] } } as typeof productRevisions.$inferSelect;
+    const plain = publishedProductProjection(product, revision);
+    const result = publishedProductProjection(product, withGallery);
+    expect(result.coverUrl).toBe("https://public.test/cover.webp");
+    expect(plain.coverUrl).toBeNull();
+    const { coverUrl: _cover, ...rest } = result;
+    const { coverUrl: _plainCover, ...plainRest } = plain;
+    expect(rest).toEqual(plainRest);
+  });
+
   it("projects approved metadata even after a draft overwrites the mutable product row", () => {
     const result = publishedProductProjection(product, revision);
     expect(result).toMatchObject({ title: "Public title", tagline: "Public tagline", websiteUrl: "https://public.test", currentRevisionId: "approved", logoUrl: null, updatedAt: publishedAt });
@@ -84,6 +95,7 @@ describe("Published catalog boundary", () => {
     expect(sql).toContain("approved.product_id");
     expect(list[0].websiteUrl).toBe("https://public.test");
     expect(list[0]).not.toHaveProperty("publishedDocument");
+    expect(list[0].coverUrl).toBeNull();
   });
 
   it("traverses beyond 100 products until the final partial page", async () => {

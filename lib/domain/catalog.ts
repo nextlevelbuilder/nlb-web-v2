@@ -6,7 +6,7 @@ import { ProductDocumentSchema, computeContentHash, type ProductDocument } from 
 import crypto from "crypto";
 import { projectProductTrust } from "./trust";
 import { productTrustScoreOrder } from "./product-trust-order";
-import { publishedDocument } from "./published-document";
+import { publishedCoverUrl, publishedDocument } from "./published-document";
 
 export interface CreateProductDraftParams {
   orgId: string;
@@ -171,7 +171,7 @@ export function publishedProductProjection(
   now = Date.now(),
 ) {
   const document = publishedDocument(revision);
-  return projectProductTrust({
+  const projected = projectProductTrust({
     ...product,
     title: revision.title,
     tagline: revision.tagline,
@@ -180,6 +180,8 @@ export function publishedProductProjection(
     currentRevisionId: revision.id,
     updatedAt: revision.createdAt,
   }, now);
+  // Additive field for catalogue cards; existing REST/MCP fields are unchanged.
+  return { ...projected, coverUrl: publishedCoverUrl(document) };
 }
 
 /**
