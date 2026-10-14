@@ -87,6 +87,8 @@ npx tsx scripts/migrate/run-migration.ts rekey-jwks --target production --confir
 
 ## 5. Nameserver change and custom domains [owner]
 
+Status (2026-10-14): done. Nameservers were switched at Spaceship at 09:19Z. The zone became Active at about 09:33Z. Custom domains are attached: apex and `www` on `nextlevelbuilder-web`, `staging` on `nextlevelbuilder-web-staging`, `mcp` on `nlb-directory-mcp` and `ui-ux-pro-max-skill` on its redirect worker. `cdn` is attached to the R2 bucket `nlb-media-public`. A custom domain on a pending zone can be attached from the worker's **Domains** tab. R2 custom domains need the zone to be Active.
+
 1. At Spaceship, set custom nameservers for `nextlevelbuilder.io` to the two hi@ nameservers from step 1, replacing the old ones.
 2. In the hi@ dashboard, wait for the zone to become **Active**. Use "Check nameservers" to speed this up.
 3. Attach the Workers custom domains immediately. In the dashboard, open **Workers & Pages** → worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain**:
