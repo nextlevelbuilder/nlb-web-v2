@@ -87,9 +87,9 @@ export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedPr
         <div className="catalogue">
           <h3 className="catalogue-head mono"><span>{t('teamTitle')}</span><span className="rule" aria-hidden="true" /></h3>
           <ul className="fleet">
-            {TEAM_PRODUCTS.map((product) => (
-              <li key={product.id}>
-                <a href={product.url} target="_blank" rel="noopener noreferrer">
+            {TEAM_PRODUCTS.map((product) => {
+              const body = (
+                <>
                   {product.logo ? (
                     <Image src={product.logo} alt="" width={32} height={32} unoptimized />
                   ) : (
@@ -97,10 +97,22 @@ export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedPr
                   )}
                   <strong>{product.name}</strong>
                   <span>{pick(product.tagline, locale)}</span>
-                  <span className="sr-only"> {tShell('newTab')}</span>
-                </a>
-              </li>
-            ))}
+                </>
+              );
+              // Tools with a directory listing open it; the rest go to their own site in a new tab.
+              return (
+                <li key={product.id}>
+                  {product.directorySlug ? (
+                    <Link href={`/products/${product.directorySlug}`}>{body}</Link>
+                  ) : (
+                    <a href={product.url} target="_blank" rel="noopener noreferrer">
+                      {body}
+                      <span className="sr-only"> {tShell('newTab')}</span>
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

@@ -163,9 +163,11 @@ export interface TeamProduct {
   url: string;
   logo: string | null;
   tagline: Bilingual;
+  /** Set when the product has a published directory listing; the row then links to that listing. */
+  directorySlug?: string;
 }
 
-/** "Built by the NLB team" row. Logos are self-hosted copies of dewee.sh/img/ecosystem. */
+/** "Built by the NLB team" row. Logos are self-hosted copies (dewee.sh/img/ecosystem and each tool's own brand mark). */
 export const TEAM_PRODUCTS: TeamProduct[] = [
   { id: "agentkit", name: "AgentKit", url: "https://agentkit.best", logo: "/img/ecosystem/agentkit.svg", tagline: { en: "AI engineering system", vi: "Hệ thống kỹ sư AI" } },
   { id: "dewee", name: "dewee", url: "https://dewee.sh", logo: "/img/ecosystem/dewee.png", tagline: { en: "AI agents for business", vi: "AI agent cho doanh nghiệp" } },
@@ -173,6 +175,12 @@ export const TEAM_PRODUCTS: TeamProduct[] = [
   { id: "uupm", name: "UI UX Pro Max", url: "https://uupm.cc", logo: "/img/ecosystem/uupm.svg", tagline: { en: "Design intelligence for AI agents", vi: "Trí tuệ thiết kế cho AI agent" } },
   { id: "tose", name: "TOSE", url: "https://tose.sh", logo: "/img/ecosystem/tose.png", tagline: { en: "Click. Deploy. Done.", vi: "Click. Deploy. Xong!" } },
   { id: "agentbrain", name: "AgentBrain", url: "https://agentbrain.sh", logo: "/img/ecosystem/agentbrain.svg", tagline: { en: "Enterprise AI hub & business wiki", vi: "Trung tâm AI & wiki doanh nghiệp" } },
+  { id: "multix-cli", name: "multix", url: "https://multix.zuey.me", logo: "/img/ecosystem/multix-cli.webp", directorySlug: "multix-cli", tagline: { en: "Multimodal AI from the command line", vi: "AI đa phương thức ngay trên dòng lệnh" } },
+  { id: "cloud-harness-mcp", name: "Cloud Harness MCP", url: "https://harness.agentkit.best", logo: "/img/ecosystem/cloud-harness-mcp.webp", directorySlug: "cloud-harness-mcp", tagline: { en: "Private cloud workspace for coding agents", vi: "Không gian làm việc đám mây riêng cho coding agent" } },
+  { id: "design-studio-ai", name: "Design Studio AI", url: "https://studio.agentkit.best", logo: "/img/ecosystem/design-studio-ai.webp", directorySlug: "design-studio-ai", tagline: { en: "Agent-first design workspace", vi: "Studio thiết kế ưu tiên AI agent" } },
+  { id: "ak-render", name: "AK Render", url: "https://render.agentkit.best", logo: "/img/ecosystem/ak-render.webp", directorySlug: "ak-render", tagline: { en: "HTML pages compiled from a Page Spec", vi: "Trang HTML biên dịch từ Page Spec" } },
+  { id: "3dviz-pro-max", name: "3Dviz Pro Max", url: "https://3dviz.dev", logo: "/img/ecosystem/3dviz-pro-max.webp", directorySlug: "3dviz-pro-max", tagline: { en: "Ideas into explorable 3D scenes", vi: "Biến ý tưởng thành cảnh 3D để khám phá" } },
+  { id: "anymd", name: "anymd", url: "https://anymd.cc", logo: "/img/ecosystem/anymd.webp", directorySlug: "anymd", tagline: { en: "The web as Markdown for AI agents", vi: "Biến web thành Markdown cho AI agent" } },
 ];
 
 export interface Partner {
