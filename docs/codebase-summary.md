@@ -20,15 +20,17 @@ Where each concern lives. This page lists entry points only, not inventories. Ru
 | Homepage data (seats, countdown, activity) | [`lib/home/`](../lib/home), [`lib/constants/`](../lib/constants) | |
 | Blog | [`lib/blog/`](../lib/blog), `components/blog/`, `app/api/v1/blog/`, `app/[locale]/blog/` | [blog-and-agent-management.md](./blog-and-agent-management.md) |
 | Courses | [`lib/courses/`](../lib/courses), `components/courses/`, `app/api/courses/`, `app/[locale]/courses/` | [courses.md](./courses.md) |
-| Markdown twins and discovery | [`lib/markdown/`](../lib/markdown), `app/api/markdown/`, `app/llms.txt/`, `app/llms-full.txt/`, `app/sitemap.ts`, `app/robots.ts` | |
-| Media upload (R2) | [`lib/media/`](../lib/media), `app/api/v1/media/upload/` | |
+| Markdown twins and discovery | [`lib/markdown/`](../lib/markdown), `app/api/markdown/`, `app/llms.txt/`, `app/llms-full.txt/`, `app/sitemap.ts`, `app/robots.ts` | Agent discovery documents (`/.well-known/mcp.json`, `ai-catalog.json`, `api-catalog`) are built in [`lib/discovery/`](../lib/discovery); the `Link` header is appended in `middleware.ts` |
+| SEO metadata and structured data | [`lib/seo.ts`](../lib/seo.ts), [`lib/structured-data.ts`](../lib/structured-data.ts), [`lib/blog/blog-seo.ts`](../lib/blog/blog-seo.ts) | One linked JSON-LD graph (Organization, WebSite, Person) in `app/layout.tsx`; pages add Product, Course, BlogPosting and breadcrumbs |
+| Social cards | [`lib/og/`](../lib/og), `opengraph-image.tsx` next to each public page | Every public page needs its own file: a page that sets `openGraph` loses the parent's image. `pageMetadata` never pins images |
+| Media upload (R2) | [`lib/media/`](../lib/media), `app/api/v1/media/upload/`, `app/media/[...key]/` | The public bucket has no domain of its own; `/media/<key>` streams `public/<key>` from `MEDIA_PUBLIC` |
 | Traffic analytics | [`lib/traffic/`](../lib/traffic), `app/api/traffic/`, `infra/clickhouse/` | Optional PostHog/ClickHouse backends |
 | Studio WebMCP widget | [`lib/webmcp/`](../lib/webmcp) | Vendor provenance in `lib/webmcp/vendor/README.md` |
 | Email, Discord | [`lib/resend.ts`](../lib/resend.ts), [`lib/discord.ts`](../lib/discord.ts) | |
 | Env schema | [`lib/env.ts`](../lib/env.ts), [`cloudflare-env.d.ts`](../cloudflare-env.d.ts) | |
 | Worker config | [`wrangler.jsonc`](../wrangler.jsonc), [`open-next.config.ts`](../open-next.config.ts), [`next.config.ts`](../next.config.ts) | |
 | CI/CD | [`.github/workflows/ci-deploy.yml`](../.github/workflows/ci-deploy.yml) | |
-| Ops scripts | [`scripts/provision-cloudflare.sh`](../scripts/provision-cloudflare.sh), `scripts/dns/`, `scripts/migrate/`, `scripts/setup-polar-products.ts`, `scripts/rename-polar-products.ts` | |
+| Ops scripts | [`scripts/provision-cloudflare.sh`](../scripts/provision-cloudflare.sh), `scripts/dns/`, `scripts/migrate/`, `scripts/setup-polar-products.ts`, `scripts/rename-polar-products.ts`, `scripts/seed-ecosystem-products/` | The ecosystem seed: [deployment-guide.md](./deployment-guide.md#seeding-ecosystem-listings) |
 | Tests | `tests/` (plus colocated `lib/**/*.test.ts`), [`tests/helpers/local-d1.ts`](../tests/helpers/local-d1.ts) | |
 
 ## Related repositories

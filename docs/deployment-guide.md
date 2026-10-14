@@ -86,6 +86,22 @@ Also export the other `NEXT_PUBLIC_*` values the workflow sets (Polar product id
 
 Roll back a bad deploy with `wr deployments list --env=<env>`, then `wr rollback <version-id> --env=<env>`.
 
+## Media
+
+Public media (product logos, screenshots, uploads) lives in the `MEDIA_PUBLIC` bucket under `public/`. Neither bucket has a custom domain or an r2.dev URL, so the app serves it at `/media/<key>` ([`app/media/[...key]/route.ts`](../app/media/[...key]/route.ts)). Uploads return a URL on the origin that received them.
+
+## Seeding ecosystem listings
+
+[`scripts/seed-ecosystem-products/`](../scripts/seed-ecosystem-products) publishes the NLB ecosystem tools through the normal path: draft, revision, submission, automated checks and an admin approval. It uploads the committed assets to R2 under content-hashed keys and skips a product whose approved document is unchanged. Take a D1 export first.
+
+```bash
+wr d1 export DB --remote --env staging --output <outside-the-repo>.sql
+env -u CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID=<pinned account> \
+  node_modules/.bin/tsx scripts/seed-ecosystem-products/seed-ecosystem-products.ts --env staging [--dry-run]
+```
+
+Use `--env production` for production. Media and avatar URLs use the environment's workers.dev origin by default; after the domain cutover, re-run with `--media-origin https://nextlevelbuilder.io` (or the staging domain) to publish revisions pointing at the domain.
+
 ## Domain cutover
 
 The full procedure (zone, nameservers, final sync, custom domains, Polar, OAuth, Turnstile, rollback) is in [cutover-runbook.md](./cutover-runbook.md).

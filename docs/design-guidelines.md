@@ -14,6 +14,10 @@ The code below is the source of truth for the current values.
 |---|---|
 | Mockup tokens (`--bg`, `--ink`, `--ink-2`, `--accent`, `--line`, `--t-*`, `--s-*`, `--d-*`) per theme on `html[data-theme]`, plus the shell components (header, menu, cursor, buttons, plates, footer, static sky) | [`app/constellation-shell.css`](../app/constellation-shell.css) |
 | Home chapter styles (ported 1:1 from the mockup, plus founders, partners, catalogues, FAQ and logbook in the same language) | [`app/[locale]/constellation-home.css`](../app/[locale]/constellation-home.css) |
+| Section and card primitives shared by home and inner pages (`.section`, `.surface`, `.catalogue`, `.launch`, `.fleet`, `.page-head`) | [`app/constellation-components.css`](../app/constellation-components.css) |
+| Page-scoped styles (courses, blog, directory, product) | a CSS file next to the route, imported by its `page.tsx` or `layout.tsx` |
+| Social cards (1200×630, dark sky, star field, orbit rings, chapter numeral and mono kicker, Cormorant title) | [`lib/og/constellation-og-card.tsx`](../lib/og/constellation-og-card.tsx), fonts subset from Google Fonts in [`lib/og/og-google-fonts.ts`](../lib/og/og-google-fonts.ts) |
+| Favicon set and web app manifest (star mark) | `public/icon.svg` (adapts to `prefers-color-scheme`), `public/favicon.ico`, `public/icon-*.png`, [`app/manifest.ts`](../app/manifest.ts) |
 | HSL triplets used by Tailwind and shadcn on inner pages, light (`:root`) and dark (`[data-theme="dark"]`) | [`app/globals.css`](../app/globals.css) `@layer base` |
 | Tailwind names mapped onto those variables, fluid type scale (`text-step-*`), font families | [`tailwind.config.ts`](../tailwind.config.ts) |
 | Generic primitives shared with inner pages (`.wrap`, `.eyebrow`, `.lede`, `.plate`, `.seg`, `.link-arrow`, `.btn`, `.skip`) | [`app/constellation-shell.css`](../app/constellation-shell.css) (`:where()` so page utilities win) |
