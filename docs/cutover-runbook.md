@@ -26,6 +26,8 @@ The CLI token cannot create zones, so add the zone in the dashboard:
 2. Choose to **enter DNS records manually**, which skips the quick scan. A scan would copy proxied records that point at the Digitop workers.
 3. Note the two assigned nameservers. The zone stays **Pending** until step 4.
 
+Status (2026-10-14): the zone is added on hi@ (Free plan) and its assigned nameservers are `marvin.ns.cloudflare.com` and `tegan.ns.cloudflare.com`. The old nameservers, kept for rollback, are `jim.ns.cloudflare.com` and `emily.ns.cloudflare.com`. DNSSEC is unsigned.
+
 Import the DNS records (mail, SPF, DKIM, site verification, Resend `send.`, the `go` CNAME) from [`scripts/dns/nextlevelbuilder-io-records.json`](../scripts/dns/nextlevelbuilder-io-records.json). Use a token scoped to this zone with **Zone: Read** and **DNS: Edit**. Enter it without echoing:
 
 ```bash
@@ -33,6 +35,8 @@ read -rs CF_ZONE_TOKEN && export CF_ZONE_TOKEN
 scripts/dns/setup-zone-on-hi-account.sh   # finds the pending zone, skips records that already exist, prints status and nameservers
 unset CF_ZONE_TOKEN
 ```
+
+Without a zone-scoped token, upload [`scripts/dns/nextlevelbuilder-io.bind.txt`](../scripts/dns/nextlevelbuilder-io.bind.txt) through **DNS → Import DNS records**, with **Proxy imported DNS records** unchecked. This is how the 13 records were imported on 2026-10-14.
 
 Check the dashboard: every record from the JSON is present. Apex, `www` and `staging` have **no** DNS records yet, because Workers custom domains create them in step 5.
 

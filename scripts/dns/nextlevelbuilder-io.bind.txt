@@ -1,0 +1,15 @@
+$ORIGIN nextlevelbuilder.io.
+$TTL 300
+nextlevelbuilder.io.	300	IN	MX	1 aspmx.l.google.com.
+nextlevelbuilder.io.	300	IN	MX	10 alt3.aspmx.l.google.com.
+nextlevelbuilder.io.	300	IN	MX	10 alt4.aspmx.l.google.com.
+nextlevelbuilder.io.	300	IN	MX	5 alt1.aspmx.l.google.com.
+nextlevelbuilder.io.	300	IN	MX	5 alt2.aspmx.l.google.com.
+nextlevelbuilder.io.	300	IN	TXT	"google-site-verification=Geh-NsQKnCi-kKhavohd5QfFiBmHdhoAT-8YhfQQK1w"
+nextlevelbuilder.io.	300	IN	TXT	"google-site-verification=Q8zGjIe8azJncJ0TLCwXLuVXtQGHPF51GLiaX1tNmCg"
+nextlevelbuilder.io.	300	IN	TXT	"v=spf1 include:_spf.google.com ~all"
+send.nextlevelbuilder.io.	300	IN	MX	10 feedback-smtp.ap-northeast-1.amazonses.com.
+send.nextlevelbuilder.io.	300	IN	TXT	"v=spf1 include:amazonses.com ~all"
+resend._domainkey.nextlevelbuilder.io.	300	IN	TXT	"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9KqYUWdpl0SmOIsGE0ICCWkWUMJHTnztLUjrugikG+zZhS4f84jg8DvFO2DRNstH9njfBCZBs0tAIvClcBALkgsBj0+lIAKgMtDJGtxJ3kqKg31yqMmn3AMvVYabTwpk4MiCeMUqGVkHEOL/2fcruERCfRCEcmiT9fyKu5PScqQIDAQAB"
+google._domainkey.nextlevelbuilder.io.	300	IN	TXT	"v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1EB+oQI09GEN72wxRBdvL+ZoKrLTytCQwbgp5SFDTkoV/5D+VIe72o5nztmfvmGFtmUkaiafbavxc4jDqf3gMAAx7wAKyjEkV+pAyDP7YesVblGtR45JiZ+wIIJ07aS8UDEpYUu4GaqeBe9RxlSMdEd+swfkI6ys4BKgdgfKmcny3zt+ipuNQ+2zlT4p7x8aIH3" "I+ScJYjwFchsPkndqKB/sjc+pGhGb9D0k+7JBfnanNsw1HFX3+hhIuSyvb1WyFJrYCk3I++2kROcH5OeYROsFYgUfweiNO5+Nf47iFy2HLM/4jNv4i7hzJdEdgfNMPzfBuls3c15GOp2dftbLaQIDAQAB"
+go.nextlevelbuilder.io.	300	IN	CNAME	dns.ladipage.com. ; cf_tags=cf-proxied:false
