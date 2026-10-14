@@ -6,14 +6,15 @@ import { products } from "@/lib/db/schema";
 export async function GET() {
   try {
     const db = getDb();
-    const [row] = await db.all<{ version: string }>(sql`SELECT sqlite_version() AS version`);
+    // D1 rejects sqlite_version() ("not authorized to use function"), so probe with a plain SELECT.
+    await db.all(sql`SELECT 1 AS ok`);
     const prods = await db.select().from(products).limit(5);
     
     return NextResponse.json(
       {
         status: "ok",
         database: "connected",
-        db_engine: `d1/sqlite ${row?.version ?? "unknown"}`,
+        db_engine: "d1",
         products_count: prods.length,
         sample_product: prods[0] ? { title: prods[0].title, slug: prods[0].slug } : null,
         timestamp: new Date().toISOString(),
