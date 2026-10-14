@@ -1,4 +1,5 @@
 import { getDb, type AppDb } from "@/lib/db";
+import { publicMediaUrl } from "@/lib/media/public-media-url";
 import { assets } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
@@ -98,8 +99,9 @@ export async function promoteAssetToPublic(assetId: string, customDb?: AppDb) {
   }
 
   // Public URL is derived from content-addressed storage key
-  const publicHost = process.env.NEXT_PUBLIC_ASSETS_URL || "https://cdn.nextlevelbuilder.io";
-  const publicUrl = `${publicHost}/${asset.storageKey.replace("staging/", "public/")}`;
+  // Served by the app's /media route unless a dedicated asset host is configured.
+  const publicKey = asset.storageKey.replace("staging/", "public/");
+  const publicUrl = process.env.NEXT_PUBLIC_ASSETS_URL ? `${process.env.NEXT_PUBLIC_ASSETS_URL}/${publicKey}` : publicMediaUrl(publicKey);
 
   const [promoted] = await db
     .update(assets)
