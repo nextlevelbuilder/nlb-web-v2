@@ -6,20 +6,20 @@ import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PLANS, MEMBERSHIP_PRICES } from "@/li
 import { buildFaqPageJsonLd, HOME_FAQ_KEYS } from "@/lib/home/home-faq";
 import { loadHomePageData } from "@/lib/home/home-page-data";
 import { pageMetadata, serializeJsonLd, siteUrl } from "@/lib/seo";
-import FooterSection from "@/components/sections/footer-section";
-import HeroSection from "@/components/sections/hero-section";
-import TheDarkSection from "@/components/sections/the-dark-section";
-import CommunitySection from "@/components/sections/community-section";
-import CoursesSection from "@/components/sections/courses-section";
-import DirectorySection from "@/components/sections/directory-section";
-import ProofSection from "@/components/sections/proof-section";
-import TeamSection from "@/components/sections/team-section";
-import PartnersSection from "@/components/sections/partners-section";
-import PricingSection from "@/components/sections/pricing-section";
-import BuildWithAgentKitSection from "@/components/sections/build-with-agentkit-section";
-import FaqSection from "@/components/sections/faq-section";
-import CTASection from "@/components/sections/cta-section";
+import HookChapter from "@/components/constellation/hook-chapter";
+import DarkChapter from "@/components/constellation/dark-chapter";
+import CommunityChapter from "@/components/constellation/community-chapter";
+import CoursesChapter from "@/components/constellation/courses-chapter";
+import DirectoryChapter from "@/components/constellation/directory-chapter";
+import ProofChapter from "@/components/constellation/proof-chapter";
+import FoundersChapter from "@/components/constellation/founders-chapter";
+import PartnersChapter from "@/components/constellation/partners-chapter";
+import PricingChapter from "@/components/constellation/pricing-chapter";
+import ToolkitsChapter from "@/components/constellation/toolkits-chapter";
+import FaqChapter from "@/components/constellation/faq-chapter";
+import FinaleChapter from "@/components/constellation/finale-chapter";
 import HomeClient from "./home-client";
+import "./constellation-home.css";
 
 // Seats, activity and launched products are read from D1 per request, never at build time.
 export const dynamic = "force-dynamic";
@@ -79,29 +79,29 @@ async function faqJsonLd(locale: string) {
 export default async function Home({ params }: { params: Params }) {
   const { locale } = await params;
   if (isLocale(locale)) setRequestLocale(locale);
-  const [data, faq] = await Promise.all([loadHomePageData(), faqJsonLd(locale)]);
+  const [data, faq] = await Promise.all([loadHomePageData(locale), faqJsonLd(locale)]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(membershipJsonLd(locale)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faq) }} />
-      <HomeClient productIds={data.productIds} seats={data.seats} activity={data.activity}>
+      <HomeClient locale={locale} productIds={data.productIds} seats={data.seats} activity={data.activity}>
+        {/* Every chapter renders unconditionally: ScrollTrigger pins re-parent top-level sections. */}
         <main id="main">
-          <HeroSection />
-          <TheDarkSection />
-          <CommunitySection />
-          <CoursesSection />
-          <DirectorySection />
-          <ProofSection />
-          <TeamSection />
-          <PartnersSection />
-          <PricingSection />
-          <BuildWithAgentKitSection launchedProducts={data.launchedProducts} />
-          <FaqSection />
-          <CTASection />
+          <HookChapter />
+          <DarkChapter />
+          <CommunityChapter />
+          <CoursesChapter videos={data.courseVideos} />
+          <DirectoryChapter leaderboard={data.leaderboard} />
+          <ProofChapter />
+          <FoundersChapter />
+          <PartnersChapter />
+          <PricingChapter />
+          <ToolkitsChapter launched={data.launchedProducts} />
+          <FaqChapter posts={data.blogPosts} />
+          <FinaleChapter />
         </main>
       </HomeClient>
-      <FooterSection />
     </>
   );
 }

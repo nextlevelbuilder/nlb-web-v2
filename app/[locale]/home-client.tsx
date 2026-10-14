@@ -1,36 +1,36 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Navbar from '@/components/navbar';
-import ActivityToast from '@/components/home/activity-toast';
 import { CheckoutProvider } from '@/components/home/checkout-context';
-import StickyCta from '@/components/home/sticky-cta';
+import ActivityToast from '@/components/constellation/activity-toast';
+import HomeEngineClient from '@/components/constellation/home-engine-client';
+import OrbitProgress from '@/components/constellation/orbit-progress';
+import StickyCta from '@/components/constellation/sticky-cta';
 import type { MembershipProductIds } from '@/lib/home/membership-product-ids';
 import type { SeatAvailability } from '@/lib/home/membership-seats';
 import type { MembershipActivity } from '@/lib/home/recent-membership-activity';
 
 interface HomeClientProps {
+  locale: string;
   productIds: MembershipProductIds;
   seats: SeatAvailability | null;
   activity: MembershipActivity[];
-  /** Server-rendered narrative sections. */
+  /** Server-rendered chapters (the <main> element). */
   children: ReactNode;
 }
 
-function scrollToPricing() {
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.getElementById('pricing')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-  history.replaceState(null, '', '#pricing');
-}
-
-/** Client shell for the homepage: shared checkout state, header, sticky CTA and the activity feed. */
-export default function HomeClient({ productIds, seats, activity, children }: HomeClientProps) {
+/**
+ * Client shell for the homepage: shared checkout state, the sky + scroll engine (re-created per
+ * locale), the sticky CTA, the activity toast and the orbit progress control.
+ */
+export default function HomeClient({ locale, productIds, seats, activity, children }: HomeClientProps) {
   return (
     <CheckoutProvider productIds={productIds} seats={seats}>
-      <Navbar onScrollToPricing={scrollToPricing} />
+      <HomeEngineClient key={locale} />
       {children}
       <StickyCta />
       <ActivityToast activity={activity} />
+      <OrbitProgress />
     </CheckoutProvider>
   );
 }
