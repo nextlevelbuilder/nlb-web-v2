@@ -27,7 +27,7 @@ describe("Discovery metadata and routes", () => {
     const meta = pageMetadata({ title: "Tool", description: "Description", locale: "en", path: "/products/tool" });
     expect(meta.alternates?.canonical).toBe("https://example.test/products/tool");
     expect(meta.alternates?.languages).toMatchObject({ vi: "https://example.test/vi/products/tool", en: "https://example.test/products/tool", "x-default": "https://example.test/products/tool" });
-    expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "en" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/.md" });
+    expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "en" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/index.md" });
     expect(pageMetadata({ title: "Home", description: "Home", path: "/", locale: "vi" }).alternates?.types).toEqual({ "text/markdown": "https://example.test/vi.md" });
     expect(serializeJsonLd({ title: "</script><script>alert(1)</script>" })).not.toContain("<");
   });
@@ -37,7 +37,11 @@ describe("Discovery metadata and routes", () => {
     expect(entries.some((entry) => entry.url.endsWith("/build-with-us"))).toBe(true);
     expect(entries.some((entry) => entry.url.endsWith("/directory"))).toBe(false);
     expect(entries.find((entry) => entry.url === "https://example.test/vi/products/tool")?.lastModified).toEqual(published.updatedAt);
-    expect(entries.find((entry) => entry.url === "https://example.test/")).not.toHaveProperty("lastModified");
+    // Listing pages take the newest change of what they list; pages without a content date get no lastmod.
+    expect(entries.find((entry) => entry.url === "https://example.test/")?.lastModified).toEqual(published.updatedAt);
+    expect(entries.find((entry) => entry.url === "https://example.test/build-with-us")?.lastModified).toEqual(published.updatedAt);
+    expect(entries.find((entry) => entry.url === "https://example.test/build-with-us/instructions")).not.toHaveProperty("lastModified");
+    expect(entries.find((entry) => entry.url === "https://example.test/policies/privacy")?.lastModified).toBeInstanceOf(Date);
     expect(entries.some((entry) => entry.url.endsWith("/account"))).toBe(false);
   });
 

@@ -6,6 +6,7 @@ import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PLANS, MEMBERSHIP_PRICES } from "@/li
 import { buildFaqPageJsonLd, HOME_FAQ_KEYS } from "@/lib/home/home-faq";
 import { loadHomePageData } from "@/lib/home/home-page-data";
 import { pageMetadata, serializeJsonLd, siteUrl } from "@/lib/seo";
+import { organizationId } from "@/lib/structured-data";
 import HookChapter from "@/components/constellation/hook-chapter";
 import DarkChapter from "@/components/constellation/dark-chapter";
 import CommunityChapter from "@/components/constellation/community-chapter";
@@ -51,7 +52,7 @@ function membershipJsonLd(locale: string) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: `Next Level Builders ${MEMBERSHIP_PLAN_NAMES[plan]} membership`,
-    brand: { "@id": `${siteUrl()}/#org` },
+    brand: { "@id": organizationId() },
     url: `${url}#pricing`,
     offers: (["quarterly", "annual"] as const).map((cycle) => ({
       "@type": "Offer",

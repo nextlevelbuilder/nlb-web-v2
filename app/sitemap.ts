@@ -5,6 +5,7 @@ import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
 import { POLICY_SLUGS } from "@/lib/constants/policy-slugs";
+import { getPolicy } from "@/content/policies";
 import { localizedPath, siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +20,34 @@ async function safely<T>(load: () => Promise<T[]>): Promise<T[]> {
   }
 }
 
+/** Latest of the given dates, or undefined when there is none (no invented lastmod). */
+function latest(dates: Array<Date | string | null | undefined>): Date | undefined {
+  const times = dates.map((value) => (value ? new Date(value).getTime() : NaN)).filter((time) => Number.isFinite(time));
+  return times.length ? new Date(Math.max(...times)) : undefined;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteUrl();
   const products = await getAllPublishedProducts();
   const posts = await safely(() => listPostSummaries({ status: "published", limit: 500, offset: 0 }));
   const videos = await safely(() => listPublishedVideos(getDb()));
-  const paths = ["/", "/build-with-us", "/build-with-us/instructions", "/leaderboards", "/blog", "/courses", "/policies", ...POLICY_SLUGS.map((slug) => `/policies/${slug}`)];
+  // Listing pages take the newest change of the content they list; policies carry their own review date.
+  // The instructions page has no content timestamp, so it is listed without lastmod.
+  const productsChanged = latest(products.map((product) => product.updatedAt));
+  const videosChanged = latest(videos.map((video) => video.updatedAt));
+  const postsChanged = latest(posts.map((post) => post.updatedAt));
+  const policyDates = new Map(POLICY_SLUGS.map((slug) => [slug, latest([getPolicy(slug, "en")?.lastUpdated])]));
+  const policiesChanged = latest([...policyDates.values()]);
+  const staticPages: Array<[string, Date | undefined]> = [
+    ["/", latest([productsChanged, videosChanged, postsChanged])],
+    ["/build-with-us", productsChanged],
+    ["/build-with-us/instructions", undefined],
+    ["/leaderboards", productsChanged],
+    ["/blog", postsChanged],
+    ["/courses", videosChanged],
+    ["/policies", policiesChanged],
+    ...POLICY_SLUGS.map((slug): [string, Date | undefined] => [`/policies/${slug}`, policyDates.get(slug)]),
+  ];
   const entries: MetadataRoute.Sitemap = [];
   const add = (path: string, lastModified?: Date) => {
     for (const locale of ["en", "vi"]) entries.push({
@@ -33,7 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: { languages: { en: `${baseUrl}${localizedPath(path, "en")}`, vi: `${baseUrl}${localizedPath(path, "vi")}`, "x-default": `${baseUrl}${localizedPath(path, "en")}` } },
     });
   };
-  for (const path of paths) add(path);
+  for (const [path, lastModified] of staticPages) add(path, lastModified);
   entries.push({ url: `${baseUrl}/api-docs` });
   for (const product of products) add(`/products/${product.slug}`, product.updatedAt);
   for (const video of videos) add(`/courses/${video.slug}`, video.updatedAt);

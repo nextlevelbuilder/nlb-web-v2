@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
+import { discoveryLinkHeader } from './lib/discovery/discovery-link-header';
 
 /**
  * EN is served at `/` and VI at `/vi` (see i18n/routing.ts). Locale detection uses the
@@ -18,7 +19,20 @@ export default function middleware(request: NextRequest) {
     destination.searchParams.set('query', request.nextUrl.search);
     return NextResponse.rewrite(destination);
   }
-  return intlMiddleware(request);
+  // Generated social cards: Next emits them with the internal locale prefix (/en/.../opengraph-image).
+  // Serve those as-is instead of letting next-intl redirect /en/* to the unprefixed URL, and map an
+  // unprefixed card URL onto the default locale, without cookie or Accept-Language detection.
+  if (/\/opengraph-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) {
+    if (/^\/(?:en|vi)\//.test(request.nextUrl.pathname)) return NextResponse.next();
+    const destination = request.nextUrl.clone();
+    destination.pathname = `/${routing.defaultLocale}${request.nextUrl.pathname}`;
+    return NextResponse.rewrite(destination);
+  }
+  const response = intlMiddleware(request);
+  // next-intl writes its own hreflang `Link` header, so discovery links are appended here rather than
+  // configured in next.config headers (which the middleware header would replace).
+  response.headers.append('Link', discoveryLinkHeader());
+  return response;
 }
 
 export const config = {

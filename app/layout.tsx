@@ -4,7 +4,8 @@ import { getLocale } from "next-intl/server";
 import { siteUrl, serializeJsonLd } from "@/lib/seo";
 import { ThemeProvider } from "@/components/theme-provider";
 import GoogleAnalyticsConsentAware from "@/components/analytics/google-analytics-consent-aware";
-import { SOCIAL_LINKS, X_HANDLE } from "@/lib/constants/socials";
+import { X_HANDLE } from "@/lib/constants/socials";
+import { siteGraphJsonLd } from "@/lib/structured-data";
 import "./globals.css";
 import "./constellation-shell.css";
 import "./constellation-components.css";
@@ -91,17 +92,6 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
-  const organization = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${siteUrl()}/#org`,
-    name: "Next Level Builders",
-    alternateName: "NLB",
-    url: siteUrl(),
-    logo: `${siteUrl()}/icon-512.png`,
-    slogan: "Building the future, one product at a time.",
-    sameAs: Object.values(SOCIAL_LINKS),
-  };
 
   return (
     // suppressHydrationWarning: next-themes sets data-theme on <html> before hydration.
@@ -109,7 +99,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale} className={`${display.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="AI index" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(organization) }} />
+        <link rel="alternate" type="text/plain" href="/llms-full.txt" title="AI full context" />
+        <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json" title="NLB REST API (OpenAPI)" />
+        <link rel="alternate" type="application/json" href="/.well-known/mcp.json" title="MCP server discovery" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteGraphJsonLd(locale)) }} />
       </head>
       <body className="font-sans">
         <ThemeProvider>{children}</ThemeProvider>

@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { markdownSourcePath } from "@/lib/markdown/page-paths";
 import { renderApiReference } from "@/lib/api-reference";
@@ -21,14 +23,23 @@ describe("markdown twins for blog and courses", () => {
 });
 
 describe("social metadata", () => {
-  it("gives every page and the blog index an image with alt text", () => {
+  it("leaves page images to the generated opengraph-image routes", () => {
+    // Config images beat file-based ones in Next metadata, so pinning a static card would hide the generated card.
     const page = pageMetadata({ title: "T", description: "D", path: "/courses", locale: "en" });
-    expect(page.openGraph?.images).toEqual([defaultOgImage()]);
+    expect(page.openGraph?.images).toBeUndefined();
+    expect(page.twitter).toMatchObject({ card: "summary_large_image" });
     expect(defaultOgImage().alt.length).toBeGreaterThan(10);
     const blog = blogIndexMetadata("vi");
-    expect(blog.openGraph?.images).toEqual([defaultOgImage()]);
+    expect(blog.openGraph?.images).toBeUndefined();
     expect(blog.twitter).toMatchObject({ card: "summary_large_image" });
     expect(blog.alternates?.types).toEqual({ "text/markdown": `${siteUrl()}/vi/blog.md` });
+  });
+
+  it("ships an opengraph-image route next to every public page that sets its own metadata", () => {
+    const publicPages = ["", "courses", "courses/[slug]", "blog", "blog/[slug]", "products/[slug]", "policies", "policies/[slug]", "leaderboards", "build-with-us", "build-with-us/instructions", "builders/[id]"];
+    for (const dir of publicPages) {
+      expect(existsSync(join(process.cwd(), "app/[locale]", dir, "opengraph-image.tsx")), dir || "home").toBe(true);
+    }
   });
 
   it("renders the API reference with an environment canonical, social card and JSON-LD", () => {

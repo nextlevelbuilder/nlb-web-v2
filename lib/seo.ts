@@ -10,7 +10,17 @@ export function localizedPath(path: string, locale: string) {
   return `${locale === "vi" ? "/vi" : ""}${suffix}` || "/";
 }
 
-/** Site-wide social card; per-page metadata reuses it so every share shows the brand. */
+/** Markdown twin of a page (rendered by app/api/markdown). The EN home is `/index.md`, never `/.md`. */
+export function markdownPath(path: string, locale: string) {
+  if (path === "/") return locale === "vi" ? "/vi.md" : "/index.md";
+  return `${localizedPath(path, locale)}.md`;
+}
+
+/**
+ * Static site-wide social card for surfaces outside the localized app tree (e.g. /api-docs).
+ * Pages under app/[locale] get generated Constellation cards from their `opengraph-image` routes,
+ * which Next attaches automatically, so pageMetadata must not pin an image of its own.
+ */
 export function defaultOgImage() {
   return { url: `${siteUrl()}/og-image.png`, width: 1200, height: 630, alt: "Next Level Builders: a community of builders shipping products together" };
 }
@@ -24,10 +34,10 @@ export function pageMetadata({ title, description, path, locale }: {
     alternates: {
       canonical,
       languages: { vi: `${siteUrl()}${localizedPath(path, "vi")}`, en: `${siteUrl()}${localizedPath(path, "en")}`, "x-default": `${siteUrl()}${localizedPath(path, "en")}` },
-      types: { "text/markdown": `${canonical}.md` },
+      types: { "text/markdown": `${siteUrl()}${markdownPath(path, locale)}` },
     },
-    openGraph: { title, description, url: canonical, type: "website", siteName: "Next Level Builders", locale: locale === "en" ? "en_US" : "vi_VN", images: [defaultOgImage()] },
-    twitter: { card: "summary_large_image", title, description, images: [defaultOgImage()] },
+    openGraph: { title, description, url: canonical, type: "website", siteName: "Next Level Builders", locale: locale === "en" ? "en_US" : "vi_VN" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
