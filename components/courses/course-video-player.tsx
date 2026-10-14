@@ -63,7 +63,7 @@ export function CourseVideoPlayer({ slug, title, locale }: CourseVideoPlayerProp
   }
 
   return (
-    <div className="surface-panel relative aspect-video w-full overflow-hidden bg-canvas-deep">
+    <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-line bg-canvas-deep">
       {state.kind === "ready" && (
         <iframe
           src={state.iframeUrl}

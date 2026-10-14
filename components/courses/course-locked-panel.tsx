@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Crown, Lock, ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { formatCoursePrice, getCoursesCopy, toCoursesLocale } from "@/lib/courses/courses-copy";
 import { localizedPath } from "@/lib/seo";
 
@@ -50,35 +49,32 @@ export function CourseLockedPanel({ slug, priceCents, currency, locale, signedIn
   }
 
   return (
-    <section aria-labelledby="course-locked-title" className="surface-panel p-6 text-ink sm:p-8">
-      <div className="flex items-center gap-2">
-        <Lock aria-hidden className="h-5 w-5 text-primary" />
-        <h2 id="course-locked-title" className="font-display text-step-xl">{copy.lockedTitle}</h2>
-      </div>
+    <section aria-labelledby="course-locked-title" className="p-3 text-ink sm:p-5">
+      <p className="mono flex items-center gap-2 text-ink-3">
+        <Lock aria-hidden className="h-3.5 w-3.5 text-primary" />
+        <span>{price}</span>
+      </p>
+      <h2 id="course-locked-title" className="mt-3 font-display text-step-xl">{copy.lockedTitle}</h2>
       {paymentReturned && (
         <p role="status" className="mt-4 rounded-sm border border-line bg-surface-raised p-3 text-step-sm">{copy.paymentPending}</p>
       )}
-      <p className="mt-4 text-step-sm text-ink-2">{copy.lockedBody}</p>
-      <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-        <li className="flex flex-col gap-4 rounded-sm border border-line bg-surface-raised p-5">
+      <p className="mt-3 text-step-sm text-ink-2">{copy.lockedBody}</p>
+      <ul className="mt-5 grid gap-4 sm:grid-cols-2">
+        <li className="flex flex-col gap-4 rounded-sm border border-line p-5">
           <ShoppingCart aria-hidden className="h-5 w-5 text-primary" />
           <p className="text-step-sm text-ink-2">{copy.buyOption(price)}</p>
           {signedIn ? (
-            <Button className="mt-auto" onClick={() => void startCheckout()} disabled={pending} aria-busy={pending}>
+            <button type="button" className="btn btn-primary btn-sm mt-auto self-start" onClick={() => void startCheckout()} disabled={pending} aria-busy={pending}>
               {copy.buyButton(price)}
-            </Button>
+            </button>
           ) : (
-            <Button asChild className="mt-auto">
-              <Link href={signInHref}>{copy.signInToBuy}</Link>
-            </Button>
+            <Link className="btn btn-primary btn-sm mt-auto self-start" href={signInHref}>{copy.signInToBuy}</Link>
           )}
         </li>
-        <li className="flex flex-col gap-4 rounded-sm border border-line bg-surface-raised p-5">
+        <li className="flex flex-col gap-4 rounded-sm border border-dashed border-line-strong p-5">
           <Crown aria-hidden className="h-5 w-5 text-primary" />
           <p className="text-step-sm text-ink-2">{copy.vipOption}</p>
-          <Button asChild variant="outline" className="mt-auto">
-            <Link href={`${localizedPath("/", locale)}#pricing`}>{copy.vipButton}</Link>
-          </Button>
+          <Link className="btn btn-ghost btn-sm mt-auto self-start" href={`${localizedPath("/", locale)}#pricing`}>{copy.vipButton}</Link>
         </li>
       </ul>
       {error && <p role="alert" className="mt-4 text-step-sm text-destructive">{error}</p>}
