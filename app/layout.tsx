@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import { siteUrl, serializeJsonLd } from "@/lib/seo";
 import { ThemeProvider } from "@/components/theme-provider";
 import GoogleAnalyticsConsentAware from "@/components/analytics/google-analytics-consent-aware";
+import PostHogAnalytics from "@/components/analytics/posthog-analytics";
 import { X_HANDLE } from "@/lib/constants/socials";
 import { siteGraphJsonLd } from "@/lib/structured-data";
 import "./globals.css";
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="font-sans">
         <ThemeProvider>{children}</ThemeProvider>
         <GoogleAnalyticsConsentAware />
+        <PostHogAnalytics />
       </body>
     </html>
   );

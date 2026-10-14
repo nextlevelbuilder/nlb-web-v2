@@ -23,32 +23,27 @@ afterEach(() => {
 });
 
 describe('traffic capture', () => {
-  it('reuses the session identifier and reports a product view to both collectors', () => {
+  it('reuses the session identifier and reports a product view to the independent collector', () => {
     expect(getTrafficVisitorId()).toBe(visitorId);
     capturePageView(trafficPageContext('/products/builder-tool'));
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith('/api/traffic', expect.objectContaining({
       keepalive: true,
       body: JSON.stringify({ productSlug: 'builder-tool', event: 'page_view', visitorId, referrer: 'https://example.com' }),
     }));
-    expect(fetch).toHaveBeenCalledWith('/api/traffic/posthog', expect.objectContaining({
-      body: JSON.stringify({ visitorId, path: '/products/builder-tool' }),
-    }));
   });
 
-  it('sends directory visits to both independent traffic collection and PostHog', () => {
+  it('sends directory visits to independent traffic collection', () => {
     capturePageView(trafficPageContext('/build-with-us'));
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith('/api/traffic', expect.objectContaining({
       body: JSON.stringify({ event: 'page_view', visitorId, referrer: 'https://example.com' }),
     }));
-    expect(fetch).toHaveBeenCalledWith('/api/traffic/posthog', expect.objectContaining({ body: JSON.stringify({ visitorId, path: '/build-with-us' }) }));
   });
 
-  it('feeds PostHog only for pages the independent collector does not own', () => {
+  it('leaves other pages to the PostHog browser SDK', () => {
     capturePageView(trafficPageContext('/pricing'));
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith('/api/traffic/posthog', expect.objectContaining({ body: JSON.stringify({ visitorId, path: '/pricing' }) }));
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it.each(['/profile', '/account/billing', '/sign-in', '/oauth/consent', '/success', '/studio/products/agentkit/preview'])('reports nothing for %s', (path) => {
@@ -90,7 +85,7 @@ describe('traffic capture', () => {
   it('continues capture when Global Privacy Control is explicitly false', () => {
     vi.stubGlobal('navigator', { doNotTrack: '0', globalPrivacyControl: false });
     capturePageView(trafficPageContext('/products/builder-tool'));
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('sends only referrer origin and limits the browser Referer header to origin', () => {
@@ -107,9 +102,6 @@ describe('traffic capture', () => {
     capturePageView(trafficPageContext('/build-with-us'));
     expect(fetch).toHaveBeenCalledWith('/api/traffic', expect.objectContaining({
       body: JSON.stringify({ event: 'page_view', visitorId, referrer: '' }),
-    }));
-    expect(fetch).toHaveBeenCalledWith('/api/traffic/posthog', expect.objectContaining({
-      body: JSON.stringify({ visitorId, path: '/build-with-us' }),
     }));
   });
 

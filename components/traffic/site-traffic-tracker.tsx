@@ -6,8 +6,8 @@ import { captureOutboundClick, capturePageView, isProductOutboundLink, trafficPa
 
 /**
  * Mounted once for every localized page. Private pages and Studio previews report
- * nothing; page views reach PostHog for the whole site, while the independent
- * collector keeps receiving only directory and product-page rows.
+ * nothing; the independent collector receives only directory and product-page rows.
+ * Site-wide PostHog tracking lives in components/analytics/posthog-analytics.tsx.
  */
 export function SiteTrafficTracker() {
   const pathname = usePathname();

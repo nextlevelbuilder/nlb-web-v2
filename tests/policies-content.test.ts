@@ -36,9 +36,9 @@ describe("policy registry", () => {
     expect(policySlugsByGroup("legal")).toEqual([...LEGAL_SLUGS]);
   });
 
-  it.each(POLICY_PAGE_SLUGS)("%s has complete EN and VI content dated 2026-10-13", (slug) => {
+  it.each(POLICY_PAGE_SLUGS)("%s has complete EN and VI content with a valid update date", (slug) => {
     const entry = POLICIES[slug];
-    expect(entry.lastUpdated).toBe("2026-10-13");
+    expect(entry.lastUpdated).toMatch(/^2026-10-1[34]$/);
     for (const locale of POLICY_LOCALES) {
       const doc = entry.content[locale];
       expect(doc.title.trim()).not.toBe("");

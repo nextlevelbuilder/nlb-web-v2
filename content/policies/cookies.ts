@@ -12,7 +12,7 @@ import type { PolicyEntry } from "./policy-types";
  */
 export const cookiesPolicy: PolicyEntry = {
   group: "legal",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-14",
   legalReviewPending: true,
   content: {
     en: {
@@ -44,7 +44,7 @@ export const cookiesPolicy: PolicyEntry = {
         {
           heading: "5. Analytics cookies",
           content:
-            "Google Analytics 4 (provided by Google LLC) measures aggregate site usage, such as which pages are visited and how visitors arrive:\n• _ga: first-party analytics cookie that distinguishes visitors. Kept for up to 2 years.\n• _ga_<container-id>: first-party analytics cookie that keeps the state of a visit. Kept for up to 2 years.\n\nWe do not load Google Analytics when your browser sends Do Not Track or Global Privacy Control. You can also opt out with Google's Analytics opt-out browser add-on (tools.google.com/dlpage/gaoptout).\n\nOur own product traffic counts set no cookies: they use the session-storage ID above, which is hashed before product statistics are stored and is sent through our own servers. Private pages such as sign-in, account and profile are never counted there.",
+            "Google Analytics 4 (provided by Google LLC) measures aggregate site usage, such as which pages are visited and how visitors arrive:\n• _ga: first-party analytics cookie that distinguishes visitors. Kept for up to 2 years.\n• _ga_<container-id>: first-party analytics cookie that keeps the state of a visit. Kept for up to 2 years.\n\nWe do not load Google Analytics when your browser sends Do Not Track or Global Privacy Control. You can also opt out with Google's Analytics opt-out browser add-on (tools.google.com/dlpage/gaoptout).\n\nPostHog (provided by PostHog Inc.) measures product usage on nextlevelbuilder.io, including session replays with typed input masked:\n• ph_<project-key>_posthog: first-party analytics cookie that keeps an anonymous visitor ID (or your account ID when signed in) and the current session. Kept for up to 1 year.\n• PostHog also keeps short-lived replay and queue data in your browser's local and session storage.\n\nPostHog does not load when your browser sends Do Not Track or Global Privacy Control.\n\nOur own product traffic counts set no cookies: they use the session-storage ID above, which is hashed before product statistics are stored and is sent through our own servers. Private pages such as sign-in, account and profile are never counted there.",
         },
         {
           heading: "6. Third-party pages",
@@ -92,7 +92,7 @@ export const cookiesPolicy: PolicyEntry = {
         {
           heading: "5. Cookie phân tích",
           content:
-            "Google Analytics 4 (do Google LLC cung cấp) đo lường tổng hợp cách website được sử dụng, chẳng hạn trang nào được xem và khách truy cập đến từ đâu:\n• _ga: cookie phân tích bên thứ nhất dùng để phân biệt khách truy cập. Lưu tối đa 2 năm.\n• _ga_<container-id>: cookie phân tích bên thứ nhất lưu trạng thái lượt truy cập. Lưu tối đa 2 năm.\n\nChúng tôi không tải Google Analytics khi trình duyệt của bạn gửi tín hiệu Do Not Track hoặc Global Privacy Control. Bạn cũng có thể từ chối bằng tiện ích trình duyệt Google Analytics Opt-out (tools.google.com/dlpage/gaoptout).\n\nSố liệu lưu lượng sản phẩm của chúng tôi không dùng cookie: chúng dựa trên mã trong session storage nêu trên, được băm trước khi lưu thống kê sản phẩm và được gửi qua máy chủ của chúng tôi. Các trang riêng tư như đăng nhập, tài khoản và hồ sơ không bao giờ được tính ở đó.",
+            "Google Analytics 4 (do Google LLC cung cấp) đo lường tổng hợp cách website được sử dụng, chẳng hạn trang nào được xem và khách truy cập đến từ đâu:\n• _ga: cookie phân tích bên thứ nhất dùng để phân biệt khách truy cập. Lưu tối đa 2 năm.\n• _ga_<container-id>: cookie phân tích bên thứ nhất lưu trạng thái lượt truy cập. Lưu tối đa 2 năm.\n\nChúng tôi không tải Google Analytics khi trình duyệt của bạn gửi tín hiệu Do Not Track hoặc Global Privacy Control. Bạn cũng có thể từ chối bằng tiện ích trình duyệt Google Analytics Opt-out (tools.google.com/dlpage/gaoptout).\n\nPostHog (do PostHog Inc. cung cấp) đo lường cách sản phẩm được sử dụng trên nextlevelbuilder.io, gồm bản ghi phiên truy cập với nội dung nhập được che:\n• ph_<project-key>_posthog: cookie phân tích bên thứ nhất lưu mã khách truy cập ẩn danh (hoặc ID tài khoản khi bạn đăng nhập) và phiên hiện tại. Lưu tối đa 1 năm.\n• PostHog cũng lưu dữ liệu ngắn hạn cho bản ghi phiên và hàng đợi gửi trong local storage và session storage của trình duyệt.\n\nPostHog không tải khi trình duyệt gửi tín hiệu Do Not Track hoặc Global Privacy Control.\n\nSố liệu lưu lượng sản phẩm của chúng tôi không dùng cookie: chúng dựa trên mã trong session storage nêu trên, được băm trước khi lưu thống kê sản phẩm và được gửi qua máy chủ của chúng tôi. Các trang riêng tư như đăng nhập, tài khoản và hồ sơ không bao giờ được tính ở đó.",
         },
         {
           heading: "6. Trang của bên thứ ba",

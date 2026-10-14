@@ -71,15 +71,15 @@ function report(url: string, body: object): void {
   }).catch(() => { /* Measurement failures must never interrupt navigation. */ });
 }
 
-/** Records one page view: directory and product pages also feed the independent collector. */
+/**
+ * Feeds the independent collector for directory and product pages. Site-wide PostHog pageviews
+ * come from the browser SDK (components/analytics/posthog-analytics.tsx), not from here.
+ */
 export function capturePageView(page: TrafficPage): void {
-  if (!page.tracked) return;
+  if (!page.tracked || !(page.directory || page.productSlug)) return;
   const visitorId = getTrafficVisitorId();
   if (!visitorId) return;
-  if (page.directory || page.productSlug) {
-    report('/api/traffic', { productSlug: page.productSlug, event: 'page_view', visitorId, referrer: referrerOrigin() });
-  }
-  report('/api/traffic/posthog', { visitorId, path: page.path });
+  report('/api/traffic', { productSlug: page.productSlug, event: 'page_view', visitorId, referrer: referrerOrigin() });
 }
 
 /** Product website clicks stay in the independent collector's outbound ledger. */
