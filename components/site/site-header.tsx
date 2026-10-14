@@ -8,34 +8,11 @@ import { lockScroll } from '@/lib/constellation/smooth-scroll';
 import BrandMark from './brand-mark';
 import LangSeg from './lang-seg';
 import ThemeSeg from './theme-seg';
-
-type NavKey = 'courses' | 'directory' | 'leaderboard' | 'pricing' | 'buildWithUs';
-
-interface NavItem {
-  key: NavKey;
-  /** In-page anchor on the home page. */
-  anchor: string;
-  /** Route everywhere else. */
-  route: string | { pathname: '/'; hash: string };
-  numeral: string;
-}
-
-// Same order, labels and chapter numerals as the Constellation header.
-const NAV: NavItem[] = [
-  { key: 'courses', anchor: '#courses', route: '/courses', numeral: 'III' },
-  { key: 'directory', anchor: '#directory', route: '/build-with-us', numeral: 'IV' },
-  { key: 'leaderboard', anchor: '#directory', route: '/leaderboards', numeral: 'IV' },
-  { key: 'pricing', anchor: '#pricing', route: { pathname: '/', hash: 'pricing' }, numeral: 'VI' },
-  { key: 'buildWithUs', anchor: '#toolkits', route: '/build-with-us/instructions', numeral: 'VII' },
-];
+import { NAV, isCurrentNavItem, type NavItem } from './site-nav-items';
 
 const DESKTOP = '(min-width: 1140px)';
 
-function isCurrent(pathname: string, route: NavItem['route']) {
-  return typeof route === 'string' && (pathname === route || pathname.startsWith(`${route}/`));
-}
-
-/** Home renders plain in-page anchors (scrolled by the home engine); other pages use locale-aware routes. */
+/** Home sections render plain anchors on the home page (scrolled by the home engine); everything else is a locale-aware route. */
 function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
   item: NavItem;
   onHome: boolean;
@@ -44,10 +21,10 @@ function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
   children: ReactNode;
   className?: string;
 }) {
-  if (onHome) {
-    return <a href={item.anchor} className={className} onClick={onNavigate}>{children}</a>;
+  if (onHome && item.homeAnchor) {
+    return <a href={item.homeAnchor} className={className} onClick={onNavigate}>{children}</a>;
   }
-  const current = isCurrent(pathname, item.route);
+  const current = isCurrentNavItem(pathname, item);
   return (
     <Link href={item.route} className={className} aria-current={current ? 'page' : undefined} onClick={onNavigate}>
       {children}
