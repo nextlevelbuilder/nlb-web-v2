@@ -99,9 +99,8 @@ export async function promoteAssetToPublic(assetId: string, customDb?: AppDb) {
   }
 
   // Public URL is derived from content-addressed storage key
-  // Served by the app's /media route unless a dedicated asset host is configured.
-  const publicKey = asset.storageKey.replace("staging/", "public/");
-  const publicUrl = process.env.NEXT_PUBLIC_ASSETS_URL ? `${process.env.NEXT_PUBLIC_ASSETS_URL}/${publicKey}` : publicMediaUrl(publicKey);
+  // Served by the app's /media route: NEXT_PUBLIC_ASSETS_URL (cdn.nextlevelbuilder.io) has no bucket behind it.
+  const publicUrl = publicMediaUrl(asset.storageKey.replace("staging/", "public/"));
 
   const [promoted] = await db
     .update(assets)
