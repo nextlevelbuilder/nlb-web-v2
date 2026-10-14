@@ -1,7 +1,8 @@
 /** Converts blog_posts / blog_post_revisions rows into the wire types of the HTTP contract. */
 import type { blogPostRevisions, blogPosts } from "@/lib/db/schema";
 import type { BlogBlock } from "./blocks/block-types";
-import type { BlogPost, BlogPostSummary, BlogRevision, BlogSeo } from "./blog-types";
+import { readingMinutes } from "./blog-reading-time";
+import type { BlogPost, BlogPostListItem, BlogPostSummary, BlogRevision, BlogSeo } from "./blog-types";
 
 export type BlogPostRow = typeof blogPosts.$inferSelect;
 export type BlogPostSummaryRow = Omit<BlogPostRow, "blocks">;
@@ -33,6 +34,13 @@ export function rowToSummary(row: BlogPostSummaryRow): BlogPostSummary {
 export function rowToPost(row: BlogPostRow): BlogPost {
   const { blocks, ...rest } = row;
   return { ...rowToSummary(rest), blocks: (Array.isArray(blocks) ? blocks : []) as BlogBlock[] };
+}
+
+/** Index card data: the summary plus a reading time computed from the blocks, which are not kept. */
+export function rowToListItem(row: BlogPostRow): BlogPostListItem {
+  const post = rowToPost(row);
+  const { blocks, ...summary } = post;
+  return { ...summary, readingMinutes: readingMinutes(blocks) };
 }
 
 /** Revision rows selected without the (large) snapshot column map to a revision without `snapshot`. */

@@ -88,6 +88,22 @@ const table = z
     });
   });
 
+const productCard = z
+  .object({
+    name: text(80),
+    tagline: text(200),
+    href,
+    logo: imageSrc.optional(),
+    image: imageSrc.optional(),
+    tags: z.array(text(32)).max(6).optional(),
+    maker: optText(80),
+  })
+  .strict();
+
+const productCards = z
+  .object({ title: optText(120), items: z.array(productCard).min(1).max(6) })
+  .strict();
+
 export const SECTION_BLOCKS = {
   hero: {
     title: "Hero / lead",
@@ -166,5 +182,24 @@ export const SECTION_BLOCKS = {
     description: "Data table with 1-8 headers and up to 50 rows; each row has one cell per header. Cells accept inline Markdown.",
     schema: table,
     example: { caption: "Plans", headers: ["Plan", "Price"], rows: [["Free", "$0"], ["Pro", "$19/mo"]] },
+  },
+  "product-cards": {
+    title: "Product cards",
+    description:
+      "1-6 product plates, each one link: name, tagline, href (site path such as /products/x or https://), optional logo and 16:9 image (https:// or /images/, /media/), up to 6 tags and a maker.",
+    schema: productCards,
+    example: {
+      title: "From the directory",
+      items: [
+        {
+          name: "AK Render",
+          tagline: "HTML pages for coding agents, compiled from a short Page Spec.",
+          href: "/products/ak-render",
+          logo: "https://cdn.nextlevelbuilder.io/public/products/ak-render/logo.png",
+          tags: ["cli", "html"],
+          maker: "Duy Nguyen",
+        },
+      ],
+    },
   },
 } satisfies Record<string, BlockSpec>;

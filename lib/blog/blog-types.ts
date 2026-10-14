@@ -36,6 +36,23 @@ export interface BlogPost {
 
 export type BlogPostSummary = Omit<BlogPost, "blocks">;
 
+/** A summary for the public index cards: reading time is computed from the blocks, which are then dropped. */
+export interface BlogPostListItem extends BlogPostSummary {
+  readingMinutes: number;
+}
+
+/** A tag used by published posts of one locale, with how many posts carry it. */
+export interface BlogTagCount {
+  tag: string;
+  count: number;
+}
+
+/** Published neighbours of a post in its locale, by publish date. */
+export interface BlogAdjacentPosts {
+  newer: BlogPostSummary | null;
+  older: BlogPostSummary | null;
+}
+
 export interface BlogRevision {
   id: string;
   postId: string;

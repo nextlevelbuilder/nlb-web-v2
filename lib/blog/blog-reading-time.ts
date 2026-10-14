@@ -1,7 +1,7 @@
 /** Reading-time estimate from a post's blocks (~220 words per minute, never below one minute). */
 import type { BlogBlock } from "./blocks/block-types";
 
-const SKIPPED_KEYS = new Set(["src", "href", "url", "sourceUrl", "language", "variant", "tone", "width", "align", "style", "aspect", "anchor"]);
+const SKIPPED_KEYS = new Set(["src", "logo", "href", "url", "sourceUrl", "language", "variant", "tone", "width", "align", "style", "aspect", "anchor"]);
 
 function collectText(value: unknown, out: string[], key?: string): void {
   if (key && SKIPPED_KEYS.has(key)) return;

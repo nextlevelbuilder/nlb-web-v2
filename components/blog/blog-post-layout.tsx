@@ -1,55 +1,91 @@
-/** Article layout for a published post: header (title, meta, cover), blocks, tags and language switch. */
+/**
+ * Article layout for a published post: masthead (plate, h1, lede, meta), cover, blocks on the article
+ * grid, then tags, share, author card and newer/older navigation. A leading hero block is lifted into
+ * the masthead: its lead is the lede, its eyebrow the plate name and its image the cover.
+ */
 import React from "react";
 import Link from "next/link";
+import { getBlockSchema, type BlogBlockProps } from "@/lib/blog/blocks/registry";
+import type { BlogBlock } from "@/lib/blog/blocks/block-types";
+import { resolveBlogAuthor } from "@/lib/blog/blog-authors";
 import { BLOG_COPY, formatBlogDate } from "@/lib/blog/blog-copy";
 import { readingMinutes } from "@/lib/blog/blog-reading-time";
+import { blogPostPublicUrl } from "@/lib/blog/blog-share-links";
+import { seedFrom, skyCoordinate } from "@/lib/blog/blog-sky-seed";
 import { blogIndexPath, blogPostPath } from "@/lib/blog/blog-slug-rules";
-import type { BlogPost, BlogPostSummary } from "@/lib/blog/blog-types";
+import type { BlogAdjacentPosts, BlogPost, BlogPostSummary } from "@/lib/blog/blog-types";
+import { BlogAuthorChip } from "./blog-author-chip";
 import { BlogBlocks } from "./blog-block-renderers";
+import { BLOG_NUMERAL, BlogPlate } from "./blog-plate";
+import { BlogPostFooter } from "./blog-post-footer";
 
-export function BlogPostLayout({ post, translation }: { post: BlogPost; translation: BlogPostSummary | null }) {
+const NO_ADJACENT: BlogAdjacentPosts = { newer: null, older: null };
+
+/** Splits off a valid leading hero block; an invalid stored hero is dropped like any invalid block. */
+function splitHero(blocks: BlogBlock[]): { hero: BlogBlockProps<"hero"> | null; body: BlogBlock[] } {
+  if (blocks[0]?.type !== "hero") return { hero: null, body: blocks };
+  const parsed = getBlockSchema("hero").safeParse(blocks[0].props);
+  return { hero: parsed.success ? (parsed.data as BlogBlockProps<"hero">) : null, body: blocks.slice(1) };
+}
+
+interface BlogPostLayoutProps {
+  post: BlogPost;
+  translation: BlogPostSummary | null;
+  adjacent?: BlogAdjacentPosts;
+}
+
+export function BlogPostLayout({ post, translation, adjacent = NO_ADJACENT }: BlogPostLayoutProps) {
   const copy = BLOG_COPY[post.locale];
   const date = formatBlogDate(post.publishedAt, post.locale);
-  const startsWithHero = post.blocks[0]?.type === "hero";
+  const author = resolveBlogAuthor(post.authorName, post.locale);
+  const { hero, body } = splitHero(post.blocks);
+  const kicker = hero?.eyebrow || post.tags[0] || copy.plateName;
+  const lede = hero?.lead ?? post.description;
+  const cover = hero?.image ?? (post.coverUrl ? { src: post.coverUrl, alt: "", caption: undefined } : null);
+
   return (
-    <article lang={post.locale} className="px-gutter">
-      <header className="mx-auto max-w-4xl">
-        <Link href={blogIndexPath(post.locale)} className="font-mono text-step-xs uppercase text-ink-3 hover:text-star">&larr; {copy.backToBlog}</Link>
-        <h1 className="mt-6 font-display text-step-3xl text-ink">{post.title}</h1>
-        {post.description && !startsWithHero && <p className="mt-5 max-w-3xl text-step-lg text-ink-2">{post.description}</p>}
-        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-6 text-step-sm text-ink-3">
-          {post.authorName && <span className="text-ink-2">{copy.byAuthor(post.authorName)}</span>}
-          {date && <time dateTime={post.publishedAt ?? undefined}>{copy.publishedOn} {date}</time>}
-          <span>{copy.minutesRead(readingMinutes(post.blocks))}</span>
+    <article lang={post.locale} className="blog-article">
+      <header className="blog-post-head">
+        <Link className="mono blog-back" href={blogIndexPath(post.locale)}>
+          <span aria-hidden="true">← </span>{copy.backToBlog}
+        </Link>
+        <BlogPlate numeral={BLOG_NUMERAL} name={kicker} coord={skyCoordinate(seedFrom(post.slug))} />
+        <h1 className="h1-page blog-title">{post.title}</h1>
+        {lede && <p className="lede blog-lede">{lede}</p>}
+        <ul className="mono blog-meta">
+          {author && <li className="blog-meta-author"><BlogAuthorChip author={author} label={copy.authorLabel} /></li>}
+          {date && post.publishedAt && <li><time dateTime={post.publishedAt}>{date}</time></li>}
+          <li>{copy.minutesRead(readingMinutes(post.blocks))}</li>
           {translation && (
-            <Link href={blogPostPath(translation.locale, translation.slug)} hrefLang={translation.locale} className="ml-auto text-star hover:underline">
-              {copy.otherLanguage}
-            </Link>
+            <li className="blog-meta-lang">
+              <Link href={blogPostPath(translation.locale, translation.slug)} hrefLang={translation.locale} lang={translation.locale}>
+                {copy.otherLanguage} <span aria-hidden="true">→</span>
+              </Link>
+            </li>
           )}
-        </div>
+        </ul>
       </header>
 
-      {post.coverUrl && !startsWithHero && (
-        <figure className="mx-auto mt-10 max-w-4xl">
-          {/* eslint-disable-next-line @next/next/no-img-element -- author-supplied https images of unknown size */}
-          <img src={post.coverUrl} alt="" decoding="async" className="w-full rounded-lg border border-line object-cover" />
+      {cover && (
+        <figure className="blog-cover">
+          <div className="blog-cover-frame">
+            {/* eslint-disable-next-line @next/next/no-img-element -- author-supplied https images of unknown size */}
+            <img src={cover.src} alt={cover.alt} decoding="async" fetchPriority="high" />
+          </div>
+          {cover.caption && <figcaption className="mono">{cover.caption}</figcaption>}
         </figure>
       )}
 
-      <div className="mt-10">
-        <BlogBlocks blocks={post.blocks} />
-      </div>
+      <BlogBlocks blocks={body} locale={post.locale} />
 
-      {post.tags.length > 0 && (
-        <footer className="mx-auto mt-16 flex max-w-prose flex-wrap items-center gap-2 border-t border-line pt-6">
-          <span className="mr-2 font-mono text-step-xs uppercase text-ink-3">{copy.tagsLabel}</span>
-          {post.tags.map((tag) => (
-            <Link key={tag} href={`${blogIndexPath(post.locale)}?tag=${encodeURIComponent(tag)}`} className="rounded-pill border border-line px-3 py-1 text-step-sm text-ink-2 hover:border-star hover:text-star">
-              #{tag}
-            </Link>
-          ))}
-        </footer>
-      )}
+      <BlogPostFooter
+        locale={post.locale}
+        title={post.title}
+        tags={post.tags}
+        publicUrl={blogPostPublicUrl(post.locale, post.slug)}
+        author={author}
+        adjacent={adjacent}
+      />
     </article>
   );
 }

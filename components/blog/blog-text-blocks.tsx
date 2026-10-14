@@ -1,19 +1,29 @@
-/** Text-centric blog blocks: hero, rich text, callout, quote, key takeaways, FAQ. */
+/** Text-centric blog blocks: hero, rich text, callout, quote, key takeaways, FAQ. Styles: blog-pages.css. */
 import React from "react";
-import { cn } from "@/lib/utils";
+import { BLOG_COPY } from "@/lib/blog/blog-copy";
 import { InlineMarkdown, MarkdownContent, blogLinkClass } from "./blog-markdown";
 import type { BlockViewProps } from "./blog-block-view-types";
+import { StarGlyph } from "./blog-orbit-lens";
 
+const GREEK = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ"] as const;
+
+/** Greek catalogue letter for a 0-based index (wraps after υ). */
+export const greekMarker = (index: number) => GREEK[index % GREEK.length];
+
+/**
+ * Stand-alone hero rendering (catalogue previews, tests). On the post page the hero is lifted into the
+ * masthead instead: its lead becomes the lede and its image the cover (components/blog/blog-post-layout.tsx).
+ */
 export function HeroBlock({ props }: BlockViewProps<"hero">) {
   return (
-    <header className="mx-auto max-w-4xl">
-      {props.eyebrow && <p className="mb-3 font-mono text-step-xs uppercase text-star">{props.eyebrow}</p>}
-      <p className="font-display text-step-lg leading-snug text-ink-2 md:text-step-xl">{props.lead}</p>
+    <header className="blog-hero">
+      {props.eyebrow && <p className="mono blog-kicker">{props.eyebrow}</p>}
+      <p className="blog-hero-lead">{props.lead}</p>
       {props.image && (
-        <figure className="mt-8">
+        <figure className="blog-figure">
           {/* eslint-disable-next-line @next/next/no-img-element -- author-supplied https images of unknown size */}
-          <img src={props.image.src} alt={props.image.alt} className="w-full rounded-lg border border-line object-cover" decoding="async" />
-          {props.image.caption && <figcaption className="mt-2 text-step-sm text-ink-3">{props.image.caption}</figcaption>}
+          <img src={props.image.src} alt={props.image.alt} decoding="async" />
+          {props.image.caption && <figcaption className="mono">{props.image.caption}</figcaption>}
         </figure>
       )}
     </header>
@@ -21,50 +31,57 @@ export function HeroBlock({ props }: BlockViewProps<"hero">) {
 }
 
 export function RichTextBlock({ props, ctx }: BlockViewProps<"rich-text">) {
-  return <MarkdownContent source={props.markdown} nextId={ctx.nextId} className="mx-auto max-w-prose" />;
+  return <MarkdownContent source={props.markdown} nextId={ctx.nextId} />;
 }
 
-const CALLOUT_TONE = {
-  note: { border: "border-line-strong", label: "text-ink-2" },
-  tip: { border: "border-star", label: "text-star" },
-  warning: { border: "border-warning", label: "text-warning" },
-  success: { border: "border-success", label: "text-success" },
-  danger: { border: "border-destructive", label: "text-destructive" },
-} as const;
-
-export function CalloutBlock({ props }: BlockViewProps<"callout">) {
-  const tone = CALLOUT_TONE[props.tone ?? "note"];
+export function CalloutBlock({ props, ctx }: BlockViewProps<"callout">) {
+  const tone = props.tone ?? "note";
+  const toneLabel = BLOG_COPY[ctx.locale].calloutTones[tone];
   return (
-    <aside className={cn("mx-auto max-w-prose rounded-lg border-l-4 bg-surface p-5", tone.border)} role="note">
-      {props.title && <p className={cn("mb-1 font-semibold", tone.label)}>{props.title}</p>}
-      <MarkdownContent source={props.body} className="text-step-base [&>*:first-child]:mt-0 [&>*:last-child]:mb-0" />
-    </aside>
+    <div className="blog-callout" data-tone={tone} role="note" aria-label={props.title ?? toneLabel}>
+      <p className="mono blog-callout-kicker">
+        <StarGlyph className="blog-callout-star" />
+        <span>{toneLabel}</span>
+      </p>
+      {props.title && <p className="blog-callout-title">{props.title}</p>}
+      <MarkdownContent source={props.body} className="blog-callout-body" />
+    </div>
   );
 }
 
 export function QuoteBlock({ props }: BlockViewProps<"quote">) {
   return (
-    <figure className="mx-auto max-w-3xl border-l-2 border-star py-2 pl-6">
-      <blockquote className="font-display text-step-xl leading-snug text-ink">&ldquo;{props.text}&rdquo;</blockquote>
+    <figure className="blog-quote">
+      <blockquote>
+        <p>{props.text}</p>
+      </blockquote>
       {(props.attribution || props.role) && (
-        <figcaption className="mt-4 text-step-sm text-ink-3">
-          {props.attribution && (props.sourceUrl ? <a href={props.sourceUrl} className={blogLinkClass} rel="noopener noreferrer nofollow">{props.attribution}</a> : <span className="font-semibold text-ink-2">{props.attribution}</span>)}
-          {props.attribution && props.role && ", "}
-          {props.role}
+        <figcaption className="mono">
+          <span className="blog-quote-rule" aria-hidden="true" />
+          <span>
+            {props.attribution &&
+              (props.sourceUrl ? (
+                <a href={props.sourceUrl} className={blogLinkClass} rel="noopener noreferrer nofollow">{props.attribution}</a>
+              ) : (
+                <cite>{props.attribution}</cite>
+              ))}
+            {props.attribution && props.role && " · "}
+            {props.role}
+          </span>
         </figcaption>
       )}
     </figure>
   );
 }
 
-export function KeyTakeawaysBlock({ props }: BlockViewProps<"key-takeaways">) {
+export function KeyTakeawaysBlock({ props, ctx }: BlockViewProps<"key-takeaways">) {
+  const title = props.title ?? BLOG_COPY[ctx.locale].keyTakeaways;
   return (
-    <section className="mx-auto max-w-prose rounded-lg border border-line bg-surface p-6" aria-label={props.title ?? "Key takeaways"}>
-      {props.title && <p className="mb-3 font-mono text-step-xs uppercase text-star">{props.title}</p>}
-      <ul className="space-y-2">
+    <section className="surface blog-takeaways" aria-label={title}>
+      <p className="mono blog-kicker">{title}</p>
+      <ul className="feats">
         {props.items.map((item, index) => (
-          <li key={index} className="flex gap-3 text-ink-2">
-            <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-star" />
+          <li key={index} className={index === 0 ? "hi" : undefined}>
             <span><InlineMarkdown source={item} /></span>
           </li>
         ))}
@@ -75,16 +92,17 @@ export function KeyTakeawaysBlock({ props }: BlockViewProps<"key-takeaways">) {
 
 export function FaqBlock({ props, ctx }: BlockViewProps<"faq">) {
   return (
-    <section className="mx-auto max-w-prose">
-      {props.title && <h2 id={ctx.nextId(props.title)} className="mb-4 scroll-mt-28 font-display text-step-xl text-ink">{props.title}</h2>}
-      <div className="divide-y divide-line border-y border-line">
+    <section className="blog-faq">
+      {props.title && <h2 id={ctx.nextId(props.title)} className="blog-h">{props.title}</h2>}
+      <div className="blog-faq-list">
         {props.items.map((item, index) => (
-          <details key={index} className="group py-4">
-            <summary className="cursor-pointer list-none font-semibold text-ink marker:hidden">
-              <span className="mr-2 inline-block text-star transition-transform group-open:rotate-45" aria-hidden>+</span>
-              {item.question}
+          <details key={index} className="blog-faq-item">
+            <summary>
+              <span className="blog-greek" data-greek={greekMarker(index)} aria-hidden="true" />
+              <span className="blog-faq-q">{item.question}</span>
+              <span className="blog-pm" aria-hidden="true" />
             </summary>
-            <MarkdownContent source={item.answer} className="mt-2 text-step-base [&>*:last-child]:mb-0" />
+            <MarkdownContent source={item.answer} className="blog-faq-a" />
           </details>
         ))}
       </div>

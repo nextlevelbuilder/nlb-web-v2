@@ -2,7 +2,7 @@ import React, { cache } from "react";
 import { notFound } from "next/navigation";
 import { BlogPostLayout } from "@/components/blog/blog-post-layout";
 import { BLOG_SLUG_RE, MAX_BLOG_SLUG_LENGTH } from "@/lib/blog/blog-slug-rules";
-import { findPublishedTranslation, getPublishedPost } from "@/lib/blog/blog-queries";
+import { findAdjacentPublishedPosts, findPublishedTranslation, getPublishedPost } from "@/lib/blog/blog-queries";
 import { blogPostJsonLd, blogPostMetadata } from "@/lib/blog/blog-seo";
 import { isBlogLocale } from "@/lib/blog/blog-types";
 import { serializeJsonLd } from "@/lib/seo";
@@ -32,13 +32,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { locale, slug } = await params;
   const loaded = await loadPost(locale, slug);
   if (!loaded) notFound();
+  const adjacent = await findAdjacentPublishedPosts(loaded.post);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <main id="main" className="blog-post-main">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostJsonLd(loaded.post)) }} />
-      <main id="main" className="flex-1 pb-section-sm pt-28">
-        <BlogPostLayout post={loaded.post} translation={loaded.translation} />
-      </main>
-    </div>
+      <BlogPostLayout post={loaded.post} translation={loaded.translation} adjacent={adjacent} />
+    </main>
   );
 }

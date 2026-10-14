@@ -2,12 +2,12 @@
  * Read side of the blog: admin lookups, the public listing and revision history.
  * Callers pass the database explicitly or fall back to the request-scoped getDb().
  */
-import { and, desc, eq, getTableColumns, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import { getDb, type AppDb } from "@/lib/db";
 import { blogPostRevisions, blogPosts } from "@/lib/db/schema";
 import type { ListPostsQuery } from "./blog-post-schema";
-import { revisionToWire, rowToPost, rowToSummary, type BlogPostRow } from "./blog-post-mapper";
-import type { BlogLocale, BlogPost, BlogPostSummary, BlogRevision } from "./blog-types";
+import { revisionToWire, rowToListItem, rowToPost, rowToSummary, type BlogPostRow } from "./blog-post-mapper";
+import type { BlogAdjacentPosts, BlogLocale, BlogPost, BlogPostListItem, BlogPostSummary, BlogRevision, BlogTagCount } from "./blog-types";
 
 /** Copy of a column map without one column (drizzle selects take a plain object of columns). */
 function withoutColumn<T extends Record<string, unknown>, K extends keyof T>(columns: T, key: K): Omit<T, K> {
@@ -55,6 +55,71 @@ export async function listPostSummaries(query: ListPostsQuery, db: AppDb = getDb
     .limit(query.limit)
     .offset(query.offset);
   return rows.map(rowToSummary);
+}
+
+export interface PublishedListQuery {
+  locale: BlogLocale;
+  tag?: string;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Published posts of one locale for the public index, newest first, each with its reading time.
+ * Blocks are selected only to count words and are dropped before returning; the REST listing
+ * (listPostSummaries) keeps its blocks-free shape.
+ */
+export async function listPublishedPostItems(query: PublishedListQuery, db: AppDb = getDb()): Promise<BlogPostListItem[]> {
+  const conditions: SQL[] = [eq(blogPosts.status, "published"), eq(blogPosts.locale, query.locale)];
+  if (query.tag) conditions.push(tagCondition(query.tag));
+  const rows = await db
+    .select()
+    .from(blogPosts)
+    .where(and(...conditions))
+    .orderBy(desc(blogPosts.publishedAt), desc(blogPosts.id))
+    .limit(query.limit)
+    .offset(query.offset);
+  return rows.map(rowToListItem);
+}
+
+/** Every tag used by published posts of a locale, most used first, then alphabetically. */
+export async function listPublishedTags(locale: BlogLocale, limit = 40, db: AppDb = getDb()): Promise<BlogTagCount[]> {
+  const rows = await db.all<{ tag: unknown; count: unknown }>(sql`
+    select je.value as tag, count(*) as count
+    from ${blogPosts}, json_each(${blogPosts.tags}) as je
+    where ${blogPosts.status} = 'published' and ${blogPosts.locale} = ${locale} and je.type = 'text'
+    group by je.value
+    order by count desc, je.value asc
+    limit ${limit}`);
+  return rows
+    .filter((row): row is { tag: string; count: number } => typeof row.tag === "string" && row.tag.length > 0)
+    .map((row) => ({ tag: row.tag, count: Number(row.count) }));
+}
+
+/**
+ * The published posts just before and after `post` in its locale, in the index order
+ * (publishedAt, then id as a tie-breaker). `newer` is null for the newest post, `older` for the oldest.
+ */
+export async function findAdjacentPublishedPosts(post: Pick<BlogPost, "id" | "locale" | "publishedAt">, db: AppDb = getDb()): Promise<BlogAdjacentPosts> {
+  if (!post.publishedAt) return { newer: null, older: null };
+  const at = new Date(post.publishedAt);
+  if (Number.isNaN(at.getTime())) return { newer: null, older: null };
+  const scope = and(eq(blogPosts.status, "published"), eq(blogPosts.locale, post.locale), ne(blogPosts.id, post.id));
+  const [newerRows, olderRows] = await Promise.all([
+    db
+      .select(summaryColumns)
+      .from(blogPosts)
+      .where(and(scope, or(gt(blogPosts.publishedAt, at), and(eq(blogPosts.publishedAt, at), gt(blogPosts.id, post.id)))))
+      .orderBy(asc(blogPosts.publishedAt), asc(blogPosts.id))
+      .limit(1),
+    db
+      .select(summaryColumns)
+      .from(blogPosts)
+      .where(and(scope, or(lt(blogPosts.publishedAt, at), and(eq(blogPosts.publishedAt, at), lt(blogPosts.id, post.id)))))
+      .orderBy(desc(blogPosts.publishedAt), desc(blogPosts.id))
+      .limit(1),
+  ]);
+  return { newer: newerRows[0] ? rowToSummary(newerRows[0]) : null, older: olderRows[0] ? rowToSummary(olderRows[0]) : null };
 }
 
 export async function getPublishedPost(locale: BlogLocale, slug: string, db: AppDb = getDb()): Promise<BlogPost | null> {
