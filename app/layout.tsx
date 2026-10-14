@@ -7,6 +7,7 @@ import GoogleAnalyticsConsentAware from "@/components/analytics/google-analytics
 import { SOCIAL_LINKS, X_HANDLE } from "@/lib/constants/socials";
 import "./globals.css";
 import "./constellation-shell.css";
+import "./constellation-components.css";
 
 // Every family ships the `vietnamese` subset so VI diacritics render in the brand faces.
 const display = Cormorant_Garamond({
