@@ -145,7 +145,7 @@ html.has-cursor, html.has-cursor * { cursor: none !important; }
 .signin .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .signin .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* segmented controls: language + theme */
+/* segmented controls: language + theme + sound */
 :where(.seg) { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: var(--r-pill); padding: 3px; gap: 2px; height: 44px; }
 :where(.seg) button {
   height: 36px; min-width: 36px; padding: 0 var(--s-2); border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center;
@@ -154,6 +154,7 @@ html.has-cursor, html.has-cursor * { cursor: none !important; }
 :where(.seg) button:hover { color: var(--ink); }
 :where(.seg) button[aria-pressed="true"], :where(.seg) button[aria-checked="true"] { background: var(--ink); color: var(--bg); }
 :where(.seg) svg { width: 16px; height: 16px; }
+.sound-seg button { gap: var(--s-2); }
 .menu-btn { width: 44px; height: 44px; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border: 1px solid var(--line-2); border-radius: 50%; }
 .menu-btn span { display: block; width: 16px; height: 1px; background: var(--ink); transition: transform var(--d-3) var(--ease-expo); }
 .menu-btn[aria-expanded="true"] span:first-child { transform: translateY(3.5px) rotate(45deg); }

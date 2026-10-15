@@ -704,6 +704,13 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "sound": {
+      "label": "Sound",
+      "turnOn": "Turn on music and sound effects",
+      "turnOff": "Turn off music and sound effects",
+      "on": "Sound on",
+      "off": "Sound off"
+    },
     "language": {
       "label": "Language",
       "en": "English",

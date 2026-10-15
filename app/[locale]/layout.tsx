@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import SiteCursor from '@/components/site/site-cursor';
 import SiteFooter from '@/components/site/site-footer';
 import SiteHeader from '@/components/site/site-header';
+import SiteSoundEffects from '@/components/site/site-sound-effects';
 import StaticSky from '@/components/site/static-sky';
 import { SiteTrafficTracker } from '@/components/traffic/site-traffic-tracker';
 import { isLocale, locales } from '@/i18n/routing';
@@ -31,6 +32,7 @@ export default async function LocaleLayout({ children, params }: {
       <StaticSky />
       <SiteCursor />
       <SiteHeader />
+      <SiteSoundEffects />
       {children}
       <SiteFooter />
     </NextIntlClientProvider>

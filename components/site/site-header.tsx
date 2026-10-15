@@ -7,6 +7,7 @@ import { signOut, useSession } from '@/lib/auth-client';
 import { lockScroll } from '@/lib/constellation/smooth-scroll';
 import BrandMark from './brand-mark';
 import LangSeg from './lang-seg';
+import SoundToggle from './sound-toggle';
 import ThemeSeg from './theme-seg';
 import { NAV, isCurrentNavItem, type NavItem } from './site-nav-items';
 
@@ -33,7 +34,7 @@ function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
 }
 
 /**
- * Site header on every page (Constellation design): brand, primary nav, language + theme controls,
+ * Site header on every page (Constellation design): brand, primary nav, language, theme + sound controls,
  * sign-in or the signed-in builder, the Join CTA and the full-screen mobile menu. Owns the skip link.
  */
 export default function SiteHeader() {
@@ -128,6 +129,7 @@ export default function SiteHeader() {
           <div className="bar-actions">
             <LangSeg />
             <ThemeSeg />
+            <SoundToggle />
             {user ? (
               <Link className="signin" href="/profile" aria-label={t('nav.profile')}>
                 <span className="avatar" aria-hidden="true">
@@ -178,6 +180,7 @@ export default function SiteHeader() {
         <div className="menu-controls">
           <LangSeg />
           <ThemeSeg labelled />
+          <SoundToggle labelled />
         </div>
         {join('btn btn-primary', tHome('primary'))}
         <p className="coord mono">RA 14h 29m 43s · Dec −62° 40′</p>

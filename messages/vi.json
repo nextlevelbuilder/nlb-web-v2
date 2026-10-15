@@ -704,6 +704,13 @@
       "light": "Sáng",
       "dark": "Tối"
     },
+    "sound": {
+      "label": "Âm thanh",
+      "turnOn": "Bật nhạc nền và hiệu ứng âm thanh",
+      "turnOff": "Tắt nhạc nền và hiệu ứng âm thanh",
+      "on": "Đang bật âm thanh",
+      "off": "Đang tắt âm thanh"
+    },
     "language": {
       "label": "Ngôn ngữ",
       "en": "English",

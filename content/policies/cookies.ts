@@ -3,7 +3,8 @@ import type { PolicyEntry } from "./policy-types";
 /**
  * Cookie Policy, written for v2 from what the site actually stores:
  * better-auth session cookies (lib/auth.ts), the next-intl NEXT_LOCALE cookie (1 year, i18n/routing.ts),
- * the next-themes `nlb-theme` localStorage entry (THEME_STORAGE_KEY in components/theme-provider.tsx), the `nlb_traffic_visitor`
+ * the next-themes `nlb-theme` localStorage entry (THEME_STORAGE_KEY in components/theme-provider.tsx), the `nlb-sound`
+ * entry (lib/site-audio/site-sound-engine.ts), the `nlb_traffic_visitor`
  * sessionStorage entry (lib/traffic-client.ts, no cookies) and the Google
  * Analytics 4 cookies loaded by app/layout.tsx, which must not load gtag when
  * the browser sends Do Not Track or Global Privacy Control.
@@ -12,7 +13,7 @@ import type { PolicyEntry } from "./policy-types";
  */
 export const cookiesPolicy: PolicyEntry = {
   group: "legal",
-  lastUpdated: "2026-10-14",
+  lastUpdated: "2026-10-15",
   legalReviewPending: true,
   content: {
     en: {
@@ -39,7 +40,7 @@ export const cookiesPolicy: PolicyEntry = {
         {
           heading: "4. Browser storage",
           content:
-            "• nlb-theme (local storage): remembers whether you prefer the system, light or dark theme. Stays until you clear your browser data.\n• nlb_traffic_visitor (session storage): a random ID used to count page views without cookies. Deleted when you close the tab, and never created when your browser sends Do Not Track or Global Privacy Control.",
+            "• nlb-theme (local storage): remembers whether you prefer the system, light or dark theme. Stays until you clear your browser data.\n• nlb-sound (local storage): remembers whether you turned the background music and sound effects on or off. Stays until you clear your browser data.\n• nlb_traffic_visitor (session storage): a random ID used to count page views without cookies. Deleted when you close the tab, and never created when your browser sends Do Not Track or Global Privacy Control.",
         },
         {
           heading: "5. Analytics cookies",
@@ -87,7 +88,7 @@ export const cookiesPolicy: PolicyEntry = {
         {
           heading: "4. Bộ nhớ trình duyệt",
           content:
-            "• nlb-theme (local storage): ghi nhớ bạn chọn giao diện theo hệ thống, sáng hay tối. Tồn tại đến khi bạn xóa dữ liệu trình duyệt.\n• nlb_traffic_visitor (session storage): mã ngẫu nhiên dùng để đếm lượt xem trang mà không cần cookie. Bị xóa khi bạn đóng tab, và không bao giờ được tạo khi trình duyệt gửi tín hiệu Do Not Track hoặc Global Privacy Control.",
+            "• nlb-theme (local storage): ghi nhớ bạn chọn giao diện theo hệ thống, sáng hay tối. Tồn tại đến khi bạn xóa dữ liệu trình duyệt.\n• nlb-sound (local storage): ghi nhớ bạn đã bật hay tắt nhạc nền và hiệu ứng âm thanh. Tồn tại đến khi bạn xóa dữ liệu trình duyệt.\n• nlb_traffic_visitor (session storage): mã ngẫu nhiên dùng để đếm lượt xem trang mà không cần cookie. Bị xóa khi bạn đóng tab, và không bao giờ được tạo khi trình duyệt gửi tín hiệu Do Not Track hoặc Global Privacy Control.",
         },
         {
           heading: "5. Cookie phân tích",
