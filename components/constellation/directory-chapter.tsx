@@ -57,8 +57,8 @@ export default function DirectoryChapter({ leaderboard }: { leaderboard: HomeLea
                 <g className="pstar" data-i={i} key={entries[i].slug}>
                   <circle className="ps-halo" cx={s.x} cy={s.y} r={s.haloR.toFixed(1)} />
                   <circle className="ps-core" cx={s.x} cy={s.y} r={s.r.toFixed(1)} style={{ opacity: s.opacity.toFixed(2) }} />
-                  <text className="ps-lbl" x={s.labelX} y={s.y - 12} textAnchor={s.labelAnchor}><tspan className="g">{BAYER[i]}</tspan> {entries[i].title}</text>
-                  <text className="ps-g" x={s.greekX} y={s.y + 6}>{BAYER[i]}</text>
+                  <text className="ps-lbl" x={s.labelX} y={s.labelY.toFixed(1)} textAnchor={s.labelAnchor}><tspan className="g">{BAYER[i]}</tspan> {entries[i].title}</text>
+                  <text className="ps-g" x={s.greekX} y={s.greekY}>{BAYER[i]}</text>
                 </g>
               ))}
             </svg>

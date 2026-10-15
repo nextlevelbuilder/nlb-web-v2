@@ -144,3 +144,30 @@ describe("NLB constellation geometry", () => {
     for (const n of seq) expect(n >= 0 && n < 1).toBe(true);
   });
 });
+
+describe("computeDirectoryPlot label placement", () => {
+  // Four new listings share Trust 60 and zero votes, so their stars sit on one point.
+  const plot = computeDirectoryPlot([
+    { trust: 70, votes: 0 },
+    { trust: 60, votes: 0 },
+    { trust: 60, votes: 0 },
+    { trust: 60, votes: 0 },
+    { trust: 60, votes: 0 },
+  ]);
+  const shared = plot.stars.slice(1);
+
+  it("stacks labels of coincident stars on separate lines in rank order", () => {
+    const ys = shared.map((s) => s.labelY);
+    expect(new Set(ys).size).toBe(4);
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(17);
+    for (const y of ys) expect(y).toBeGreaterThanOrEqual(plot.top);
+  });
+
+  it("keeps a lone star's label just above it", () => {
+    expect(plot.stars[0].labelY).toBeCloseTo(plot.stars[0].y - 12);
+  });
+
+  it("spreads the mobile Greek letters of coincident stars", () => {
+    expect(new Set(shared.map((s) => s.greekX)).size).toBe(4);
+  });
+});

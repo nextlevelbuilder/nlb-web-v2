@@ -22,8 +22,11 @@ export interface PlotStar {
   /** 0..1 apparent magnitude, also used for the board row's star and bar. */
   magnitude: number;
   labelX: number;
+  /** Baseline of the name label, moved off its star when another label would overlap it. */
+  labelY: number;
   labelAnchor: 'start' | 'end';
   greekX: number;
+  greekY: number;
 }
 
 export interface PlotGeometry {
@@ -57,6 +60,46 @@ function niceStep(range: number, count: number): number {
 
 const finite = (n: number) => (Number.isFinite(n) ? n : 0);
 
+/** Name labels are 15px serif; one line plus breathing room. */
+const LABEL_LINE = 17;
+/** Generous label width estimate, so labels on the same side count as overlapping. */
+const LABEL_WIDTH = 170;
+/** Greek letters (the mobile labels) are 30px; each coincident star gets its own slot. */
+const GREEK_STEP = 20;
+
+type LabelBox = { x: number; y: number; anchor: 'start' | 'end' };
+
+function labelsOverlap(a: LabelBox, b: LabelBox): boolean {
+  const span = (box: LabelBox) => (box.anchor === 'start' ? [box.x, box.x + LABEL_WIDTH] : [box.x - LABEL_WIDTH, box.x]);
+  const [a0, a1] = span(a);
+  const [b0, b1] = span(b);
+  return a0 < b1 && b0 < a1 && Math.abs(a.y - b.y) < LABEL_LINE;
+}
+
+/**
+ * Stars with equal Trust and votes sit on the same point (new listings: same Trust, zero votes),
+ * so their labels would print on top of each other. Labels keep their star's x and stack upward
+ * one line at a time, falling back to below the star near the top edge.
+ */
+function placeLabels(stars: Array<{ x: number; y: number; labelX: number; labelAnchor: 'start' | 'end' }>): number[] {
+  // Bottom stars first; on a shared point the lower rank goes first, so the stack reads by rank top-down.
+  const order = stars.map((_, i) => i).sort((a, b) => stars[b].y - stars[a].y || b - a);
+  const placed: LabelBox[] = [];
+  const result = new Array<number>(stars.length);
+  for (const i of order) {
+    const star = stars[i];
+    const box: LabelBox = { x: star.labelX, y: star.y - 12, anchor: star.labelAnchor };
+    while (placed.some((other) => labelsOverlap(box, other)) && box.y - LABEL_LINE >= T + 10) box.y -= LABEL_LINE;
+    if (placed.some((other) => labelsOverlap(box, other))) {
+      box.y = star.y + 20;
+      while (placed.some((other) => labelsOverlap(box, other))) box.y += LABEL_LINE;
+    }
+    placed.push(box);
+    result[i] = box.y;
+  }
+  return result;
+}
+
 export function computeDirectoryPlot(entries: PlotInput[]): PlotGeometry {
   const trusts = entries.map((e) => Math.min(100, Math.max(0, finite(e.trust))));
   const votes = entries.map((e) => Math.max(0, finite(e.votes)));
@@ -89,8 +132,16 @@ export function computeDirectoryPlot(entries: PlotInput[]): PlotGeometry {
     const leftSide = x > (L + R) / 2;
     return {
       x, y, r, haloR: r * 3.2, opacity: 0.45 + magnitude * 0.55, magnitude,
-      labelX: leftSide ? x - 12 : x + 12, labelAnchor: leftSide ? 'end' : 'start', greekX: x + r * 3.4 + 4,
+      labelX: leftSide ? x - 12 : x + 12, labelY: y - 12, labelAnchor: leftSide ? 'end' : 'start' as const,
+      greekX: x + r * 3.4 + 4, greekY: y + 6,
     };
+  });
+  const labelYs = placeLabels(stars);
+  stars.forEach((star, i) => {
+    star.labelY = labelYs[i];
+    // Coincident stars line their Greek letters up side by side instead of printing them on one spot.
+    const before = stars.slice(0, i).filter((other) => Math.abs(other.x - star.x) < 6 && Math.abs(other.y - star.y) < 6).length;
+    star.greekX += before * GREEK_STEP;
   });
 
   return {
