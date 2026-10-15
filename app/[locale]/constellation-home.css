@@ -113,9 +113,9 @@ html[lang="vi"] .dark-text { line-height: 1.18; }
 .plot { padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); margin: 0; }
 .plot-head { display: flex; justify-content: space-between; gap: var(--s-3); color: var(--ink-3); }
 .plot svg { width: 100%; height: auto; overflow: visible; }
-.plot .ax { stroke: var(--line); stroke-width: 1; }
+.plot .ax { stroke: var(--line); stroke-width: 1; opacity: .7; }
 .plot .ax-t { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-3); letter-spacing: .06em; }
-.plot .chain { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 3 4; }
+.plot .chain { fill: none; stroke: var(--accent); stroke-opacity: .45; stroke-width: 1; stroke-linejoin: round; }
 .plot .ps-halo { fill: var(--accent); opacity: .14; transition: opacity var(--d-3), transform var(--d-3) var(--ease-expo); transform-box: fill-box; transform-origin: center; }
 .plot .ps-core { fill: var(--star); transition: transform var(--d-3) var(--ease-expo); transform-box: fill-box; transform-origin: center; }
 .plot .ps-lbl { font-family: var(--f-display); font-size: 15px; fill: var(--ink-2); }

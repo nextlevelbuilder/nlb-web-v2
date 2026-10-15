@@ -1,16 +1,16 @@
 /**
- * Star-magnitude chart geometry for the Directory chapter: Trust on the y axis, votes on the x axis,
- * brighter (larger) stars for higher Trust. Pure so the scales are unit-tested; the SVG is rendered
- * on the server from this description.
+ * Sky-map geometry for the Directory chapter: today's top products drawn as one constellation.
+ * Stars march left to right in rank order (α → ε) and are joined by constellation lines; each
+ * star's height and nudge come from its slug, so a product keeps its place in the sky between
+ * visits. Brightness and size follow Trust, the glow follows votes. Exact numbers live in the
+ * board next to the chart. Pure so the layout is unit-tested; the SVG is rendered on the server.
  */
+import { seededRandom } from './geometry';
+
 export interface PlotInput {
+  slug: string;
   trust: number;
   votes: number;
-}
-
-export interface PlotTick {
-  value: number;
-  pos: number;
 }
 
 export interface PlotStar {
@@ -32,40 +32,40 @@ export interface PlotStar {
 export interface PlotGeometry {
   width: number;
   height: number;
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  trustTicks: PlotTick[];
-  voteTicks: PlotTick[];
+  /** Faint graticule (sky-map grid) positions, drawn without numbers. */
+  gridX: number[];
+  gridY: number[];
   stars: PlotStar[];
   chain: string;
 }
 
 const W = 520;
 const H = 380;
-const L = 44;
-const R = 500;
-const T = 26;
-const B = 340;
-
-/** A 1-2-5 step (votes are whole numbers, so never 2.5 and never below 1). */
-function niceStep(range: number, count: number): number {
-  const raw = range / Math.max(count, 1);
-  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
-  const unit = raw / pow;
-  const nice = unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 5 ? 5 : 10;
-  return Math.max(1, nice * pow);
-}
-
-const finite = (n: number) => (Number.isFinite(n) ? n : 0);
+/** Star field: leaves room for labels on the right and the caption above. */
+const X0 = 70;
+const X1 = 400;
+const Y0 = 56;
+const Y1 = 324;
+/** Smallest vertical step between neighbours, so the chain never collapses into a flat line. */
+const MIN_RISE = 38;
 
 /** Name labels are 15px serif; one line plus breathing room. */
 const LABEL_LINE = 17;
 /** Generous label width estimate, so labels on the same side count as overlapping. */
 const LABEL_WIDTH = 170;
-/** Greek letters (the mobile labels) are 30px; each coincident star gets its own slot. */
-const GREEK_STEP = 20;
+
+const finite = (n: number) => (Number.isFinite(n) ? n : 0);
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** FNV-1a, mapped into the generator's valid seed range (1 … 2^31 − 2). */
+function slugSeed(slug: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < slug.length; i++) {
+    hash ^= slug.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return (hash % 2147483646) + 1;
+}
 
 type LabelBox = { x: number; y: number; anchor: 'start' | 'end' };
 
@@ -76,22 +76,17 @@ function labelsOverlap(a: LabelBox, b: LabelBox): boolean {
   return a0 < b1 && b0 < a1 && Math.abs(a.y - b.y) < LABEL_LINE;
 }
 
-/**
- * Stars with equal Trust and votes sit on the same point (new listings: same Trust, zero votes),
- * so their labels would print on top of each other. Labels keep their star's x and stack upward
- * one line at a time, falling back to below the star near the top edge.
- */
-function placeLabels(stars: Array<{ x: number; y: number; labelX: number; labelAnchor: 'start' | 'end' }>): number[] {
-  // Bottom stars first; on a shared point the lower rank goes first, so the stack reads by rank top-down.
+/** Labels sit just above their star; one that would overlap another moves up a line, or below near the top. */
+function placeLabels(stars: Array<{ y: number; labelX: number; labelAnchor: 'start' | 'end' }>): number[] {
   const order = stars.map((_, i) => i).sort((a, b) => stars[b].y - stars[a].y || b - a);
   const placed: LabelBox[] = [];
   const result = new Array<number>(stars.length);
   for (const i of order) {
     const star = stars[i];
     const box: LabelBox = { x: star.labelX, y: star.y - 12, anchor: star.labelAnchor };
-    while (placed.some((other) => labelsOverlap(box, other)) && box.y - LABEL_LINE >= T + 10) box.y -= LABEL_LINE;
+    while (placed.some((other) => labelsOverlap(box, other)) && box.y - LABEL_LINE >= Y0 - 20) box.y -= LABEL_LINE;
     if (placed.some((other) => labelsOverlap(box, other))) {
-      box.y = star.y + 20;
+      box.y = star.y + 22;
       while (placed.some((other) => labelsOverlap(box, other))) box.y += LABEL_LINE;
     }
     placed.push(box);
@@ -101,51 +96,50 @@ function placeLabels(stars: Array<{ x: number; y: number; labelX: number; labelA
 }
 
 export function computeDirectoryPlot(entries: PlotInput[]): PlotGeometry {
-  const trusts = entries.map((e) => Math.min(100, Math.max(0, finite(e.trust))));
+  const trusts = entries.map((e) => clamp(finite(e.trust), 0, 100));
   const votes = entries.map((e) => Math.max(0, finite(e.votes)));
+  const n = entries.length;
+  const step = n > 1 ? (X1 - X0) / (n - 1) : 0;
+  const maxVotes = Math.max(1, ...votes);
 
-  // Trust axis: a 5-tick band around the data, never wider than 0..100.
-  const tMax = trusts.length ? Math.max(...trusts) : 100;
-  const tMin = trusts.length ? Math.min(...trusts) : 80;
-  const tStep = Math.max(1, Math.ceil(Math.max(tMax - tMin + 4, 8) / 4));
-  const yTop = Math.min(100, Math.ceil((tMax + tStep / 2) / tStep) * tStep);
-  const yBottom = Math.max(0, yTop - tStep * 4);
-  const yHi = yTop + tStep * 0.2;
-  const Y = (t: number) => T + ((yHi - t) / (yHi - yBottom)) * (B - T);
+  // Magnitude spreads today's Trust range across the visible scale, never below a faint floor.
+  const tMax = n ? Math.max(...trusts) : 100;
+  const tMin = n ? Math.min(...trusts) : 0;
+  const floor = Math.min(tMin, tMax - 20);
 
-  // Votes axis: from a little below zero so a zero-vote star is not glued to the axis.
-  const vMax = votes.length ? Math.max(...votes) : 0;
-  const vStep = niceStep(Math.max(vMax * 1.15, 10), 4);
-  const xHi = Math.max(vStep * 4, vMax * 1.08);
-  const xLo = -xHi * 0.06;
-  const X = (v: number) => L + ((v - xLo) / (xHi - xLo)) * (R - L);
+  let prevY = 0;
+  const stars = entries.map((entry, i): PlotStar => {
+    const rand = seededRandom(slugSeed(entry.slug || String(i)));
+    // A single star sits mid-field; otherwise march left to right with a slug-stable nudge.
+    const x = n > 1 ? X0 + i * step + (rand() - 0.5) * step * 0.3 : (X0 + X1) / 2;
+    let y: number;
+    if (i === 0) {
+      y = Y0 + 20 + rand() * (Y1 - Y0) * 0.3; // the leader shines near the top
+    } else {
+      const rise = (rand() - 0.45) * 2 * 110;
+      y = clamp(prevY + rise, Y0, Y1);
+      if (Math.abs(y - prevY) < MIN_RISE) y = prevY + (prevY + MIN_RISE <= Y1 ? MIN_RISE : -MIN_RISE);
+    }
+    prevY = y;
 
-  const trustTicks: PlotTick[] = [0, 1, 2, 3, 4].map((i) => ({ value: yTop - i * tStep, pos: Y(yTop - i * tStep) }));
-  const voteTicks: PlotTick[] = [1, 2, 3, 4].map((i) => ({ value: i * vStep, pos: X(i * vStep) })).filter((tick) => tick.pos <= R);
-
-  const span = Math.max(yTop - yBottom, 1);
-  const stars = entries.map((_, i): PlotStar => {
-    const x = X(votes[i]);
-    const y = Y(trusts[i]);
-    const magnitude = Math.min(1, Math.max(0.12, (trusts[i] - yBottom) / span));
+    const magnitude = clamp((trusts[i] - floor) / Math.max(tMax - floor, 1), 0.12, 1);
     const r = 2.2 + magnitude * 4.2;
-    const leftSide = x > (L + R) / 2;
+    const glow = 1 + (votes[i] / maxVotes) * 0.6;
+    const rightEdge = x > X1 - 60;
     return {
-      x, y, r, haloR: r * 3.2, opacity: 0.45 + magnitude * 0.55, magnitude,
-      labelX: leftSide ? x - 12 : x + 12, labelY: y - 12, labelAnchor: leftSide ? 'end' : 'start' as const,
+      x, y, r, haloR: r * 3.2 * glow, opacity: 0.45 + magnitude * 0.55, magnitude,
+      labelX: rightEdge ? x - 14 : x + 14, labelY: y - 12, labelAnchor: rightEdge ? 'end' : 'start',
       greekX: x + r * 3.4 + 4, greekY: y + 6,
     };
   });
   const labelYs = placeLabels(stars);
-  stars.forEach((star, i) => {
-    star.labelY = labelYs[i];
-    // Coincident stars line their Greek letters up side by side instead of printing them on one spot.
-    const before = stars.slice(0, i).filter((other) => Math.abs(other.x - star.x) < 6 && Math.abs(other.y - star.y) < 6).length;
-    star.greekX += before * GREEK_STEP;
-  });
+  stars.forEach((star, i) => { star.labelY = labelYs[i]; });
 
   return {
-    width: W, height: H, left: L, right: R, top: T, bottom: B, trustTicks, voteTicks, stars,
+    width: W, height: H,
+    gridX: [1, 2, 3, 4].map((k) => (W / 5) * k),
+    gridY: [1, 2, 3].map((k) => (H / 4) * k),
+    stars,
     chain: stars.map((s) => `${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(' '),
   };
 }

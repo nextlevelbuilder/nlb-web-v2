@@ -11,13 +11,13 @@ import UtcResetClock from './utc-reset-clock';
 const BAYER = ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η'] as const;
 
 /**
- * Chapter IV · magnitude: the real top products of today's organic leaderboard plotted as stars
- * (Trust ↑, votes →) next to the board. Empty places become "open magnitude" invitations to submit.
+ * Chapter IV · magnitude: the real top products of today's organic leaderboard drawn as one
+ * constellation (joined in rank order, brighter = higher Trust, wider glow = more votes) next to the board. Empty places become "open magnitude" invitations to submit.
  */
 export default function DirectoryChapter({ leaderboard }: { leaderboard: HomeLeaderboardEntry[] }) {
   const t = useTranslations('home.directory');
   const entries = leaderboard.slice(0, HOME_LEADERBOARD_SIZE);
-  const plot = computeDirectoryPlot(entries.map((e) => ({ trust: e.trustScore, votes: e.votes })));
+  const plot = computeDirectoryPlot(entries.map((e) => ({ slug: e.slug, trust: e.trustScore, votes: e.votes })));
   const open = Math.max(0, HOME_LEADERBOARD_SIZE - entries.length);
   const leader = entries[0];
 
@@ -40,18 +40,8 @@ export default function DirectoryChapter({ leaderboard }: { leaderboard: HomeLea
               role="img"
               aria-label={leader ? t('chartAlt', { name: leader.title, trust: leader.trustScore }) : t('chartAltEmpty')}
             >
-              {plot.trustTicks.map((tick) => (
-                <g key={`t${tick.value}`}>
-                  <line className="ax" x1={plot.left} x2={plot.right} y1={tick.pos} y2={tick.pos} />
-                  <text className="ax-t" x={plot.left - 10} y={tick.pos + 3} textAnchor="end">{tick.value}</text>
-                </g>
-              ))}
-              {plot.voteTicks.map((tick) => (
-                <g key={`v${tick.value}`}>
-                  <line className="ax" y1={plot.top} y2={plot.bottom} x1={tick.pos} x2={tick.pos} strokeDasharray="1 4" />
-                  <text className="ax-t" y={plot.bottom + 18} x={tick.pos} textAnchor="middle">{tick.value}</text>
-                </g>
-              ))}
+              {plot.gridX.map((x) => <line key={`gx${x}`} className="ax" x1={x} x2={x} y1={0} y2={plot.height} strokeDasharray="1 5" />)}
+              {plot.gridY.map((y) => <line key={`gy${y}`} className="ax" x1={0} x2={plot.width} y1={y} y2={y} strokeDasharray="1 5" />)}
               {plot.stars.length > 1 && <polyline className="chain" points={plot.chain} />}
               {plot.stars.map((s, i) => (
                 <g className="pstar" data-i={i} key={entries[i].slug}>

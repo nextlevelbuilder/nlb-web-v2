@@ -42,57 +42,6 @@ describe("splitRichWords", () => {
   });
 });
 
-describe("computeDirectoryPlot", () => {
-  const plot = computeDirectoryPlot([
-    { trust: 96, votes: 412 },
-    { trust: 93, votes: 287 },
-    { trust: 87, votes: 163 },
-  ]);
-
-  it("keeps every star inside the chart frame", () => {
-    for (const s of plot.stars) {
-      expect(s.x).toBeGreaterThanOrEqual(plot.left);
-      expect(s.x).toBeLessThanOrEqual(plot.right);
-      expect(s.y).toBeGreaterThanOrEqual(plot.top);
-      expect(s.y).toBeLessThanOrEqual(plot.bottom);
-    }
-  });
-
-  it("draws higher Trust higher and brighter, more votes further right", () => {
-    const [a, b, c] = plot.stars;
-    expect(a.y).toBeLessThan(b.y);
-    expect(b.y).toBeLessThan(c.y);
-    expect(a.r).toBeGreaterThan(c.r);
-    expect(a.opacity).toBeGreaterThan(c.opacity);
-    expect(a.x).toBeGreaterThan(b.x);
-    expect(a.labelAnchor).toBe("end"); // right half labels to the left
-  });
-
-  it("uses descending trust ticks and a matching chain", () => {
-    const values = plot.trustTicks.map((t) => t.value);
-    expect(values).toHaveLength(5);
-    expect([...values].sort((x, y) => y - x)).toEqual(values);
-    expect(values[0]).toBeLessThanOrEqual(100);
-    expect(plot.chain.split(" ")).toHaveLength(3);
-  });
-
-  it("labels the vote axis with whole numbers, even with no votes yet", () => {
-    for (const entries of [[{ trust: 70, votes: 0 }], [{ trust: 90, votes: 3 }], [{ trust: 96, votes: 412 }]]) {
-      const ticks = computeDirectoryPlot(entries).voteTicks;
-      expect(ticks.length).toBeGreaterThan(0);
-      for (const t of ticks) expect(Number.isInteger(t.value)).toBe(true);
-    }
-  });
-
-  it("handles no entries, zero votes and invalid numbers", () => {
-    expect(computeDirectoryPlot([]).stars).toEqual([]);
-    const odd = computeDirectoryPlot([{ trust: Number.NaN, votes: -5 }, { trust: 140, votes: 0 }]);
-    for (const s of odd.stars) {
-      expect(Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.r)).toBe(true);
-    }
-  });
-});
-
 describe("home leaderboard", () => {
   const products = [
     { id: "a", slug: "a", title: "Alpha", tagline: "", trustScore: 90.4 },
@@ -145,29 +94,63 @@ describe("NLB constellation geometry", () => {
   });
 });
 
-describe("computeDirectoryPlot label placement", () => {
-  // Four new listings share Trust 60 and zero votes, so their stars sit on one point.
-  const plot = computeDirectoryPlot([
-    { trust: 70, votes: 0 },
-    { trust: 60, votes: 0 },
-    { trust: 60, votes: 0 },
-    { trust: 60, votes: 0 },
-    { trust: 60, votes: 0 },
-  ]);
-  const shared = plot.stars.slice(1);
 
-  it("stacks labels of coincident stars on separate lines in rank order", () => {
-    const ys = shared.map((s) => s.labelY);
-    expect(new Set(ys).size).toBe(4);
-    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(17);
-    for (const y of ys) expect(y).toBeGreaterThanOrEqual(plot.top);
+describe("computeDirectoryPlot sky map", () => {
+  const entries = [
+    { slug: "agentkit", trust: 70, votes: 0 },
+    { slug: "3dviz-pro-max", trust: 60, votes: 0 },
+    { slug: "ak-render", trust: 60, votes: 0 },
+    { slug: "anymd", trust: 60, votes: 0 },
+    { slug: "cloud-harness-mcp", trust: 60, votes: 0 },
+  ];
+  const plot = computeDirectoryPlot(entries);
+
+  it("keeps every star and label inside the frame", () => {
+    for (const s of plot.stars) {
+      expect(s.x).toBeGreaterThan(0);
+      expect(s.x).toBeLessThan(plot.width);
+      expect(s.y).toBeGreaterThan(0);
+      expect(s.y).toBeLessThan(plot.height);
+      expect(s.labelY).toBeGreaterThan(0);
+      expect(s.labelY).toBeLessThan(plot.height);
+    }
   });
 
-  it("keeps a lone star's label just above it", () => {
-    expect(plot.stars[0].labelY).toBeCloseTo(plot.stars[0].y - 12);
+  it("separates stars that share Trust and votes, marching left to right in rank order", () => {
+    for (let i = 1; i < plot.stars.length; i++) {
+      const a = plot.stars[i - 1];
+      const b = plot.stars[i];
+      expect(b.x).toBeGreaterThan(a.x);
+      expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeGreaterThan(40);
+      expect(Math.abs(b.y - a.y)).toBeGreaterThanOrEqual(38);
+    }
+    expect(plot.chain.split(" ")).toHaveLength(5);
   });
 
-  it("spreads the mobile Greek letters of coincident stars", () => {
-    expect(new Set(shared.map((s) => s.greekX)).size).toBe(4);
+  it("is stable for the same products and brighter for higher Trust", () => {
+    expect(computeDirectoryPlot(entries)).toEqual(plot);
+    expect(plot.stars[0].r).toBeGreaterThan(plot.stars[1].r);
+    expect(plot.stars[0].opacity).toBeGreaterThan(plot.stars[1].opacity);
+  });
+
+  it("gives labels their own lines", () => {
+    const boxes = plot.stars.map((s) => ({ x: s.labelX, y: s.labelY, anchor: s.labelAnchor }));
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        const span = (x: typeof a) => (x.anchor === "start" ? [x.x, x.x + 170] : [x.x - 170, x.x]);
+        const overlapX = span(a)[0] < span(b)[1] && span(b)[0] < span(a)[1];
+        if (overlapX) expect(Math.abs(a.y - b.y)).toBeGreaterThanOrEqual(17);
+      }
+    }
+  });
+
+  it("widens the glow with votes and handles empty or invalid input", () => {
+    const voted = computeDirectoryPlot([{ slug: "a", trust: 80, votes: 10 }, { slug: "b", trust: 80, votes: 0 }]);
+    expect(voted.stars[0].haloR).toBeGreaterThan(voted.stars[1].haloR);
+    expect(computeDirectoryPlot([]).stars).toEqual([]);
+    const odd = computeDirectoryPlot([{ slug: "", trust: Number.NaN, votes: -5 }, { slug: "x", trust: 140, votes: 0 }]);
+    for (const s of odd.stars) expect(Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.r)).toBe(true);
   });
 });
