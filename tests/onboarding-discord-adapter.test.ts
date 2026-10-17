@@ -141,6 +141,19 @@ describe("discordAdapter", () => {
     expect(join.headers["x-audit-log-reason"]).toBeTruthy();
   });
 
+  it("adds the roles itself when the member joined on their own before the join call", async () => {
+    const connection = await connectedUser();
+    on("GET", MEMBER_URL, unknownMember);
+    on("PUT", MEMBER_URL, noContent);
+
+    expect(await apply(connection, "vip")).toEqual({ status: "active", appliedTier: "vip" });
+    expect(mutations()).toEqual([
+      "PUT member",
+      `PUT member/roles/${PREMIUM}`,
+      `PUT member/roles/${VIP}`,
+    ]);
+  });
+
   it("gives an existing VIP member both roles without touching unrelated roles", async () => {
     const connection = await connectedUser();
     memberWithRoles([OTHER]);

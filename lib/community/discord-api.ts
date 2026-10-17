@@ -188,14 +188,19 @@ export class DiscordGuildClient {
     throw toProviderError(failure);
   }
 
-  /** Add the user to the guild with their `guilds.join` token, with the given roles on join. */
-  async addMember(discordUserId: string, accessToken: string, roles: string[]): Promise<void> {
+  /**
+   * Add the user to the guild with their `guilds.join` token, with the given roles on join.
+   * Discord answers 201 when it added the member and 204 when they were already in the guild; in
+   * that case the roles in the body are ignored, so the caller must apply them itself.
+   */
+  async addMember(discordUserId: string, accessToken: string, roles: string[]): Promise<"added" | "already_member"> {
     const response = await send(this.memberUrl(discordUserId), {
       method: "PUT",
       headers: this.headers({ "content-type": "application/json" }),
       body: JSON.stringify({ access_token: accessToken, roles }),
     });
     if (!response.ok) throw toProviderError(await readFailure(response));
+    return response.status === 204 ? "already_member" : "added";
   }
 
   async addRole(discordUserId: string, roleId: string): Promise<void> {

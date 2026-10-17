@@ -57,10 +57,10 @@ async function joinGuild(input: ApplyInput & { connection: CommunityConnection }
   const discordUserId = input.connection.externalUserId;
   const token = await accessTokenFor(input.db, input.connection, config);
   try {
-    await guild.addMember(discordUserId, token, roles);
+    return await guild.addMember(discordUserId, token, roles);
   } catch (error) {
     if (!(error instanceof ProviderError) || error.code !== "discord_reauth" || !input.connection.refreshTokenEnc) throw error;
-    await guild.addMember(discordUserId, await accessTokenFor(input.db, input.connection, config, { forceRefresh: true }), roles);
+    return guild.addMember(discordUserId, await accessTokenFor(input.db, input.connection, config, { forceRefresh: true }), roles);
   }
 }
 
@@ -76,7 +76,10 @@ async function converge(input: ApplyInput & { connection: CommunityConnection })
     // Not in the guild. Revoking never kicks, so there is nothing left to do; granting joins with the roles.
     if (input.desiredTier === "none") return { status: "revoked", appliedTier: "none" };
     await assertConnectionGrantable(input.db, input.connection);
-    await joinGuild(input, config, guild, wanted);
+    // They joined on their own since the read: Discord ignored the join roles, so add them now.
+    if ((await joinGuild(input, config, guild, wanted)) === "already_member") {
+      for (const role of wanted) await guild.addRole(discordUserId, role);
+    }
     return { status: "active", appliedTier: input.desiredTier };
   }
 
