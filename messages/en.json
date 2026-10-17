@@ -1055,7 +1055,8 @@
         "discord_denied": "Discord access was cancelled. Link Discord again when you are ready.",
         "discord_state": "That Discord link expired or was opened in another session. Start again from this page.",
         "discord_in_use": "That Discord account is already linked to another NLB account. Sign in with that account or use another Discord account. If this NLB account already has a different Discord linked, unlink it below first.",
-        "discord_failed": "Discord did not respond. Try again in a moment."
+        "discord_failed": "Discord did not respond. Try again in a moment.",
+        "membership_required": "Discord access needs an active Premium or VIP membership. Buy or renew a membership, then connect Discord again."
       }
     },
     "telegram": {

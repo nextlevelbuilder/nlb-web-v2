@@ -1055,7 +1055,8 @@
         "discord_denied": "Bạn đã huỷ cấp quyền Discord. Hãy liên kết lại khi sẵn sàng.",
         "discord_state": "Liên kết Discord đã hết hạn hoặc được mở ở phiên khác. Hãy bắt đầu lại từ trang này.",
         "discord_in_use": "Tài khoản Discord này đã được liên kết với một tài khoản NLB khác. Hãy đăng nhập bằng tài khoản đó hoặc dùng tài khoản Discord khác. Nếu tài khoản NLB này đã liên kết một Discord khác, hãy hủy liên kết bên dưới trước.",
-        "discord_failed": "Discord chưa phản hồi. Hãy thử lại sau ít phút."
+        "discord_failed": "Discord chưa phản hồi. Hãy thử lại sau ít phút.",
+        "membership_required": "Cần có gói Premium hoặc VIP còn hiệu lực để vào Discord. Hãy mua hoặc gia hạn gói, rồi kết nối Discord lại."
       }
     },
     "telegram": {

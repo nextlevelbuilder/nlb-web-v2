@@ -106,10 +106,13 @@ describe("GET /api/onboarding/discord/start", () => {
     expect(location.searchParams.get("callbackUrl")).toBe("/api/onboarding/discord/start?locale=vi");
   });
 
-  it("refuses users without an effective membership tier", async () => {
+  it("sends users without an effective membership tier back to onboarding with a reason", async () => {
     signIn(await createUser());
     getMemberTierMock.mockResolvedValue({ tier: "none", validUntil: null, reason: "none" });
-    expect((await start()).status).toBe(403);
+    const response = await start("?locale=vi");
+    expect(response.status).toBe(302);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("location")).toBe(`${APP}/vi/onboarding?error=membership_required`);
   });
 
   it("redirects members to Discord with state and an S256 PKCE challenge", async () => {

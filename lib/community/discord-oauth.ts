@@ -7,7 +7,7 @@ import { runDueJobs } from "@/lib/onboarding/runner";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/routing";
 
 /** Error codes the onboarding page renders after the Discord callback. */
-export type DiscordLinkErrorCode = "discord_denied" | "discord_state" | "discord_in_use" | "discord_failed";
+export type DiscordLinkErrorCode = "discord_denied" | "discord_state" | "discord_in_use" | "discord_failed" | "membership_required";
 
 export const DISCORD_OAUTH_NONCE_TTL_MS = 10 * 60 * 1000;
 

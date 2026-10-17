@@ -36,7 +36,8 @@ export async function GET(request: Request) {
 
   const db = getDb();
   const { tier } = await getMemberTier(db, userId);
-  if (tier === "none") return NextResponse.json({ error: "membership_required" }, { status: 403 });
+  // A browser navigation: send the visitor back to onboarding with a readable reason, not raw JSON.
+  if (tier === "none") return noStoreRedirect(onboardingRedirectUrl(locale, { error: "membership_required" }));
 
   const { clientId } = readDiscordConfig();
   if (!clientId) {

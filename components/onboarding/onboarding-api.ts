@@ -6,7 +6,13 @@ export type { OnboardingStatus, ProfileSummary, CommunityProvider, CommunityTarg
 export const ONBOARDING_SUPPORT_EMAIL = 'hello@nextlevelbuilder.io';
 
 /** Error codes the Discord callback appends as `?error=` on the onboarding page. */
-export const DISCORD_ERROR_CODES = ['discord_denied', 'discord_state', 'discord_in_use', 'discord_failed'] as const;
+export const DISCORD_ERROR_CODES = [
+  'discord_denied',
+  'discord_state',
+  'discord_in_use',
+  'discord_failed',
+  'membership_required',
+] as const;
 export type DiscordErrorCode = (typeof DISCORD_ERROR_CODES)[number];
 
 export const TARGET_FOR: Record<CommunityProvider, CommunityTarget> = {

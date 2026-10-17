@@ -225,6 +225,11 @@ export default function OnboardingFlow({ checkoutId, discordLinked, discordError
   } else if (!status.membership) {
     body = (
       <Panel icon={<CircleSlash className="h-5 w-5" strokeWidth={1.5} />} title={t('noMembership.title')}>
+        {discordError === 'membership_required' && (
+          <p role="alert" className="text-step-sm text-destructive">
+            {t('discord.errors.membership_required')}
+          </p>
+        )}
         <p className="text-step-sm text-ink-2">{t('noMembership.desc')}</p>
         <div className="flex flex-col justify-center gap-2 sm:flex-row">
           <Button asChild>
