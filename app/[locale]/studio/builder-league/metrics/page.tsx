@@ -50,7 +50,7 @@ export default async function BuilderLeagueMetricsPage({ params, searchParams }:
         title={copy.title}
         lede={copy.lede}
         action={
-          <Button asChild variant="outline" size="lg" className="gap-2">
+          <Button asChild variant="outline" size="lg" className="h-auto min-h-[52px] gap-2 whitespace-normal">
             <Link href="/studio/builder-league">
               <ArrowLeft aria-hidden className="h-4 w-4" />
               {copy.back}
