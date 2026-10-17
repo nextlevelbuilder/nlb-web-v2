@@ -13,6 +13,7 @@ import ShareProfileButton from "@/components/profile/share-profile-button";
 import { getTranslations } from "next-intl/server";
 import { getPublishedProducts } from "@/lib/domain/catalog";
 import { pageMetadata } from "@/lib/seo";
+import { PassportSection } from "@/components/builder-league/passport/passport-section";
 
 interface BuilderProfileProps {
   params: Promise<{ id: string; locale: string }>;
@@ -197,6 +198,8 @@ export default async function BuilderPublicProfilePage({ params }: BuilderProfil
               </ul>
             )}
           </section>
+
+          <PassportSection userId={builder.id} locale={locale} />
         </div>
       </main>
     </div>
