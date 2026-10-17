@@ -129,6 +129,8 @@ MCP_DELEGATION_SECRET=
 # --- Builder League ---
 # "true" opens the Builder League to every paid member; anything else limits it to admins and the pilot allowlist.
 BUILDER_LEAGUE_ENABLED=
+# Shared secret (32+ chars) the Discord bot sends as x-nlb-builder-ingest-secret; optional (an admin API key also works).
+BUILDER_INGEST_SECRET=
 
 # --- Courses (Cloudflare Stream) ---
 # Comma-separated plans that unlock every course video (default "vip").

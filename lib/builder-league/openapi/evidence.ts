@@ -5,6 +5,7 @@
  */
 import { EVIDENCE_MAX_FILE_BYTES, EVIDENCE_MAX_FILES } from "../evidence-storage";
 import { DECISION_REASON_CODES } from "../moderation";
+import { DISCORD_INGEST_KINDS, DISCORD_KIND_EVENT, INGEST_SECRET_HEADER } from "../discord-ingest";
 import { EVIDENCE_STATUSES, STAGES, VISIBILITIES } from "../types";
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
@@ -247,6 +248,13 @@ export const evidenceSchemas: Record<string, unknown> = {
     required: ["userId", "addedAt"],
     properties: { userId: { type: "string" }, name: nullable("string"), email: nullable("string"), note: nullable("string"), addedBy: nullable("string"), addedAt: date },
   },
+};
+
+const SNOWFLAKE = { type: "string", pattern: "^[0-9]{15,22}$", description: "Discord id (snowflake)" };
+const ingestResult = {
+  type: "object",
+  required: ["status", "evidence"],
+  properties: { status: { type: "string", enum: ["created", "existing"] }, evidence: ref("BuilderEvidence") },
 };
 
 export const evidencePaths: Record<string, unknown> = {
@@ -534,6 +542,68 @@ export const evidencePaths: Record<string, unknown> = {
         }),
       },
       responses: { "200": data(ref("BuilderBackfillReport"), "Backfill report"), ...writeErrors },
+    },
+  },
+  "/api/v1/builder-access": {
+    get: {
+      operationId: "getBuilderAccess",
+      summary: "Should the menu show the Builder League?",
+      description:
+        "Always 200. `showNav` is true while the Builder League is open to members, or when the caller may use it (admin, pilot member). Signed-out callers get the public answer. Used by the site menu once per browser tab.",
+      tags: memberTags,
+      security: [...memberAuth, {}],
+      responses: {
+        "200": data({ type: "object", required: ["showNav"], properties: { showNav: { type: "boolean" } } }, "Menu visibility for the caller"),
+      },
+    },
+  },
+  "/api/v1/builder-admin/ingest/discord": {
+    post: {
+      operationId: "ingestBuilderDiscordEvent",
+      summary: "Ingest a Discord bot event as evidence",
+      description:
+        `For the community Discord bot. Authenticate with the shared \`${INGEST_SECRET_HEADER}\` header or an admin API key (admin sessions also work; MCP delegation does not). ` +
+        `Only these kinds count, never message volume: ${DISCORD_INGEST_KINDS.map((kind) => `\`${kind}\` → \`${DISCORD_KIND_EVENT[kind]}\``).join(", ")}. ` +
+        "The member is resolved from the Discord account linked during onboarding. The evidence is stored as `submitted` with source `discord` and waits for a moderator; this route never approves or awards. " +
+        "Idempotent per member and `messageId` (client key `discord:{messageId}`): a retry answers 200 with the stored evidence. `help_confirmation` needs `counterpartDiscordUserId` (the helped member), who still confirms from their own account. SHIP evidence needs a project, which the member attaches before review.",
+      tags: adminTags,
+      security: [{ BuilderIngestSecret: [] }, { BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }],
+      requestBody: {
+        required: true,
+        content: json({
+          type: "object",
+          additionalProperties: false,
+          required: ["kind", "discordUserId", "messageId", "channelId", "occurredAt"],
+          properties: {
+            kind: { type: "string", enum: [...DISCORD_INGEST_KINDS] },
+            discordUserId: { ...SNOWFLAKE, description: "Discord id of the member the event is about." },
+            messageId: SNOWFLAKE,
+            channelId: SNOWFLAKE,
+            url: { ...link, maxLength: 2048, description: "Message link; defaults to the guild message URL when the guild id is configured." },
+            occurredAt: { oneOf: [{ ...date }, { type: "integer", description: "Epoch milliseconds" }] },
+            counterpartDiscordUserId: { ...SNOWFLAKE, description: "Required for `help_confirmation`: the member who was helped." },
+            summary: { type: "string", maxLength: 2000 },
+          },
+        }),
+      },
+      responses: {
+        "200": data(ingestResult, "Replay: the evidence already stored for this message"),
+        "201": data(ingestResult, "Evidence created with status `submitted`"),
+        "202": data(
+          {
+            type: "object",
+            required: ["status", "reason"],
+            properties: {
+              status: { type: "string", enum: ["ignored"] },
+              reason: { type: "string", enum: ["unknown_discord_user", "no_builder_access", "counterpart_required", "unknown_counterpart", "self_counterpart", "event_type_not_in_ruleset"] },
+            },
+          },
+          "Accepted but ignored: nothing was stored"
+        ),
+        "400": error("Validation failed; `error.details` lists the failing fields"),
+        "401": error("Missing or invalid secret or credentials"),
+        "403": error("Not an admin, or MCP delegation"),
+      },
     },
   },
 };

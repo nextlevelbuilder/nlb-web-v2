@@ -342,6 +342,12 @@ export const openApiSpec = {
           type: "apiKey",
           in: "cookie",
           name: "better-auth.session_token"
+        },
+        BuilderIngestSecret: {
+          type: "apiKey",
+          in: "header",
+          name: "x-nlb-builder-ingest-secret",
+          description: "Shared secret of the Builder League Discord bot (server env BUILDER_INGEST_SECRET)."
         }
       },
       schemas: {
