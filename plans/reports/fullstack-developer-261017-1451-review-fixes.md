@@ -42,3 +42,43 @@ All four checks were run on `198e39f`:
 
 - One pre-squatting risk remains. Someone could pay first with an email that has never been used and is unverified on NLB; the rule then trusts the new customer's `nlb_user_id`. This depends on email-keyed customer rows, which is out-of-scope pre-existing issue 3.
 - The Telegram bot does not subscribe to `chat_member` updates. A member leaving the group is noticed on the next reconcile for that member (Retry/Rejoin or a tier change), not instantly. Subscribing would mean changing the `set-webhook` allowed updates and adding a handler.
+
+## Re-review fixes
+
+Source: [code-review-261017-1543-onboarding-rereview.md](./code-review-261017-1543-onboarding-rereview.md). These commits build on `6a53df1`.
+
+| Finding | Commit | Tests |
+|---|---|---|
+| N1 (medium): `nlb_user_id` claimed a new customer whose email is another user's verified email | `3ec5425` fix(onboarding): never link a customer to the payer when its email is another user's | `onboarding-foundation-membership`: "links a purchase made with another user's verified email to that user, not the payer". `onboarding-status`: "never binds a checkout paid with another user's verified email to the payer" (the payer gets `not_owner`; the email owner gets the link). |
+| N2 (low): a Telegram approval could race an unlink | `6b23b33` fix(onboarding): remove a Telegram account approved while its unlink completed | `onboarding-telegram`: "removes the account again when an unlink lands while the approval is in flight". Covers a deleted link (ban and unban), a pending unlink on an admin (never removed) and an unchanged link (no extra calls). |
+| N3 (low): an unlink from an error state showed the stale error and did not poll | `1d9f420` fix(onboarding): show an unlink from an error state as pending until it runs | `onboarding-status`: "shows a pending unlink as processing until a state recorded after the request reports a failure" (tests the `summarizeConnection` mapping). `onboarding-status-actions`: "shows an unlink from an error state as processing until its job reports". |
+| N4 (low): the welcome-email send had no time bound | `283b444` fix(onboarding): bound the welcome email send like other provider calls | `onboarding-welcome-email`: "gives up after 10 seconds with a retryable timeout" and "sends once with the idempotency key" |
+
+Docs: `9cdf572` and the N1/N4 commits update `docs/membership-onboarding.md`.
+
+- **N1:** the checkout email is a prefill only. Ownership is enforced when the customer is linked, and another user's verified email always wins.
+- **N2 and N3:** the Telegram approval re-check and the display of a pending unlink are described.
+- **N4:** Resend is now in the timeout list.
+
+Decisions:
+
+- **N1:** `externalCustomerId` was not added, as the coordinator decided. `customerEmail` stays a prefill.
+- **N2:**
+  - The removal reuses the adapter's ban-then-unban helper (`removeFromTelegramGroup`) and never touches admins.
+  - If the removal fails, it is logged and the webhook still answers 200. Telegram would redeliver the join request, not the removal, and on redelivery the link no longer exists.
+- **N3:**
+  - No extra write is made. An `action_required` state counts as a failed unlink only when it was recorded at or after `unlink_requested_at`.
+  - The polling moved into a shared hook, `components/onboarding/use-unlink-polling.ts`, used by both the account page and the onboarding page; the onboarding page also offers Unlink.
+- **N4:**
+  - The Resend SDK takes no abort signal, so the send races a 10 s timer.
+  - The job runner rethrows the `ProviderError` and keeps its code, `resend_timeout`.
+
+Verification at `9cdf572`:
+
+- `npm run type-check` is clean.
+- `npm run lint` reports 0 errors and 80 warnings, the same count as before.
+- `npx vitest run --maxWorkers=2`: 98 files passed and 1 was skipped; 997 tests passed and 2 were skipped.
+- `npm run build:worker` succeeds.
+- The untracked `.claude/agent-memory/` directory was deleted (not committed).
+
+Update to the unresolved questions above: N1 shrinks the pre-squatting residual. What remains is an email that is not a verified NLB account (issue #12). The re-review's own open questions are left for the owner: whether a refund restore can be triggered by Polar's own update, whether support should be paged on `not_owner`, and whether to use a real email lock.
