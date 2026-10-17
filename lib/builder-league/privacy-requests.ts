@@ -56,10 +56,10 @@ import { getEvidenceBucket } from "./evidence-storage";
 import { BuilderApiError } from "./http";
 import { renderOutputKey } from "./render-jobs";
 import { serializeShareLink } from "./share-links";
-import type { ActorRole } from "./types";
+import { TOMBSTONE_USER_PREFIX, type ActorRole } from "./types";
 
 export const PRIVACY_EXPORT_SCHEMA = 1;
-export const TOMBSTONE_PREFIX = "deleted-";
+export const TOMBSTONE_PREFIX = TOMBSTONE_USER_PREFIX;
 
 /** Ids the routes accept: better-auth ids and test ids, never a tombstone. */
 const USER_ID = /^[A-Za-z0-9_-]{1,128}$/;

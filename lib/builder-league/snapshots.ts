@@ -15,7 +15,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { leagueSnapshots, scoreLedger } from "@/lib/db/schema";
-import { PERIOD_TYPES, type BoardKey, type PeriodType } from "./types";
+import { PERIOD_TYPES, isTombstoneUserId, type BoardKey, type PeriodType } from "./types";
 import { computeBoards, parseBoardQuery, toPublicBoard, type BoardEntry, type ComputedBoard, type PublicBoard } from "./leaderboards";
 import { nextPeriodKey, periodKey, periodRange, previousPeriodKey } from "./time-windows";
 import { evaluateRank } from "./ranks";
@@ -299,7 +299,7 @@ export async function finalizeDuePeriods(db: AppDb, now = new Date()): Promise<F
           .selectDistinct({ userId: scoreLedger.userId })
           .from(scoreLedger)
           .where(and(gte(scoreLedger.occurredAt, range.start), lte(scoreLedger.occurredAt, range.end)));
-        for (const row of rows) rankCandidates.add(row.userId);
+        for (const row of rows) if (!isTombstoneUserId(row.userId)) rankCandidates.add(row.userId);
       }
     }
   }

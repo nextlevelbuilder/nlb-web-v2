@@ -97,3 +97,11 @@ export function isPeriodType(value: string): value is PeriodType {
 export function isBoardKey(value: string): value is BoardKey {
   return (BOARD_KEYS as readonly string[]).includes(value);
 }
+
+/** Prefix of the subject id that replaces a member's id in kept history after a privacy delete. */
+export const TOMBSTONE_USER_PREFIX = "deleted-";
+
+/** Tombstoned subjects have no `users` row, so per-user writes (ranks, yearly snapshots) must skip them. */
+export function isTombstoneUserId(userId: string): boolean {
+  return userId.startsWith(TOMBSTONE_USER_PREFIX);
+}

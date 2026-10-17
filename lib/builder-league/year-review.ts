@@ -36,7 +36,7 @@ import { canonicalJson, getEffectiveRuleset, getRuleset } from "./ruleset";
 import { leagueScore } from "./scoring";
 import { localDateKey, periodKey, periodRange } from "./time-windows";
 import { BuilderApiError } from "./http";
-import { STAGES, type RankKey, type Stage, type Verification, type Visibility } from "./types";
+import { STAGES, isTombstoneUserId, type RankKey, type Stage, type Verification, type Visibility } from "./types";
 
 export const YEAR_REVIEW_SCHEMA = 1;
 /** Days after Dec 31 (local) during which late moderation still lands in the final snapshot. */
@@ -747,5 +747,5 @@ export async function listYearParticipants(db: AppDb, year: number, readUntil: n
       inArray(builderEvents.kind, [...MILESTONE_KINDS]),
       inArray(builderEvents.verification, VERIFIED)
     ));
-  return rows.map((row) => row.userId).sort();
+  return rows.map((row) => row.userId).filter((userId) => !isTombstoneUserId(userId)).sort();
 }
