@@ -22,6 +22,13 @@
       "when": 1792224618036,
       "tag": "0002_onboarding_community",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792225000000,
+      "tag": "0003_builder_league",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,12 @@
+import { requireEvent } from "@/lib/builder-league/ruleset/policy-text";
 import type { PolicyEntry } from "./policy-types";
 
-/** Community policy ported verbatim from the original site (messages.policies["contributor-policy"]). */
+const work = requireEvent("contribute_contributor_work");
+
+/** Community policy ported verbatim from the original site (messages.policies["contributor-policy"]); RP and rank text follows Builder League ruleset v2. */
 export const contributorPolicy: PolicyEntry = {
   group: "community",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-17",
   legalReviewPending: false,
   content: {
     en: {
@@ -34,7 +37,7 @@ export const contributorPolicy: PolicyEntry = {
         {
           heading: "Confirmed Contributor Benefits",
           content:
-            "• Contributor badge on Discord\n• SHIP requirement waived\n• +15 RP/week of work\n• Early access to NLB products\n• Connect with Mentors and Partners\n• Reference letter from NLB when needed\n• Revenue share from contributed projects (case by case)",
+            `• Contributor badge on Discord\n• SHIP requirement waived\n• +${work.rp} RP per verified week of work\n• Verified Contributor weeks count instead of SHIPs toward rank conditions\n• Early access to NLB products\n• Connect with Mentors and Partners\n• Reference letter from NLB when needed\n• Revenue share from contributed projects (case by case)`,
         },
         {
           heading: "Strategic Partner Privileges",
@@ -71,7 +74,7 @@ export const contributorPolicy: PolicyEntry = {
         {
           heading: "Quyền lợi Contributor chính thức",
           content:
-            "• Badge Contributor trên Discord\n• Miễn SHIP 4 bài/tháng\n• +15 RP/tuần công việc\n• Early Access sản phẩm NLB\n• Kết nối với Mentors và Partners\n• Thư giới thiệu từ NLB khi cần\n• Revenue share từ dự án đóng góp (tùy case)",
+            `• Badge Contributor trên Discord\n• Miễn SHIP 4 bài/tháng\n• +${work.rp} RP cho mỗi tuần công việc được xác minh\n• Số tuần Contributor được xác minh thay cho số SHIP khi xét hạng\n• Early Access sản phẩm NLB\n• Kết nối với Mentors và Partners\n• Thư giới thiệu từ NLB khi cần\n• Revenue share từ dự án đóng góp (tùy case)`,
         },
         {
           heading: "Đặc quyền Đối tác Chiến lược",

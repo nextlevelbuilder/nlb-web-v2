@@ -31,6 +31,7 @@
   "vars": {
     "MCP_OAUTH_ENABLED": "true",
     "MCP_OAUTH_RESOURCE": "https://mcp.nextlevelbuilder.io/mcp",
+    "BUILDER_LEAGUE_ENABLED": "false",
     "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFVjTy75wVNVWXvG",
     "NEXT_PUBLIC_APP_URL": "https://nextlevelbuilder.io",
     "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
@@ -56,6 +57,10 @@
     {
       "binding": "MEDIA_PUBLIC",
       "bucket_name": "nlb-media-public"
+    },
+    {
+      "binding": "BUILDER_EVIDENCE",
+      "bucket_name": "nlb-builder-evidence"
     }
   ],
   "kv_namespaces": [
@@ -85,6 +90,7 @@
       "vars": {
         "MCP_OAUTH_ENABLED": "true",
         "MCP_OAUTH_RESOURCE": "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp",
+        "BUILDER_LEAGUE_ENABLED": "true",
         "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFVjUpt2OL12upHT",
         "NEXT_PUBLIC_APP_URL": "https://staging.nextlevelbuilder.io",
         "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
@@ -110,6 +116,10 @@
         {
           "binding": "MEDIA_PUBLIC",
           "bucket_name": "nlb-media-staging-public"
+        },
+        {
+          "binding": "BUILDER_EVIDENCE",
+          "bucket_name": "nlb-builder-evidence-staging"
         }
       ],
       "kv_namespaces": [

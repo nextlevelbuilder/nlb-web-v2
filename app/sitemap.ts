@@ -7,6 +7,7 @@ import { getDb } from "@/lib/db";
 import { POLICY_SLUGS } from "@/lib/constants/policy-slugs";
 import { getPolicy } from "@/content/policies";
 import { localizedPath, siteUrl } from "@/lib/seo";
+import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   };
   for (const [path, lastModified] of staticPages) add(path, lastModified);
+  // Community Wrapped, only while the Builder League is public (flag on).
+  for (const path of publicWrappedPaths()) add(path);
   entries.push({ url: `${baseUrl}/api-docs` });
   for (const product of products) add(`/products/${product.slug}`, product.updatedAt);
   for (const video of videos) add(`/courses/${video.slug}`, video.updatedAt);
