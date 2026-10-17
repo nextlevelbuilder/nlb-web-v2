@@ -1,4 +1,4 @@
-import { createTelegramClient, getTelegramConfig, type TelegramChatMember } from "./telegram-api";
+import { createTelegramClient, getTelegramConfig, type TelegramChatMember, type TelegramClient } from "./telegram-api";
 import { ProviderError, type ApplyResult, type CommunityAdapter } from "./types";
 
 /**
@@ -13,6 +13,34 @@ function isInChat(member: TelegramChatMember): boolean {
 }
 
 const isChatAdmin = (member: TelegramChatMember) => member.status === "creator" || member.status === "administrator";
+
+/** Remove a member with a short ban then an unban, so they can rejoin later. */
+async function kick(client: TelegramClient, groupChatId: string, telegramUserId: string): Promise<void> {
+  await client.banChatMember(groupChatId, telegramUserId, Math.floor(Date.now() / 1000) + REMOVAL_BAN_SECONDS);
+  await client.unbanChatMember(groupChatId, telegramUserId);
+}
+
+/**
+ * Remove an account from the group right away, outside the reconcile job (for example an approval
+ * that raced an unlink). Admins and the owner are never touched. Throws `ProviderError` on failure.
+ */
+export async function removeFromTelegramGroup(
+  client: TelegramClient,
+  groupChatId: string,
+  telegramUserId: string
+): Promise<"removed" | "not_in_chat" | "admin"> {
+  let member: TelegramChatMember;
+  try {
+    member = await client.getChatMember(groupChatId, telegramUserId);
+  } catch (error) {
+    if (!(error instanceof ProviderError) || error.code !== "telegram_user_not_found") throw error;
+    return "not_in_chat";
+  }
+  if (isChatAdmin(member)) return "admin";
+  if (!isInChat(member)) return "not_in_chat";
+  await kick(client, groupChatId, telegramUserId);
+  return "removed";
+}
 
 /**
  * One shared community supergroup for Premium and VIP. Entitled linked users are let in through
@@ -51,8 +79,7 @@ export const telegramAdapter: CommunityAdapter = {
     if (!isInChat(member)) return { status: "revoked", appliedTier: "none" };
 
     try {
-      await client.banChatMember(config.groupChatId, telegramUserId, Math.floor(Date.now() / 1000) + REMOVAL_BAN_SECONDS);
-      await client.unbanChatMember(config.groupChatId, telegramUserId);
+      await kick(client, config.groupChatId, telegramUserId);
     } catch (error) {
       if (error instanceof ProviderError && !error.retryable) {
         return { status: "action_required", appliedTier: "none", errorCode: error.code };

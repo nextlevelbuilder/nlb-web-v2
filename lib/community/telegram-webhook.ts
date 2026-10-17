@@ -5,6 +5,7 @@ import { getMemberTier, isUniqueViolation } from "@/lib/membership/member-access
 import { enqueueAccessReconcile } from "@/lib/onboarding/jobs";
 import { consumeNonce } from "@/lib/onboarding/nonces";
 import { createTelegramClient, getTelegramConfig } from "./telegram-api";
+import { removeFromTelegramGroup } from "./telegram-adapter";
 import {
   findTelegramConnectionByTelegramId,
   findTelegramConnectionByUser,
@@ -121,7 +122,9 @@ async function handleStart(db: AppDb, chatId: number | string, from: TelegramUse
  * owner has an effective paid tier and no pending unlink, decline it otherwise. Requests from
  * accounts not linked through NLB are left untouched, so the group's own admins keep handling them.
  * Reconcile afterwards so the recorded state follows. A request that is already gone (handled
- * earlier) is treated as done.
+ * earlier) is treated as done. An approval runs outside the reconcile job, so it can race an unlink:
+ * when the link is gone, replaced or being unlinked once the approval returns, the account is removed
+ * again at once so nothing NLB no longer tracks stays in the group.
  */
 async function handleJoinRequest(db: AppDb, groupChatId: string, botToken: string, from: TelegramUser, now: Date) {
   const telegramUserId = String(from.id);
@@ -139,9 +142,33 @@ async function handleJoinRequest(db: AppDb, groupChatId: string, botToken: strin
     if (error.retryable) return { kind: "retry" } as const;
   }
 
+  if (entitled) await undoApprovalIfUnlinked(db, client, groupChatId, connection.id, telegramUserId);
+
   await enqueueAccessReconcile(db, connection.userId, ["telegram_group"], now);
   scheduleOnboardingJobRun(db);
   return { kind: "handled" } as const;
+}
+
+async function undoApprovalIfUnlinked(
+  db: AppDb,
+  client: ReturnType<typeof createTelegramClient>,
+  groupChatId: string,
+  connectionId: string,
+  telegramUserId: string
+): Promise<void> {
+  const [current] = await db
+    .select({ externalUserId: communityConnections.externalUserId, unlinkRequestedAt: communityConnections.unlinkRequestedAt })
+    .from(communityConnections)
+    .where(eq(communityConnections.id, connectionId))
+    .limit(1);
+  if (current && current.externalUserId === telegramUserId && !current.unlinkRequestedAt) return;
+  try {
+    await removeFromTelegramGroup(client, groupChatId, telegramUserId);
+  } catch (error) {
+    if (!(error instanceof ProviderError)) throw error;
+    // Telegram would redeliver the join request, not this removal, so a retry would not help.
+    console.error(`telegram removal after an unlinked approval failed: ${error.code}`);
+  }
 }
 
 /** Route one verified update. Anything outside the bot's private chats and the community group is ignored. */

@@ -302,6 +302,48 @@ describe("POST /api/telegram/webhook", () => {
     expect(await reconcileJobFor(userId)).toMatchObject({ status: "pending" });
   });
 
+  it("removes the account again when an unlink lands while the approval is in flight", async () => {
+    const passThrough = fetchMock.getMockImplementation()!;
+    const unlinkDuringApproval = (finish: () => Promise<unknown>) =>
+      fetchMock.mockImplementationOnce(async (input, init) => {
+        await finish();
+        return passThrough(input, init);
+      });
+
+    // The unlink job already deleted the link.
+    const deleted = await createMember();
+    const deletedTelegramId = nextTelegramId();
+    await linkTelegram(deleted, String(deletedTelegramId));
+    unlinkDuringApproval(() => getDb().delete(communityConnections).where(eq(communityConnections.userId, deleted)));
+    stubTelegram("getChatMember", ok({ status: "member" }));
+    expect((await webhook(joinRequestUpdate(deletedTelegramId))).status).toBe(200);
+    expect(callsTo("approveChatJoinRequest")).toHaveLength(1);
+    expect(callsTo("banChatMember").map((call) => call.params.user_id)).toEqual([deletedTelegramId]);
+    expect(callsTo("unbanChatMember").map((call) => call.params.user_id)).toEqual([deletedTelegramId]);
+
+    // The unlink is pending; an admin is never removed.
+    telegramCalls.length = 0;
+    const admin = await createMember();
+    const adminTelegramId = nextTelegramId();
+    await linkTelegram(admin, String(adminTelegramId));
+    unlinkDuringApproval(() =>
+      getDb().update(communityConnections).set({ unlinkRequestedAt: new Date() }).where(eq(communityConnections.userId, admin))
+    );
+    stubTelegram("getChatMember", ok({ status: "administrator" }));
+    await webhook(joinRequestUpdate(adminTelegramId));
+    expect(callsTo("getChatMember")).toHaveLength(1);
+    expect(callsTo("banChatMember")).toHaveLength(0);
+
+    // A link that stayed in place keeps the member.
+    telegramCalls.length = 0;
+    const kept = await createMember();
+    const keptTelegramId = nextTelegramId();
+    await linkTelegram(kept, String(keptTelegramId));
+    await webhook(joinRequestUpdate(keptTelegramId));
+    expect(callsTo("approveChatJoinRequest")).toHaveLength(1);
+    expect(callsTo("getChatMember")).toHaveLength(0);
+  });
+
   it("declines join requests only from linked users without a tier", async () => {
     const lapsed = await createUser();
     const lapsedTelegramId = nextTelegramId();
