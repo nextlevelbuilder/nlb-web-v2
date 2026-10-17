@@ -22,7 +22,7 @@ The whole flow sits behind `ONBOARDING_V2_ENABLED`. Off means the legacy flow (w
 
 ## Jobs and cron
 
-Provider calls never run inline in a request. Routes and webhooks enqueue rows in `onboarding_jobs` ([`lib/onboarding/jobs.ts`](../lib/onboarding/jobs.ts)): `reconcile_access`, `welcome_email`, `admin_notify`. Each row has a dedupe key and a two-minute lease, renewed as each job of a claimed batch starts; a job another runner re-took after its lease expired is skipped. Every Discord, Telegram, Polar and admin-webhook call a job makes times out after 10 s and is retried as a transient failure. A failed job backs off for 30 s·2^n, capped at 1 h, and is marked dead after 10 attempts. Stored errors are redacted codes.
+Provider calls never run inline in a request. Routes and webhooks enqueue rows in `onboarding_jobs` ([`lib/onboarding/jobs.ts`](../lib/onboarding/jobs.ts)): `reconcile_access`, `welcome_email`, `admin_notify`. Each row has a dedupe key and a two-minute lease, renewed as each job of a claimed batch starts; a job another runner re-took after its lease expired is skipped. Every Discord, Telegram, Polar, Resend (welcome email) and admin-webhook call a job makes times out after 10 s and is retried as a transient failure. A failed job backs off for 30 s·2^n, capped at 1 h, and is marked dead after 10 attempts. Stored errors are redacted codes.
 
 The worker entry [`worker.ts`](../worker.ts) adds `scheduled()` (crons in [`wrangler.jsonc`](../wrangler.jsonc)). Both no-op while the flag is off:
 - `* * * * *` runs due jobs.

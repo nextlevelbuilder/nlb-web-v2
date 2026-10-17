@@ -51,7 +51,9 @@ async function runWelcomeEmail(db: AppDb, job: OnboardingJob): Promise<void> {
     locale: typeof job.payload.locale === "string" ? job.payload.locale : null,
     idempotencyKey: `nlb-onboarding-welcome-${subscriptionId}`,
   });
-  if (!result.success) throw new ProviderError("email_send_failed", { retryable: true });
+  if (!result.success) {
+    throw result.error instanceof ProviderError ? result.error : new ProviderError("email_send_failed", { retryable: true });
+  }
 }
 
 /** Internal admin ping. Optional: without `LARK_ADMIN_WEBHOOK_URL` the job completes as a no-op. */
