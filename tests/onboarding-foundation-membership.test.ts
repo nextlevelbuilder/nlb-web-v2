@@ -262,6 +262,7 @@ describe("Polar resync", () => {
     };
     const summary = await resyncMembershipSubscriptions(getDb(), client, { now: T0 });
     expect(summary).toMatchObject({ changed: 1, failed: 1 });
+    expect(client.subscriptions.get).toHaveBeenCalledWith({ id: live.polarSubscriptionId }, { timeoutMs: 10_000 });
     expect(await subscriptionRow(live.polarSubscriptionId)).toMatchObject({ status: "canceled", endedAt: T0 });
     const jobs = await getDb().select().from(onboardingJobs);
     expect(jobs.map((job) => job.dedupeKey).sort()).toEqual([

@@ -15,6 +15,7 @@ import {
   JOB_MAX_ATTEMPTS,
   listJobs,
   redactError,
+  renewJobLease,
   retryJob,
 } from "@/lib/onboarding/jobs";
 import { runDueJobs, runOnboardingCron, JOB_RUNNER_CRON, MEMBERSHIP_RESYNC_CRON } from "@/lib/onboarding/runner";
@@ -242,7 +243,7 @@ describe("onboarding job runner", () => {
     const userId = await createUser();
     await enqueueAccessReconcile(getDb(), userId, undefined, T0);
     await enqueueJob(getDb(), { kind: "admin_notify", dedupeKey: "notify-1", payload: { event: "new_membership" } }, T0);
-    expect(await runDueJobs(getDb(), { now: () => T0 })).toEqual({ claimed: 3, done: 3, retried: 0, dead: 0 });
+    expect(await runDueJobs(getDb(), { now: () => T0 })).toEqual({ claimed: 3, done: 3, retried: 0, dead: 0, lost: 0 });
     const states = await getDb().select().from(communityAccessState).where(eq(communityAccessState.userId, userId));
     expect(states.map((s) => [s.target, s.desiredTier, s.status]).sort()).toEqual([
       ["discord_guild", "none", "not_connected"],
@@ -253,7 +254,7 @@ describe("onboarding job runner", () => {
   it("kills jobs with an invalid payload or unknown kind without retrying", async () => {
     await enqueueJob(getDb(), { kind: "reconcile_access", dedupeKey: "bad-target", payload: { userId: "x", target: "slack" } }, T0);
     await enqueueJob(getDb(), { kind: "welcome_email", dedupeKey: "bad-welcome", payload: {} }, T0);
-    expect(await runDueJobs(getDb(), { now: () => T0 })).toEqual({ claimed: 2, done: 0, retried: 0, dead: 2 });
+    expect(await runDueJobs(getDb(), { now: () => T0 })).toEqual({ claimed: 2, done: 0, retried: 0, dead: 2, lost: 0 });
   });
 
   it("posts admin notifications to Lark when configured and retries on server errors", async () => {
@@ -268,6 +269,49 @@ describe("onboarding job runner", () => {
     fetchMock.mockResolvedValueOnce(new Response("{}", { status: 200 }));
     expect(await runDueJobs(getDb(), { now: () => after(backoffMs(1)) })).toMatchObject({ done: 1 });
     fetchMock.mockRestore();
+  });
+
+  it("renews the lease as each job of a batch starts and skips a job another runner re-took", async () => {
+    vi.stubEnv("LARK_ADMIN_WEBHOOK_URL", "https://lark.example.test/hook");
+    await enqueueJob(getDb(), { kind: "admin_notify", dedupeKey: "batch-1", payload: { event: "first" } }, after(-3));
+    await enqueueJob(getDb(), { kind: "admin_notify", dedupeKey: "batch-2", payload: { event: "second" } }, after(-2));
+    await enqueueJob(getDb(), { kind: "admin_notify", dedupeKey: "batch-3", payload: { event: "third" } }, after(-1));
+    // The claim happens at T0 with a 1 s lease; the first job starts at 0.9 s.
+    let clock = after(900);
+    let claimed = false;
+    const stolen: string[] = [];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      const { text } = (JSON.parse(String(init?.body)) as { content: { text: string } }).content;
+      if (text.endsWith("first")) {
+        // The first job runs past the batch lease; another runner then takes the second job only.
+        clock = after(1500);
+        const [taken] = await claimDueJobs(getDb(), 1, 1000, clock);
+        stolen.push(taken.dedupeKey);
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const now = () => {
+      if (claimed) return clock;
+      claimed = true;
+      return T0;
+    };
+    const summary = await runDueJobs(getDb(), { leaseMs: 1000, now });
+    expect(stolen).toEqual(["batch-2"]);
+    expect(summary).toEqual({ claimed: 3, done: 2, retried: 0, dead: 0, lost: 1 });
+    expect(await jobByKey("batch-2")).toMatchObject({ status: "running", lockedUntil: after(2500) });
+    expect(await jobByKey("batch-3")).toMatchObject({ status: "done" });
+    fetchMock.mockRestore();
+  });
+
+  it("extends only its own lease", async () => {
+    await enqueueJob(getDb(), { kind: "admin_notify", dedupeKey: "renew", payload: {} }, T0);
+    const [job] = await claimDueJobs(getDb(), 1, 1000, T0);
+    const renewed = await renewJobLease(getDb(), job, 1000, after(900));
+    expect(renewed?.lockedUntil).toEqual(after(1900));
+    expect(await claimDueJobs(getDb(), 1, 1000, after(1500))).toEqual([]);
+    expect(await renewJobLease(getDb(), job, 1000, after(1000))).toBeNull();
   });
 
   it("does nothing on any cron while the flag is off", async () => {

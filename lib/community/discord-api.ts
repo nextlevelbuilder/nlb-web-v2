@@ -1,5 +1,5 @@
 import { getOnboardingEnv, type OnboardingRuntimeEnv } from "@/lib/onboarding/flags";
-import { ProviderError } from "./types";
+import { ProviderError, PROVIDER_FETCH_TIMEOUT_MS, isFetchTimeout } from "./types";
 
 /**
  * Minimal Discord REST v10 client for onboarding: OAuth2 code/refresh exchange, `@me`, and the bot
@@ -91,9 +91,9 @@ export function toProviderError(failure: DiscordFailure): ProviderError {
 
 async function send(url: string, init: RequestInit): Promise<Response> {
   try {
-    return await fetch(url, init);
-  } catch {
-    throw new ProviderError("discord_network", { retryable: true });
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(PROVIDER_FETCH_TIMEOUT_MS) });
+  } catch (error) {
+    throw new ProviderError(isFetchTimeout(error) ? "discord_timeout" : "discord_network", { retryable: true });
   }
 }
 

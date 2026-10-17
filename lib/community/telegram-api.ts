@@ -1,5 +1,5 @@
 import { getOnboardingEnv, type OnboardingRuntimeEnv } from "@/lib/onboarding/flags";
-import { ProviderError } from "./types";
+import { ProviderError, PROVIDER_FETCH_TIMEOUT_MS, isFetchTimeout } from "./types";
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 
@@ -91,9 +91,10 @@ export async function callTelegram<T>(
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(params),
+      signal: AbortSignal.timeout(PROVIDER_FETCH_TIMEOUT_MS),
     });
-  } catch {
-    throw new ProviderError("telegram_network", { retryable: true });
+  } catch (error) {
+    throw new ProviderError(isFetchTimeout(error) ? "telegram_timeout" : "telegram_network", { retryable: true });
   }
 
   let body: { ok?: boolean; result?: T; description?: string; parameters?: { retry_after?: number } } = {};

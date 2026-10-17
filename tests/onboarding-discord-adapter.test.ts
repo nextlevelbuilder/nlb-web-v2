@@ -196,6 +196,9 @@ describe("discordAdapter", () => {
     await expect(apply(connection, "premium")).rejects.toMatchObject({ code: "discord_http_502", retryable: true });
     on("GET", MEMBER_URL, () => Promise.reject(new TypeError("fetch failed")));
     await expect(apply(connection, "premium")).rejects.toMatchObject({ code: "discord_network", retryable: true });
+    on("GET", MEMBER_URL, () => Promise.reject(new DOMException("The operation was aborted due to timeout", "TimeoutError")));
+    await expect(apply(connection, "premium")).rejects.toMatchObject({ code: "discord_timeout", retryable: true });
+    expect(fetchMock.mock.calls.every(([, init]) => init?.signal instanceof AbortSignal)).toBe(true);
   });
 
   it("refreshes an expired token before joining and re-seals the new tokens", async () => {

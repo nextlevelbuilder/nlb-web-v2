@@ -3,13 +3,14 @@ import type { AppDb } from "@/lib/db";
 import { communityAccessState, customers, subscriptions } from "@/lib/db/schema";
 import { enqueueAccessReconcile } from "@/lib/onboarding/jobs";
 import { MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS } from "@/lib/polar";
+import { PROVIDER_FETCH_TIMEOUT_MS } from "@/lib/community/types";
 import { getMemberTier } from "./member-access";
 import { applySubscriptionSnapshot } from "./subscription-sync";
 
 /** The slice of the Polar SDK the resync uses (`polar.subscriptions.get`). */
 export interface PolarSubscriptionReader {
   subscriptions: {
-    get(request: { id: string }): Promise<{
+    get(request: { id: string }, options?: { timeoutMs?: number }): Promise<{
       id: string;
       status: string;
       productId: string;
@@ -63,7 +64,7 @@ export async function resyncMembershipSubscriptions(
   for (const { subscription, userId } of rows) {
     summary.checked += 1;
     try {
-      const live = await client.subscriptions.get({ id: subscription.polarSubscriptionId });
+      const live = await client.subscriptions.get({ id: subscription.polarSubscriptionId }, { timeoutMs: PROVIDER_FETCH_TIMEOUT_MS });
       const result = await applySubscriptionSnapshot(
         db,
         {

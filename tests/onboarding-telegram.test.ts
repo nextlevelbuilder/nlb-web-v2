@@ -475,6 +475,12 @@ describe("telegramAdapter.apply", () => {
       throw new TypeError("fetch failed");
     });
     await expect(telegramAdapter.apply(input({}))).rejects.toMatchObject({ code: "telegram_network", retryable: true });
+
+    stubTelegram("getChatMember", () => {
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    });
+    await expect(telegramAdapter.apply(input({}))).rejects.toMatchObject({ code: "telegram_timeout", retryable: true });
+    expect(fetchMock.mock.calls.every(([, init]) => init?.signal instanceof AbortSignal)).toBe(true);
   });
 
   it("needs an operator when the bot is not admin or the chat is missing", async () => {
