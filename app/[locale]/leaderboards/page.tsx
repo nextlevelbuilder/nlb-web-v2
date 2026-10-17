@@ -8,6 +8,7 @@ import { toPageLocale } from "@/content/pages/page-locale";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { pageMetadata } from "@/lib/seo";
+import { BuilderBoardsTab } from "@/components/builder-league/leaderboard/builder-boards-tab";
 
 // Reads (and may compute) ranking snapshots in D1; never prerender at build time.
 export const dynamic = "force-dynamic";
@@ -79,6 +80,8 @@ export default async function LeaderboardsPage({ params }: LeaderboardsPageProps
               </dl>
             )}
           </header>
+
+          <BuilderBoardsTab locale={locale} />
 
           {visibleItems.length === 0 ? (
             <div className="surface-panel px-6 py-16 text-center">
