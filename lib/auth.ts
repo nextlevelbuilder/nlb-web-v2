@@ -6,6 +6,7 @@ import { getDb, type AppDb } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getMcpOAuthPlugins, isMcpOAuthEnabled } from "@/lib/mcp-oauth-config";
+import { SHARE_REF_COOKIE, recordSignupFromShareRef } from "@/lib/builder-league/attribution";
 
 export interface SessionUser {
   id: string;
@@ -97,6 +98,16 @@ export function getAuth(customDb?: AppDb, options?: { oauthProvider: boolean }) 
     }),
     emailAndPassword: {
       enabled: false,
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          // Builder League share attribution; a no-op without the share cookie, never blocks signup.
+          after: async (user, context) => {
+            await recordSignupFromShareRef(db, user.id, context?.getCookie(SHARE_REF_COOKIE));
+          },
+        },
+      },
     },
     socialProviders: {
       ...(githubClientId && githubClientSecret

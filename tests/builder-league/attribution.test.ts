@@ -8,6 +8,7 @@ import {
   isValidVisitorId,
   recordShareConversion,
   recordShareVisit,
+  recordSignupFromShareRef,
   sanitizeUtm,
   shareFunnel,
 } from "@/lib/builder-league/attribution";
@@ -24,6 +25,7 @@ beforeAll(async () => {
     { id: "owner", name: "Owner", email: "owner@example.com" },
     { id: "friend", name: "Friend", email: "friend@example.com" },
     { id: "late", name: "Late", email: "late@example.com" },
+    { id: "hooked", name: "Hooked", email: "hooked@example.com" },
   ]);
   linkId = (await createShareLink(t.db, { userId: "owner", kind: "year_review", year: 2026 })).link.id;
 });
@@ -73,5 +75,13 @@ describe("share attribution", () => {
     expect(await recordShareConversion(t.db, "late", "paid")).toBeNull();
     expect(await recordShareConversion(t.db, "late", "signup", { shareLinkId: "missing" })).toBeNull();
     expect(await shareFunnel(t.db, "owner", 2026)).toEqual({ visits: 2, signups: 1, paid: 1 });
+  });
+
+  it("attributes a signup from the share cookie and ignores missing or malformed refs", async () => {
+    await recordSignupFromShareRef(t.db, "hooked", undefined);
+    await recordSignupFromShareRef(t.db, "hooked", "../../etc");
+    expect(await shareFunnel(t.db, "owner", 2026)).toEqual({ visits: 2, signups: 1, paid: 1 });
+    await recordSignupFromShareRef(t.db, "hooked", linkId);
+    expect(await shareFunnel(t.db, "owner", 2026)).toEqual({ visits: 2, signups: 2, paid: 1 });
   });
 });

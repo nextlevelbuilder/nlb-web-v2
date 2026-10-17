@@ -114,6 +114,36 @@ export async function recordShareConversion(
   return link.id;
 }
 
+const SHARE_LINK_ID_RE = /^[\w-]{1,64}$/;
+
+/**
+ * Signup hook entry: attributes a new account to the share link in `SHARE_REF_COOKIE`. A missing or
+ * malformed cookie is a no-op; failures are logged and never block account creation.
+ */
+export async function recordSignupFromShareRef(db: AppDb, userId: string, shareRef: string | null | undefined): Promise<void> {
+  if (!shareRef || !SHARE_LINK_ID_RE.test(shareRef)) return;
+  try {
+    await recordShareConversion(db, userId, "signup", { shareLinkId: shareRef });
+  } catch (err) {
+    console.error("share attribution: signup not recorded", err instanceof Error ? err.message : err);
+  }
+}
+
+/**
+ * Payment hook entry: once the member holds an effective paid tier, attributes the payment to the link
+ * of their signup attribution. Without one it changes nothing; failures are logged, never thrown.
+ */
+export async function recordPaidShareConversion(db: AppDb, userId: string): Promise<void> {
+  try {
+    // Loaded lazily: this module is also imported by the auth signup hook, which must not pull in commerce.
+    const { getCommunityTier } = await import("./membership");
+    if ((await getCommunityTier(db, userId)) === "none") return;
+    await recordShareConversion(db, userId, "paid");
+  } catch (err) {
+    console.error("share attribution: paid conversion not recorded", err instanceof Error ? err.message : err);
+  }
+}
+
 /** Funnel counts of one member's links, for the owner's share panel. */
 export async function shareFunnel(db: AppDb, ownerUserId: string, year: number): Promise<{ visits: number; signups: number; paid: number }> {
   const rows = await db
