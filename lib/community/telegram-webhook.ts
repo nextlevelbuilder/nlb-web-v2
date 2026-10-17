@@ -117,14 +117,17 @@ async function handleStart(db: AppDb, chatId: number | string, from: TelegramUse
 }
 
 /**
- * A join request to the community group: approve only an account linked through NLB whose owner
- * has an effective paid tier; decline everyone else. Reconcile afterwards so the recorded state
- * follows. A request that is already gone (handled earlier) is treated as done.
+ * A join request to the community group from an account linked through NLB: approve it when its
+ * owner has an effective paid tier and no pending unlink, decline it otherwise. Requests from
+ * accounts not linked through NLB are left untouched, so the group's own admins keep handling them.
+ * Reconcile afterwards so the recorded state follows. A request that is already gone (handled
+ * earlier) is treated as done.
  */
 async function handleJoinRequest(db: AppDb, groupChatId: string, botToken: string, from: TelegramUser, now: Date) {
   const telegramUserId = String(from.id);
   const connection = await findTelegramConnectionByTelegramId(db, telegramUserId);
-  const entitled = connection ? (await getMemberTier(db, connection.userId, now)).tier !== "none" : false;
+  if (!connection) return { kind: "ignored" } as const;
+  const entitled = !connection.unlinkRequestedAt && (await getMemberTier(db, connection.userId, now)).tier !== "none";
 
   const client = createTelegramClient(botToken);
   try {
@@ -136,10 +139,8 @@ async function handleJoinRequest(db: AppDb, groupChatId: string, botToken: strin
     if (error.retryable) return { kind: "retry" } as const;
   }
 
-  if (connection) {
-    await enqueueAccessReconcile(db, connection.userId, ["telegram_group"], now);
-    scheduleOnboardingJobRun(db);
-  }
+  await enqueueAccessReconcile(db, connection.userId, ["telegram_group"], now);
+  scheduleOnboardingJobRun(db);
   return { kind: "handled" } as const;
 }
 

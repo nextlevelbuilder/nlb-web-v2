@@ -302,18 +302,22 @@ describe("POST /api/telegram/webhook", () => {
     expect(await reconcileJobFor(userId)).toMatchObject({ status: "pending" });
   });
 
-  it("declines join requests from unlinked accounts and from linked users without a tier", async () => {
-    const unlinkedTelegramId = nextTelegramId();
-    await webhook(joinRequestUpdate(unlinkedTelegramId));
-
+  it("declines join requests only from linked users without a tier", async () => {
     const lapsed = await createUser();
     const lapsedTelegramId = nextTelegramId();
     await linkTelegram(lapsed, String(lapsedTelegramId));
     await webhook(joinRequestUpdate(lapsedTelegramId));
 
     expect(callsTo("approveChatJoinRequest")).toHaveLength(0);
-    expect(callsTo("declineChatJoinRequest").map((call) => call.params.user_id)).toEqual([unlinkedTelegramId, lapsedTelegramId]);
+    expect(callsTo("declineChatJoinRequest").map((call) => call.params.user_id)).toEqual([lapsedTelegramId]);
     expect(await reconcileJobFor(lapsed)).toMatchObject({ status: "pending" });
+  });
+
+  it("leaves join requests from accounts not linked through NLB to the group admins", async () => {
+    const response = await webhook(joinRequestUpdate(nextTelegramId()));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("ignores join requests for other chats", async () => {
