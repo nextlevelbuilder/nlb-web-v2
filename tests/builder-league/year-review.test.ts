@@ -142,6 +142,8 @@ describe("shared (public) version", () => {
     expect(shared.stats.verifiedMilestones).toBe(3);
     expect(shared.scenes.map((s) => s.key)).toEqual(["year_in_numbers", "first_idea", "mvp", "launch"]);
     expect(shared.nextYearNote).toBeNull();
+    expect(shared.peerMentions).toEqual([]); // the help events behind them are private
+    expect(shared.provenance.backfill).toBeNull();
     const json = JSON.stringify(shared);
     for (const secret of ["\"pivot\"", "help-1", "Ship the paid tier", "\"rp\"", "\"score\""]) expect(json).not.toContain(secret);
   });

@@ -431,6 +431,8 @@ export function toPublicYearReview(data: YearReviewData, hiddenScenes: readonly 
   }
   const nextNote = data.reflection.nextYearIntent ?? data.reflection.reflection;
   const { rp: _rp, backfilled: _backfilled, peopleHelped: _helped, ...publicStats } = stats;
+  const shown = (key: SceneKey) => scenes.some((s) => s.key === key);
+  const backfilled = milestones.filter((m) => m.backfill);
   return {
     year: data.year,
     status: data.status,
@@ -438,15 +440,28 @@ export function toPublicYearReview(data: YearReviewData, hiddenScenes: readonly 
     cutoffAt: data.cutoffAt,
     stats: publicStats,
     milestones: milestones.map(({ rp: _r, verification: _v, ...rest }) => rest),
-    badges: data.badges,
-    ranks: data.ranks,
+    // Each detail travels only with the scene that shows it, so a hidden scene leaks nothing.
+    badges: shown("league_highlights") ? data.badges : [],
+    ranks: shown("league_highlights") ? data.ranks : [],
     standoutDay: computeStandoutDay(milestones),
-    peerMentions: data.peerMentions,
-    nextYearNote: scenes.some((s) => s.key === "next_year") && nextNote?.visibility === "public" ? nextNote.body : null,
+    peerMentions: shown("community_impact") ? data.peerMentions : [],
+    nextYearNote: shown("next_year") && nextNote?.visibility === "public" ? nextNote.body : null,
     scenes,
     archetype: computeArchetype(milestones),
-    provenance: data.provenance,
-    missing: { ...data.missing, scenes: SCENE_KEYS.filter((key) => !scenes.some((s) => s.key === key)) },
+    provenance: {
+      sources: data.provenance.sources,
+      backfill: backfilled.length === 0 ? null : {
+        count: backfilled.length,
+        labels: [...new Set(backfilled.map((m) => m.provenanceLabel ?? "backfill"))].sort(),
+        firstAt: backfilled[0].occurredAt,
+        lastAt: backfilled[backfilled.length - 1].occurredAt,
+      },
+    },
+    missing: {
+      scenes: SCENE_KEYS.filter((key) => !shown(key)),
+      trackedFrom: milestones[0]?.localDate ?? null,
+      untrackedBeforeTrackedFrom: Boolean(milestones[0] && !milestones[0].localDate.endsWith("-01-01")),
+    },
   };
 }
 
