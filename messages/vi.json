@@ -1129,10 +1129,12 @@
     "upgrade": {
       "title": "Nâng cấp lên VIP",
       "desc": "Ưu tiên DM với Mentor, truy cập sớm và ưu tiên xét duyệt Partner, cộng thêm mọi quyền lợi của Premium.",
-      "note": "VIP bắt đầu như một subscription mới. Sau khi nâng cấp, hãy email cho chúng mình để huỷ hoặc tính lại phần phí Premium.",
+      "note": "Bạn giữ nguyên chu kỳ thanh toán hiện tại. Polar thu ngay phần chênh lệch cho thời gian còn lại của kỳ này và quyền lợi VIP có hiệu lực ngay lập tức.",
       "cta": "Nâng cấp lên VIP",
-      "redirecting": "Đang chuyển sang Polar…",
-      "error": "Chưa mở được trang thanh toán. Hãy thử lại."
+      "error": "Chưa thể nâng cấp lúc này. Hãy thử lại hoặc email hello@nextlevelbuilder.io.",
+      "upgrading": "Đang nâng cấp…",
+      "success": "Bạn đã là thành viên VIP. Quyền truy cập cộng đồng sẽ được cập nhật trong vòng một phút.",
+      "rateLimited": "Vui lòng đợi vài giây rồi thử lại."
     },
     "support": "Có câu hỏi về membership? Email cho"
   }

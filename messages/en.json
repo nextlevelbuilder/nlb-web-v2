@@ -1129,10 +1129,12 @@
     "upgrade": {
       "title": "Upgrade to VIP",
       "desc": "Priority mentor DMs, early access and partner priority, on top of everything in Premium.",
-      "note": "VIP starts as a new subscription. Email us after upgrading and we will cancel or prorate your Premium plan.",
+      "note": "You keep your current billing cycle. Polar charges the price difference for the rest of this period right away, and VIP benefits start immediately.",
       "cta": "Upgrade to VIP",
-      "redirecting": "Redirecting to Polar…",
-      "error": "Could not start checkout. Try again."
+      "error": "Could not upgrade right now. Try again or email hello@nextlevelbuilder.io.",
+      "upgrading": "Upgrading…",
+      "success": "You are now VIP. Your community access updates within a minute.",
+      "rateLimited": "Please wait a few seconds before trying again."
     },
     "support": "Questions about your membership? Email"
   }

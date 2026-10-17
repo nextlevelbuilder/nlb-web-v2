@@ -82,19 +82,51 @@ export interface PolarCheckoutReader {
     }>;
   };
   subscriptions: {
-    get(request: { id: string }): Promise<{
-      id: string;
-      status: string;
-      productId: string;
-      product?: { name?: string | null } | null;
-      currentPeriodStart?: Date | null;
-      currentPeriodEnd?: Date | null;
-      cancelAtPeriodEnd?: boolean | null;
-      endedAt?: Date | null;
-      modifiedAt?: Date | null;
-      createdAt?: Date | null;
-    }>;
+    get(request: { id: string }): Promise<PolarSubscriptionData>;
   };
+}
+
+/** The Polar subscription fields mirrored into the local `subscriptions` row. */
+export interface PolarSubscriptionData {
+  id: string;
+  status: string;
+  productId: string;
+  product?: { name?: string | null } | null;
+  currentPeriodStart?: Date | null;
+  currentPeriodEnd?: Date | null;
+  cancelAtPeriodEnd?: boolean | null;
+  endedAt?: Date | null;
+  modifiedAt?: Date | null;
+  createdAt?: Date | null;
+}
+
+/** The slice of the Polar SDK the in-place upgrade uses (`subscriptions.update`). */
+export interface PolarSubscriptionUpdater {
+  subscriptions: {
+    update(request: {
+      id: string;
+      subscriptionUpdate: { productId: string; prorationBehavior: "invoice" | "prorate" };
+    }): Promise<PolarSubscriptionData>;
+  };
+}
+
+function applyPolarSubscription(db: AppDb, live: PolarSubscriptionData, customerId: string, now: Date) {
+  return applySubscriptionSnapshot(
+    db,
+    {
+      polarSubscriptionId: live.id,
+      customerId,
+      productId: live.productId,
+      productName: live.product?.name ?? null,
+      status: live.status,
+      currentPeriodStart: live.currentPeriodStart ?? null,
+      currentPeriodEnd: live.currentPeriodEnd ?? null,
+      cancelAtPeriodEnd: Boolean(live.cancelAtPeriodEnd),
+      endedAt: live.endedAt ?? null,
+      modifiedAt: live.modifiedAt ?? live.createdAt ?? null,
+    },
+    now
+  );
 }
 
 const TARGET_FOR_PROVIDER: Readonly<Record<CommunityProvider, CommunityTarget>> = {
@@ -188,22 +220,7 @@ async function verifyCheckout(
     const customer = await ensureCheckoutCustomer(db, checkout);
     if (!customer) return "verifying";
     const live = await polar.subscriptions.get({ id: checkout.subscriptionId });
-    await applySubscriptionSnapshot(
-      db,
-      {
-        polarSubscriptionId: live.id,
-        customerId: customer.id,
-        productId: live.productId,
-        productName: live.product?.name ?? null,
-        status: live.status,
-        currentPeriodStart: live.currentPeriodStart ?? null,
-        currentPeriodEnd: live.currentPeriodEnd ?? null,
-        cancelAtPeriodEnd: Boolean(live.cancelAtPeriodEnd),
-        endedAt: live.endedAt ?? null,
-        modifiedAt: live.modifiedAt ?? live.createdAt ?? null,
-      },
-      now
-    );
+    await applyPolarSubscription(db, live, customer.id, now);
     const linked = customer.userId === user.id || (await linkCustomerToUser(db, { customerId: customer.id, userId: user.id }));
     if (!linked) {
       // Owned by another NLB user, or this user already owns a different Polar customer.
@@ -443,6 +460,14 @@ export async function requestMemberReconcile(
   target: CommunityTarget,
   now: Date = new Date()
 ): Promise<{ ok: true } | { ok: false; retryAfterMs: number }> {
+  const limited = await memberRateLimit(db, userId, now);
+  if (limited) return limited;
+  await enqueueMemberReconcile(db, userId, [target], now);
+  return { ok: true };
+}
+
+/** A member action within the last 30 seconds blocks the next one (retry and upgrade share it). */
+async function memberRateLimit(db: AppDb, userId: string, now: Date): Promise<{ ok: false; retryAfterMs: number } | null> {
   const since = new Date(now.getTime() - RETRY_RATE_LIMIT_MS);
   const [recent] = await db
     .select({ requestedAt: sql<number>`json_extract(${onboardingJobs.payload}, '$.memberRequestedAt')` })
@@ -459,20 +484,74 @@ export async function requestMemberReconcile(
     )
     .orderBy(sql`json_extract(${onboardingJobs.payload}, '$.memberRequestedAt') desc`)
     .limit(1);
-  if (recent) {
-    return { ok: false, retryAfterMs: Math.max(1000, Number(recent.requestedAt) + RETRY_RATE_LIMIT_MS - now.getTime()) };
+  if (!recent) return null;
+  return { ok: false, retryAfterMs: Math.max(1000, Number(recent.requestedAt) + RETRY_RATE_LIMIT_MS - now.getTime()) };
+}
+
+/** Same dedupe key and payload shape as `enqueueAccessReconcile`, plus the member marker. */
+async function enqueueMemberReconcile(db: AppDb, userId: string, targets: readonly CommunityTarget[], now: Date) {
+  for (const target of targets) {
+    await enqueueJob(
+      db,
+      {
+        kind: "reconcile_access",
+        dedupeKey: `reconcile_access:${userId}:${target}`,
+        payload: { userId, target, memberRequestedAt: now.getTime() },
+      },
+      now
+    );
   }
-  // Same dedupe key and payload shape as `enqueueAccessReconcile`, plus the member marker.
-  await enqueueJob(
-    db,
-    {
-      kind: "reconcile_access",
-      dedupeKey: `reconcile_access:${userId}:${target}`,
-      payload: { userId, target, memberRequestedAt: now.getTime() },
-    },
-    now
-  );
-  return { ok: true };
+}
+
+const UPGRADEABLE_STATUSES = new Set(["active", "trialing"]);
+
+/** VIP product on the same billing cycle: quarterly stays quarterly, annual and early-bird become VIP annual. */
+export function vipProductForPremium(productId: string): string {
+  return termForProductId(productId) === "quarterly" ? PRODUCT_IDS.VIP_QUARTERLY : PRODUCT_IDS.VIP_ANNUAL;
+}
+
+export type UpgradeResult =
+  | { ok: true; membership: MembershipSummary | null }
+  | { ok: false; error: "rate_limited"; retryAfterMs: number }
+  | { ok: false; error: "no_upgradeable_subscription" | "upgrade_failed" };
+
+/**
+ * Premium → VIP in place: the member's linked, active Premium subscription switches product on
+ * Polar and the difference is invoiced immediately, so no second subscription is created. The
+ * local row is refreshed from Polar's answer and community access is reconciled to VIP.
+ */
+export async function upgradeMembershipToVip(
+  db: AppDb,
+  userId: string,
+  polar: PolarSubscriptionUpdater,
+  now: Date = new Date()
+): Promise<UpgradeResult> {
+  const premium = (await getLinkedSubscriptions(db, userId))
+    .filter(
+      (row) =>
+        UPGRADEABLE_STATUSES.has(row.status) &&
+        resolveEffectiveTier([toMembershipState(row)], now, getPastDueGraceDays()).tier === "premium"
+    )
+    .sort((a, b) => (b.currentPeriodEnd?.getTime() ?? 0) - (a.currentPeriodEnd?.getTime() ?? 0))[0];
+  if (!premium) return { ok: false, error: "no_upgradeable_subscription" };
+
+  const limited = await memberRateLimit(db, userId, now);
+  if (limited) return { ok: false, error: "rate_limited", retryAfterMs: limited.retryAfterMs };
+
+  try {
+    const live = await polar.subscriptions.update({
+      id: premium.polarSubscriptionId,
+      subscriptionUpdate: { productId: vipProductForPremium(premium.polarProductId), prorationBehavior: "invoice" },
+    });
+    await applyPolarSubscription(db, live, premium.customerId, now);
+  } catch (error) {
+    console.warn(`membership upgrade failed: ${error instanceof Error ? error.name : "error"}`);
+    // Still record the attempt so a failing Polar call is not retried in a tight loop.
+    await enqueueMemberReconcile(db, userId, [TARGET_FOR_PROVIDER.discord], now);
+    return { ok: false, error: "upgrade_failed" };
+  }
+  await enqueueMemberReconcile(db, userId, [TARGET_FOR_PROVIDER.discord, TARGET_FOR_PROVIDER.telegram], now);
+  return { ok: true, membership: await membershipSummary(db, userId, now) };
 }
 
 export type UnlinkResult = "unlinked" | "not_linked" | "revoke_failed";
