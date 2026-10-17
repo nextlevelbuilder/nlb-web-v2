@@ -1,7 +1,12 @@
 import { toPageLocale, type PageLocale } from "@/content/pages/page-locale";
 import type { CapRule } from "@/lib/builder-league/ruleset";
+import { EVENT_LABELS, describeCap, type PolicyLocale } from "@/lib/builder-league/ruleset/policy-text";
 import type { EventTypeKey, EvidenceStatus, Stage, Verification, Visibility } from "@/lib/builder-league/types";
 
+
+/** Event names come from the ruleset policy text, so the evidence UI and the policy pages never differ. */
+const eventLabels = (locale: PolicyLocale) =>
+  Object.fromEntries(Object.entries(EVENT_LABELS).map(([key, labels]) => [key, labels[locale]])) as Record<EventTypeKey, string>;
 /** Builder League evidence, moderation and admin copy (EN + VI). */
 export interface EvidenceCopy {
   meta: { list: string; create: string; detail: string; moderation: string; hub: string };
@@ -217,27 +222,7 @@ const en: EvidenceCopy = {
     moderator_verified: "Verified by a moderator",
     system_verified: "Recorded by the system",
   },
-  events: {
-    validate_problem_signal: "Problem signal with evidence",
-    validate_interviews: "Customer interviews written up",
-    validate_waitlist: "Waitlist or landing page with real sign-ups",
-    validate_wtp_commitment: "Willingness-to-pay commitment",
-    validate_stop_pivot: "Documented stop or pivot decision",
-    build_scope_cut: "Scope cut with rationale",
-    build_mvp: "Working MVP",
-    build_first_real_user: "First real user",
-    build_feedback_improvement: "Improvement shipped from user feedback",
-    ship_public_post: "SHIP a public post",
-    ship_highlighted_post: "SHIP gets highlighted",
-    ship_product_launch: "Product launch",
-    ship_first_payment: "First payment from a customer",
-    ship_distribution_case_study: "Distribution case study",
-    contribute_peer_help: "Help a member (confirmed by them)",
-    contribute_weekly_feedback: "Feedback Weekly",
-    contribute_contributor_work: "Contributor work",
-    contribute_discord_active: "Active in Discord",
-    contribute_featured: "Featured contribution",
-  },
+  events: eventLabels("en"),
   reasons: {
     meets_requirements: "Meets the requirements",
     verified_link: "Link verified",
@@ -328,12 +313,7 @@ const en: EvidenceCopy = {
     internal_error: "Something went wrong. Try again.",
   },
   errorFallback: "That did not work. Try again.",
-  describeCap: (cap) => {
-    if (cap.window === "lifetime") return cap.max === 1 ? "once per project" : `max ${cap.max} per project`;
-    if (cap.per === "project") return `max ${cap.max}/${cap.window} per project`;
-    if (cap.per === "counterparty") return `max ${cap.max}/${cap.window} for the same person`;
-    return `max ${cap.max}/${cap.window}`;
-  },
+  describeCap: (cap) => describeCap(cap, "en"),
   rp: (value) => `${value} RP`,
   minSummary: (chars) => `Summary of at least ${chars} characters`,
   linkRequired: "At least one link or file",
@@ -539,27 +519,7 @@ const vi: EvidenceCopy = {
     moderator_verified: "Moderator xác minh",
     system_verified: "Hệ thống ghi nhận",
   },
-  events: {
-    validate_problem_signal: "Tín hiệu vấn đề có bằng chứng",
-    validate_interviews: "Phỏng vấn khách hàng có ghi chép",
-    validate_waitlist: "Waitlist hoặc landing page có người đăng ký thật",
-    validate_wtp_commitment: "Cam kết sẵn sàng trả tiền",
-    validate_stop_pivot: "Quyết định dừng hoặc pivot có ghi lại lý do",
-    build_scope_cut: "Cắt scope có lý do rõ ràng",
-    build_mvp: "MVP chạy được",
-    build_first_real_user: "Người dùng thật đầu tiên",
-    build_feedback_improvement: "Cải tiến dựa trên feedback người dùng",
-    ship_public_post: "SHIP một bài public",
-    ship_highlighted_post: "Bài SHIP được highlight",
-    ship_product_launch: "Ra mắt sản phẩm",
-    ship_first_payment: "Khoản thanh toán đầu tiên từ khách hàng",
-    ship_distribution_case_study: "Case study về phân phối",
-    contribute_peer_help: "Giúp một thành viên (người được giúp xác nhận)",
-    contribute_weekly_feedback: "Feedback Weekly",
-    contribute_contributor_work: "Công việc Contributor",
-    contribute_discord_active: "Hoạt động trên Discord",
-    contribute_featured: "Đóng góp nổi bật",
-  },
+  events: eventLabels("vi"),
   reasons: {
     meets_requirements: "Đạt yêu cầu",
     verified_link: "Đã kiểm tra link",
@@ -650,13 +610,7 @@ const vi: EvidenceCopy = {
     internal_error: "Đã có lỗi. Thử lại nhé.",
   },
   errorFallback: "Chưa thực hiện được. Thử lại nhé.",
-  describeCap: (cap) => {
-    const window = { week: "tuần", month: "tháng", year: "năm", lifetime: "" }[cap.window];
-    if (cap.window === "lifetime") return cap.max === 1 ? "1 lần mỗi dự án" : `tối đa ${cap.max} lần mỗi dự án`;
-    if (cap.per === "project") return `tối đa ${cap.max}/${window} mỗi dự án`;
-    if (cap.per === "counterparty") return `tối đa ${cap.max}/${window} cho cùng một người`;
-    return `tối đa ${cap.max}/${window}`;
-  },
+  describeCap: (cap) => describeCap(cap, "vi"),
   rp: (value) => `${value} RP`,
   minSummary: (chars) => `Mô tả tối thiểu ${chars} ký tự`,
   linkRequired: "Ít nhất một link hoặc tệp",

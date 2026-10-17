@@ -8,7 +8,8 @@ import { rulesetV2 } from "./v2";
 
 export type PolicyLocale = "en" | "vi";
 
-const EVENT_LABELS: Record<EventTypeKey, Record<PolicyLocale, string>> = {
+/** Display name of every event type, per locale. The single source for policy pages and evidence UI. */
+export const EVENT_LABELS: Record<EventTypeKey, Record<PolicyLocale, string>> = {
   validate_problem_signal: { en: "Problem signal with evidence", vi: "Tín hiệu vấn đề có bằng chứng" },
   validate_interviews: { en: "Customer interviews written up", vi: "Phỏng vấn khách hàng có ghi chép" },
   validate_waitlist: { en: "Waitlist or landing page with real sign-ups", vi: "Waitlist hoặc landing page có người đăng ký thật" },
@@ -46,7 +47,8 @@ const WINDOW_LABELS: Record<Exclude<CapRule["window"], "lifetime">, Record<Polic
   year: { en: "year", vi: "năm" },
 };
 
-function describeCap(cap: CapRule, locale: PolicyLocale): string {
+/** A cap rule in words, e.g. "max 4/week" or "once per project". */
+export function describeCap(cap: CapRule, locale: PolicyLocale): string {
   const vi = locale === "vi";
   if (cap.window === "lifetime") {
     if (cap.max === 1) return vi ? "1 lần mỗi dự án" : "once per project";
