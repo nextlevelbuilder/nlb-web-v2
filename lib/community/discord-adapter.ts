@@ -3,6 +3,7 @@ import type { AppDb } from "@/lib/db";
 import { communityConnections } from "@/lib/db/schema";
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secret-box";
 import { DiscordGuildClient, readDiscordConfig, refreshDiscordToken, type DiscordConfig } from "./discord-api";
+import { assertConnectionGrantable } from "./grant-guard";
 import { ProviderError, type ApplyInput, type ApplyResult, type CommunityAdapter, type CommunityConnection, type MembershipTier } from "./types";
 
 /** Refresh a little before expiry so the join call never races the token's end. */
@@ -74,13 +75,14 @@ async function converge(input: ApplyInput & { connection: CommunityConnection })
   if (currentRoles === null) {
     // Not in the guild. Revoking never kicks, so there is nothing left to do; granting joins with the roles.
     if (input.desiredTier === "none") return { status: "revoked", appliedTier: "none" };
+    await assertConnectionGrantable(input.db, input.connection);
     await joinGuild(input, config, guild, wanted);
     return { status: "active", appliedTier: input.desiredTier };
   }
 
-  for (const role of wanted) {
-    if (!currentRoles.includes(role)) await guild.addRole(discordUserId, role);
-  }
+  const missing = wanted.filter((role) => !currentRoles.includes(role));
+  if (missing.length > 0) await assertConnectionGrantable(input.db, input.connection);
+  for (const role of missing) await guild.addRole(discordUserId, role);
   for (const role of managed) {
     if (!wanted.includes(role) && currentRoles.includes(role)) await guild.removeRole(discordUserId, role);
   }

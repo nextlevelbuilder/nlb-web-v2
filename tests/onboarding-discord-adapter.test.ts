@@ -237,6 +237,25 @@ describe("discordAdapter", () => {
     expect(await apply(connection, "premium", "premium")).toEqual({ status: "action_required", appliedTier: "premium", errorCode });
   });
 
+  it("never grants to a connection the member unlinked or replaced after it was read", async () => {
+    const unlinked = await connectedUser();
+    await getDb().update(communityConnections).set({ unlinkRequestedAt: new Date() }).where(eq(communityConnections.id, unlinked.id));
+    on("GET", MEMBER_URL, unknownMember);
+    await expect(apply(unlinked, "premium")).rejects.toMatchObject({ code: "connection_changed", retryable: true });
+    await getDb().delete(communityConnections);
+
+    const replaced = await connectedUser();
+    await getDb().update(communityConnections).set({ externalUserId: "discord-other" }).where(eq(communityConnections.id, replaced.id));
+    memberWithRoles([]);
+    await expect(apply(replaced, "vip")).rejects.toMatchObject({ code: "connection_changed", retryable: true });
+    await getDb().delete(communityConnections);
+
+    const deleted = await connectedUser();
+    await getDb().delete(communityConnections).where(eq(communityConnections.id, deleted.id));
+    await expect(apply(deleted, "premium")).rejects.toMatchObject({ code: "connection_changed", retryable: true });
+    expect(mutations()).toEqual([]);
+  });
+
   it("returns action_required when the bot is not configured", async () => {
     vi.stubEnv("DISCORD_BOT_TOKEN", "");
     const connection = await connectedUser();

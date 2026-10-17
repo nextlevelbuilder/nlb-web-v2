@@ -26,8 +26,7 @@ import { getPastDueGraceDays } from "@/lib/onboarding/flags";
 import { enqueueAccessReconcile, enqueueJob } from "@/lib/onboarding/jobs";
 import { runDueJobs } from "@/lib/onboarding/runner";
 import { PRODUCT_IDS } from "@/lib/polar";
-import { getCommunityAdapter } from "@/lib/community/registry";
-import { ProviderError, type AccessStatus, type CommunityProvider, type CommunityTarget } from "@/lib/community/types";
+import type { AccessStatus, CommunityProvider, CommunityTarget } from "@/lib/community/types";
 
 export type PaymentState = "pending" | "verifying" | "verified" | "failed" | "not_owner" | "none";
 export type NextAction = "connect" | "join" | "retry" | "reconnect" | "none";
@@ -61,6 +60,10 @@ export interface ConnectionSummary {
   status: AccessStatus;
   displayName?: string;
   nextAction: NextAction;
+  /** Present while an unlink is pending: access is being removed before the link goes away. */
+  unlinking?: true;
+  /** Short provider code of the last permanent failure (status `action_required` only). */
+  errorCode?: string;
 }
 
 export interface OnboardingStatus {
@@ -302,23 +305,34 @@ async function connectionSummaries(
   tier: MembershipTier
 ): Promise<Record<CommunityProvider, ConnectionSummary>> {
   const connections = await db
-    .select({ provider: communityConnections.provider, displayName: communityConnections.displayName })
+    .select({
+      provider: communityConnections.provider,
+      displayName: communityConnections.displayName,
+      unlinkRequestedAt: communityConnections.unlinkRequestedAt,
+    })
     .from(communityConnections)
     .where(eq(communityConnections.userId, userId));
   const states = await db
-    .select({ target: communityAccessState.target, status: communityAccessState.status })
+    .select({ target: communityAccessState.target, status: communityAccessState.status, errorCode: communityAccessState.errorCode })
     .from(communityAccessState)
     .where(eq(communityAccessState.userId, userId));
 
   const summarize = (provider: CommunityProvider): ConnectionSummary => {
     const connection = connections.find((row) => row.provider === provider);
     const state = states.find((row) => row.target === TARGET_FOR_PROVIDER[provider]);
-    // A fresh link has no reconciled state yet: it is being processed.
-    const status: AccessStatus = state?.status ?? (connection ? "processing" : "not_connected");
+    const unlinking = Boolean(connection?.unlinkRequestedAt);
+    // A fresh link has no reconciled state yet, and a pending unlink is still removing access.
+    let status: AccessStatus = state?.status ?? (connection ? "processing" : "not_connected");
+    if (unlinking && status !== "action_required") status = "processing";
+    let nextAction = nextActionFor(provider, tier, Boolean(connection), connection ? status : null);
+    // A failed unlink is retried as-is; reconnecting would not help.
+    if (unlinking) nextAction = status === "action_required" ? "retry" : "none";
     return {
       status,
       ...(connection?.displayName ? { displayName: connection.displayName } : {}),
-      nextAction: nextActionFor(provider, tier, Boolean(connection), connection ? status : null),
+      nextAction,
+      ...(unlinking ? { unlinking: true as const } : {}),
+      ...(status === "action_required" && state?.errorCode ? { errorCode: state.errorCode } : {}),
     };
   };
   return { discord: summarize("discord"), telegram: summarize("telegram") };
@@ -578,13 +592,14 @@ export async function upgradeMembershipToVip(
   return { ok: true, membership: await membershipSummary(db, userId, now) };
 }
 
-export type UnlinkResult = "unlinked" | "not_linked" | "revoke_failed";
+export type UnlinkResult = "unlinking" | "not_linked";
 
 /**
- * Unlink a community account. Access is revoked first by converging the target to tier `none`
- * with the linked account still known to the adapter; the connection row is deleted only after the
- * adapter confirms nothing is applied, and a reconcile then records the unlinked state. A failed
- * revoke keeps the row so the member (or support) can try again.
+ * Request an unlink. The connection is marked and the target's access reconcile is queued under its
+ * usual dedupe key, so the unlink never runs alongside another reconcile for the same user and
+ * target. That job converges the account to no access and deletes the connection only when the
+ * adapter reports the access revoked; a failed revoke keeps the row and its error code in the
+ * access state, so the member (or support) can retry.
  */
 export async function unlinkCommunityConnection(
   db: AppDb,
@@ -592,37 +607,14 @@ export async function unlinkCommunityConnection(
   provider: CommunityProvider,
   now: Date = new Date()
 ): Promise<UnlinkResult> {
-  const target = TARGET_FOR_PROVIDER[provider];
-  const [connection] = await db
-    .select()
-    .from(communityConnections)
+  const marked = await db
+    .update(communityConnections)
+    .set({ unlinkRequestedAt: sql`coalesce(${communityConnections.unlinkRequestedAt}, ${now.getTime()})`, updatedAt: now })
     .where(and(eq(communityConnections.userId, userId), eq(communityConnections.provider, provider)))
-    .limit(1);
-  if (!connection) return "not_linked";
-  const [current] = await db
-    .select()
-    .from(communityAccessState)
-    .where(and(eq(communityAccessState.userId, userId), eq(communityAccessState.target, target)))
-    .limit(1);
-
-  try {
-    const result = await getCommunityAdapter(target).apply({
-      db,
-      userId,
-      target,
-      desiredTier: "none",
-      connection,
-      current: current ?? null,
-    });
-    if (result.retryable || result.appliedTier !== "none") return "revoke_failed";
-  } catch (error) {
-    console.warn(`community unlink revoke failed for ${target}: ${error instanceof ProviderError ? error.code : "adapter_error"}`);
-    return "revoke_failed";
-  }
-
-  await db.delete(communityConnections).where(eq(communityConnections.id, connection.id));
-  await enqueueAccessReconcile(db, userId, [target], now);
-  return "unlinked";
+    .returning({ id: communityConnections.id });
+  if (marked.length === 0) return "not_linked";
+  await enqueueAccessReconcile(db, userId, [TARGET_FOR_PROVIDER[provider]], now);
+  return "unlinking";
 }
 
 /** Drain queued onboarding jobs after the response, when the Worker context is available. */

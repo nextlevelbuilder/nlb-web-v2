@@ -61,7 +61,8 @@ export function retryCommunityAccess(provider: CommunityProvider): Promise<{ que
   return call('/api/onboarding/retry', { method: 'POST', body: JSON.stringify({ target: TARGET_FOR[provider] }) });
 }
 
-export function unlinkCommunityAccount(provider: CommunityProvider): Promise<{ unlinked: true }> {
+/** Queues the unlink (202): access is removed first, then the link; poll the status for progress. */
+export function unlinkCommunityAccount(provider: CommunityProvider): Promise<{ unlinking: true }> {
   return call(`/api/onboarding/connections/${provider}`, { method: 'DELETE' });
 }
 

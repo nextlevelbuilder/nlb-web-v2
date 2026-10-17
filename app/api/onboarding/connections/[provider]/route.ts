@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 
 const PROVIDERS: readonly CommunityProvider[] = ["discord", "telegram"];
 
-/** Unlink a Discord or Telegram account: access is revoked first, then the link is removed. */
+/**
+ * Unlink a Discord or Telegram account. Answers 202 `{ unlinking: true }`: the access job revokes
+ * access first and removes the link afterwards; the status endpoint reports progress.
+ */
 export async function DELETE(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   if (!isOnboardingV2Enabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const user = await getSessionUser(request);
@@ -22,7 +25,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
   const db = getDb();
   const result = await unlinkCommunityConnection(db, user.id, provider as CommunityProvider);
   if (result === "not_linked") return NextResponse.json({ error: "not_linked" }, { status: 404 });
-  if (result === "revoke_failed") return NextResponse.json({ error: "revoke_failed" }, { status: 502 });
   scheduleOnboardingJobRun(db);
-  return NextResponse.json({ unlinked: true });
+  return NextResponse.json({ unlinking: true }, { status: 202 });
 }

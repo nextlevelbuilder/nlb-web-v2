@@ -762,7 +762,8 @@ export const onboardingProfiles = sqliteTable("onboarding_profiles", {
 
 /**
  * A community account (Discord user, Telegram user) linked through NLB. Provider tokens are stored
- * encrypted (lib/crypto/secret-box.ts). Unlink deletes the row only after access was revoked.
+ * encrypted (lib/crypto/secret-box.ts). Unlink sets `unlink_requested_at`; the access reconcile job
+ * then revokes access and deletes the row only once nothing is applied any more.
  */
 export const communityConnections = sqliteTable(
   "community_connections",
@@ -775,6 +776,8 @@ export const communityConnections = sqliteTable(
     accessTokenEnc: text("access_token_enc"),
     refreshTokenEnc: text("refresh_token_enc"),
     tokenExpiresAt: integer("token_expires_at", { mode: "timestamp_ms" }),
+    /** The member asked to unlink: reconcile converges this account to no access, then deletes the row. */
+    unlinkRequestedAt: integer("unlink_requested_at", { mode: "timestamp_ms" }),
     linkedAt: integer("linked_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),

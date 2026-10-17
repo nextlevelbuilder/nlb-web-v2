@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { communityConnections, onboardingJobs } from "@/lib/db/schema";
-import { requestMemberReconcile, RETRY_RATE_LIMIT_MS } from "@/lib/onboarding/status";
+import { communityAccessState, communityConnections, onboardingJobs } from "@/lib/db/schema";
+import { reconcileCommunityAccess } from "@/lib/community/reconcile";
+import { getOnboardingStatus, requestMemberReconcile, RETRY_RATE_LIMIT_MS } from "@/lib/onboarding/status";
 import { createMember, createTestUser, nextId, sessionFor, type TestUser } from "./helpers/onboarding-fixtures";
 
 const getSessionMock = vi.fn();
@@ -105,34 +106,72 @@ describe("DELETE /api/onboarding/connections/:provider", () => {
     expect(applyMock).not.toHaveBeenCalled();
   });
 
-  it("revokes access before deleting the link, then queues a reconcile", async () => {
+  it("marks the unlink and queues it on the reconcile key without calling the provider inline", async () => {
     await linkDiscord(user);
-    applyMock.mockImplementation(async () => {
-      // The row must still exist while the adapter revokes.
-      expect(await discordRows(user)).toHaveLength(1);
-      return { appliedTier: "none", status: "revoked", retryable: false };
-    });
-
     const response = await deleteConnection("discord");
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ unlinked: true });
-    expect(applyMock).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: user.id, target: "discord_guild", desiredTier: "none" })
-    );
-    expect(await discordRows(user)).toHaveLength(0);
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ unlinking: true });
+    expect(applyMock).not.toHaveBeenCalled();
+
+    const [row] = await discordRows(user);
+    expect(row.unlinkRequestedAt).toBeInstanceOf(Date);
     const [job] = await getDb()
       .select()
       .from(onboardingJobs)
       .where(eq(onboardingJobs.dedupeKey, `reconcile_access:${user.id}:discord_guild`));
     expect(job?.status).toBe("pending");
+
+    const status = await getOnboardingStatus(getDb(), user);
+    expect(status.connections.discord).toMatchObject({ status: "processing", nextAction: "none", unlinking: true });
   });
 
-  it("keeps the link when the revoke fails or is only partly applied", async () => {
+  it("revokes in the reconcile job before deleting the link", async () => {
     await linkDiscord(user);
-    applyMock.mockRejectedValueOnce(new Error("discord down"));
-    expect((await deleteConnection("discord")).status).toBe(502);
-    applyMock.mockResolvedValueOnce({ appliedTier: "premium", status: "retrying", retryable: true });
-    expect((await deleteConnection("discord")).status).toBe(502);
+    await deleteConnection("discord");
+    applyMock.mockImplementation(async () => {
+      // The row must still exist while the adapter revokes.
+      expect(await discordRows(user)).toHaveLength(1);
+      return { appliedTier: "none", status: "revoked" };
+    });
+
+    expect(await reconcileCommunityAccess(getDb(), user.id, "discord_guild")).toMatchObject({ status: "not_connected" });
+    expect(applyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: user.id, target: "discord_guild", desiredTier: "none" })
+    );
+    expect(await discordRows(user)).toHaveLength(0);
+    const status = await getOnboardingStatus(getDb(), user);
+    expect(status.connections.discord).toEqual({ status: "not_connected", nextAction: "connect" });
+  });
+
+  it("keeps the link and surfaces the code when the provider did not confirm the removal", async () => {
+    await linkDiscord(user);
+    await deleteConnection("discord");
+
+    applyMock.mockResolvedValueOnce({ appliedTier: "none", status: "action_required", errorCode: "telegram_bot_not_admin" });
+    await reconcileCommunityAccess(getDb(), user.id, "discord_guild");
     expect(await discordRows(user)).toHaveLength(1);
+    const status = await getOnboardingStatus(getDb(), user);
+    expect(status.connections.discord).toMatchObject({
+      status: "action_required",
+      nextAction: "retry",
+      unlinking: true,
+      errorCode: "telegram_bot_not_admin",
+    });
+
+    applyMock.mockResolvedValueOnce({ appliedTier: "premium", status: "retrying", retryable: true, errorCode: "discord_http_502" });
+    await expect(reconcileCommunityAccess(getDb(), user.id, "discord_guild")).rejects.toMatchObject({ retryable: true });
+    applyMock.mockRejectedValueOnce(new Error("discord down"));
+    await expect(reconcileCommunityAccess(getDb(), user.id, "discord_guild")).rejects.toMatchObject({ retryable: true });
+    expect(await discordRows(user)).toHaveLength(1);
+
+    // A later reconcile, for whatever reason it runs, keeps converging the unlink.
+    applyMock.mockResolvedValueOnce({ appliedTier: "none", status: "revoked" });
+    await reconcileCommunityAccess(getDb(), user.id, "discord_guild");
+    expect(await discordRows(user)).toHaveLength(0);
+    const [state] = await getDb()
+      .select()
+      .from(communityAccessState)
+      .where(and(eq(communityAccessState.userId, user.id), eq(communityAccessState.target, "discord_guild")));
+    expect(state).toMatchObject({ status: "not_connected", appliedTier: "none", errorCode: null });
   });
 });

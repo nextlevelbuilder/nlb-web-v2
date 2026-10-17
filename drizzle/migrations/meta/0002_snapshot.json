@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e19bbb49-8f28-412c-bf8b-0a9caf6cdfc9",
+  "id": "fb705240-c92d-41d3-b51a-6de64b9d9347",
   "prevId": "a9d96158-1962-4511-ab58-10455aa994d5",
   "tables": {
     "accounts": {
@@ -1129,6 +1129,13 @@
         },
         "token_expires_at": {
           "name": "token_expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "unlink_requested_at": {
+          "name": "unlink_requested_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

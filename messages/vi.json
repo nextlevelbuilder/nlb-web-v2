@@ -1076,7 +1076,8 @@
       "active": "Đang hoạt động",
       "retrying": "Đang tự động thử lại",
       "action_required": "Cần bạn xử lý",
-      "revoked": "Đã gỡ quyền truy cập"
+      "revoked": "Đã gỡ quyền truy cập",
+      "unlinking": "Đang huỷ liên kết"
     },
     "actions": {
       "linkedAs": "Đã liên kết với",
@@ -1087,7 +1088,9 @@
       "unlink": "Huỷ liên kết",
       "unlinkConfirm": "Huỷ liên kết {provider}? Quyền thành viên của bạn ở đó sẽ bị gỡ.",
       "unlinkFailed": "Chưa gỡ được quyền truy cập lúc này. Hãy thử lại sau.",
-      "unlinked": "Đã huỷ liên kết {provider}."
+      "unlinked": "Đã huỷ liên kết {provider}.",
+      "unlinkQueued": "Đang gỡ quyền truy cập {provider} rồi huỷ liên kết. Trạng thái sẽ cập nhật trong vòng một phút.",
+      "unlinkFailedCode": "Chưa gỡ được quyền truy cập {provider} ({code}) nên tài khoản vẫn đang liên kết. Hãy bấm Thử lại, hoặc email cho chúng mình nếu vẫn lỗi."
     },
     "done": {
       "title": "Bạn đã sẵn sàng",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ExternalLink, Loader2, RefreshCw, Unlink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -56,9 +56,17 @@ export default function CommunityConnectionCard({
   const [busy, setBusy] = useState<null | 'primary' | 'retry' | 'unlink'>(null);
   const [notice, setNotice] = useState<{ tone: 'info' | 'error'; text: string } | null>(null);
   const name = t(`${provider}.name`);
+  const unlinking = connection.unlinking === true;
   // With a membership, "connect" is offered exactly when no account is linked.
   const linked =
     connection.nextAction !== 'connect' && (connection.nextAction !== 'none' || connection.status !== 'not_connected');
+
+  // Tell the member when a pending unlink finished (the link is gone on the next status read).
+  const wasUnlinking = useRef(unlinking);
+  useEffect(() => {
+    if (wasUnlinking.current && !unlinking) setNotice({ tone: 'info', text: t('actions.unlinked', { provider: name }) });
+    wasUnlinking.current = unlinking;
+  }, [unlinking, name, t]);
 
   const run = async (kind: 'primary' | 'retry' | 'unlink', action: () => Promise<void>) => {
     setBusy(kind);
@@ -89,7 +97,7 @@ export default function CommunityConnectionCard({
     if (!window.confirm(t('actions.unlinkConfirm', { provider: name }))) return;
     void run('unlink', async () => {
       await unlinkCommunityAccount(provider);
-      setNotice({ tone: 'info', text: t('actions.unlinked', { provider: name }) });
+      setNotice({ tone: 'info', text: t('actions.unlinkQueued', { provider: name }) });
       onChanged();
     });
   };
@@ -142,6 +150,7 @@ export default function CommunityConnectionCard({
   })();
 
   const showRetry = connection.nextAction === 'retry' || connection.nextAction === 'reconnect' || connection.nextAction === 'join';
+  const unlinkFailed = unlinking && connection.status === 'action_required';
 
   return (
     <div className={cn('space-y-4 rounded-sm border border-line bg-surface p-5', className)}>
@@ -151,7 +160,7 @@ export default function CommunityConnectionCard({
           <p className="text-step-sm text-ink-2">{t(`${provider}.desc`)}</p>
         </div>
         <Badge variant="outline" className={STATUS_TONE[connection.status]}>
-          {t(`status.${connection.status}`)}
+          {unlinking && !unlinkFailed ? t('status.unlinking') : t(`status.${connection.status}`)}
         </Badge>
       </div>
 
@@ -162,7 +171,13 @@ export default function CommunityConnectionCard({
         </p>
       )}
 
-      {(primary || showRetry || (allowUnlink && linked)) && (
+      {unlinkFailed && (
+        <p role="alert" className="text-step-sm text-destructive">
+          {t('actions.unlinkFailedCode', { provider: name, code: connection.errorCode ?? 'unknown' })}
+        </p>
+      )}
+
+      {(primary || showRetry || (allowUnlink && linked && !unlinking)) && (
         <div className="flex flex-wrap items-center gap-2">
           {primary}
           {showRetry && (
@@ -171,7 +186,7 @@ export default function CommunityConnectionCard({
               {busy === 'retry' ? t('actions.retrying') : t('actions.retry')}
             </Button>
           )}
-          {allowUnlink && linked && (
+          {allowUnlink && linked && !unlinking && (
             <Button type="button" variant="ghost" size="sm" className="gap-2" onClick={unlink} disabled={busy !== null}>
               {busy === 'unlink' ? <Loader2 aria-hidden className="animate-spin motion-reduce:animate-none" /> : <Unlink aria-hidden />}
               {t('actions.unlink')}

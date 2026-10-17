@@ -21,6 +21,7 @@ CREATE TABLE `community_connections` (
 	`access_token_enc` text,
 	`refresh_token_enc` text,
 	`token_expires_at` integer,
+	`unlink_requested_at` integer,
 	`linked_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
