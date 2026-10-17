@@ -311,7 +311,7 @@ export const progressionSchemas: Record<string, unknown> = {
             eventType: { type: "string" },
             status: { type: "string", enum: ["done", "in_review", "recommended", "available"] },
             revisit: { type: "boolean" },
-            href: { type: "string", example: "/builder-league/evidence/new?type=validate_customer_interviews" },
+            href: { type: "string", example: "/builder-league/evidence/new?type=validate_interviews" },
             completedAt: nullableDate,
             title: { type: "string" },
             outcome: { type: "string" },

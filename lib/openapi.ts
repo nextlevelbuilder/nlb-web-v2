@@ -6,6 +6,7 @@ import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evi
 import { rankingsPaths, rankingsSchemas } from "@/lib/builder-league/openapi/rankings";
 import { progressionPaths, progressionSchemas } from "@/lib/builder-league/openapi/progression";
 import { journeyPaths, journeySchemas } from "@/lib/builder-league/openapi/journey";
+import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/privacy";
 
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
@@ -43,6 +44,7 @@ export const openApiSpec = {
       ...rankingsPaths,
       ...progressionPaths,
       ...journeyPaths,
+      ...privacyPaths,
       "/api/v1/products/{slug}/pulse": {
         get: {
           summary: "Read product website health history",
@@ -357,6 +359,7 @@ export const openApiSpec = {
         ...rankingsSchemas,
         ...progressionSchemas,
         ...journeySchemas,
+        ...privacySchemas,
         PulseSummary: {
           type: "object",
           properties: {

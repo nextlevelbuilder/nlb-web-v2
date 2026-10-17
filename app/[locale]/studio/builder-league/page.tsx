@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getEvidenceCopy } from "@/content/builder-league/evidence-copy";
+import { getMetricsCopy } from "@/content/builder-league/metrics-copy";
 import { getModerationSummary } from "@/lib/builder-league/moderation";
 import { param, requireLeagueAdmin } from "@/components/builder-league/evidence/league-access";
 import { FormResult, LeagueShell, PageHeader, PagePlate, privateRobots } from "@/components/builder-league/evidence/evidence-ui";
@@ -24,6 +25,7 @@ export default async function BuilderLeagueAdminPage({ params, searchParams }: P
   const { locale } = await params;
   const query = await searchParams;
   const copy = getEvidenceCopy(locale);
+  const metricsCopy = getMetricsCopy(locale);
   const viewer = await requireLeagueAdmin();
   const summary = await getModerationSummary(viewer.db);
   const prefix = locale === "vi" ? "/vi" : "";
@@ -42,12 +44,17 @@ export default async function BuilderLeagueAdminPage({ params, searchParams }: P
         title={copy.hub.title}
         lede={copy.hub.lede}
         action={
-          <Button asChild size="lg" className="gap-2">
-            <Link href="/studio/builder-league/moderation">
-              {copy.hub.openQueue}
-              <ArrowRight aria-hidden className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild size="lg" className="gap-2">
+              <Link href="/studio/builder-league/moderation">
+                {copy.hub.openQueue}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/studio/builder-league/metrics">{metricsCopy.meta.title}</Link>
+            </Button>
+          </div>
         }
       />
       <FormResult copy={copy} notice={param(query.notice)} error={param(query.error)} />
