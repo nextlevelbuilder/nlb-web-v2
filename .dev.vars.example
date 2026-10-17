@@ -1,0 +1,139 @@
+# Local development variables for `next dev` / `wrangler dev`.
+# Copy to .dev.vars (gitignored) and fill in values. Never commit real values.
+# Deployed workers get these as wrangler secrets (scripts/provision-cloudflare.sh) or wrangler.jsonc vars.
+
+# --- App and auth ---
+# Public base URL of this app (canonical links, emails, markdown twins).
+NEXT_PUBLIC_APP_URL=
+# Base URL for public media assets (R2 behind cdn.).
+NEXT_PUBLIC_ASSETS_URL=
+# Better Auth signing secret, at least 32 random characters.
+BETTER_AUTH_SECRET=
+# Better Auth base URL; OAuth callbacks are registered against it.
+BETTER_AUTH_URL=
+# GitHub OAuth app client id.
+GITHUB_CLIENT_ID=
+# GitHub OAuth app client secret.
+GITHUB_CLIENT_SECRET=
+# Google OAuth client id.
+GOOGLE_CLIENT_ID=
+# Google OAuth client secret.
+GOOGLE_CLIENT_SECRET=
+
+# --- Turnstile ---
+# Turnstile widget site key (public).
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+# Turnstile widget secret used for server-side verification.
+TURNSTILE_SECRET_KEY=
+
+# --- Polar (payments) ---
+# Polar organization access token (needs products:write to publish course videos).
+POLAR_ACCESS_TOKEN=
+# Polar organization id.
+POLAR_ORG_ID=
+# Polar organization slug.
+POLAR_ORG_SLUG=
+# Standard Webhooks signing secret of the Polar webhook endpoint.
+POLAR_WEBHOOK_SECRET=
+# Server-side Polar product id: Premium early-bird annual.
+POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL=
+# Server-side Polar product id: Premium quarterly.
+POLAR_PRODUCT_PREMIUM_QUARTERLY=
+# Server-side Polar product id: Premium annual.
+POLAR_PRODUCT_PREMIUM_ANNUAL=
+# Server-side Polar product id: VIP early-bird annual.
+POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL=
+# Server-side Polar product id: VIP quarterly.
+POLAR_PRODUCT_VIP_QUARTERLY=
+# Server-side Polar product id: VIP annual.
+POLAR_PRODUCT_VIP_ANNUAL=
+# Server-side Polar product id: directory listing, early-bird price.
+POLAR_PRODUCT_DIRECTORY_EARLY_BIRD=
+# Server-side Polar product id: directory listing, standard price.
+POLAR_PRODUCT_DIRECTORY_STANDARD=
+# Build-time copy of the Premium early-bird annual product id (client checkout).
+NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL=
+# Build-time copy of the Premium quarterly product id.
+NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_QUARTERLY=
+# Build-time copy of the Premium annual product id.
+NEXT_PUBLIC_POLAR_PRODUCT_PREMIUM_ANNUAL=
+# Build-time copy of the VIP early-bird annual product id.
+NEXT_PUBLIC_POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL=
+# Build-time copy of the VIP quarterly product id.
+NEXT_PUBLIC_POLAR_PRODUCT_VIP_QUARTERLY=
+# Build-time copy of the VIP annual product id.
+NEXT_PUBLIC_POLAR_PRODUCT_VIP_ANNUAL=
+# Build-time copy of the directory early-bird product id.
+NEXT_PUBLIC_POLAR_PRODUCT_DIRECTORY_EARLY_BIRD=
+# Build-time copy of the directory standard product id.
+NEXT_PUBLIC_POLAR_PRODUCT_DIRECTORY_STANDARD=
+# ISO date-time when early-bird pricing ends (countdown).
+NEXT_PUBLIC_EARLY_BIRD_DEADLINE=
+
+# --- Email (Resend) ---
+# Resend API key for transactional email.
+RESEND_API_KEY=
+# Sender address for transactional email.
+RESEND_FROM_EMAIL=
+
+# --- Discord ---
+# Public Discord invite shown on the site.
+NEXT_PUBLIC_DISCORD_URL=
+# Invite sent in welcome emails.
+DISCORD_INVITE_URL=
+# Bot token used to grant the member role.
+DISCORD_BOT_TOKEN=
+# Discord server (guild) id.
+DISCORD_GUILD_ID=
+# Role id granted to paying members.
+DISCORD_PREMIUM_ROLE_ID=
+# Incoming webhook URL for sales notifications.
+DISCORD_SALES_WEBHOOK_URL=
+
+# --- MCP delegation (toolkits MCP worker) ---
+# "true" to advertise the MCP OAuth protected resource.
+MCP_OAUTH_ENABLED=
+# MCP resource URL; also the issuer of delegation assertions.
+MCP_OAUTH_RESOURCE=
+# HS256 secret shared with the MCP worker for delegation assertions (32+ bytes).
+MCP_DELEGATION_SECRET=
+
+# --- Courses (Cloudflare Stream) ---
+# Comma-separated plans that unlock every course video (default "vip").
+COURSES_ACCESS_PLANS=
+# Cloudflare account id that owns the Stream videos.
+CF_ACCOUNT_ID=
+# API token with Stream: Edit, used to enforce requireSignedURLs.
+CF_STREAM_API_TOKEN=
+# Stream signing key id (from POST /stream/keys).
+CF_STREAM_SIGNING_KEY_ID=
+# Stream signing key (JWK or PEM, raw or base64).
+CF_STREAM_SIGNING_KEY_JWK=
+# Stream customer host, customer-<code>.cloudflarestream.com.
+CF_STREAM_CUSTOMER_SUBDOMAIN=
+
+# --- Analytics (optional; unset disables collection) ---
+# PostHog project key for page-view capture (public).
+NEXT_PUBLIC_POSTHOG_KEY=
+# PostHog ingestion host, https only.
+NEXT_PUBLIC_POSTHOG_HOST=
+# PostHog personal API key for realtime aggregates.
+POSTHOG_API_KEY=
+# PostHog API host for realtime aggregates.
+POSTHOG_HOST=
+# PostHog numeric project id.
+POSTHOG_PROJECT_ID=
+# Salt for hashing visitor ids in traffic counts.
+TRAFFIC_HASH_SECRET=
+# ClickHouse URL for traffic storage (legacy, optional).
+CLICKHOUSE_URL=
+# ClickHouse user (legacy, optional).
+CLICKHOUSE_USER=
+# ClickHouse password (legacy, optional).
+CLICKHOUSE_PASSWORD=
+# ClickHouse database (legacy, optional).
+CLICKHOUSE_DATABASE=
+
+# --- Data migration script only (not read by the app) ---
+# Read-only Neon connection string for scripts/migrate (or use scripts/migrate/dump/.neon-uri).
+NEON_DATABASE_URL=

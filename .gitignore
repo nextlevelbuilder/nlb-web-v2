@@ -20,3 +20,13 @@ scripts/migrate/dump/
 # os/editor
 .DS_Store
 *.log
+.vercel
+next-env.d.ts
+.dev.vars
+cloudflare-env.d.ts.bak
+
+# Local media upload fallback (dev only)
+public/uploads/
+
+# Full-size visual parity screenshots (only the downscaled contact sheet is committed)
+plans/reports/visual-parity-*/*.png

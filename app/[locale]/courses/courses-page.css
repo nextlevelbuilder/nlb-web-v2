@@ -1,0 +1,104 @@
+/* ==========================================================================
+   COURSES — /courses (observatory page) and /courses/<slug>
+   Builds on the shared primitives (.page-head, .plate, .cards/.card/.lens, .surface, .badge,
+   .link-arrow, .btn) from app/constellation-shell.css and app/constellation-components.css.
+   Tokens only; both themes come from html[data-theme]. Hover motion is CSS and is switched
+   off by the global prefers-reduced-motion rule.
+   ========================================================================== */
+
+.courses-page { padding-bottom: clamp(4rem, 9vw, 7rem); }
+.courses-kicker { color: var(--ink-3); }
+
+/* ---------- layout: content left, reading list right (stacked under 1024px) ---------- */
+.courses-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-8); align-items: start; }
+@media (min-width: 1024px) { .courses-layout { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: var(--s-7); } }
+.courses-main { min-width: 0; }
+/* with no videos the plate is much shorter than the reading list: keep it in view beside it */
+@media (min-width: 1024px) { .courses-main:has(> .courses-empty) { position: sticky; top: calc(var(--header-h) + var(--s-5)); } }
+
+/* ---------- video catalogue ---------- */
+.courses-catalogue-head { display: flex; align-items: center; gap: var(--s-4); color: var(--ink-3); margin-bottom: var(--s-5); }
+.courses-catalogue-head .rule { flex: 1; height: 1px; background: var(--line); }
+.courses-cards { grid-template-columns: minmax(0, 1fr); }
+.courses-cards > li { display: flex; min-width: 0; }
+.courses-cards > li > .card { flex: 1; min-width: 0; }
+@media (min-width: 700px) {
+  .courses-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .courses-cards > .courses-cards-feature { grid-column: 1 / -1; }
+  .courses-cards .card.feature { flex-direction: row; }
+  .courses-cards .card.feature .lens { flex: 0 0 48%; aspect-ratio: auto; min-height: 260px; border-bottom: 0; border-right: 1px solid var(--line); }
+}
+.courses-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card-foot .courses-card-price { color: var(--accent); font-family: var(--f-mono); letter-spacing: .06em; }
+/* the "View video" link covers the whole card; focus ring is drawn on the card */
+.courses-card-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.courses-card-link:focus-visible { outline: none; }
+.courses-card:has(.courses-card-link:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.courses-card:has(.courses-card-link:hover) .courses-card-link { border-color: var(--ink); }
+
+/* ---------- empty state: dashed orbit plate ---------- */
+.courses-empty {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); padding: clamp(var(--s-5), 4vw, var(--s-7));
+  border: 1px dashed var(--line-2); border-radius: var(--r-1);
+  background: radial-gradient(ellipse at 50% 30%, color-mix(in oklab, var(--accent) 7%, transparent), transparent 70%), var(--surface);
+}
+@media (min-width: 760px) { .courses-empty { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: var(--s-6); } }
+.courses-empty-orbit { width: 100%; max-width: 360px; height: auto; justify-self: center; }
+.courses-empty-orbit .orbit { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 5; }
+.courses-empty-orbit .grid-l { stroke: var(--line); stroke-width: 1; }
+.courses-empty-orbit .planet { fill: var(--ink-3); }
+.courses-empty-orbit .core { fill: var(--star); }
+.courses-empty-orbit .halo { fill: var(--accent); opacity: .14; }
+.courses-empty-orbit .spk { stroke: var(--star); stroke-width: 1; opacity: .7; }
+html[data-theme="light"] .courses-empty-orbit .halo { fill: none; stroke: var(--accent); opacity: .5; }
+.courses-empty-body { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.courses-empty-title { font-family: var(--f-display); font-weight: 400; font-size: var(--t-2xl); line-height: 1.08; letter-spacing: -.008em; text-wrap: balance; }
+html[lang="vi"] .courses-empty-title { line-height: 1.2; }
+.courses-empty-text { color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; max-width: 52ch; text-wrap: pretty; }
+.courses-empty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-4) var(--s-5); margin-top: var(--s-2); }
+
+/* ---------- sidebar: reading list ---------- */
+.courses-aside { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; scroll-margin-top: calc(var(--header-h) + var(--s-5)); }
+.courses-aside:focus { outline: none; }
+.courses-aside-label { display: flex; align-items: center; gap: var(--s-2); color: var(--ink-3); }
+.courses-aside-star { color: var(--accent); font-size: .9rem; letter-spacing: 0; }
+.courses-aside-block { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-5); min-width: 0; }
+.courses-aside-title { font-family: var(--f-display); font-weight: 500; font-size: var(--t-xl); line-height: 1.15; letter-spacing: -.005em; text-wrap: balance; margin-bottom: var(--s-2); }
+html[lang="vi"] .courses-aside-title { line-height: 1.25; }
+.courses-aside-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.courses-aside-list > li + li { border-top: 1px solid var(--line); }
+.courses-aside-item { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: var(--s-4); align-items: start; min-height: 44px; padding: var(--s-4) 0; color: var(--ink); }
+.courses-thumb { display: block; width: 88px; border: 1px solid var(--line); border-radius: var(--r-1); transition: border-color var(--d-3) var(--ease-expo); }
+.courses-thumb svg { display: block; }
+.courses-thumb img { opacity: 1; transition: transform var(--d-4) var(--ease-expo); }
+.courses-aside-text { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.courses-aside-name {
+  font-family: var(--f-display); font-weight: 500; font-size: var(--t-lg); line-height: 1.2; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; transition: color var(--d-2);
+}
+html[lang="vi"] .courses-aside-name { line-height: 1.3; }
+.courses-aside-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-2); color: var(--ink-3); }
+.courses-aside-meta > * { white-space: nowrap; }
+.courses-free { color: var(--accent); }
+.courses-members { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: var(--r-pill); border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent); color: var(--accent); }
+.courses-aside-item:hover .courses-aside-name { color: var(--accent); }
+.courses-aside-item:hover .courses-thumb { border-color: var(--line-2); }
+.courses-aside-item:hover .courses-thumb img { transform: scale(1.04); }
+.courses-aside-item:hover .core { transform: scale(1.5); }
+.courses-aside-item:hover .halo { opacity: .3; transform: scale(1.7); }
+.courses-aside-item:hover .spk { opacity: .8; }
+.courses-aside-all { align-self: flex-start; margin-top: var(--s-2); font-size: var(--t-sm); }
+.courses-aside-fallback { color: var(--ink-2); font-size: var(--t-sm); line-height: 1.6; padding-top: var(--s-3); border-top: 1px solid var(--line); }
+.courses-aside-fallback .link-arrow { font-size: var(--t-sm); }
+@media (min-width: 600px) and (max-width: 1023px) {
+  .courses-aside { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .courses-aside-label { grid-column: 1 / -1; }
+}
+@media (max-width: 479px) { .courses-aside-item { grid-template-columns: 64px minmax(0, 1fr); gap: var(--s-3); } .courses-thumb { width: 64px; } .courses-aside-block { padding: var(--s-4); } }
+
+/* ---------- detail page ---------- */
+.courses-back { margin-bottom: var(--s-6); font-size: var(--t-sm); color: var(--ink-2); }
+.courses-detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-5); color: var(--ink-3); }
+.courses-detail-meta .courses-detail-price { color: var(--accent); }
+.courses-stage { padding: clamp(var(--s-3), 2vw, var(--s-5)); }
+.courses-detail-desc { margin-top: var(--s-7); max-width: 65ch; white-space: pre-line; color: var(--ink-2); font-size: var(--t-md); line-height: 1.7; }

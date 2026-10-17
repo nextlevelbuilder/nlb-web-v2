@@ -1,0 +1,95 @@
+Discovery surfaces for https://nextlevelbuilder-web-staging.hi-7ac.workers.dev: 37 URL(s) in sitemap, 37 page(s) checked
+
+ERROR (5)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/blog: missing og:image
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/blog: missing og:image
+- [markdown-variant] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/courses.md: markdown twin missing (tried https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/courses.md; status 404)
+- [markdown-variant] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/courses.md: markdown twin missing (tried https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/courses.md; status 404)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: missing og:image
+
+WARN (7)
+- [markdown-variant] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/blog.md: markdown twin missing (tried https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/blog.md; status 404)
+- [markdown-variant] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/blog.md: markdown twin missing (tried https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/blog.md; status 404)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: missing og:title
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: missing og:description
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: missing og:url
+- [twitter-card] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: missing twitter:card
+- [json-ld] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: no JSON-LD structured data
+
+INFO (76)
+- [ai-crawlers] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/robots.txt: no training or user-fetch AI token is blocked site-wide
+- [llms-txt] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/llms.txt: llms.txt lacks X-Robots-Tag: noindex
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/build-with-us: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/build-with-us: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/build-with-us: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/build-with-us: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/build-with-us/instructions: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/build-with-us/instructions: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/build-with-us/instructions: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/build-with-us/instructions: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/leaderboards: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/leaderboards: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/leaderboards: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/leaderboards: no markdown for Accept: text/markdown (optional)
+- [markdown-alternate] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/blog: no <link rel="alternate" type="text/markdown">
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/blog: no markdown for Accept: text/markdown (optional)
+- [markdown-alternate] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/blog: no <link rel="alternate" type="text/markdown">
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/blog: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/courses: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/courses: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/courses: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/courses: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/overview: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/overview: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/overview: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/overview: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/ship-policy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/ship-policy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/ship-policy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/ship-policy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/contributor-policy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/contributor-policy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/contributor-policy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/contributor-policy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/membership-tiers: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/membership-tiers: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/membership-tiers: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/membership-tiers: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/onboarding: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/onboarding: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/onboarding: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/onboarding: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/violations: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/violations: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/violations: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/violations: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/terms: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/terms: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/terms: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/terms: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/privacy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/privacy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/privacy: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/privacy: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/refund: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/refund: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/refund: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/refund: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/cookies: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/policies/cookies: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/cookies: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/policies/cookies: no markdown for Accept: text/markdown (optional)
+- [canonical] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: canonical points elsewhere: https://nextlevelbuilder.io/api-docs
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/api-docs: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/products/agentkit: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/products/agentkit: no markdown for Accept: text/markdown (optional)
+- [open-graph] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/products/agentkit: missing og:image:alt
+- [content-negotiation] https://nextlevelbuilder-web-staging.hi-7ac.workers.dev/vi/products/agentkit: no markdown for Accept: text/markdown (optional)

@@ -1,0 +1,535 @@
+{
+  "meta": {
+    "generated": "2026-10-13T18:00+07:00",
+    "tz": "Asia/Saigon",
+    "author": "researcher",
+    "notes": "VI copy marked draft:true was written by researcher (no official VI source)."
+  },
+  "flagship": [
+    {
+      "id": "agentkit",
+      "name": "AgentKit",
+      "formerly": "ClaudeKit",
+      "url": "https://agentkit.best",
+      "redirects_from": [
+        "https://claudekit.cc"
+      ],
+      "docs": "https://agentkit.best/docs",
+      "repos": [
+        "bestagentkits/agentkit (private, proprietary)",
+        "bestagentkits/ak-web (private)"
+      ],
+      "tagline": {
+        "en": "Build your AI engineering system on a battle-tested foundation of agents, skills, and workflows.",
+        "vi": "Xây hệ thống kỹ sư AI của riêng bạn trên nền tảng agent, skill và workflow đã được kiểm chứng.",
+        "vi_draft": true
+      },
+      "hero": {
+        "en": "AI Engineering System Foundation. Keep what works. Change what doesn't. Make it yours."
+      },
+      "description_en": "Customizable foundation for coding agents: 108+ skills, 95+ commands, 45 specialized subagents; Skill Graph Brainstorm > Advise > Plan > Cook > Code Review > Ship. Works with Claude Code, Codex, Cursor, Antigravity, Pi, Oh My Pi, DeepSeek Harness.",
+      "features": [
+        "Engineer Kit: 100+ skills, 30+ workflows, AI subagents (TDD, DB/API, DevOps/CI, evidence-based review)",
+        "Marketing Kit: 12+ MCP integrations, research, programmatic SEO, content pipeline",
+        "ak CLI + Desktop app (desktop cockpit for coding agents)",
+        "AK Render: 70-73% less presentation-context guidance (benchmark 2026-10-06)",
+        "14-day refund, instant license key, full source ownership"
+      ],
+      "pricing": {
+        "engineer": "$99 / 2,450,000 VND one-time",
+        "marketing": "$99 / 2,450,000 VND one-time",
+        "bundle": "$149 / 3,650,000 VND (incl. 3-device Desktop license 1yr)",
+        "desktop_app": "$49/yr 1 device, $99/yr 3 devices"
+      },
+      "social_proof": {
+        "rating": "4.9/5 (349 ratings)",
+        "discord": "3,800+ builders on Discord"
+      },
+      "logo": "https://agentkit.best/agentkit/logo.svg",
+      "logo_icon": "https://agentkit.best/agentkit/logo-icon.svg",
+      "logo_alt": "https://dewee.sh/img/ecosystem/agentkit.svg",
+      "og_image": "https://agentkit.best/agentkit/og-image.png",
+      "brand_pack": "ak-web repo public/brand/agentkit-logo-pack.zip"
+    },
+    {
+      "id": "dewee",
+      "name": "dewee",
+      "formerly": "GoClaw (closed-source successor; GoClaw stays open-source)",
+      "url": "https://dewee.sh",
+      "docs": "https://docs.dewee.sh",
+      "repos": [
+        "nextlevelbuilder/dewee (private)",
+        "nextlevelbuilder/dewee-web-v2 (public)"
+      ],
+      "tagline": {
+        "en": "AI agents for business. The hard part is ours. The future is yours.",
+        "vi": "AI agent cho doanh nghiệp. Phần khó để chúng tôi lo."
+      },
+      "description": {
+        "en": "dewee puts AI agents to work inside your company: in the chats your team already uses, on the models you trust, behind five layers of defence. From the team behind GoClaw.",
+        "vi": "dewee đưa AI agent vào làm việc ngay trong doanh nghiệp bạn: trong những nhóm chat đội ngũ đang dùng, trên các mô hình bạn tin tưởng, sau năm lớp phòng thủ. Từ đội ngũ làm ra GoClaw."
+      },
+      "features": [
+        "8-stage agent pipeline",
+        "3-tier memory (working/episodic/semantic) + Knowledge Vault",
+        "Agent teams & orchestration (auto/explicit/manual)",
+        "Self-evolution with guardrails",
+        "Multi-tenant PostgreSQL, AES-256-GCM, RBAC",
+        "20+ LLM providers",
+        "7 channels: Telegram, Discord, Slack, Zalo OA, Zalo Personal, Feishu/Lark, WhatsApp",
+        "5-layer security",
+        "Single ~25MB Go binary, <1s startup, $5 VPS",
+        "LLM tracing + OpenTelemetry"
+      ],
+      "pricing": {
+        "self_install": "$0 install, $500/yr per workspace to connect channels",
+        "aaas": "$500/yr",
+        "dedicated_on_tose": "$500/yr + $99 TOSE credit",
+        "on_prem": "From $5K"
+      },
+      "logo": "https://dewee.sh/brand/dewee-wordmark.svg",
+      "logo_icon": "https://dewee.sh/brand/dewee-icon-512.png",
+      "og_image": "https://dewee.sh/og/en/index.png"
+    },
+    {
+      "id": "reelcrew",
+      "name": "Reelcrew",
+      "url": "https://reelcrew.io",
+      "ecosystem": "AgentVid",
+      "tagline": {
+        "en": "A film crew for Claude Code. You have the idea. Claude directs. Reelcrew brings the whole film crew.",
+        "vi": "Đoàn làm phim cho Claude Code. Bạn có ý tưởng. Claude đạo diễn. Reelcrew lo cả đoàn phim."
+      },
+      "description": {
+        "en": "Video tools and skill templates for Claude Code, running on your own computer.",
+        "vi": "Bộ công cụ và skill template làm video cho Claude Code, chạy ngay trên máy bạn."
+      },
+      "features": [
+        "17 tools: web sources, voice-over (free local Vietnamese voice), music, SFX, images, subtitles, edit & export 1080p MP4",
+        "20+ skill templates (12 Reelcrew + AgentVid Bundle 10 industry templates)",
+        "One-command install; `reelcrew doctor` shows what is missing",
+        "Asset library; runs locally, your AI stays yours"
+      ],
+      "pricing": {
+        "preorder_pro": "1,900,000 VND one-time (99 seats)",
+        "after_preorder": "2,900,000 VND"
+      },
+      "social_proof": "176 customers first week, 5/5 from 84 verified reviews (site claim)",
+      "logo": "https://reelcrew.io/site/reelcrew-favicon.svg",
+      "og_image": "https://reelcrew.io/site/og-cover.jpg"
+    }
+  ],
+  "other_products": [
+    {
+      "id": "uiuxpromax",
+      "name": "UI UX Pro Max",
+      "url": "https://uupm.cc",
+      "description": {
+        "en": "AI-powered UI/UX design system. Create stunning interfaces with intelligent design tokens.",
+        "vi": "Hệ thống thiết kế UI/UX với AI. Tạo giao diện ấn tượng với design tokens thông minh."
+      },
+      "tagline_alt": {
+        "en": "Design intelligence for AI agents. 130K+ GitHub stars.",
+        "vi": "Trí tuệ thiết kế cho AI agent. 130K+ sao GitHub."
+      },
+      "logo": "https://dewee.sh/img/ecosystem/uupm.svg",
+      "og_image": "https://uupm.cc/share.png"
+    },
+    {
+      "id": "agenticworking",
+      "name": "Agentic Working",
+      "url": "https://agenticworking.io",
+      "description": {
+        "en": "Master the art of working with AI agents. Frameworks and methodologies for 10x productivity.",
+        "vi": "Thành thạo nghệ thuật làm việc với AI agents. Frameworks và phương pháp luận cho năng suất 10x."
+      },
+      "live_meta_en": "49+ Agentic Workflows - free agentic workflow library, no coding required.",
+      "logo": null,
+      "og_image": "https://agenticworking.io/og-image.png"
+    },
+    {
+      "id": "200lab",
+      "name": "200Lab",
+      "url": "https://200lab.io",
+      "description": {
+        "en": "Vietnam's leading tech education platform. Learn from industry experts and build real products.",
+        "vi": "Nền tảng giáo dục công nghệ hàng đầu Việt Nam. Học từ chuyên gia và xây dựng sản phẩm thực tế."
+      },
+      "logo": "https://200lab.io/icon.svg",
+      "og_image": "https://assets.200lab.io/brand/og/og-home-v2.jpg"
+    },
+    {
+      "id": "goclaw",
+      "name": "GoClaw",
+      "url": "https://goclaw.sh",
+      "status": "open-source ancestor of dewee (CC BY-NC 4.0)",
+      "description": {
+        "en": "Secure, scalable AI agent platform for enterprise. Deploy coordinated AI teams with multi-tenant isolation and 5-layer security.",
+        "vi": "Nền tảng AI agent bảo mật, mở rộng cho doanh nghiệp. Triển khai đội AI phối hợp với multi-tenant isolation và 5 lớp bảo mật."
+      },
+      "logo": "https://dewee.sh/img/ecosystem/goclaw.svg"
+    },
+    {
+      "id": "tose",
+      "name": "TOSE",
+      "url": "https://tose.sh",
+      "description": {
+        "en": "Click. Deploy. Done! Ship to production in under 2 minutes with auto-scaling Kubernetes, SSL, and instant rollbacks.",
+        "vi": "Click. Deploy. Xong! Đưa lên production trong chưa đầy 2 phút với auto-scaling Kubernetes, SSL, và rollback tức thì."
+      },
+      "logo": "https://dewee.sh/img/ecosystem/tose.png",
+      "og_image": "https://tose.sh/og.png"
+    },
+    {
+      "id": "agentbrain",
+      "name": "AgentBrain",
+      "url": "https://agentbrain.sh",
+      "source": "dewee-web-v2 ecosystem.ts (not on old nlb-web list)",
+      "description": {
+        "en": "Enterprise AI hub, agent runtime & business wiki.",
+        "vi": "Trung tâm AI doanh nghiệp, agent runtime & wiki nội bộ."
+      },
+      "logo": "https://dewee.sh/img/ecosystem/agentbrain.svg"
+    },
+    {
+      "id": "agentwiki",
+      "name": "AgentWiki",
+      "url": "https://agentwiki.cc",
+      "source": "dewee-web-v2 ecosystem.ts",
+      "description": {
+        "en": "One knowledge base for humans and AI agents.",
+        "vi": "Một kho tri thức cho cả người và AI agent."
+      },
+      "logo": "https://dewee.sh/img/ecosystem/agentwiki-icon.png"
+    }
+  ],
+  "old_site_logo_note": "nlb-web products-section uses lucide icons only; no product logos in nlb-web/public. Screenshots: nlb-web/public/screenshots/{agentkit,agentbrain,agentwiki,dewee,goclaw}.png",
+  "founders": [
+    {
+      "id": "duy",
+      "name": "Duy Nguyen",
+      "role": {
+        "en": "Co-founder · Product & engineering",
+        "vi": "Đồng sáng lập · Sản phẩm & kỹ thuật"
+      },
+      "title_old_en": "CTO/Co-founder of T.O.P Group Vietnam, Founder of \"Build in Public VN\" Community",
+      "bio": {
+        "en": "CTO and co-founder of T.O.P Group, creator of GoClaw and UI UX Pro Max, and founder of the Build in Public Vietnam community.",
+        "vi": "CTO, đồng sáng lập T.O.P Group; cha đẻ GoClaw và UI UX Pro Max; người sáng lập cộng đồng Build in Public Việt Nam."
+      },
+      "facts": {
+        "en": [
+          "Built 14+ SaaS products",
+          "Creator of GoClaw & UI UX Pro Max",
+          "Build in Public VN: 65K+ members"
+        ],
+        "vi": [
+          "Xây hơn 14 sản phẩm SaaS",
+          "Cha đẻ GoClaw & UI UX Pro Max",
+          "Build in Public VN: 65K+ thành viên"
+        ]
+      },
+      "company": {
+        "name": "T.O.P Group",
+        "url": "https://wearetopgroup.com"
+      },
+      "avatar": {
+        "nlb_web": "nlb-web/public/docs/assets/duy.png",
+        "dewee": "https://dewee.sh/img/founders/duy.webp"
+      },
+      "social": {
+        "x": "https://x.com/goon_nguyen",
+        "facebook": "https://facebook.com/mrgoonie"
+      }
+    },
+    {
+      "id": "cuong",
+      "name": "Cuong Vo",
+      "role": {
+        "en": "Co-founder · Operations & growth",
+        "vi": "Đồng sáng lập · Vận hành & tăng trưởng"
+      },
+      "title_old_en": "CEO of EGANY",
+      "bio": {
+        "en": "CEO of EGANY for 11 years, building commerce software used by more than 10,000 businesses. Knows sales automation from the shop floor up.",
+        "vi": "CEO EGANY suốt 11 năm, làm phần mềm thương mại cho hơn 10.000 doanh nghiệp. Hiểu tự động hoá bán hàng từ tận quầy hàng."
+      },
+      "facts": {
+        "en": [
+          "11 years leading EGANY",
+          "10,000+ businesses served",
+          "Sales automation & conversion"
+        ],
+        "vi": [
+          "11 năm dẫn dắt EGANY",
+          "Phục vụ 10.000+ doanh nghiệp",
+          "Tự động hoá bán hàng & chuyển đổi"
+        ]
+      },
+      "company": {
+        "name": "EGANY",
+        "url": "https://egany.com"
+      },
+      "avatar": {
+        "nlb_web": "nlb-web/public/docs/assets/cuong.png",
+        "dewee": "https://dewee.sh/img/founders/cuong.webp"
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/voquoccuong007"
+      }
+    },
+    {
+      "id": "viet",
+      "name": "Viet Tran",
+      "role": {
+        "en": "Co-founder · Architecture",
+        "vi": "Đồng sáng lập · Kiến trúc hệ thống"
+      },
+      "title_old_en": "Founder & Solution Architect of 200lab",
+      "bio": {
+        "en": "Founder and solution architect of 200lab. 15+ years designing high-load systems, from flash sales to Black Friday peaks of ~400k concurrent users.",
+        "vi": "Nhà sáng lập, kiến trúc sư giải pháp của 200lab. Hơn 15 năm thiết kế hệ thống tải cao, từ flash sale tới đỉnh Black Friday ~400 nghìn người dùng đồng thời."
+      },
+      "facts": {
+        "en": [
+          "15+ years in software",
+          "Peak ~400k concurrent users",
+          "Mentored 3,000+ engineers"
+        ],
+        "vi": [
+          "Hơn 15 năm làm phần mềm",
+          "Đỉnh ~400 nghìn người dùng đồng thời",
+          "Đào tạo 3.000+ kỹ sư"
+        ]
+      },
+      "company": {
+        "name": "200lab",
+        "url": "https://200lab.io"
+      },
+      "avatar": {
+        "nlb_web": "nlb-web/public/docs/assets/viet.png",
+        "dewee": "https://dewee.sh/img/founders/viet.webp"
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/viettranx"
+      }
+    }
+  ],
+  "partners": [
+    {
+      "name": "DIGITOP.AI",
+      "url": "https://digitop.ai",
+      "one_liner": {
+        "en": "AI-first engineering: deploys enterprise AI agent systems that automate workflows and accelerate growth.",
+        "vi": "Kỹ thuật AI-first: triển khai hệ thống AI agent cho doanh nghiệp, tự động hoá quy trình và tăng tốc tăng trưởng.",
+        "vi_draft": true
+      },
+      "logo": null,
+      "icon": "https://digitop.ai/apple-touch-icon.png",
+      "og_image": "https://digitop.ai/og-image.png"
+    },
+    {
+      "name": "200LAB.IO",
+      "url": "https://200lab.io",
+      "one_liner": {
+        "en": "Level up your AI skills: from systems thinking to production agents, taught through real enterprise problems.",
+        "vi": "Từ tư duy hệ thống tới agent chạy trong production, học bằng chính những bài toán doanh nghiệp mà 200Lab đã triển khai."
+      },
+      "logo": "https://200lab.io/icon.svg",
+      "og_image": "https://assets.200lab.io/brand/og/og-home-v2.jpg"
+    },
+    {
+      "name": "EGANY.COM",
+      "url": "https://egany.com",
+      "one_liner": {
+        "en": "Conversion- and UX-optimized e-commerce websites on Haravan, Sapo, Shopify, LadiPage and WordPress; 10,000+ businesses served.",
+        "vi": "Bộ giải pháp website bán hàng tối ưu chuyển đổi và trải nghiệm người dùng trên Haravan, Sapo, Shopify, LadiPage, WordPress."
+      },
+      "logo": "https://egany.com/wp-content/uploads/2021/02/LOGO.png",
+      "icon": "https://egany.com/wp-content/uploads/2021/02/egany_favicon.png"
+    }
+  ],
+  "toolkits": {
+    "repo": "https://github.com/nextlevelbuilder/nlb-directory-toolkits",
+    "license": "MIT",
+    "npm": {
+      "@nextlevelbuilder/cli": "0.2.1 (bin: nlb)",
+      "@nextlevelbuilder/mcp": "0.2.1 (bin: nlb-mcp)",
+      "@nextlevelbuilder/contracts": "0.2.1"
+    },
+    "cli": [
+      "npx @nextlevelbuilder/cli template developer-cli --out product.json",
+      "npx @nextlevelbuilder/cli validate product.json",
+      "npx @nextlevelbuilder/cli preview product.json",
+      "npx @nextlevelbuilder/cli submit product.json --api-key <YOUR_API_KEY>",
+      "npx @nextlevelbuilder/cli status my-awesome-tool",
+      "npm install -g @nextlevelbuilder/cli"
+    ],
+    "mcp_config": {
+      "mcpServers": {
+        "nlb-directory": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@nextlevelbuilder/mcp"
+          ],
+          "env": {
+            "NLB_API_KEY": "your_api_key_here"
+          }
+        }
+      }
+    },
+    "mcp_stdio_oneliner": "npx -y @nextlevelbuilder/mcp",
+    "agent_skill": {
+      "name": "nlb-submit",
+      "path": "skills/nlb-submit/SKILL.md",
+      "invoke": "/nlb-submit",
+      "install": "copy skills/nlb-submit into your agent skills dir (no official one-line installer documented)"
+    },
+    "api_docs": "https://nextlevelbuilder.io/api-docs",
+    "openapi": "https://nextlevelbuilder.io/api/openapi.json",
+    "llms_txt": "https://nextlevelbuilder.io/llms.txt",
+    "block_types": 16,
+    "templates": 5
+  },
+  "build_with_us": {
+    "endpoints": {
+      "products": "GET /api/v1/products?limit=1..50&offset=",
+      "product": "GET /api/v1/products/{slug}",
+      "rankings": "GET /api/v1/rankings?window=daily|weekly|monthly",
+      "stats": "GET /api/v1/stats"
+    },
+    "live_stats_2026-10-13": {
+      "publishedCount": 1,
+      "outboundClicks": 4082,
+      "registeredBuilders": 16,
+      "totalVotes": 0
+    },
+    "rankings_state": "all windows empty (ranks: [], last snapshot 2026-09-02)",
+    "published_products": [
+      {
+        "slug": "agentkit",
+        "name": "AgentKit",
+        "tagline": "Build your AI engineering system on a battle-tested foundation of agents, skills, and workflows.",
+        "url": "https://agentkit.best",
+        "logo": "https://nextlevelbuilder.io/screenshots/agentkit/logo.svg",
+        "trustScore": 70,
+        "votes": 0,
+        "isFeatured": true,
+        "maker": "orgId 007ccf55-ecf2-4717-8bad-945fa5047647 (name not exposed by public API)",
+        "detail": "https://nextlevelbuilder.io/products/agentkit"
+      }
+    ],
+    "warning": "Only 1 published product; 6 featured cannot be sourced from the API. Old homepage featuredProducts (AgentKit 98, GoClaw 94, AgentBrain 96, Dewee 92) are hardcoded fake trust scores in build-with-agentkit-section.tsx."
+  },
+  "policies": {
+    "route": {
+      "vi": "/policies/{slug}",
+      "en": "/en/policies/{slug}"
+    },
+    "slugs": {
+      "overview": {
+        "en": "NLB Community Guidelines Overview",
+        "vi": "Tổng quan Quy chế NLB"
+      },
+      "ship-policy": {
+        "en": "SHIP Policy — Build in Public",
+        "vi": "Quy chế SHIP — Build in Public"
+      },
+      "contributor-policy": {
+        "en": "Contributor Policy",
+        "vi": "Quy chế Contributor"
+      },
+      "membership-tiers": {
+        "en": "Membership Types & Ranks",
+        "vi": "Phân loại & Hạng thành viên"
+      },
+      "onboarding": {
+        "en": "New Member Review Process",
+        "vi": "Quy trình xét duyệt thành viên mới"
+      },
+      "violations": {
+        "en": "Violation Policy",
+        "vi": "Chính sách xử lý vi phạm"
+      }
+    },
+    "content_source": "nlb-web/messages/{en,vi}.json -> policies.<slug>.sections[{heading,content}]",
+    "tc": {
+      "en": "Community Terms & Guidelines",
+      "vi": "Điều khoản & Quy chế Cộng đồng",
+      "where": "pre-checkout modal (messages tc.sections), not a standalone page"
+    },
+    "missing": [
+      "privacy policy",
+      "terms of service",
+      "refund policy (hero claims 30-day money-back)"
+    ]
+  },
+  "socials": {
+    "discord": {
+      "value": "https://discord.com/invite/Ht4sb7Wjnx",
+      "verified": "guild 'Next Level Builder', ~794 members",
+      "same_guild": "https://discord.gg/eFtJerUrfw (dewee.sh/discord)",
+      "broken": "https://discord.gg/nextlevelbuilder (Unknown Invite, used as Polar webhook fallback)"
+    },
+    "x": {
+      "nlb_web": "https://x.com/nextlevelbuilders (footer uses twitter.com/nextlevelbuilders)",
+      "dewee_site": "https://x.com/nlb_io",
+      "conflict": true
+    },
+    "github": "https://github.com/nextlevelbuilder",
+    "linkedin": "https://www.linkedin.com/nextlevelbuilders (malformed: missing /company/)",
+    "facebook_goclaw_vn": "https://www.facebook.com/GoClawVietNam",
+    "youtube": null,
+    "email": "hello@nextlevelbuilder.io (OpenAPI), hi@nextlevelbuilder.io (dewee-web-v2 README)"
+  },
+  "page_builder_reference": {
+    "repo": "nextlevelbuilder/dewee-web-v2 (local: /Volumes/GOON/www/nlb/dewee-web-v2, 9 commits behind origin/main; builder files unchanged except EcosystemGrid)",
+    "stack": "Astro 7 server output on Cloudflare Workers; D1 (pages), R2 (MEDIA), KV, Durable Objects; zod; no UI framework",
+    "blocks": {
+      "registry": "src/lib/blocks/registry.ts",
+      "schemas": [
+        "src/lib/blocks/marketing-block-schemas.ts",
+        "src/lib/blocks/primitive-block-schemas.ts",
+        "src/lib/blocks/block-fields.ts",
+        "src/lib/blocks/block-types.ts",
+        "src/lib/blocks/safe-markdown.ts"
+      ],
+      "renderer": "src/components/blocks/BlockRenderer.astro",
+      "section": [
+        "PageHero",
+        "SectionHead",
+        "FeatureGrid",
+        "Steps",
+        "Faq",
+        "Quote",
+        "CtaBand",
+        "Timeline",
+        "ProofStrip",
+        "TocIndex",
+        "LogoWall",
+        "EcosystemGrid"
+      ],
+      "primitive": [
+        "RichText",
+        "Image",
+        "Callout",
+        "ButtonRow",
+        "Columns",
+        "Divider",
+        "Spacer"
+      ],
+      "limits": "max 60 blocks, 200KB; PageHero once and first; one board section",
+      "envelope": "{type, props, section?: {background: plain|band|board, spacing: normal|tight|flush, id}}"
+    },
+    "data_model": "D1 pages(id, kind page|post, locale en|vi, slug, title, description, layout, blocks JSON, body_md, seo JSON, cover, tags, author, status draft|published|archived, translation_key, published_at, version) + page_revisions(page_id, version, snapshot, actor, note) + api_keys(prefix, hash, scopes, owner_email, expires/revoked) + admin_sessions, login_codes; migrations/0001_init.sql",
+    "services": "src/lib/server/pages/{page-service,page-schema,page-queries,page-revisions,slug-rules}.ts (optimistic version -> 409, revisions, restore)",
+    "rest": "src/lib/server/api/* single route table -> dispatch + OpenAPI (/api/v1/openapi.json); /me, /blocks, /blocks/{type}, /blocks/validate, /media, /leads, /pages|/posts CRUD + /{id}/publish|unpublish + revisions/restore; Idempotency-Key header",
+    "auth": "src/lib/server/auth/*: hashed API keys with scopes pages:read|write posts:read|write media:write leads:read; admin via email OTP or Cloudflare Access + CSRF; audit log",
+    "mcp": "POST /mcp JSON-RPC streamable HTTP (src/pages/mcp.ts, src/lib/server/mcp/mcp-tools.ts): list_{pages|posts}, create_/update_/publish_{page|post}, get_page, unpublish_page, list_blocks, get_block_schema, upload_media, list_leads, list_revisions, restore_revision; scope-filtered tools/list",
+    "cli": "cli/ package dewee-web (auth login|status, pages list|create|get|update|publish|unpublish, posts create from .md with front matter, media upload, blocks, mcp stdio bridge)",
+    "webmcp": "src/components/webmcp/{webmcp-core,webmcp-public,webmcp-admin}.ts: public get_page_markdown, switch_language, set_theme, open_chat; admin list_blocks, get_block_schema, validate_blocks, get_editor_draft, fill_editor_draft",
+    "agent_skill": "docs/skills/dewee-web-content/SKILL.md",
+    "public_routes": "/p/<slug> pages, /blog/<slug> posts, .md twin per URL, llms.txt, llms-full.txt, sitemap; /developers guide; /admin editor"
+  }
+}

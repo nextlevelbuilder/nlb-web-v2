@@ -1,0 +1,111 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nextlevelbuilder-web",
+  "account_id": "7ac87c90789159ae1b10b7d78f5dcc08",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public",
+    "cache_option_enabled"
+  ],
+  "keep_names": false,
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "nextlevelbuilder-web"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "MCP_OAUTH_ENABLED": "true",
+    "MCP_OAUTH_RESOURCE": "https://mcp.nextlevelbuilder.io/mcp",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFVjTy75wVNVWXvG",
+    "NEXT_PUBLIC_APP_URL": "https://nextlevelbuilder.io",
+    "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
+    "COURSES_ACCESS_PLANS": "vip",
+    "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nlb-prod",
+      "database_id": "26d63f67-6c10-43bc-9e92-62062b8e8f79",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_STAGING",
+      "bucket_name": "nlb-media-staging"
+    },
+    {
+      "binding": "MEDIA_PUBLIC",
+      "bucket_name": "nlb-media-public"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "MCP_DELEGATION_JTI",
+      "id": "fed692ed5b194ab08610acefe758841e"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "nextlevelbuilder-web-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "nextlevelbuilder-web-staging"
+        }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "vars": {
+        "MCP_OAUTH_ENABLED": "true",
+        "MCP_OAUTH_RESOURCE": "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFVjUpt2OL12upHT",
+        "NEXT_PUBLIC_APP_URL": "https://staging.nextlevelbuilder.io",
+        "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
+        "COURSES_ACCESS_PLANS": "vip",
+        "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "nlb-staging",
+          "database_id": "e5ae18de-8fb3-468e-a9b4-53618b2f0748",
+          "migrations_dir": "drizzle/migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_STAGING",
+          "bucket_name": "nlb-media-staging"
+        },
+        {
+          "binding": "MEDIA_PUBLIC",
+          "bucket_name": "nlb-media-staging-public"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "MCP_DELEGATION_JTI",
+          "id": "44a2a308a7074708aa9e7fb3f0e381b2"
+        }
+      ]
+    }
+  }
+}
