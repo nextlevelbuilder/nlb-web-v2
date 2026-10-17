@@ -69,6 +69,9 @@ const envSchema = z.object({
   MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://mcp.nextlevelbuilder.io/mcp"),
   MCP_DELEGATION_SECRET: z.string().min(32).optional(),
 
+  // Builder League feature flag ("true" | "false"). Optional: a missing value means off.
+  BUILDER_LEAGUE_ENABLED: z.enum(["true", "false"]).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 

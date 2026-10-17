@@ -10,6 +10,7 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [code-standards.md](./code-standards.md) | Write code that fits D1, the Worker runtime, i18n and the public API contract |
 | [design-guidelines.md](./design-guidelines.md) | Work on UI: Constellation tokens, themes, motion, i18n copy |
 | [blog-and-agent-management.md](./blog-and-agent-management.md) | Manage blog posts over REST, the `nlb` CLI or MCP |
+| [builder-league-adr.md](./builder-league-adr.md) | Understand Builder League scoring: the ledger, rulesets, caps, time windows, privacy and the rollout flag |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |
 | [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md) | Understand the one-way Neon → D1 data copy and its risks |

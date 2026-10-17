@@ -98,6 +98,10 @@ MCP_OAUTH_RESOURCE=
 # HS256 secret shared with the MCP worker for delegation assertions (32+ bytes).
 MCP_DELEGATION_SECRET=
 
+# --- Builder League ---
+# "true" opens the Builder League to every paid member; anything else limits it to admins and the pilot allowlist.
+BUILDER_LEAGUE_ENABLED=
+
 # --- Courses (Cloudflare Stream) ---
 # Comma-separated plans that unlock every course video (default "vip").
 COURSES_ACCESS_PLANS=

@@ -1,9 +1,10 @@
+import { describeRankGates, describeRpTable, rulesetNotice } from "@/lib/builder-league/ruleset/policy-text";
 import type { PolicyEntry } from "./policy-types";
 
-/** Community policy ported verbatim from the original site (messages.policies["membership-tiers"]). */
+/** Community policy ported verbatim from the original site (messages.policies["membership-tiers"]); RP and rank text follows Builder League ruleset v2. */
 export const membershipTiersPolicy: PolicyEntry = {
   group: "community",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-17",
   legalReviewPending: false,
   content: {
     en: {
@@ -28,18 +29,20 @@ export const membershipTiersPolicy: PolicyEntry = {
         },
         {
           heading: "5-Tier Ranking System",
-          content:
-            "• Apprentice (Gray): Auto-assigned when joining (0–45 days)\n• Builder (Green): >45 days, ≥8 SHIPs, ≥80% feedback, ≥4 weekly check-ins\n• Architect (Blue): >90 days, ≥20 SHIPs, ≥90% feedback, helped ≥5 members, ≥2 highlighted posts\n• Master (Purple): >6 months, ≥50 SHIPs, ≥95% feedback, Featured/Contributor\n• Legend (Gold): >1 year, ≥100 SHIPs, nominated by ≥2 Mentors — max 5% of members",
+          content: `A rank is reached when every condition of that rank and of all lower ranks is met. Membership type (Premium or VIP) never changes your rank or your RP.\n${describeRankGates("en")}`,
         },
         {
           heading: "Ranking Points System",
-          content:
-            "• SHIP a post: +10 RP\n• SHIP gets highlighted: +25 RP\n• Feedback weekly: +5 RP/week\n• Active in Discord (week): +3 RP/week\n• Help member (verified): +8 RP/time\n• Featured contributor: +50 RP/instance\n• Contributor work: +15 RP/week\n• Product launch: +100 RP\n\nRank thresholds: Builder 100 RP | Architect 300 RP | Master 800 RP | Legend 2000 RP + Nomination",
+          content: `RP is earned only for verified activity. SHIP events and every award of 25 RP or more are verified by a moderator or by the system; help to a member is confirmed by the person you helped.\n\n${describeRpTable("en")}`,
         },
         {
           heading: "Upgrade & Downgrade",
           content:
-            "• Type upgrade (Premium → VIP): Any time, pay the difference, effective immediately\n• Ranking: Auto-calculated based on Ranking Points, updated on the 1st of each month\n• No downgrade from achieved ranks (only freeze if inactive)\n• Legend requires annual re-nomination",
+            "• Type upgrade (Premium → VIP): Any time, pay the difference, effective immediately\n• Ranking: Calculated automatically from your verified RP and the conditions above\n• No automatic downgrade: a rank you have reached is kept (inactive members are only frozen)\n• Legend requires annual re-nomination by Mentors",
+        },
+        {
+          heading: "Rules Version",
+          content: rulesetNotice("en"),
         },
       ],
     },
@@ -65,18 +68,20 @@ export const membershipTiersPolicy: PolicyEntry = {
         },
         {
           heading: "Hệ thống 5 Hạng",
-          content:
-            "• Apprentice (Xám): Tự động khi mới tham gia (0–45 ngày)\n• Builder (Xanh lá): >45 ngày, ≥8 SHIP, ≥80% feedback, ≥4 lần check-in hàng tuần\n• Architect (Xanh dương): >90 ngày, ≥20 SHIP, ≥90% feedback, giúp ≥5 members, ≥2 bài highlight\n• Master (Tím): >6 tháng, ≥50 SHIP, ≥95% feedback, Featured/Contributor\n• Legend (Vàng): >1 năm, ≥100 SHIP, được ≥2 Mentors đề cử — tối đa 5% thành viên",
+          content: `Bạn đạt một hạng khi đáp ứng mọi điều kiện của hạng đó và của tất cả các hạng thấp hơn. Loại thành viên (Premium hay VIP) không ảnh hưởng đến hạng hay RP của bạn.\n${describeRankGates("vi")}`,
         },
         {
           heading: "Ranking Points System",
-          content:
-            "• SHIP bài viết: +10 RP\n• SHIP được highlight: +25 RP\n• Feedback weekly: +5 RP/tuần\n• Hoạt động Discord (tuần): +3 RP/tuần\n• Giúp member (verified): +8 RP/lần\n• Đóng góp nổi bật: +50 RP/lần\n• Contributor work: +15 RP/tuần\n• Product launch: +100 RP\n\nNgưỡng hạng: Builder 100 RP | Architect 300 RP | Master 800 RP | Legend 2000 RP + Đề cử",
+          content: `RP chỉ được cộng cho hoạt động đã xác minh. Các hoạt động SHIP và mọi khoản từ 25 RP trở lên do moderator hoặc hệ thống xác minh; việc giúp đỡ thành viên cần chính người được giúp xác nhận.\n\n${describeRpTable("vi")}`,
         },
         {
           heading: "Upgrade & Downgrade",
           content:
-            "• Upgrade loại (Premium → VIP): Bất kỳ lúc nào, thanh toán chênh lệch, hiệu lực ngay\n• Ranking: Tự động tính dựa trên Ranking Points, cập nhật ngày 1 mỗi tháng\n• Không downgrade hạng đã đạt (chỉ freeze nếu inactive)\n• Legend cần re-nomination hàng năm",
+            "• Upgrade loại (Premium → VIP): Bất kỳ lúc nào, thanh toán chênh lệch, hiệu lực ngay\n• Ranking: Tự động tính từ RP đã xác minh và các điều kiện ở trên\n• Không tự động hạ hạng: hạng đã đạt được giữ nguyên (chỉ freeze nếu inactive)\n• Legend cần được Mentor đề cử lại hàng năm",
+        },
+        {
+          heading: "Phiên bản quy tắc",
+          content: rulesetNotice("vi"),
         },
       ],
     },
