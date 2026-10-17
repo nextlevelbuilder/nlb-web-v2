@@ -8,6 +8,7 @@ import {
   claimReward,
   decideClaim,
   expireDueClaims,
+  listClaimsForAdmin,
   listRewardsForMember,
   rewardEligibilitySchema,
   seedRewardCatalogue,
@@ -113,6 +114,13 @@ describe("reward claims on local D1", () => {
     // Next season is a new period.
     const later = await claimReward(local.db, "u1", reward.id, { now: new Date("2027-03-01T03:00:00Z") });
     expect(later.periodKey).toBe("S2027-3");
+
+    const queue = await listClaimsForAdmin(local.db, { status: "requested" });
+    expect(queue.map((row) => [row.memberName, row.rewardKey, row.claim.periodKey])).toEqual([
+      ["Member u1", reward.key, "S2027-3"],
+      ["Member u1", reward.key, "S2026-2"],
+    ]);
+    expect(await listClaimsForAdmin(local.db, { status: "approved" })).toEqual([]);
   });
 
   it("never oversells under concurrent claims", async () => {

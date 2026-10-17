@@ -14,10 +14,13 @@ import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import type { AppDb } from "@/lib/db";
-import { badgeAwards, rankAwards, rewardClaims, rewardItems } from "@/lib/db/schema";
+import { badgeAwards, rankAwards, rewardClaims, rewardItems, users } from "@/lib/db/schema";
 import { moderationActionInsert } from "./audit";
 import { BADGE_KEYS, getBadge } from "./badges";
 import { BuilderApiError } from "./http";
+import { getMissionsCopy } from "@/content/builder-league/missions-copy";
+import { getSeasonsCopy } from "@/content/builder-league/seasons-copy";
+import { MISSIONS } from "./missions";
 import { getLastSeasonPlacement } from "./seasons";
 import { periodKey } from "./time-windows";
 import { getVerifiedHistory } from "./verified-history";
@@ -26,6 +29,7 @@ import { BOARD_KEYS, EVENT_TYPE_KEYS, RANK_KEYS, type ActorRole, type RankKey } 
 export type RewardItem = typeof rewardItems.$inferSelect;
 export type RewardClaim = typeof rewardClaims.$inferSelect;
 export type RewardClaimStatus = RewardClaim["status"];
+export const REWARD_CLAIM_STATUSES = ["requested", "approved", "rejected", "redeemed", "expired", "cancelled"] as const satisfies readonly RewardClaimStatus[];
 
 /** Volume-style activity never unlocks a reward. */
 const MILESTONE_EVENT_TYPES = EVENT_TYPE_KEYS.filter((key) => key !== "ship_public_post" && key !== "contribute_discord_active") as [
@@ -598,13 +602,39 @@ export function describeRequirement(requirement: RewardRequirement, locale: "en"
       const name = getBadge(requirement.key)?.name[locale] ?? requirement.key;
       return vi ? `Huy hiệu ${name}` : `${name} badge`;
     }
-    case "season_placement":
+    case "season_placement": {
+      const board = getSeasonsCopy(locale).page.boardNames[requirement.board] ?? requirement.board;
       return vi
-        ? `Top ${requirement.maxPlace} bảng ${requirement.board} mùa trước`
-        : `Top ${requirement.maxPlace} on the ${requirement.board} board last season`;
-    case "verified_milestone":
-      return vi
-        ? `${requirement.count} × ${requirement.eventType} đã xác minh`
-        : `${requirement.count} verified ${requirement.eventType}`;
+        ? `Top ${requirement.maxPlace} bảng ${board} mùa trước`
+        : `Top ${requirement.maxPlace} on the ${board} board last season`;
+    }
+    case "verified_milestone": {
+      const mission = MISSIONS.find((entry) => entry.eventType === requirement.eventType);
+      const title = mission ? getMissionsCopy(locale).missions[mission.key].title : requirement.eventType.replace(/_/g, " ");
+      return vi ? `${title} (${requirement.count} lần đã xác minh)` : `${title} (${requirement.count} verified)`;
+    }
   }
+}
+
+export interface AdminClaimRow {
+  claim: RewardClaim;
+  memberName: string;
+  rewardKey: string;
+  rewardTitle: { en: string; vi: string };
+}
+
+/** Claims with the member name and reward title for the admin queue, newest first. */
+export async function listClaimsForAdmin(
+  db: AppDb,
+  { status, limit = 100 }: { status?: RewardClaimStatus; limit?: number } = {}
+): Promise<AdminClaimRow[]> {
+  const rows = await db
+    .select({ claim: rewardClaims, memberName: users.name, rewardKey: rewardItems.key, rewardTitle: rewardItems.title })
+    .from(rewardClaims)
+    .innerJoin(users, eq(users.id, rewardClaims.userId))
+    .innerJoin(rewardItems, eq(rewardItems.id, rewardClaims.rewardId))
+    .where(status ? eq(rewardClaims.status, status) : undefined)
+    .orderBy(desc(rewardClaims.createdAt))
+    .limit(Math.min(Math.max(limit, 1), 500));
+  return rows;
 }

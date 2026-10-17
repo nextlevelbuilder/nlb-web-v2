@@ -515,3 +515,18 @@ export async function revokeBadge(db: AppDb, input: RevokeBadgeInput): Promise<B
   const [updated] = await db.select().from(badgeAwards).where(eq(badgeAwards.id, award.id)).limit(1);
   return updated;
 }
+
+export interface RecentBadgeAward {
+  award: BadgeAward;
+  memberName: string;
+}
+
+/** Latest awards across members, revoked ones included, for the admin revocation list. */
+export async function listRecentBadgeAwards(db: AppDb, { limit = 50 } = {}): Promise<RecentBadgeAward[]> {
+  return db
+    .select({ award: badgeAwards, memberName: users.name })
+    .from(badgeAwards)
+    .innerJoin(users, eq(users.id, badgeAwards.userId))
+    .orderBy(desc(badgeAwards.awardedAt))
+    .limit(Math.min(Math.max(limit, 1), 200));
+}

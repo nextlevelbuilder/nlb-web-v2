@@ -9,6 +9,7 @@ import {
   evaluateBadges,
   getBadgeAwards,
   getBadgeShareCard,
+  listRecentBadgeAwards,
   revokeBadge,
 } from "@/lib/builder-league/badges";
 import { reverseAward, awardForEvent } from "@/lib/builder-league/ledger";
@@ -79,6 +80,12 @@ describe("badge evaluation on local D1", () => {
     const badgeEvents = await local.db.select().from(builderEvents).where(eq(builderEvents.kind, "badge"));
     expect(badgeEvents).toHaveLength(2);
     expect(badgeEvents[0]).toMatchObject({ actorRole: "system", verification: "system_verified", subjectUserId: "u1" });
+
+    const recent = await listRecentBadgeAwards(local.db);
+    expect(recent.map((row) => [row.memberName, row.award.badgeKey])).toEqual([
+      ["Member u1", "first_ship"],
+      ["Member u1", "first_ship"],
+    ]);
   });
 
   it("is idempotent across repeated and concurrent evaluations", async () => {
