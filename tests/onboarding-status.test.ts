@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { customers, onboardingJobs, subscriptions } from "@/lib/db/schema";
 import { PRODUCT_IDS } from "@/lib/polar";
-import { checkoutBelongsTo, nextActionFor, termForProductId } from "@/lib/onboarding/status";
+import { checkoutBelongsTo, nextActionFor, summarizeConnection, termForProductId } from "@/lib/onboarding/status";
 import { createMember, createTestUser, nextId, sessionFor, type TestUser } from "./helpers/onboarding-fixtures";
 
 const getSessionMock = vi.fn();
@@ -229,6 +229,34 @@ describe("status helpers", () => {
     expect(nextActionFor("discord", "vip", true, "retrying")).toBe("retry");
     expect(nextActionFor("telegram", "premium", true, "active")).toBe("retry");
     expect(nextActionFor("discord", "vip", true, "processing")).toBe("none");
+  });
+
+  it("shows a pending unlink as processing until a state recorded after the request reports a failure", () => {
+    const requested = new Date("2026-10-17T08:00:00Z");
+    const connection = { displayName: "member#1", unlinkRequestedAt: requested };
+    const staleError = { status: "action_required" as const, errorCode: "discord_reauth", updatedAt: new Date(requested.getTime() - 60_000) };
+    expect(summarizeConnection("discord", "premium", connection, staleError)).toEqual({
+      status: "processing",
+      displayName: "member#1",
+      nextAction: "none",
+      unlinking: true,
+    });
+
+    const failedAfter = { status: "action_required" as const, errorCode: "discord_forbidden", updatedAt: new Date(requested.getTime() + 1000) };
+    expect(summarizeConnection("discord", "premium", connection, failedAfter)).toEqual({
+      status: "action_required",
+      displayName: "member#1",
+      nextAction: "retry",
+      unlinking: true,
+      errorCode: "discord_forbidden",
+    });
+
+    const linkedError = { ...staleError };
+    expect(summarizeConnection("discord", "premium", { displayName: null, unlinkRequestedAt: null }, linkedError)).toEqual({
+      status: "action_required",
+      nextAction: "reconnect",
+      errorCode: "discord_reauth",
+    });
   });
 
   it("derives the billing term from the product id", () => {

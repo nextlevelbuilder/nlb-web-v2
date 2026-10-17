@@ -302,6 +302,36 @@ export function nextActionFor(
   }
 }
 
+/**
+ * What the member sees for one community. A pending unlink shows as processing until the reconcile
+ * job that removes access has answered: only a state recorded at or after the unlink request can
+ * report its failure, so an older error (the reason the member unlinked) never shows as one.
+ */
+export function summarizeConnection(
+  provider: CommunityProvider,
+  tier: MembershipTier,
+  connection: { displayName: string | null; unlinkRequestedAt: Date | null } | null,
+  state: { status: AccessStatus; errorCode: string | null; updatedAt: Date } | null
+): ConnectionSummary {
+  const unlinkRequestedAt = connection?.unlinkRequestedAt ?? null;
+  const unlinking = Boolean(unlinkRequestedAt);
+  // A fresh link has no reconciled state yet, and a pending unlink is still removing access.
+  let status: AccessStatus = state?.status ?? (connection ? "processing" : "not_connected");
+  const unlinkFailed =
+    unlinkRequestedAt !== null && status === "action_required" && state !== null && state.updatedAt >= unlinkRequestedAt;
+  if (unlinking && !unlinkFailed) status = "processing";
+  let nextAction = nextActionFor(provider, tier, Boolean(connection), connection ? status : null);
+  // A failed unlink is retried as-is; reconnecting would not help.
+  if (unlinking) nextAction = unlinkFailed ? "retry" : "none";
+  return {
+    status,
+    ...(connection?.displayName ? { displayName: connection.displayName } : {}),
+    nextAction,
+    ...(unlinking ? { unlinking: true as const } : {}),
+    ...(status === "action_required" && state?.errorCode ? { errorCode: state.errorCode } : {}),
+  };
+}
+
 async function connectionSummaries(
   db: AppDb,
   userId: string,
@@ -316,28 +346,22 @@ async function connectionSummaries(
     .from(communityConnections)
     .where(eq(communityConnections.userId, userId));
   const states = await db
-    .select({ target: communityAccessState.target, status: communityAccessState.status, errorCode: communityAccessState.errorCode })
+    .select({
+      target: communityAccessState.target,
+      status: communityAccessState.status,
+      errorCode: communityAccessState.errorCode,
+      updatedAt: communityAccessState.updatedAt,
+    })
     .from(communityAccessState)
     .where(eq(communityAccessState.userId, userId));
 
-  const summarize = (provider: CommunityProvider): ConnectionSummary => {
-    const connection = connections.find((row) => row.provider === provider);
-    const state = states.find((row) => row.target === TARGET_FOR_PROVIDER[provider]);
-    const unlinking = Boolean(connection?.unlinkRequestedAt);
-    // A fresh link has no reconciled state yet, and a pending unlink is still removing access.
-    let status: AccessStatus = state?.status ?? (connection ? "processing" : "not_connected");
-    if (unlinking && status !== "action_required") status = "processing";
-    let nextAction = nextActionFor(provider, tier, Boolean(connection), connection ? status : null);
-    // A failed unlink is retried as-is; reconnecting would not help.
-    if (unlinking) nextAction = status === "action_required" ? "retry" : "none";
-    return {
-      status,
-      ...(connection?.displayName ? { displayName: connection.displayName } : {}),
-      nextAction,
-      ...(unlinking ? { unlinking: true as const } : {}),
-      ...(status === "action_required" && state?.errorCode ? { errorCode: state.errorCode } : {}),
-    };
-  };
+  const summarize = (provider: CommunityProvider): ConnectionSummary =>
+    summarizeConnection(
+      provider,
+      tier,
+      connections.find((row) => row.provider === provider) ?? null,
+      states.find((row) => row.target === TARGET_FOR_PROVIDER[provider]) ?? null
+    );
   return { discord: summarize("discord"), telegram: summarize("telegram") };
 }
 

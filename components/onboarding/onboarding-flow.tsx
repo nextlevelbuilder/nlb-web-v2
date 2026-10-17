@@ -9,6 +9,7 @@ import { trackOnboardingEvent } from '@/lib/analytics/onboarding-events';
 import { cn } from '@/lib/utils';
 import CommunityConnectionCard from './community-connection-card';
 import OnboardingProfileForm from './onboarding-profile-form';
+import { useUnlinkPolling } from './use-unlink-polling';
 import { fetchOnboardingStatus, type DiscordErrorCode, type OnboardingStatus } from './onboarding-api';
 
 /** Backoff while Polar confirms a payment: about one minute in total, then the help message. */
@@ -153,6 +154,7 @@ export default function OnboardingFlow({ checkoutId, discordLinked, discordError
     void load();
     setTimeout(() => void load(), 4000);
   }, [load]);
+  useUnlinkPolling(status?.connections, load);
 
   const support = (
     <p className="text-center text-step-sm text-ink-3">

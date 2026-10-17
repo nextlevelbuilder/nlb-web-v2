@@ -141,6 +141,22 @@ describe("DELETE /api/onboarding/connections/:provider", () => {
     expect(status.connections.discord).toMatchObject({ status: "processing", nextAction: "none", unlinking: true });
   });
 
+  it("shows an unlink from an error state as processing until its job reports", async () => {
+    await linkDiscord(user);
+    applyMock.mockResolvedValueOnce({ appliedTier: "none", status: "action_required", errorCode: "discord_reauth" });
+    await reconcileCommunityAccess(getDb(), user.id, "discord_guild");
+    expect((await getOnboardingStatus(getDb(), user)).connections.discord).toMatchObject({ status: "action_required" });
+
+    expect((await deleteConnection("discord")).status).toBe(202);
+    const pending = (await getOnboardingStatus(getDb(), user)).connections.discord;
+    expect(pending).toMatchObject({ status: "processing", nextAction: "none", unlinking: true });
+    expect(pending.errorCode).toBeUndefined();
+
+    applyMock.mockResolvedValueOnce({ appliedTier: "none", status: "revoked" });
+    await reconcileCommunityAccess(getDb(), user.id, "discord_guild");
+    expect((await getOnboardingStatus(getDb(), user)).connections.discord).toEqual({ status: "not_connected", nextAction: "connect" });
+  });
+
   it("revokes in the reconcile job before deleting the link", async () => {
     await linkDiscord(user);
     await deleteConnection("discord");
