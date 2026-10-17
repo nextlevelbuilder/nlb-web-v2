@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { isBuilderLeagueEnabled } from "@/lib/builder-league/access";
 import { communityWrappedData, ensureCommunityWrapped } from "@/lib/builder-league/community-wrapped";
-import { localYear } from "@/lib/builder-league/time-windows";
+import { localDateKey, localYear } from "@/lib/builder-league/time-windows";
 import { canSeePublicSurface, getPageViewer, isReviewableYear } from "@/lib/builder-league/wrapped-access";
 import { getWrappedCopy } from "@/content/builder-league/wrapped-copy";
 import CommunityMetrics from "@/components/builder-league/wrapped/community-metrics";
 import { formatLocalDate } from "@/components/builder-league/journey/journey-format";
 import { Link } from "@/i18n/navigation";
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, serializeJsonLd } from "@/lib/seo";
+import { communityWrappedJsonLd } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 
@@ -42,9 +43,24 @@ export default async function CommunityWrappedPage({ params }: CommunityWrappedP
   const copy = getWrappedCopy(locale).community;
   const { snapshot } = await ensureCommunityWrapped(db, year, new Date());
   const data = communityWrappedData(snapshot);
+  // Structured data only while the page is public and indexable.
+  const jsonLd = isBuilderLeagueEnabled()
+    ? communityWrappedJsonLd({
+        year,
+        locale,
+        name: copy.title(year),
+        description: copy.metaDescription(year),
+        coverageStart: localDateKey(new Date(data.timeframe.start)),
+        coverageEnd: localDateKey(new Date(Math.min(data.timeframe.end, data.timeframe.cutoffAt))),
+        status: data.status,
+        version: snapshot.version,
+        modifiedAt: snapshot.createdAt,
+      })
+    : null;
 
   return (
     <main id="main" className="sky-backdrop flex-1">
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />}
       <div className="wrap space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)]">
         <header className="max-w-3xl space-y-5">
           <p className="eyebrow">{copy.eyebrow(year)}</p>
