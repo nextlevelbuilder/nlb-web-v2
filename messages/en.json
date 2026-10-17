@@ -966,5 +966,174 @@
       "title": "From the logbook",
       "all": "Read the blog"
     }
+  },
+  "onboarding": {
+    "metaTitle": "Set up your membership",
+    "eyebrow": "Onboarding",
+    "title": "Set up your membership",
+    "lede": "Three short steps: tell us what you are building, link Discord, then join the Telegram group.",
+    "loading": "Checking your membership…",
+    "membershipLine": "{tier} membership active",
+    "tier": {
+      "premium": "Premium",
+      "vip": "VIP",
+      "none": "No membership"
+    },
+    "signIn": {
+      "title": "Sign in to continue",
+      "desc": "Use the email address you paid with, so we can match your payment to your account.",
+      "cta": "Sign in"
+    },
+    "loadError": {
+      "title": "We could not load your onboarding",
+      "desc": "Check your connection and try again."
+    },
+    "verifying": {
+      "title": "Confirming your payment",
+      "desc": "Polar is confirming your payment. This usually takes a few seconds.",
+      "slowTitle": "This is taking longer than usual",
+      "slowDesc": "Your payment may still be processing. Check again in a minute, or email us with the address you used at checkout.",
+      "checkAgain": "Check again"
+    },
+    "notOwner": {
+      "title": "This checkout belongs to another account",
+      "desc": "Sign in with the email address you used at checkout to continue.",
+      "switchAccount": "Sign in with another email"
+    },
+    "failed": {
+      "title": "Payment not completed",
+      "desc": "Polar did not complete this payment, so no membership was created.",
+      "cta": "Back to pricing"
+    },
+    "noMembership": {
+      "title": "No active membership on this account",
+      "desc": "We could not find a Premium or VIP membership for this account. If you paid with another email, sign in with that email.",
+      "cta": "See membership plans"
+    },
+    "steps": {
+      "label": "Step {n} of 3"
+    },
+    "profile": {
+      "title": "Tell us what you are building",
+      "desc": "Two required answers. Everything else is optional, and you can save and come back later.",
+      "required": "(required)",
+      "optional": "(optional)",
+      "goal": "What do you want to build?",
+      "goalHint": "One or two sentences, up to 500 characters.",
+      "links": "Profile links",
+      "linksHint": "Up to 3 links, for example GitHub, LinkedIn, X or a portfolio.",
+      "linkLabel": "Profile link {n}",
+      "skills": "Skills",
+      "skillsPlaceholder": "Next.js, product design, growth…",
+      "phone": "Phone",
+      "phoneHint": "Only used by the team to reach you about your membership.",
+      "commitment": "I commit to ship in public, share progress with the community and follow the <link>member commitments</link>.",
+      "save": "Save progress",
+      "submit": "Save and continue",
+      "saving": "Saving…",
+      "saved": "Progress saved.",
+      "completed": "Profile complete.",
+      "edit": "Edit answers",
+      "errors": {
+        "goal": "Tell us what you want to build, in up to 500 characters.",
+        "commitmentAccepted": "Accept the member commitments to continue.",
+        "profileLinks": "Use up to 3 links that start with http:// or https://.",
+        "skills": "Keep skills under 200 characters.",
+        "phone": "Enter a valid phone number or leave it empty.",
+        "generic": "Could not save. Try again."
+      }
+    },
+    "discord": {
+      "name": "Discord",
+      "title": "Link Discord",
+      "desc": "We add you to the NLB server and give you the role for your tier.",
+      "connect": "Link Discord",
+      "reconnect": "Reconnect Discord",
+      "linked": "Discord linked. Your role is being applied.",
+      "error": "Something went wrong. Try again in a moment.",
+      "errors": {
+        "discord_denied": "Discord access was cancelled. Link Discord again when you are ready.",
+        "discord_state": "That Discord link expired or was opened in another session. Start again from this page.",
+        "discord_in_use": "That Discord account is already linked to another NLB account. Sign in with that account or use another Discord account. If this NLB account already has a different Discord linked, unlink it below first.",
+        "discord_failed": "Discord did not respond. Try again in a moment."
+      }
+    },
+    "telegram": {
+      "name": "Telegram",
+      "title": "Join the Telegram group",
+      "desc": "Link your Telegram account with our bot, then request to join the members group.",
+      "connect": "Link Telegram",
+      "reconnect": "Link Telegram again",
+      "join": "Request to join the group",
+      "openedHint": "Telegram is open. Press Start in the bot chat, then come back. This page updates on its own.",
+      "joinHint": "Telegram is open. Send the join request; the bot approves members within a minute.",
+      "error": "Could not create a Telegram link. Try again."
+    },
+    "status": {
+      "not_connected": "Not linked",
+      "waiting_for_join": "Waiting for your join request",
+      "processing": "Processing",
+      "active": "Active",
+      "retrying": "Retrying automatically",
+      "action_required": "Action needed",
+      "revoked": "Access removed"
+    },
+    "actions": {
+      "linkedAs": "Linked as",
+      "retry": "Retry",
+      "retrying": "Retrying…",
+      "retryQueued": "Retry queued. This updates within a minute.",
+      "rateLimited": "Please wait {seconds} s before retrying.",
+      "unlink": "Unlink",
+      "unlinkConfirm": "Unlink {provider}? Your member access there will be removed.",
+      "unlinkFailed": "Could not remove access right now. Try again later.",
+      "unlinked": "{provider} unlinked."
+    },
+    "done": {
+      "title": "You are all set",
+      "desc": "Your profile is saved and your community access is active. Welcome to Next Level Builders.",
+      "account": "Go to your account"
+    },
+    "support": {
+      "prefix": "Stuck? Email"
+    }
+  },
+  "accountMembership": {
+    "title": "Membership",
+    "desc": "Your plan, renewal date and community access.",
+    "none": "No active membership on this account.",
+    "noneCta": "See membership plans",
+    "tierLabel": "Tier",
+    "planLabel": "Plan",
+    "renewsLabel": "Renews on",
+    "endsLabel": "Access until",
+    "term": {
+      "quarterly": "Quarterly",
+      "annual": "Annual"
+    },
+    "subscriptionStatus": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Payment past due",
+      "canceled": "Canceled",
+      "other": "Updating"
+    },
+    "cancelAtPeriodEnd": "Your membership ends at the end of the current period. Access stays until then, and you can rejoin any time by renewing.",
+    "pastDue": "Polar could not take your last payment. Access continues for 7 days while you update your card.",
+    "communityTitle": "Community access",
+    "banner": {
+      "title": "Finish setting up your membership",
+      "desc": "Link Discord and Telegram to get your member access automatically. It takes about a minute.",
+      "cta": "Finish setup"
+    },
+    "upgrade": {
+      "title": "Upgrade to VIP",
+      "desc": "Priority mentor DMs, early access and partner priority, on top of everything in Premium.",
+      "note": "VIP starts as a new subscription. Email us after upgrading and we will cancel or prorate your Premium plan.",
+      "cta": "Upgrade to VIP",
+      "redirecting": "Redirecting to Polar…",
+      "error": "Could not start checkout. Try again."
+    },
+    "support": "Questions about your membership? Email"
   }
 }
