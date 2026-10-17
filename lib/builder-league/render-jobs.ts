@@ -13,7 +13,6 @@
  */
 import { and, asc, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { resolveCaller } from "@/lib/auth-api-key";
 import type { AppDb } from "@/lib/db";
 import { renderJobs, users, yearlySnapshots } from "@/lib/db/schema";
 import { BuilderApiError } from "./http";
@@ -297,16 +296,4 @@ export async function listRenderJobsForAdmin(db: AppDb, status?: RenderJob["stat
     .where(status ? eq(renderJobs.status, status) : undefined)
     .orderBy(desc(renderJobs.createdAt))
     .limit(100);
-}
-
-
-/**
- * Renderer endpoints accept an admin's session or an admin's NLB API key (`NLB_RENDER_API_KEY` in the
- * GitHub workflow). MCP delegation and non-admin keys are refused. Returns the admin user id.
- */
-export async function requireRenderer(request: Request, db: AppDb): Promise<string> {
-  const caller = await resolveCaller(request.headers, db, { scope: "mcp:write", method: request.method, path: new URL(request.url).pathname });
-  if (!caller?.user) throw new BuilderApiError(401, "unauthorized", "Sign in or send an admin API key.");
-  if (caller.authType === "delegation" || caller.user.role !== "admin") throw new BuilderApiError(403, "admin_required", "Admin access required.");
-  return caller.user.id;
 }

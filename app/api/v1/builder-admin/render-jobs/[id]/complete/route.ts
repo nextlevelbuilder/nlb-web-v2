@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { BuilderApiError, ok, withBuilderErrors } from "@/lib/builder-league/http";
-import { completeRenderJob, getRenderBucket, requireRenderer, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { completeRenderJob, getRenderBucket, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { requireRenderer } from "@/lib/builder-league/admin-key-auth";
 
 export const dynamic = "force-dynamic";
 

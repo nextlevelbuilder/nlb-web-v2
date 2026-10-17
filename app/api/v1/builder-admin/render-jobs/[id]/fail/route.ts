@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { ok, withBuilderErrors } from "@/lib/builder-league/http";
-import { failRenderJob, requireRenderer, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { failRenderJob, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { requireRenderer } from "@/lib/builder-league/admin-key-auth";
 
 export const dynamic = "force-dynamic";
 

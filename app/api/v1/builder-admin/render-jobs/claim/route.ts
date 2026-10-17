@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { ok, withBuilderErrors } from "@/lib/builder-league/http";
-import { claimNextRenderJob, requireRenderer, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { claimNextRenderJob, serializeRenderJobForAdmin } from "@/lib/builder-league/render-jobs";
+import { requireRenderer } from "@/lib/builder-league/admin-key-auth";
 import { journeyCopy } from "@/content/builder-league/journey-copy";
 import { yearReviewCopy } from "@/content/builder-league/year-review-copy";
 import { wrappedCopy } from "@/content/builder-league/wrapped-copy";
