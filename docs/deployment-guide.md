@@ -54,6 +54,7 @@ scripts/provision-cloudflare.sh secrets production
 - The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets; the same value must be on the MCP worker ([cutover-runbook.md](./cutover-runbook.md)).
 - Because `BETTER_AUTH_URL` is the final domain, OAuth sign-in works only there.
 - Course video secrets (`CF_STREAM_API_TOKEN`, signing key, customer subdomain) are set by hand once Stream is enabled: [courses.md](./courses.md#one-time-setup-cloudflare-stream).
+- Builder League: the `BUILDER_LEAGUE_ENABLED` var lives in `wrangler.jsonc` (`false` in production). The optional `BUILDER_INGEST_SECRET` (32+ characters, shared with the Discord bot) is set by hand with `wr secret put BUILDER_INGEST_SECRET --env <env>`; without it the bot uses an admin API key. The private evidence buckets `nlb-builder-evidence` and `nlb-builder-evidence-staging` are not in the provisioning script; create them once with `wr r2 bucket create <name>`. The render workflow ([`builder-league-render.yml`](../.github/workflows/builder-league-render.yml)) needs the repository secrets `NLB_API_BASE` and `NLB_RENDER_API_KEY` (an admin's API key). Operations: [builder-league-runbook.md](./builder-league-runbook.md).
 - Staging currently uses the production Polar token. Provide a Polar sandbox token in the staging secrets if staging must not touch live Polar data.
 
 ## Database

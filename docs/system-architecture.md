@@ -37,9 +37,12 @@ Markdown twins render the HTML page through the `WORKER_SELF_REFERENCE` service 
 | `MEDIA_PUBLIC`, `MEDIA_STAGING` (R2) | Uploaded product media, served from `cdn.nextlevelbuilder.io` | [`app/api/v1/media/upload/route.ts`](../app/api/v1/media/upload/route.ts) |
 | `WORKER_SELF_REFERENCE` (service) | Markdown twins | [`lib/markdown/page-fetch.ts`](../lib/markdown/page-fetch.ts) |
 | `ASSETS` | Static assets emitted by OpenNext | OpenNext runtime |
+| `BUILDER_EVIDENCE` (R2 `nlb-builder-evidence` / `nlb-builder-evidence-staging`) | Private Builder League evidence uploads and rendered Wrapped videos; never public | [`lib/builder-league/evidence-storage.ts`](../lib/builder-league/evidence-storage.ts) |
 | `MCP_DELEGATION_JTI` (KV) | One-time use of MCP delegation assertions: each `jti` is stored until the token expires | [`lib/auth-mcp-delegation-replay.ts`](../lib/auth-mcp-delegation-replay.ts) |
 
 The old app also declared `GO_REDIRECTS` (KV), `POLAR_WEBHOOK_QUEUE` (Queue) and `AI` (Workers AI), but never used them: `/go/[slug]` reads D1, Polar webhooks are processed inline, and listing screening is a deterministic heuristic. They are not bound here.
+
+Scheduled work runs in [`worker.ts`](../worker.ts) on the two crons in `wrangler.jsonc`: every minute (the onboarding job queue) and hourly at `:17` (the membership resync, plus the Builder League cron: period finalization, the year snapshots and Community Wrapped, render job expiry; [`lib/builder-league/cron.ts`](../lib/builder-league/cron.ts)). The league cron runs whatever `BUILDER_LEAGUE_ENABLED` says: it writes only league tables, and pages check the flag. The flag is `false` in production (admins and pilot members only) and `true` on staging.
 
 Staging and production share the `nlb-media-staging` bucket for `MEDIA_STAGING`. Only the public bucket is split.
 
