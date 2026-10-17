@@ -8,6 +8,7 @@ import {
   communityWrappedData,
   computeCommunityWrapped,
   ensureCommunityWrapped,
+  loadCommunityWrapped,
   type CommunityEvent,
 } from "@/lib/builder-league/community-wrapped";
 import { local, seedEvent } from "./year-review-fixtures";
@@ -71,7 +72,16 @@ describe("community wrapped", () => {
     const a = buildCommunityWrappedData({ year: 2026, status: "final", cutoffAt: 1, events });
     const b = buildCommunityWrappedData({ year: 2026, status: "final", cutoffAt: 1, events: [...events].reverse() });
     expect(canonicalJson(a)).toBe(canonicalJson(b));
-    expect(a.backfilledEvents).toBe(1);
+  });
+
+  it("suppresses the backfilled count when too few members are behind it", () => {
+    const events = (backfilledMembers: number): CommunityEvent[] =>
+      builders.map((id, i) => ({
+        id: `e${i}`, subjectUserId: id, projectId: null, stage: "build", eventType: "build_mvp", verification: "moderator_verified", backfill: i < backfilledMembers, counterpartyUserId: null,
+      }));
+    expect(buildCommunityWrappedData({ year: 2026, status: "final", cutoffAt: 1, events: events(1) }).backfilledEvents).toBeNull();
+    expect(buildCommunityWrappedData({ year: 2026, status: "final", cutoffAt: 1, events: events(MIN_COHORT - 1) }).backfilledEvents).toBeNull();
+    expect(buildCommunityWrappedData({ year: 2026, status: "final", cutoffAt: 1, events: events(MIN_COHORT) }).backfilledEvents).toBe(MIN_COHORT);
   });
 
   it("stores versions only on change and never replaces the final snapshot", async () => {
@@ -85,5 +95,16 @@ describe("community wrapped", () => {
     const frozen = await ensureCommunityWrapped(t.db, 2026, local(2027, 2, 1));
     expect(frozen).toMatchObject({ created: false, snapshot: { id: final.snapshot.id } });
     expect(communityWrappedData(frozen.snapshot).status).toBe("final");
+  });
+
+  it("serves the stored snapshot to readers without recomputing it", async () => {
+    // A year without a snapshot is computed once; afterwards new events wait for the cron.
+    const first = await loadCommunityWrapped(t.db, 2027, local(2027, 3, 1));
+    await seedEvent(t.db, { id: "b1-2027", subjectUserId: "b1", eventType: "build_mvp", stage: "build", occurredAt: local(2027, 3, 2) });
+    const read = await loadCommunityWrapped(t.db, 2027, local(2027, 3, 5));
+    expect(read).toMatchObject({ id: first.id, version: 1 });
+    const refreshed = await ensureCommunityWrapped(t.db, 2027, local(2027, 3, 5));
+    expect(refreshed).toMatchObject({ created: true, snapshot: { version: 2 } });
+    expect(await loadCommunityWrapped(t.db, 2027, local(2027, 3, 6))).toMatchObject({ id: refreshed.snapshot.id });
   });
 });

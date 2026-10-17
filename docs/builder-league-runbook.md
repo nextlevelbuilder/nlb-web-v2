@@ -65,6 +65,8 @@ The reversal does three things:
 
 It is idempotent per entry (`reverseLedgerEntry` in [`lib/builder-league/moderation.ts`](../lib/builder-league/moderation.ts)). To revoke a badge, use `POST /api/v1/builder-admin/rewards/badges/{awardId}/revoke`.
 
+A reversal is final. The reversed entry keeps its dedupe key, so re-approving the same evidence or replaying an import finds the original entry and awards nothing. For project-scoped awards such as a launch, the key is the project, so a later launch of the same project earns nothing either. Reverse only when the RP should never come back.
+
 ## Disputes and appeals
 
 1. **A decision is disputed before it is final.** Re-decide the evidence:
@@ -139,8 +141,10 @@ The year cutoffs are defined in `yearWindow` ([`lib/builder-league/year-review.t
 
 | When (local) | What the cron does |
 |---|---|
-| After Dec 30 23:59:59.999 | Builds **provisional** Year in Review snapshots for every member with verified milestones that year (`ensureYearSnapshot`, 100 members per run), and the provisional Community Wrapped (`ensureCommunityWrapped`). |
+| After Dec 30 23:59:59.999 | Builds **provisional** Year in Review snapshots for every member with verified milestones that year (`ensureYearSnapshot`, 100 members per run). |
 | After Dec 31 + `FINAL_GRACE_DAYS` (7 days) | Freezes the **final** snapshots. Late moderation inside the grace still lands; after it, the year is closed. The cron keeps catching up for 60 days. |
+
+Community Wrapped is refreshed by the hourly cron for the current and the previous year (`ensureCommunityWrapped`): a new version is stored only when the aggregate changed, and a final version is never replaced. The page and `GET /api/v1/builder-wrapped/{year}` only read the stored snapshot, so the public figures can lag new verified events by up to an hour.
 
 Community Wrapped publishes aggregates only. Cohorts smaller than `MIN_COHORT` (5) are suppressed, and no member is named.
 
@@ -277,6 +281,8 @@ wr d1 time-travel restore DB --env=<env> --timestamp=<RFC3339>
 ```
 
 Directory backfill (`POST /api/v1/builder-admin/backfill`, or `scripts/builder-league/backfill-directory.ts`) is a dry run unless you ask otherwise. Export first, run the dry run, read the report, then apply.
+
+A directory approval records a launch live only when the submitter has league access at that moment. Anyone else gets nothing until they join and opt in to the backfill. Each product launches once across both paths and all of its owners. A product that is already claimed shows up in the backfill report as `skipped` with `recorded_from_directory` or `launch_already_recorded`.
 
 ## Cost ceilings
 

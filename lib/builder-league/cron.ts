@@ -2,8 +2,10 @@
  * Builder League scheduled work, called from the `scheduled` handler in `worker.ts`:
  *
  * - finalize due league periods (rankings piece, loaded only if present);
- * - publish the provisional Year in Review and Community Wrapped once Dec 30 has closed (local time);
- * - freeze the final ones after Dec 31 plus the moderation grace period;
+ * - publish the provisional Year in Review once Dec 30 has closed (local time), and freeze the final one
+ *   after Dec 31 plus the moderation grace period;
+ * - refresh Community Wrapped for the current and the previous year (a final version is never replaced),
+ *   so public requests only read the stored snapshot;
  * - expire render jobs and delete their outputs past retention.
  *
  * Every step is idempotent and bounded per run (`USERS_PER_RUN`), so an hourly cron catches up over a
@@ -15,6 +17,7 @@ import { yearlySnapshots } from "@/lib/db/schema";
 import { ensureCommunityWrapped } from "./community-wrapped";
 import { expireRenderJobs, type RenderBucket } from "./render-jobs";
 import { localYear } from "./time-windows";
+import { isReviewableYear } from "./wrapped-access";
 import { ensureYearSnapshot, listYearParticipants, yearWindow } from "./year-review";
 
 export const USERS_PER_RUN = 100;
@@ -34,7 +37,7 @@ export interface BuilderLeagueCronResult {
   cron: string;
   periodsFinalized: "done" | "skipped" | "failed";
   yearSnapshots: { year: number; status: "provisional" | "final"; created: number; pending: number } | null;
-  communityWrapped: { year: number; status: "provisional" | "final"; created: boolean } | null;
+  communityWrapped: { year: number; status: "provisional" | "final"; created: boolean }[];
   renderJobsExpired: number;
   errors: string[];
 }
@@ -51,6 +54,12 @@ async function loadFinalizeDuePeriods(): Promise<FinalizeDuePeriods | null> {
   } catch {
     return null;
   }
+}
+
+/** Years whose Community Wrapped the cron keeps current: the previous and the current local year. */
+export function communityWrappedYears(now: Date): number[] {
+  const current = localYear(now);
+  return [current - 1, current].filter((year) => isReviewableYear(year, current));
 }
 
 /** Which year is due and with which status at `now`, if any. */
@@ -101,7 +110,7 @@ export async function runBuilderLeagueCron(env: BuilderLeagueCronEnv, cron: stri
     cron,
     periodsFinalized: "skipped",
     yearSnapshots: null,
-    communityWrapped: null,
+    communityWrapped: [],
     renderJobsExpired: 0,
     errors: [],
   };
@@ -126,12 +135,15 @@ export async function runBuilderLeagueCron(env: BuilderLeagueCronEnv, cron: stri
     }
   });
 
+  for (const year of communityWrappedYears(now)) {
+    await step("community_wrapped", async () => {
+      const { snapshot, created } = await ensureCommunityWrapped(db, year, now);
+      result.communityWrapped.push({ year, status: snapshot.status, created });
+    });
+  }
+
   const due = dueYear(now);
   if (due) {
-    await step("community_wrapped", async () => {
-      const { snapshot, created } = await ensureCommunityWrapped(db, due.year, now);
-      result.communityWrapped = { year: due.year, status: snapshot.status, created };
-    });
     await step("year_snapshots", async () => {
       result.yearSnapshots = await runYearSnapshots(db, due.year, due.status, now);
     });

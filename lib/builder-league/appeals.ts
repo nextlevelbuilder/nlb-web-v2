@@ -3,7 +3,9 @@
  * second one can be filed (enforced in one `INSERT … SELECT … WHERE NOT EXISTS` statement, so two
  * concurrent appeals cannot both land). An admin other than the appellant resolves it: `uphold` keeps
  * the rejection, `overturn` approves the evidence through the normal approval path, with both steps in
- * the audit trail. Resolution is idempotent and safe to retry.
+ * the audit trail. An overturn checks the approval preconditions (for example a required counterparty
+ * confirmation) before it closes the appeal, so it either goes through or fails with the appeal still
+ * open. Resolution is idempotent and safe to retry.
  */
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -11,7 +13,10 @@ import type { AppDb } from "@/lib/db";
 import { activityEvidence, evidenceAppeals, users } from "@/lib/db/schema";
 import { BuilderApiError } from "./http";
 import { auditIfChanged, getEvidence, type EvidenceAppeal } from "./evidence";
-import { approveEvidence, type ApprovalOutcome, type ModeratorActor } from "./moderation";
+import { approveEvidence, assertApprovable, type ApprovalOutcome, type ModeratorActor } from "./moderation";
+
+/** An overturn approves evidence that is still rejected. */
+const OVERTURN_FROM = ["rejected"] as const;
 
 export const AppealInputSchema = z.object({ reason: z.string().trim().min(20).max(2000) }).strict();
 
@@ -106,6 +111,8 @@ export async function resolveAppeal(
   const status = parsed.outcome === "uphold" ? "upheld" : "overturned";
   let current = appeal;
   if (appeal.status === "open") {
+    // Never close an appeal as overturned when the approval it promises cannot happen.
+    if (status === "overturned") assertApprovable(await getEvidence(db, appeal.evidenceId), actor, OVERTURN_FROM);
     const now = new Date();
     const [updated] = await db.batch([
       db
@@ -131,7 +138,7 @@ export async function resolveAppeal(
   if (status === "upheld") return { appeal: current, approval: null };
 
   const approval = await approveEvidence(db, appeal.evidenceId, actor, {
-    fromStatuses: ["rejected"],
+    fromStatuses: OVERTURN_FROM,
     reasonCodes: ["appeal_overturned"],
     note: parsed.resolution,
     auditAction: "approve_on_appeal",

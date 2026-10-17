@@ -15,7 +15,7 @@ import { and, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { builderPrivacy, scoreLedger, users } from "@/lib/db/schema";
 import { STAGES, isBoardKey, isPeriodType, isStage, type BoardKey, type PeriodType, type Stage } from "./types";
-import { getEffectiveRuleset, type Ruleset } from "./ruleset";
+import { RULESETS, getEffectiveRuleset, type Ruleset } from "./ruleset";
 import { compareForRanking, leagueScore, type LeagueEntry } from "./scoring";
 import { periodKey, periodRange, previousPeriodKey, type PeriodRange } from "./time-windows";
 import { BuilderApiError } from "./http";
@@ -71,6 +71,9 @@ interface MemberPeriod {
   ids: string[];
 }
 
+/** Start of the first ruleset; no activity can be scored before it. */
+const LEAGUE_START_MS = Date.parse(RULESETS[0].effectiveFrom);
+
 export function parseBoardQuery(input: { board?: string | null; period?: string | null; key?: string | null }, now = new Date()) {
   const board = input.board ?? "overall";
   const periodType = input.period ?? "week";
@@ -83,8 +86,10 @@ export function parseBoardQuery(input: { board?: string | null; period?: string 
   } catch {
     throw new BuilderApiError(400, "invalid_period_key", "Invalid period key.");
   }
-  // Boards exist for the current and past periods only (no snapshots of the future).
+  // Boards exist for the current and past periods only (no snapshots of the future), and never for
+  // periods that ended before the first ruleset took effect: reading a board stores its snapshot.
   if (range.start.getTime() > now.getTime()) throw new BuilderApiError(400, "future_period", "That period has not started yet.");
+  if (range.end.getTime() < LEAGUE_START_MS) throw new BuilderApiError(400, "period_before_league", "That period ended before the league started.");
   return { board: board as BoardKey, periodType: periodType as PeriodType, periodKey: key };
 }
 

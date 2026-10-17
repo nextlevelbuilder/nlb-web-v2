@@ -41,6 +41,9 @@ describe("share links", () => {
   it("revokes idempotently, only for the owner, and a revoked token resolves to nothing", async () => {
     const { link, token } = await createShareLink(t.db, { userId: "u1", kind: "year_review", year: 2026 });
     await expect(revokeShareLink(t.db, "u2", link.id)).rejects.toMatchObject({ status: 404 });
+    // A link of another year is not found and stays active.
+    await expect(revokeShareLink(t.db, "u1", link.id, new Date(), { year: 2025 })).rejects.toMatchObject({ status: 404, code: "link_not_found" });
+    expect(await resolveShareToken(t.db, token, { kind: "year_review", year: 2026 })).toMatchObject({ id: link.id });
     const revoked = await revokeShareLink(t.db, "u1", link.id, new Date("2026-11-01T00:00:00Z"));
     expect(revoked.revokedAt?.toISOString()).toBe("2026-11-01T00:00:00.000Z");
     const again = await revokeShareLink(t.db, "u1", link.id, new Date("2026-12-01T00:00:00Z"));

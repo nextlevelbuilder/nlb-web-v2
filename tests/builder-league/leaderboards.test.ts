@@ -149,8 +149,10 @@ describe("builder boards", () => {
     const now = local(2026, 10, 16);
     expect(parseBoardQuery({}, now)).toEqual({ board: "overall", periodType: "week", periodKey: "2026-W42" });
     expect(parseBoardQuery({ board: "ship", period: "month", key: "2026-09" }, now)).toEqual({ board: "ship", periodType: "month", periodKey: "2026-09" });
-    for (const query of [{ board: "tier" }, { period: "day" }, { period: "week", key: "2026-W60" }, { period: "month", key: "2026-12" }]) {
+    for (const query of [{ board: "tier" }, { period: "day" }, { period: "week", key: "2026-W60" }, { period: "month", key: "2026-12" }, { period: "week", key: "2000-W01" }, { period: "year", key: "2024" }]) {
       expect(() => parseBoardQuery(query, now)).toThrow(BuilderApiError);
     }
+    expect(() => parseBoardQuery({ period: "week", key: "2000-W01" }, now)).toThrow(expect.objectContaining({ code: "period_before_league" }));
+    expect(parseBoardQuery({ period: "year", key: "2025" }, now)).toMatchObject({ periodKey: "2025" });
   });
 });

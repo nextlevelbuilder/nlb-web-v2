@@ -13,7 +13,7 @@
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { AppDb } from "@/lib/db";
-import { activityEvidence, builderPilotMembers, builderProjects, scoreLedger, users } from "@/lib/db/schema";
+import { activityEvidence, builderModerationActions, builderPilotMembers, builderProjects, scoreLedger, users } from "@/lib/db/schema";
 import { BuilderApiError, encodeCursor, type Cursor } from "./http";
 import { awardForEventDetailed, getBuilderEvent, recordBuilderEvent, reverseAward, type AwardResult, type BuilderEvent, type ScoreLedgerEntry } from "./ledger";
 import { recordModerationAction } from "./audit";
@@ -178,9 +178,30 @@ export interface ApprovalOutcome {
   decided: boolean;
 }
 
-function approverOf(evidence: Evidence): { actor: ModeratorActor; verification: Verification } {
+/** Audit actions that record an approval of evidence (see `approveEvidence`). */
+const APPROVAL_AUDIT_ACTIONS = ["approve", "approve_on_appeal"];
+
+/**
+ * Who approved the evidence, with the role they approved in. The role comes from the approval's audit
+ * row, which is written in the same batch as the decision; `moderator` (the least privileged deciding
+ * role) is the fallback when no such row is found.
+ */
+async function approverOf(db: AppDb, evidence: Evidence): Promise<{ actor: ModeratorActor; verification: Verification }> {
   if (evidence.decidedBy === SYSTEM_ACTOR_ID) return { actor: { actorId: SYSTEM_ACTOR_ID, actorRole: "system" }, verification: "peer_confirmed" };
-  return { actor: { actorId: evidence.decidedBy ?? "unknown", actorRole: "admin" }, verification: "moderator_verified" };
+  const actorId = evidence.decidedBy ?? "unknown";
+  const [audit] = await db
+    .select({ actorRole: builderModerationActions.actorRole })
+    .from(builderModerationActions)
+    .where(and(
+      eq(builderModerationActions.targetType, "evidence"),
+      eq(builderModerationActions.targetId, evidence.id),
+      eq(builderModerationActions.actorId, actorId),
+      inArray(builderModerationActions.action, APPROVAL_AUDIT_ACTIONS)
+    ))
+    .orderBy(desc(builderModerationActions.createdAt))
+    .limit(1);
+  const actorRole: ActorRole = audit && MODERATOR_ROLES.includes(audit.actorRole) ? audit.actorRole : "moderator";
+  return { actor: { actorId, actorRole }, verification: "moderator_verified" };
 }
 
 /**
@@ -189,7 +210,7 @@ function approverOf(evidence: Evidence): { actor: ModeratorActor; verification: 
  */
 export async function completeApproval(db: AppDb, evidence: Evidence): Promise<Omit<ApprovalOutcome, "decided">> {
   if (evidence.status !== "approved") throw new BuilderApiError(409, "not_approved", "Evidence is not approved.");
-  const { actor, verification } = approverOf(evidence);
+  const { actor, verification } = await approverOf(db, evidence);
   const { event } = await recordBuilderEvent(db, {
     kind: "activity",
     subjectUserId: evidence.userId,
@@ -230,6 +251,26 @@ interface ApproveOptions {
 }
 
 /**
+ * The approval preconditions, without writing anything: the evidence exists, is not the actor's own, and
+ * is either already approved (a replay) or in one of `fromStatuses` with any required counterparty
+ * confirmation in place. Callers that must not commit a related change unless the approval can go
+ * through (an appeal overturn) check this first.
+ */
+export function assertApprovable(evidence: Evidence | null, actor: ModeratorActor, fromStatuses: readonly EvidenceStatus[]): Evidence {
+  if (!evidence) throw new BuilderApiError(404, "not_found", "Evidence not found.");
+  if (evidence.userId === actor.actorId) throw new BuilderApiError(403, "self_moderation", "You cannot decide on your own evidence.");
+  if (evidence.status === "approved") return evidence;
+  if (!fromStatuses.includes(evidence.status)) {
+    throw new BuilderApiError(409, "already_decided", `Evidence is ${evidence.status}.`, { status: evidence.status });
+  }
+  const definition = isEventTypeKey(evidence.eventType) ? getEffectiveRuleset(evidence.occurredAt).events[evidence.eventType] : undefined;
+  if (definition?.evidence.counterpartyConfirmation && !evidence.counterpartyConfirmedAt) {
+    throw new BuilderApiError(409, "counterparty_unconfirmed", "The counterparty has not confirmed this evidence yet.");
+  }
+  return evidence;
+}
+
+/**
  * Claims the evidence as approved (one winner among concurrent callers), then completes the award.
  * Callers that find it already approved complete or replay the same award.
  */
@@ -237,17 +278,8 @@ export async function approveEvidence(db: AppDb, evidenceId: string, actor: Mode
   if (!MODERATOR_ROLES.includes(actor.actorRole) && !(actor.actorRole === "system" && actor.actorId === SYSTEM_ACTOR_ID)) {
     throw new BuilderApiError(403, "moderation_not_allowed", "Only moderators, admins and the system can approve evidence.");
   }
-  const evidence = await getEvidence(db, evidenceId);
-  if (!evidence) throw new BuilderApiError(404, "not_found", "Evidence not found.");
-  if (evidence.userId === actor.actorId) throw new BuilderApiError(403, "self_moderation", "You cannot decide on your own evidence.");
+  const evidence = assertApprovable(await getEvidence(db, evidenceId), actor, options.fromStatuses);
   if (evidence.status === "approved") return { ...(await completeApproval(db, evidence)), decided: false };
-  if (!options.fromStatuses.includes(evidence.status)) {
-    throw new BuilderApiError(409, "already_decided", `Evidence is ${evidence.status}.`, { status: evidence.status });
-  }
-  const definition = isEventTypeKey(evidence.eventType) ? getEffectiveRuleset(evidence.occurredAt).events[evidence.eventType] : undefined;
-  if (definition?.evidence.counterpartyConfirmation && !evidence.counterpartyConfirmedAt) {
-    throw new BuilderApiError(409, "counterparty_unconfirmed", "The counterparty has not confirmed this evidence yet.");
-  }
 
   const now = new Date();
   const [claimed] = await db.batch([

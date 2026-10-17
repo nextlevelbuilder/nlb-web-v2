@@ -49,12 +49,15 @@ import { eq } from "drizzle-orm";
 import {
   badgeAwards,
   builderEvents,
+  builderPilotMembers,
   builderPrivacy,
+  builderProjects,
   members,
   moderationCases,
   organizations,
   productRevisions,
   products,
+  scoreCapSlots,
   scoreLedger,
   submissions,
 } from "@/lib/db/schema";
@@ -132,6 +135,18 @@ describe("progression refresh after RP is awarded", () => {
     await resolveAppeal(env.db, { evidenceId: evidence.id, appealId: appeal.id }, { outcome: "overturn", resolution: "Verified the launch." }, ADMIN);
     expect(faults.rankCalls).toEqual(["alice"]);
     expect(await badgesFor("alice")).toContain("first_ship");
+  });
+
+  it("records the role the approver actually decided in", async () => {
+    const evidence = await submitLaunch();
+    await decideEvidence(env.db, evidence.id, { decision: "approve" }, { actorId: "mod2", actorRole: "moderator" });
+    const [event] = await launchEvents();
+    expect(event).toMatchObject({ actorRole: "moderator", actorUserId: "mod2", source: "moderator", verification: "moderator_verified" });
+    expect(await ledgerFor("alice")).toEqual([expect.objectContaining({ reason: "awarded_by:moderator:mod2" })]);
+
+    const other = await submitLaunch("bob");
+    await decideEvidence(env.db, other.id, { decision: "approve" }, ADMIN);
+    expect(await ledgerFor("bob")).toEqual([expect.objectContaining({ reason: "awarded_by:admin:admin" })]);
   });
 
   it("keeps the award and the badges when the rank evaluation fails", async () => {
@@ -256,6 +271,58 @@ describe("directory launch events", () => {
     expect(await ledgerFor("alice")).toHaveLength(1);
   });
 
+  it("writes nothing for a submitter without league access, who can still import the launch later", async () => {
+    await env.db.delete(builderPilotMembers).where(eq(builderPilotMembers.userId, "alice"));
+    vi.setSystemTime(APPROVED_AT);
+    await approve(await seedDirectory({ optIn: true }));
+    expect(await launchEvents()).toEqual([]);
+    expect(await ledgerFor("alice")).toEqual([]);
+    expect(await env.db.select().from(builderProjects).where(eq(builderProjects.productId, "prod-a"))).toEqual([]);
+    expect(await env.db.select().from(scoreCapSlots)).toEqual([]);
+    expect(faults.rankCalls).toEqual([]);
+    expect(await recordDirectoryLaunch(env.db, { submissionId: "sub-1", productId: "prod-a", submitterId: "alice", approvedAt: APPROVED_AT })).toEqual({
+      status: "skipped",
+      reason: "no_league_access",
+    });
+
+    // Once in the league, the opt-in backfill imports the launch.
+    await env.db.insert(builderPilotMembers).values({ userId: "alice", addedBy: "admin" });
+    later();
+    await runBackfill(env.db, { userIds: ["alice"], dryRun: false }, ADMIN);
+    expect(await launchEvents()).toEqual([expect.objectContaining({ source: "backfill", subjectUserId: "alice" })]);
+    expect(await ledgerFor("alice")).toEqual([expect.objectContaining({ rp: 100 })]);
+  });
+
+  it("launches a product once when two owners backfill it, even at the same time", async () => {
+    vi.setSystemTime(APPROVED_AT);
+    await seedDirectory({ optIn: true });
+    await env.db.batch([
+      env.db.insert(members).values({ id: "m2", organizationId: "org-a", userId: "bob", role: "owner" }),
+      env.db.insert(builderPrivacy).values({ userId: "bob", backfillOptIn: true }),
+      env.db.update(submissions).set({ status: "approved", reviewedAt: APPROVED_AT }).where(eq(submissions.id, "sub-1")),
+      env.db.update(products).set({ status: "published" }).where(eq(products.id, "prod-a")),
+    ]);
+    later();
+    const reports = await Promise.all([
+      runBackfill(env.db, { userIds: ["alice"], dryRun: false }, ADMIN),
+      runBackfill(env.db, { userIds: ["bob"], dryRun: false }, ADMIN),
+    ]);
+    const items = reports.flatMap((report) => report.users.flatMap((user) => user.items));
+    expect(items.filter((item) => item.action === "created")).toHaveLength(1);
+    expect(items.filter((item) => item.action === "skipped")).toEqual([expect.objectContaining({ reason: "launch_already_recorded" })]);
+    expect(await launchEvents()).toHaveLength(1);
+    expect((await ledgerFor("alice")).length + (await ledgerFor("bob")).length).toBe(1);
+
+    // Dry runs report the same outcome without writing, and replays change nothing.
+    const holder = (await launchEvents())[0].subjectUserId;
+    const other = holder === "alice" ? "bob" : "alice";
+    const dry = await runBackfill(env.db, { userIds: [other], dryRun: true }, ADMIN);
+    expect(dry.users[0].items).toEqual([expect.objectContaining({ action: "skipped", reason: "launch_already_recorded" })]);
+    const replay = await runBackfill(env.db, { userIds: [holder], dryRun: false }, ADMIN);
+    expect(replay.users[0].items).toEqual([expect.objectContaining({ action: "existing" })]);
+    expect(await launchEvents()).toHaveLength(1);
+  });
+
   it("evaluates rank and badges after a backfill that awarded RP", async () => {
     vi.setSystemTime(APPROVED_AT);
     await seedDirectory({ optIn: true });
@@ -281,6 +348,8 @@ describe("directory launch events", () => {
       expect(submission.status).toBe("approved");
       expect(await launchEvents()).toEqual([]);
       expect(errors).toHaveBeenCalledWith("builder league: directory launch event failed", "prod-a", "project store unavailable");
+      // The failed hook gave its launch claim back, so the backfill can still import the launch.
+      expect(await env.db.select().from(scoreCapSlots)).toEqual([]);
     } finally {
       errors.mockRestore();
     }

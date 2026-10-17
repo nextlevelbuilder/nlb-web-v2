@@ -16,7 +16,7 @@ import { builderPilotMembers } from "@/lib/db/schema";
 import { resolveCaller, type ResolvedCaller } from "@/lib/auth-api-key";
 import type { McpDelegationContext } from "@/lib/auth-mcp-delegation";
 import { getCommunityTier } from "./membership";
-import { BuilderApiError, fail } from "./http";
+import { BuilderApiError, assertSameSite, fail, isSafeMethod } from "./http";
 import type { ActorRole, CommunityTier } from "./types";
 
 function getBinding(name: string): string | undefined {
@@ -89,6 +89,11 @@ function notFoundError(): BuilderApiError {
   return new BuilderApiError(404, "not_found", "Not found");
 }
 
+/** Session cookies ride along on cross-site requests, so every session write must come from this site. */
+function assertSameSiteSessionWrite(request: Request, caller: ResolvedCaller): void {
+  if (caller.authType === "session" && !isSafeMethod(request.method)) assertSameSite(request);
+}
+
 /**
  * Resolves the caller (session, API key or MCP delegation) and checks Builder League access.
  * Throws `BuilderApiError`; wrap the route in `withBuilderErrors`.
@@ -107,6 +112,7 @@ export async function requireBuilderLeagueUser(
   if (!caller?.user) throw denied(flagEnabled, 401, "unauthorized");
   const access = await getViewerAccess(db, { id: caller.user.id, role: caller.user.role });
   if (!access.canUse) throw denied(flagEnabled, 403, "membership_required");
+  assertSameSiteSessionWrite(request, caller);
   return { caller, access, actorRole: actorRoleFor(caller, access.isAdmin) };
 }
 
@@ -121,6 +127,7 @@ export async function requireBuilderLeagueAdmin(request: Request, db: AppDb = ge
   if (!caller?.user) throw denied(flagEnabled, 401, "unauthorized");
   if (caller.user.role !== "admin") throw denied(flagEnabled, 403, "admin_required");
   if (caller.authType !== "session") throw new BuilderApiError(403, "session_required", "Admin actions require a signed-in session.");
+  assertSameSiteSessionWrite(request, caller);
   const access = await getViewerAccess(db, { id: caller.user.id, role: caller.user.role });
   return { caller, access, actorRole: "admin" };
 }

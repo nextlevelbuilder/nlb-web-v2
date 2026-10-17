@@ -50,7 +50,7 @@ export default function CommunityMetrics({ data, copy, locale }: CommunityMetric
         <h2 id="wrapped-method" className="font-mono text-step-xs uppercase tracking-[0.16em] text-ink-3">{copy.methodHeading}</h2>
         <p className="max-w-[70ch]">{copy.method(data.minCohort)}</p>
         <p>{copy.timeframe(formatLocalDate(locale, data.timeframe.start), formatLocalDate(locale, Math.min(data.timeframe.cutoffAt, data.timeframe.end)), data.timeframe.timeZone)}</p>
-        {data.backfilledEvents > 0 && <p>{copy.backfill(data.backfilledEvents)}</p>}
+        {data.backfilledEvents !== null && data.backfilledEvents > 0 && <p>{copy.backfill(data.backfilledEvents)}</p>}
       </section>
     </div>
   );

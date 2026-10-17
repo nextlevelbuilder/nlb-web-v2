@@ -267,7 +267,7 @@ export const journeySchemas: Record<string, unknown> = {
       version: { type: "integer" }, createdAt: { type: "string", format: "date-time" },
       year: { type: "integer" }, status: { type: "string", enum: ["provisional", "final"] },
       timeframe: { type: "object", properties: { start: { type: "integer" }, end: { type: "integer" }, cutoffAt: { type: "integer" }, timeZone: { type: "string" } } },
-      minCohort: { type: "integer" }, backfilledEvents: { type: "integer" }, eventHash: { type: "string" },
+      minCohort: { type: "integer" }, backfilledEvents: { type: ["integer", "null"] }, eventHash: { type: "string" },
       metrics: {
         type: "array",
         items: {

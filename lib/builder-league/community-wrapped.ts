@@ -6,6 +6,9 @@
  * and denominator. Only verified, non-superseded events count. A metric whose cohort (distinct members
  * behind it) is smaller than `MIN_COHORT` is suppressed rather than shown, so no individual can be
  * singled out. No member is named. The same provisional/final cutoffs as the Year in Review apply.
+ *
+ * Computing a year scans all its verified events, so public requests never do it: they read the stored
+ * snapshot (`loadCommunityWrapped`), and the hourly cron refreshes it (`ensureCommunityWrapped`).
  */
 import { desc, eq } from "drizzle-orm";
 import { createHash } from "crypto";
@@ -46,8 +49,8 @@ export interface CommunityWrappedData {
   timeframe: { start: number; end: number; cutoffAt: number; timeZone: string };
   minCohort: number;
   metrics: CommunityMetric[];
-  /** Backfilled events counted, so imported history is disclosed. */
-  backfilledEvents: number;
+  /** Backfilled events counted, so imported history is disclosed; null when fewer than `MIN_COHORT` members are behind them. */
+  backfilledEvents: number | null;
   eventHash: string;
 }
 
@@ -87,6 +90,11 @@ function metric(
     eventTypes: meta.eventTypes,
     verification: meta.verification,
   };
+}
+
+function backfilledCount(verified: CommunityEvent[]): number | null {
+  const backfilled = verified.filter((e) => e.backfill);
+  return new Set(backfilled.map((e) => e.subjectUserId)).size < MIN_COHORT ? null : backfilled.length;
 }
 
 /** Pure aggregation; exported for tests. */
@@ -131,7 +139,7 @@ export function buildCommunityWrappedData(input: { year: number; status: Snapsho
     timeframe: { start: window.start, end: window.end, cutoffAt: input.cutoffAt, timeZone: BUILDER_TIME_ZONE },
     minCohort: MIN_COHORT,
     metrics,
-    backfilledEvents: verified.filter((e) => e.backfill).length,
+    backfilledEvents: backfilledCount(verified),
     eventHash: createHash("sha256").update(events.map((e) => e.id).join("|")).digest("hex"),
   };
 }
@@ -184,6 +192,14 @@ export async function ensureCommunityWrapped(db: AppDb, year: number, now: Date)
   const concurrent = await getLatestCommunityWrapped(db, year);
   if (!concurrent) throw new Error("community wrapped insert conflicted but no row was found");
   return { snapshot: concurrent, created: false };
+}
+
+/**
+ * The snapshot public requests serve: the latest stored version. Only a year that has none yet is
+ * computed (once) here; refreshing is the cron's job.
+ */
+export async function loadCommunityWrapped(db: AppDb, year: number, now: Date): Promise<CommunityWrappedSnapshot> {
+  return (await getLatestCommunityWrapped(db, year)) ?? (await ensureCommunityWrapped(db, year, now)).snapshot;
 }
 
 export function communityWrappedData(row: CommunityWrappedSnapshot): CommunityWrappedData {

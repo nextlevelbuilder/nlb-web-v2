@@ -53,14 +53,25 @@ export async function listShareLinks(
   return db.select().from(builderShareLinks).where(and(...conditions)).orderBy(desc(builderShareLinks.createdAt));
 }
 
-/** Idempotent: revoking an already revoked link returns it unchanged. Only the owner may revoke. */
-export async function revokeShareLink(db: AppDb, userId: string, linkId: string, now = new Date()): Promise<ShareLink> {
+/**
+ * Idempotent: revoking an already revoked link returns it unchanged. Only the owner may revoke. With
+ * `expected.year`, a link of another year is reported as not found and left untouched.
+ */
+export async function revokeShareLink(
+  db: AppDb,
+  userId: string,
+  linkId: string,
+  now = new Date(),
+  expected: { year?: number } = {}
+): Promise<ShareLink> {
   const [link] = await db
     .select()
     .from(builderShareLinks)
     .where(and(eq(builderShareLinks.id, linkId), eq(builderShareLinks.userId, userId)))
     .limit(1);
-  if (!link) throw new BuilderApiError(404, "link_not_found", "Share link not found.");
+  if (!link || (expected.year !== undefined && link.year !== expected.year)) {
+    throw new BuilderApiError(404, "link_not_found", "Share link not found.");
+  }
   if (link.revokedAt) return link;
   const [updated] = await db
     .update(builderShareLinks)

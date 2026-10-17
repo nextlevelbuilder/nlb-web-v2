@@ -35,9 +35,10 @@ vi.mock("@/lib/builder-league/membership", async (importOriginal) => {
 
 import { eq } from "drizzle-orm";
 import { runWithDb } from "@/lib/db";
-import { activityEvidence, builderEvents, builderModerationActions, communityConnections, scoreLedger } from "@/lib/db/schema";
+import { activityEvidence, builderEvents, builderModerationActions, communityConnections, evidenceAppeals, scoreLedger } from "@/lib/db/schema";
 import { submitEvidence } from "@/lib/builder-league/evidence";
 import { decideEvidence } from "@/lib/builder-league/moderation";
+import { createAppeal, resolveAppeal } from "@/lib/builder-league/appeals";
 import { confirmPeerHelp, sharesDiscordIdentity } from "@/lib/builder-league/peer-help";
 import { getRuleset } from "@/lib/builder-league/ruleset";
 import { POST as confirmRoute } from "@/app/api/v1/builder-evidence/[id]/confirm/route";
@@ -181,6 +182,30 @@ describe("counterparty confirmation", () => {
     } finally {
       definition.requiredVerification = original;
     }
+  });
+
+  it("refuses to overturn an appeal whose evidence still lacks the counterparty confirmation, leaving the appeal open", async () => {
+    const ADMIN = { actorId: "admin", actorRole: "admin" as const };
+    const evidence = await helped("alice", "bob");
+    await decideEvidence(env.db, evidence.id, { decision: "reject", reasonCodes: ["unverifiable"] }, ADMIN);
+    vi.setSystemTime(new Date(TEST_NOW.getTime() + 60_000));
+    const appeal = await createAppeal(env.db, "alice", evidence.id, { reason: "Bob can confirm this; he was away when you looked." });
+
+    const overturn = () => resolveAppeal(env.db, { evidenceId: evidence.id }, { outcome: "overturn", resolution: "Looks fine." }, ADMIN);
+    await expect(overturn()).rejects.toMatchObject({ status: 409, code: "counterparty_unconfirmed" });
+    await expect(overturn()).rejects.toMatchObject({ status: 409, code: "counterparty_unconfirmed" });
+
+    const [stored] = await env.db.select().from(evidenceAppeals).where(eq(evidenceAppeals.id, appeal.id));
+    expect(stored).toMatchObject({ status: "open", resolvedBy: null });
+    const [current] = await env.db.select().from(activityEvidence).where(eq(activityEvidence.id, evidence.id));
+    expect(current.status).toBe("rejected");
+    expect(await ledgerFor("alice")).toHaveLength(0);
+    const audit = await env.db.select().from(builderModerationActions).where(eq(builderModerationActions.targetId, appeal.id));
+    expect(audit).toEqual([]);
+
+    // The appeal can still be closed the other way.
+    const upheld = await resolveAppeal(env.db, { evidenceId: evidence.id }, { outcome: "uphold", resolution: "Needs the confirmation first." }, ADMIN);
+    expect(upheld).toMatchObject({ appeal: { status: "upheld" }, approval: null });
   });
 
   it("refuses confirmation for event types that do not need one, and for closed evidence", async () => {

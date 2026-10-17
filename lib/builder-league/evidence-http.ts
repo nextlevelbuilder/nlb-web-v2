@@ -3,10 +3,12 @@
  * MCP) and plain HTML form posts, so the member and moderator pages work without JavaScript:
  * - a form post (urlencoded or multipart, without `Accept: application/json`) gets a 303 redirect to its
  *   validated same-site `returnTo` path with `?notice=` or `?error=` instead of a JSON body;
- * - cross-site form posts are refused (Origin / Sec-Fetch-Site), on top of the session cookie's SameSite.
+ * - cross-site browser requests are refused (Origin / Sec-Fetch-Site) whatever their content type, on
+ *   top of the session cookie's SameSite: a `text/plain` POST needs no CORS preflight, so the JSON branch
+ *   cannot rely on one. Non-browser callers (API keys, CLI, MCP) send neither header and pass.
  */
 import { NextResponse } from "next/server";
-import { BuilderApiError, builderErrorResponse } from "./http";
+import { BuilderApiError, assertSameSite, builderErrorResponse } from "./http";
 
 /** Multipart bodies carry up to five 10 MB files plus fields. */
 const MAX_MULTIPART_BYTES = 52 * 1024 * 1024;
@@ -32,18 +34,6 @@ function isFormContent(request: Request): boolean {
 
 function wantsJson(request: Request): boolean {
   return (request.headers.get("accept") ?? "").toLowerCase().includes("application/json");
-}
-
-/** Same-site check for browser form posts; JSON requests are protected by CORS preflight. */
-function assertSameSite(request: Request): void {
-  const site = request.headers.get("sec-fetch-site");
-  if (site && site !== "same-origin" && site !== "same-site" && site !== "none") {
-    throw new BuilderApiError(403, "cross_site_request", "Cross-site form submissions are not accepted.");
-  }
-  const origin = request.headers.get("origin");
-  if (origin && origin !== "null" && origin !== new URL(request.url).origin) {
-    throw new BuilderApiError(403, "cross_site_request", "Cross-site form submissions are not accepted.");
-  }
 }
 
 /** Only relative, same-site paths into the Builder League or its admin pages. */
@@ -92,11 +82,11 @@ export function formToBody(form: FormData): { body: Record<string, unknown>; fil
 
 /** Reads a JSON or form body with size limits. Bodiless requests read as `{}`. */
 export async function readRequestInput(request: Request): Promise<RequestInput> {
+  assertSameSite(request);
   const declared = Number(request.headers.get("content-length"));
   if (isFormContent(request)) {
     if (Number.isFinite(declared) && declared > MAX_MULTIPART_BYTES) throw new BuilderApiError(413, "payload_too_large", "Request body is too large.");
     const redirect = !wantsJson(request);
-    if (redirect) assertSameSite(request);
     let form: FormData;
     try {
       form = await request.formData();

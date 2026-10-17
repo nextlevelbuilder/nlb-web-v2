@@ -65,6 +65,27 @@ export async function withBuilderErrors(run: () => Promise<Response>): Promise<R
   }
 }
 
+/**
+ * Refuses cross-site browser requests (Sec-Fetch-Site / Origin). Cookie-authenticated writes run it
+ * whatever the content type: a `text/plain` POST needs no CORS preflight, so a JSON route cannot rely on
+ * one. Non-browser callers (API keys, CLI, MCP) send neither header and pass.
+ */
+export function assertSameSite(request: Request): void {
+  const site = request.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin" && site !== "same-site" && site !== "none") {
+    throw new BuilderApiError(403, "cross_site_request", "Cross-site requests are not accepted.");
+  }
+  const origin = request.headers.get("origin");
+  if (origin && origin !== "null" && origin !== new URL(request.url).origin) {
+    throw new BuilderApiError(403, "cross_site_request", "Cross-site requests are not accepted.");
+  }
+}
+
+/** Methods that never change state. */
+export function isSafeMethod(method: string): boolean {
+  return method === "GET" || method === "HEAD" || method === "OPTIONS";
+}
+
 // ---------------------------------------------------------------------------
 // Keyset cursors: `{ at, id }` of the last item, base64url JSON. Opaque to clients.
 // ---------------------------------------------------------------------------

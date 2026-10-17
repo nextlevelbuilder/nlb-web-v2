@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { createLocalD1, type LocalD1 } from "../helpers/local-d1";
 import { communityWrappedSnapshots, renderJobs, users, yearlySnapshots } from "@/lib/db/schema";
-import { dueYear, runBuilderLeagueCron, type BuilderLeagueCronEnv } from "@/lib/builder-league/cron";
+import { communityWrappedYears, dueYear, runBuilderLeagueCron, type BuilderLeagueCronEnv } from "@/lib/builder-league/cron";
 import { ensureYearSnapshot, snapshotData } from "@/lib/builder-league/year-review";
 import { local, seedEvent } from "./year-review-fixtures";
 
@@ -34,10 +34,17 @@ describe("builder league cron", () => {
     expect(dueYear(local(2027, 6, 1))).toBeNull();
   });
 
-  it("does nothing for the year before the provisional cutoff", async () => {
+  it("refreshes Community Wrapped for the previous and current year from the league's first year on", () => {
+    expect(communityWrappedYears(local(2026, 10, 17))).toEqual([2026]);
+    expect(communityWrappedYears(local(2027, 1, 3))).toEqual([2026, 2027]);
+  });
+
+  it("keeps the current Community Wrapped fresh but builds no year snapshots before the provisional cutoff", async () => {
     const result = await runBuilderLeagueCron(env, "0 * * * *", local(2026, 10, 17), t.db);
-    expect(result).toMatchObject({ yearSnapshots: null, communityWrapped: null, errors: [] });
+    expect(result).toMatchObject({ yearSnapshots: null, communityWrapped: [{ year: 2026, status: "provisional", created: true }], errors: [] });
     expect(await t.db.select().from(yearlySnapshots)).toHaveLength(0);
+    const again = await runBuilderLeagueCron(env, "0 * * * *", local(2026, 10, 17, 1), t.db);
+    expect(again.communityWrapped).toEqual([{ year: 2026, status: "provisional", created: false }]);
   });
 
   it("publishes provisional snapshots, confirms unchanged earlier ones, catches up idempotently, then freezes the final ones", async () => {
@@ -48,19 +55,23 @@ describe("builder league cron", () => {
     const [confirmed] = await t.db.select().from(yearlySnapshots).where(eq(yearlySnapshots.id, early.snapshot.id));
     expect(confirmed.provenance).toMatchObject({ confirmedAt: local(2026, 12, 31, 1).getTime() });
     expect(confirmed.data).toEqual(early.snapshot.data);
-    expect(first.communityWrapped).toMatchObject({ year: 2026, status: "provisional", created: true });
+    // Nothing new since the mid-year refresh, so no new version.
+    expect(first.communityWrapped).toEqual([{ year: 2026, status: "provisional", created: false }]);
 
     const second = await runBuilderLeagueCron(env, "0 * * * *", local(2026, 12, 31, 2), t.db);
     expect(second.yearSnapshots).toEqual({ year: 2026, status: "provisional", created: 0, pending: 0 });
-    expect(second.communityWrapped?.created).toBe(false);
+    expect(second.communityWrapped).toEqual([{ year: 2026, status: "provisional", created: false }]);
 
     const final = await runBuilderLeagueCron(env, "0 * * * *", local(2027, 1, 8, 1), t.db);
     expect(final.yearSnapshots).toEqual({ year: 2026, status: "final", created: 2, pending: 0 });
-    expect(final.communityWrapped).toMatchObject({ status: "final", created: true });
+    expect(final.communityWrapped).toEqual([
+      { year: 2026, status: "final", created: true },
+      { year: 2027, status: "provisional", created: true },
+    ]);
     const rows = await t.db.select().from(yearlySnapshots).where(and(eq(yearlySnapshots.userId, "u1"), eq(yearlySnapshots.status, "final")));
     expect(rows).toHaveLength(1);
     expect(snapshotData(rows[0]).milestones.map((m) => m.eventId)).toEqual(["u1-launch"]);
-    expect(await t.db.select().from(communityWrappedSnapshots)).toHaveLength(2);
+    expect(await t.db.select().from(communityWrappedSnapshots).where(eq(communityWrappedSnapshots.year, 2026))).toHaveLength(2);
 
     const rerun = await runBuilderLeagueCron(env, "0 * * * *", local(2027, 1, 8, 2), t.db);
     expect(rerun.yearSnapshots).toEqual({ year: 2026, status: "final", created: 0, pending: 0 });

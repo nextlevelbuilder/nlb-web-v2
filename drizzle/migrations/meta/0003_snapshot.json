@@ -5383,6 +5383,13 @@
           ],
           "isUnique": false
         },
+        "activity_evidence_counterparty_idx": {
+          "name": "activity_evidence_counterparty_idx",
+          "columns": [
+            "counterparty_user_id"
+          ],
+          "isUnique": false
+        },
         "activity_evidence_user_client_key_unique": {
           "name": "activity_evidence_user_client_key_unique",
           "columns": [
@@ -5692,6 +5699,22 @@
           "columns": [
             "subject_user_id",
             "occurred_at"
+          ],
+          "isUnique": false
+        },
+        "builder_events_occurred_idx": {
+          "name": "builder_events_occurred_idx",
+          "columns": [
+            "occurred_at"
+          ],
+          "isUnique": false
+        },
+        "builder_events_type_source_external_idx": {
+          "name": "builder_events_type_source_external_idx",
+          "columns": [
+            "event_type",
+            "source",
+            "external_event_id"
           ],
           "isUnique": false
         }
@@ -7335,6 +7358,13 @@
           "columns": [
             "share_link_id",
             "created_at"
+          ],
+          "isUnique": false
+        },
+        "share_attributions_user_idx": {
+          "name": "share_attributions_user_idx",
+          "columns": [
+            "user_id"
           ],
           "isUnique": false
         }

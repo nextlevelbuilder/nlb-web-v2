@@ -105,6 +105,7 @@ export const activityEvidence = sqliteTable(
     unique("activity_evidence_user_client_key_unique").on(t.userId, t.clientKey),
     index("activity_evidence_status_created_idx").on(t.status, t.createdAt),
     index("activity_evidence_user_occurred_idx").on(t.userId, t.occurredAt),
+    index("activity_evidence_counterparty_idx").on(t.counterpartyUserId),
   ]
 );
 
@@ -133,7 +134,11 @@ export const builderEvents = sqliteTable(
     payload: text("payload", { mode: "json" }).$type<BuilderEventPayload>().notNull().default({}),
     provenance: text("provenance", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
   },
-  (t) => [index("builder_events_subject_occurred_idx").on(t.subjectUserId, t.occurredAt)]
+  (t) => [
+    index("builder_events_subject_occurred_idx").on(t.subjectUserId, t.occurredAt),
+    index("builder_events_occurred_idx").on(t.occurredAt),
+    index("builder_events_type_source_external_idx").on(t.eventType, t.source, t.externalEventId),
+  ]
 );
 
 export const scoreLedger = sqliteTable(
@@ -164,6 +169,9 @@ export const scoreLedger = sqliteTable(
  * (`user|eventType|scope|window|index`) in the same D1 batch as its ledger row, so two concurrent awards
  * competing for the last slot collide on the primary key and only one commits. A reversal releases its
  * slots. This is a lock table, not history: the ledger stays the record of truth.
+ *
+ * It also holds one claim per directory product (`launch|product:{id}`, `entry_id` = the claiming event's
+ * dedupe key), so a product launch is recorded once across the directory hook and the backfill.
  */
 export const scoreCapSlots = sqliteTable(
   "score_cap_slots",
@@ -383,7 +391,7 @@ export const shareAttributions = sqliteTable(
     visitorHash: text("visitor_hash"),
     createdAt: createdAt(),
   },
-  (t) => [index("share_attributions_link_idx").on(t.shareLinkId, t.createdAt)]
+  (t) => [index("share_attributions_link_idx").on(t.shareLinkId, t.createdAt), index("share_attributions_user_idx").on(t.userId)]
 );
 
 export const renderJobs = sqliteTable(

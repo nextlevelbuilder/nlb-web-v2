@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { isBuilderLeagueEnabled } from "@/lib/builder-league/access";
-import { communityWrappedData, ensureCommunityWrapped } from "@/lib/builder-league/community-wrapped";
+import { communityWrappedData, loadCommunityWrapped } from "@/lib/builder-league/community-wrapped";
 import { localDateKey, localYear } from "@/lib/builder-league/time-windows";
 import { canSeePublicSurface, getPageViewer, isReviewableYear } from "@/lib/builder-league/wrapped-access";
 import { getWrappedCopy } from "@/content/builder-league/wrapped-copy";
@@ -41,7 +41,7 @@ export default async function CommunityWrappedPage({ params }: CommunityWrappedP
   const { access } = await getPageViewer(db);
   if (!canSeePublicSurface(access)) notFound();
   const copy = getWrappedCopy(locale).community;
-  const { snapshot } = await ensureCommunityWrapped(db, year, new Date());
+  const snapshot = await loadCommunityWrapped(db, year, new Date());
   const data = communityWrappedData(snapshot);
   // Structured data only while the page is public and indexable.
   const jsonLd = isBuilderLeagueEnabled()

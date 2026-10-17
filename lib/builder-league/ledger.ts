@@ -24,6 +24,7 @@ import {
   AWARDING_ROLES,
   STAGES,
   isEventTypeKey,
+  isTombstoneUserId,
   type ActorRole,
   type BuilderEventKind,
   type BuilderEventPayload,
@@ -188,6 +189,7 @@ export type AwardSkipReason =
   | "insufficient_verification"
   | "project_required"
   | "invalid_adjustment"
+  | "subject_deleted"
   | (string & {});
 
 export type AwardResult =
@@ -255,6 +257,9 @@ export async function awardForEventDetailed(db: AppDb, eventId: string, actor: A
   }
   const event = await getBuilderEvent(db, eventId);
   if (!event) return skip("event_not_found");
+  // A privacy delete moved this history to a tombstone id. Its dedupe keys are kept, so a replayed import
+  // can find the event again; it must never earn RP for a member who no longer exists.
+  if (isTombstoneUserId(event.subjectUserId)) return skip("subject_deleted");
   const plan = planAward(event, actor);
   if (typeof plan === "string") return skip(plan);
 
@@ -336,6 +341,11 @@ export interface ReverseActor {
  * never touched. Idempotent: reversing the same entry again returns the existing reversal entry. The
  * reversal entry keeps the original `occurred_at`, so period totals of the original period net out,
  * and it releases the entry's cap slots. The moderator audit row is written in the same batch.
+ *
+ * The reversed entry keeps its ledger dedupe key (and its event keeps the event dedupe key), on purpose:
+ * re-approving or replaying the same fact finds the original entry and awards nothing, so a reversal is
+ * final. For project-scoped awards (such as a launch) the key is the project, so a later fact for the
+ * same project is not awarded either.
  */
 export async function reverseAward(db: AppDb, entryId: string, actor: ReverseActor): Promise<ScoreLedgerEntry> {
   const actorRole = actor.actorRole ?? "moderator";

@@ -20,7 +20,7 @@ import { awardForEventDetailed, builderDedupeKey, recordBuilderEvent } from "./l
 import { recordModerationAction } from "./audit";
 import { getPrivacy } from "./privacy";
 import { refreshProgression } from "./progression-refresh";
-import { productLaunchRecorded } from "./directory-events";
+import { claimProductLaunch, productLaunchClaimedByOther, productLaunchRecorded } from "./directory-events";
 import { findOrCreateProductProject } from "./projects";
 import { getEffectiveRuleset } from "./ruleset";
 import type { ActorRole, EventTypeKey } from "./types";
@@ -149,9 +149,19 @@ export async function backfillUser(db: AppDb, userId: string, context: BackfillC
       items.push({ ...base, action: "skipped", reason: "recorded_from_directory", eventId: null, entryId: null });
       continue;
     }
+    // One product launches once: another owner's backfill may already hold its launch claim.
+    const claim = { productId: record.id, userId, source: "backfill" as const };
     if (context.dryRun) {
+      if (await productLaunchClaimedByOther(db, claim)) {
+        items.push({ ...base, action: "skipped", reason: "launch_already_recorded", eventId: null, entryId: null });
+        continue;
+      }
       const existing = await eventExists(db, userId, record.id);
       items.push({ ...base, action: existing ? "existing" : "planned", reason: null, eventId: existing, entryId: null });
+      continue;
+    }
+    if (!(await claimProductLaunch(db, claim))) {
+      items.push({ ...base, action: "skipped", reason: "launch_already_recorded", eventId: null, entryId: null });
       continue;
     }
 

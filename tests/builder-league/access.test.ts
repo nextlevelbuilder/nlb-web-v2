@@ -17,6 +17,7 @@ import {
   requireBuilderLeagueUser,
 } from "@/lib/builder-league/access";
 import { getCommunityTier, getDiscordIdentity } from "@/lib/builder-league/membership";
+import { canSeePublicSurface } from "@/lib/builder-league/wrapped-access";
 
 let local: LocalD1;
 const DAY = 86_400_000;
@@ -137,5 +138,31 @@ describe("builder league access", () => {
     await expect(requireBuilderLeagueAdmin(request(), local.db)).rejects.toMatchObject({ status: 403, code: "session_required" });
     resolveCallerMock.mockResolvedValue(caller("pilot"));
     await expect(requireBuilderLeagueAdmin(request(), local.db)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("refuses cross-site session writes whatever the content type, but not reads or API keys", async () => {
+    const crossSite = (method: string) =>
+      new Request("https://example.test/api/v1/builder-me", {
+        method,
+        headers: { origin: "https://evil.example", "sec-fetch-site": "cross-site", "content-type": "text/plain" },
+        body: method === "GET" ? undefined : "{}",
+      });
+    resolveCallerMock.mockResolvedValue(caller("pilot"));
+    await expect(requireBuilderLeagueUser(crossSite("PATCH"), "builder:write", local.db)).rejects.toMatchObject({ status: 403, code: "cross_site_request" });
+    await expect(requireBuilderLeagueUser(crossSite("GET"), "builder:read", local.db)).resolves.toMatchObject({ actorRole: "member" });
+    resolveCallerMock.mockResolvedValue(caller("admin", "session", "admin"));
+    await expect(requireBuilderLeagueAdmin(crossSite("POST"), local.db)).rejects.toMatchObject({ status: 403, code: "cross_site_request" });
+    resolveCallerMock.mockResolvedValue(caller("pilot", "api_key"));
+    await expect(requireBuilderLeagueUser(crossSite("POST"), "builder:write", local.db)).resolves.toMatchObject({ actorRole: "api" });
+  });
+
+  it("shows public surfaces while the flag is off only to viewers who can use the league", async () => {
+    expect(canSeePublicSurface(await getViewerAccess(local.db, viewer("admin", "admin")))).toBe(true);
+    expect(canSeePublicSurface(await getViewerAccess(local.db, viewer("pilot")))).toBe(true);
+    expect(canSeePublicSurface(await getViewerAccess(local.db, viewer("free-pilot")))).toBe(false);
+    expect(canSeePublicSurface(await getViewerAccess(local.db, viewer("paid")))).toBe(false);
+    expect(canSeePublicSurface(await getViewerAccess(local.db, null))).toBe(false);
+    vi.stubEnv("BUILDER_LEAGUE_ENABLED", "true");
+    expect(canSeePublicSurface(await getViewerAccess(local.db, null))).toBe(true);
   });
 });

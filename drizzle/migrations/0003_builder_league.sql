@@ -27,6 +27,7 @@ CREATE TABLE `activity_evidence` (
 --> statement-breakpoint
 CREATE INDEX `activity_evidence_status_created_idx` ON `activity_evidence` (`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `activity_evidence_user_occurred_idx` ON `activity_evidence` (`user_id`,`occurred_at`);--> statement-breakpoint
+CREATE INDEX `activity_evidence_counterparty_idx` ON `activity_evidence` (`counterparty_user_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `activity_evidence_user_client_key_unique` ON `activity_evidence` (`user_id`,`client_key`);--> statement-breakpoint
 CREATE TABLE `badge_awards` (
 	`id` text PRIMARY KEY NOT NULL,
@@ -68,6 +69,8 @@ CREATE TABLE `builder_events` (
 CREATE UNIQUE INDEX `builder_events_event_id_unique` ON `builder_events` (`event_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `builder_events_dedupe_key_unique` ON `builder_events` (`dedupe_key`);--> statement-breakpoint
 CREATE INDEX `builder_events_subject_occurred_idx` ON `builder_events` (`subject_user_id`,`occurred_at`);--> statement-breakpoint
+CREATE INDEX `builder_events_occurred_idx` ON `builder_events` (`occurred_at`);--> statement-breakpoint
+CREATE INDEX `builder_events_type_source_external_idx` ON `builder_events` (`event_type`,`source`,`external_event_id`);--> statement-breakpoint
 CREATE TABLE `builder_moderation_actions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`target_type` text NOT NULL,
@@ -308,6 +311,7 @@ CREATE TABLE `share_attributions` (
 );
 --> statement-breakpoint
 CREATE INDEX `share_attributions_link_idx` ON `share_attributions` (`share_link_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `share_attributions_user_idx` ON `share_attributions` (`user_id`);--> statement-breakpoint
 CREATE TABLE `time_capsule_entries` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,

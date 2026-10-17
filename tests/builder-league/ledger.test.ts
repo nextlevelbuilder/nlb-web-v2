@@ -95,6 +95,20 @@ describe("builder ledger on local D1", () => {
     expect(await getRpTotal(local.db, "u1")).toBe(60);
   });
 
+  it("never awards an event whose subject was replaced by a privacy-delete tombstone", async () => {
+    const event = await verifiedEvent("post-t", { subjectUserId: "deleted-0b5f7c1e" });
+    expect(await awardForEventDetailed(local.db, event.id, MOD)).toEqual({ entry: null, created: false, reason: "subject_deleted" });
+    expect(await local.db.select().from(scoreLedger)).toHaveLength(0);
+  });
+
+  it("never re-awards a reversed entry when the same event is awarded again", async () => {
+    const event = await verifiedEvent("post-again");
+    const award = (await awardForEvent(local.db, event.id, MOD))!;
+    await reverseAward(local.db, award.id, { actorId: "mod", reason: "wrong link" });
+    expect(await awardForEvent(local.db, event.id, MOD)).toMatchObject({ id: award.id, created: false });
+    expect(await getRpTotal(local.db, "u1")).toBe(0);
+  });
+
   it("reverses an award with a negative entry, never touching the original", async () => {
     const event = await verifiedEvent("post-r");
     const award = (await awardForEvent(local.db, event.id, MOD))!;

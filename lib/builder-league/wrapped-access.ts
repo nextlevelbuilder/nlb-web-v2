@@ -3,7 +3,7 @@
  *
  * Private pages (journey, own year) follow `getViewerAccess`. Public pages (Community Wrapped and shared
  * Year in Review links) are open to everyone while `BUILDER_LEAGUE_ENABLED` is on; while it is off they
- * 404 for everyone except admins and pilot members, like every other Builder League surface.
+ * 404 for everyone except admins and paid pilot members, like every other Builder League surface.
  */
 import { eq } from "drizzle-orm";
 import { resolveCaller } from "@/lib/auth-api-key";
@@ -46,9 +46,12 @@ export async function requirePrivatePageViewer(locale: string, path: string, db:
   return notFound();
 }
 
-/** Public Builder League pages are visible when the flag is on, or to admins and pilot members. */
+/**
+ * Public Builder League pages are visible to everyone when the flag is on; while it is off, only to
+ * viewers who may use the league (admins, and pilot members with a paid tier), as `canUse` decides.
+ */
 export function canSeePublicSurface(access: ViewerAccess): boolean {
-  return access.flagEnabled || access.isAdmin || access.isPilot;
+  return access.flagEnabled || access.canUse;
 }
 
 /** API guard for public, unauthenticated Builder League routes; throws a 404 while hidden. */
