@@ -30,7 +30,7 @@ async function checkout(body: Record<string, unknown>, headers: Record<string, s
 
 beforeEach(() => {
   createCheckoutMock.mockReset().mockResolvedValue({ id: "chk_1", url: "https://polar.test/checkout/chk_1" });
-  getSessionMock.mockReset().mockResolvedValue({ user: { id: "nlb-user-1" } });
+  getSessionMock.mockReset().mockResolvedValue({ user: { id: "nlb-user-1", email: "member@example.com" } });
 });
 
 afterEach(() => vi.unstubAllEnvs());
@@ -54,6 +54,16 @@ describe("checkout with onboarding v2 on", () => {
     // No Polar external id: existing customers may already carry none or another one.
     expect(request).not.toHaveProperty("externalCustomerId");
     expect(request.metadata).toMatchObject({ nlb_user_id: "nlb-user-1", nlb_locale: "en" });
+  });
+
+  it("uses the signed-in account email for the checkout, never one from the body", async () => {
+    const request = await checkout({ productId: PRODUCT_IDS.PREMIUM_ANNUAL, customerEmail: "victim@example.com" });
+    expect(request.customerEmail).toBe("member@example.com");
+    expect(request.metadata).toMatchObject({ nlb_user_id: "nlb-user-1" });
+
+    getSessionMock.mockResolvedValue(null);
+    const anonymous = await checkout({ productId: PRODUCT_IDS.PREMIUM_ANNUAL, customerEmail: "buyer@example.com" });
+    expect(anonymous.customerEmail).toBe("buyer@example.com");
   });
 
   it("uses the Vietnamese onboarding path from the body or the referring page", async () => {

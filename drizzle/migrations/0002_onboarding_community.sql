@@ -71,7 +71,7 @@ CREATE TABLE `onboarding_profiles` (
 );
 --> statement-breakpoint
 ALTER TABLE `customers` ADD `user_id` text;--> statement-breakpoint
-CREATE UNIQUE INDEX `customers_user_id_unique` ON `customers` (`user_id`);--> statement-breakpoint
+CREATE INDEX `customers_user_id_idx` ON `customers` (`user_id`);--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD `past_due_since` integer;--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD `ended_at` integer;--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD `polar_modified_at` integer;

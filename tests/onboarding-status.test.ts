@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { customers, onboardingJobs } from "@/lib/db/schema";
+import { customers, onboardingJobs, subscriptions } from "@/lib/db/schema";
 import { PRODUCT_IDS } from "@/lib/polar";
 import { checkoutBelongsTo, nextActionFor, termForProductId } from "@/lib/onboarding/status";
 import { createMember, createTestUser, nextId, sessionFor, type TestUser } from "./helpers/onboarding-fixtures";
@@ -105,6 +105,35 @@ describe("checkout ownership matrix", () => {
     expect(body.payment).toBe("verified");
     const [linked] = await getDb().select().from(customers).where(eq(customers.userId, user.id));
     expect(linked.email).toBe("other-address@example.com");
+  });
+
+  it("does not take over an existing customer with its own membership through metadata alone", async () => {
+    const victimEmail = `${nextId("victim")}@example.com`;
+    const [victim] = await getDb().insert(customers).values({ email: victimEmail, name: "Victim" }).returning();
+    await getDb().insert(subscriptions).values({
+      customerId: victim.id,
+      polarSubscriptionId: nextId("victim-sub"),
+      polarProductId: PRODUCT_IDS.VIP_ANNUAL,
+      productName: "VIP",
+      status: "active",
+      currentPeriodEnd: new Date(Date.now() + 90 * DAY),
+    });
+    checkoutGetMock.mockResolvedValue(polarCheckout({ customerId: null, customerEmail: victimEmail, metadata: { nlb_user_id: user.id } }));
+
+    const body = await (await getStatus("?checkout_id=chk_takeover")).json();
+    expect(body.payment).toBe("not_owner");
+    expect(body.membership).toBeNull();
+    const [row] = await getDb().select().from(customers).where(eq(customers.id, victim.id));
+    expect(row.userId).toBeNull();
+    expect(await reconcileJobsFor(user.id)).toEqual([]);
+  });
+
+  it("binds a second customer for a user who already owns one", async () => {
+    await createMember(user, { productId: PRODUCT_IDS.PREMIUM_ANNUAL, status: "canceled" });
+    checkoutGetMock.mockResolvedValue(polarCheckout({ customerEmail: "work-address@example.com", metadata: { nlb_user_id: user.id } }));
+    const body = await (await getStatus("?checkout_id=chk_second")).json();
+    expect(body.payment).toBe("verified");
+    expect(await getDb().select().from(customers).where(eq(customers.userId, user.id))).toHaveLength(2);
   });
 
   it("reports not_owner and binds nothing when neither email nor metadata match", async () => {

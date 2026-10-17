@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a1d5def3-625f-40d8-b831-d29707e4c96a",
+  "id": "e19bbb49-8f28-412c-bf8b-0a9caf6cdfc9",
   "prevId": "a9d96158-1962-4511-ab58-10455aa994d5",
   "tables": {
     "accounts": {
@@ -1433,12 +1433,12 @@
           ],
           "isUnique": true
         },
-        "customers_user_id_unique": {
-          "name": "customers_user_id_unique",
+        "customers_user_id_idx": {
+          "name": "customers_user_id_idx",
           "columns": [
             "user_id"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {},

@@ -15,6 +15,7 @@ import {
   findLinkableCustomerForUser,
   getLinkedSubscriptions,
   getMemberTier,
+  linkCustomerFromPurchase,
   linkCustomerToUser,
   normalizeEmail,
   toMembershipState,
@@ -154,7 +155,10 @@ export async function claimCustomerByVerifiedEmail(db: AppDb, user: OnboardingUs
   return linked;
 }
 
-/** The checkout belongs to the session user: verified email match or server-set `nlb_user_id`. */
+/**
+ * The checkout was started by the session user: verified email match or server-set `nlb_user_id`.
+ * This only allows looking the checkout up; linking its customer follows `linkCustomerFromPurchase`.
+ */
 export function checkoutBelongsTo(
   checkout: { customerEmail?: string | null; metadata?: Record<string, unknown> | null },
   user: OnboardingUser
@@ -221,12 +225,13 @@ async function verifyCheckout(
     if (!customer) return "verifying";
     const live = await polar.subscriptions.get({ id: checkout.subscriptionId });
     await applyPolarSubscription(db, live, customer.id, now);
-    const linked = customer.userId === user.id || (await linkCustomerToUser(db, { customerId: customer.id, userId: user.id }));
-    if (!linked) {
-      // Owned by another NLB user, or this user already owns a different Polar customer.
-      const [current] = await db.select({ userId: customers.userId }).from(customers).where(eq(customers.id, customer.id)).limit(1);
-      return current?.userId && current.userId !== user.id ? "not_owner" : "verifying";
-    }
+    const metadataUserId = typeof checkout.metadata?.nlb_user_id === "string" ? checkout.metadata.nlb_user_id : null;
+    const owner = await linkCustomerFromPurchase(db, customer, {
+      metadataUserId,
+      refs: { polarSubscriptionIds: [checkout.subscriptionId] },
+    });
+    // Owned by another NLB user, or a customer with its own history whose email is not this user's.
+    if (owner !== user.id) return "not_owner";
     await enqueueAccessReconcile(db, user.id, undefined, now);
   } catch {
     console.warn("onboarding status: Polar checkout verification failed; will retry on next poll");

@@ -1,6 +1,6 @@
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { customers, subscriptions, users } from "@/lib/db/schema";
+import { customers, orders, subscriptions, users } from "@/lib/db/schema";
 import { getPastDueGraceDays } from "@/lib/onboarding/flags";
 import { resolveEffectiveTier, type EffectiveTier, type MembershipSubscriptionState } from "./effective-tier";
 import { tierForProductId } from "./tiers";
@@ -53,25 +53,91 @@ export async function getMemberTier(db: AppDb, userId: string, now: Date = new D
 }
 
 /**
- * Link a Polar customer to an NLB user. Never steals: a customer already owned by another user, or
- * a user who already owns another customer, is left unchanged. Returns true when the customer is
- * linked to `userId` after the call.
+ * Link a Polar customer to an NLB user. Never steals: a customer already owned by another user is
+ * left unchanged. One user may own several customers (a Polar customer per checkout email).
+ * Returns true when the customer is linked to `userId` after the call.
  */
 export async function linkCustomerToUser(
   db: AppDb,
   { customerId, userId }: { customerId: string; userId: string }
 ): Promise<boolean> {
-  try {
-    await db
-      .update(customers)
-      .set({ userId, updatedAt: new Date() })
-      .where(and(eq(customers.id, customerId), isNull(customers.userId)));
-  } catch (error) {
-    // Unique `customers.user_id`: this user already owns a different customer row.
-    if (!isUniqueViolation(error)) throw error;
-  }
+  await db
+    .update(customers)
+    .set({ userId, updatedAt: new Date() })
+    .where(and(eq(customers.id, customerId), isNull(customers.userId)));
   const [row] = await db.select({ userId: customers.userId }).from(customers).where(eq(customers.id, customerId)).limit(1);
   return row?.userId === userId;
+}
+
+/** Polar ids that belong to the purchase being processed (one checkout, its subscription and order). */
+export interface PurchaseRefs {
+  polarSubscriptionIds?: readonly (string | null | undefined)[];
+  polarOrderIds?: readonly (string | null | undefined)[];
+}
+
+const presentIds = (ids: readonly (string | null | undefined)[] | undefined): string[] =>
+  (ids ?? []).filter((id): id is string => typeof id === "string" && id.length > 0);
+
+/** Whether the customer has any subscription or order recorded besides the ones of this purchase. */
+async function hasOtherPurchases(db: AppDb, customerId: string, refs: PurchaseRefs): Promise<boolean> {
+  const subscriptionIds = presentIds(refs.polarSubscriptionIds);
+  const orderIds = presentIds(refs.polarOrderIds);
+  const otherSubscription: SQL[] = [eq(subscriptions.customerId, customerId)];
+  if (subscriptionIds.length > 0) otherSubscription.push(notInArray(subscriptions.polarSubscriptionId, subscriptionIds));
+  const [subscription] = await db.select({ id: subscriptions.id }).from(subscriptions).where(and(...otherSubscription)).limit(1);
+  if (subscription) return true;
+  const otherOrder: SQL[] = [eq(orders.customerId, customerId)];
+  if (orderIds.length > 0) otherOrder.push(notInArray(orders.polarOrderId, orderIds));
+  const [order] = await db.select({ id: orders.id }).from(orders).where(and(...otherOrder)).limit(1);
+  return Boolean(order);
+}
+
+/**
+ * Whether `metadata.nlb_user_id` may link this customer. The metadata is server-set, but the buyer
+ * chooses the checkout email, so it only proves who paid for this purchase, not who owns the
+ * customer. It is trusted when the customer is new to us (nothing recorded besides this purchase)
+ * or when its email equals that user's verified email (trim + lowercase).
+ */
+export async function canLinkFromMetadata(
+  db: AppDb,
+  customer: { id: string; email: string },
+  userId: string,
+  refs: PurchaseRefs
+): Promise<boolean> {
+  const [user] = await db
+    .select({ email: users.email, emailVerified: users.emailVerified })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!user) return false;
+  if (user.emailVerified && user.email && normalizeEmail(user.email) === normalizeEmail(customer.email)) return true;
+  return !(await hasOtherPurchases(db, customer.id, refs));
+}
+
+/**
+ * Link the customer of a purchase from server-trusted signals only: `metadata.nlb_user_id` under the
+ * rule of `canLinkFromMetadata`, else the NLB user whose verified email equals the customer email.
+ * Never overwrites an existing link. Returns the user the customer is linked to afterwards, if any.
+ */
+export async function linkCustomerFromPurchase(
+  db: AppDb,
+  customer: { id: string; email: string; userId?: string | null },
+  { metadataUserId, refs }: { metadataUserId?: string | null; refs: PurchaseRefs }
+): Promise<string | null> {
+  if (customer.userId) return customer.userId;
+  if (metadataUserId && (await canLinkFromMetadata(db, customer, metadataUserId, refs))) {
+    if (await linkCustomerToUser(db, { customerId: customer.id, userId: metadataUserId })) return metadataUserId;
+    return currentOwner(db, customer.id);
+  }
+  const verifiedUserId = await findVerifiedUserIdByEmail(db, customer.email);
+  if (!verifiedUserId) return null;
+  if (await linkCustomerToUser(db, { customerId: customer.id, userId: verifiedUserId })) return verifiedUserId;
+  return currentOwner(db, customer.id);
+}
+
+async function currentOwner(db: AppDb, customerId: string): Promise<string | null> {
+  const [row] = await db.select({ userId: customers.userId }).from(customers).where(eq(customers.id, customerId)).limit(1);
+  return row?.userId ?? null;
 }
 
 /**
@@ -104,9 +170,4 @@ export async function findVerifiedUserIdByEmail(db: AppDb, email: string): Promi
     .where(and(sql`lower(trim(${users.email})) = ${normalizeEmail(email)}`, eq(users.emailVerified, true)))
     .limit(1);
   return row?.id ?? null;
-}
-
-export async function userExists(db: AppDb, userId: string): Promise<boolean> {
-  const [row] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1);
-  return Boolean(row);
 }

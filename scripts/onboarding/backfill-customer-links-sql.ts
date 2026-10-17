@@ -2,8 +2,8 @@
  * SQL for linking existing Polar customers to NLB users, shared by the backfill CLI and its test.
  *
  * Same rule as `findLinkableCustomerForUser`: the user's email is verified and equals the customer
- * email after trim + lowercase. A pair is skipped when either side matches more than one row
- * (ambiguous), when the user already owns another customer, or when the customer is already linked.
+ * email after trim + lowercase. A customer matched by more than one user (ambiguous) or already
+ * linked is skipped. One user may own several customers, so every unambiguous match is linked.
  * Linking grants nothing by itself: community access changes only after the member connects
  * Discord or Telegram through NLB.
  */
@@ -18,8 +18,6 @@ WITH matches AS (
 SELECT m.customer_id, m.user_id
 FROM matches m
 WHERE (SELECT count(*) FROM matches x WHERE x.customer_id = m.customer_id) = 1
-  AND (SELECT count(*) FROM matches x WHERE x.user_id = m.user_id) = 1
-  AND NOT EXISTS (SELECT 1 FROM customers owned WHERE owned.user_id = m.user_id)
 ORDER BY m.customer_id`;
 
 export const LINK_SUMMARY_SQL = `
@@ -42,12 +40,11 @@ function quote(value: string): string {
   return `'${value}'`;
 }
 
-/** One guarded UPDATE per pair: never overwrites an existing link and never takes a user twice. */
+/** One guarded UPDATE per pair: never overwrites an existing link. */
 export function linkStatements(candidates: LinkCandidate[], nowMs: number): string[] {
   return candidates.map(
     ({ customer_id, user_id }) =>
       `UPDATE customers SET user_id = ${quote(user_id)}, updated_at = ${nowMs} ` +
-      `WHERE id = ${quote(customer_id)} AND user_id IS NULL ` +
-      `AND NOT EXISTS (SELECT 1 FROM customers WHERE user_id = ${quote(user_id)});`
+      `WHERE id = ${quote(customer_id)} AND user_id IS NULL;`
   );
 }

@@ -41,16 +41,30 @@ describe("backfill customer links", () => {
     await addCustomer("c_owner_dupe", "owner@example.com");
     await addCustomer("c_none", "nobody@example.com");
 
-    expect(await candidates()).toEqual([{ customer_id: "c_ok", user_id: "u_ok" }]);
+    // A user who already owns a customer still gets the other customers matching their email.
+    expect(await candidates()).toEqual([
+      { customer_id: "c_ok", user_id: "u_ok" },
+      { customer_id: "c_owner_dupe", user_id: "u_owner" },
+    ]);
 
     const summary = await local.d1.prepare(LINK_SUMMARY_SQL).first<Record<string, number>>();
     expect(summary).toEqual({ customers: 5, already_linked: 1, no_verified_user: 2 });
   });
 
-  it("skips a user matched by two customer rows", async () => {
+  it("links every customer row of a user matched by two of them", async () => {
     await addUser("u_a", "dupe@example.com");
     await addCustomer("c_1", "dupe@example.com");
     await addCustomer("c_2", " DUPE@example.com");
+    expect(await candidates()).toEqual([
+      { customer_id: "c_1", user_id: "u_a" },
+      { customer_id: "c_2", user_id: "u_a" },
+    ]);
+  });
+
+  it("skips a customer matched by two verified users", async () => {
+    await addUser("u_1", "Shared@example.com");
+    await addUser("u_2", "shared@example.com");
+    await addCustomer("c_shared", "shared@example.com");
     expect(await candidates()).toEqual([]);
   });
 

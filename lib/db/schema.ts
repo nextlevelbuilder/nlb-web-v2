@@ -13,17 +13,24 @@ const nowMs = sql`(cast(unixepoch('subsec') * 1000 as integer))`;
 // 1. Existing Commerce Tables (Unchanged for Parity)
 // ==========================================
 
-export const customers = sqliteTable("customers", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  email: text("email").notNull().unique(),
-  name: text("name"),
-  polarCustomerId: text("polar_customer_id").unique(),
-  discordId: text("discord_id"),
-  /** Verified NLB user who owns this Polar customer. Set only from server-trusted signals. */
-  userId: text("user_id").unique(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
-});
+export const customers = sqliteTable(
+  "customers",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull().unique(),
+    name: text("name"),
+    polarCustomerId: text("polar_customer_id").unique(),
+    discordId: text("discord_id"),
+    /**
+     * Verified NLB user who owns this Polar customer. Set only from server-trusted signals. Not
+     * unique: one user may own several customers (one per checkout email).
+     */
+    userId: text("user_id"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [index("customers_user_id_idx").on(t.userId)]
+);
 
 export const subscriptions = sqliteTable("subscriptions", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),

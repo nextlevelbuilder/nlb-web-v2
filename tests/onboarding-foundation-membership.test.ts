@@ -135,9 +135,19 @@ describe("customer linking and member tier", () => {
 
     expect(await linkCustomerToUser(getDb(), { customerId: customer.id, userId })).toBe(true);
     expect(await linkCustomerToUser(getDb(), { customerId: customer.id, userId: unverified })).toBe(false);
-    // The user already owns a customer: a second one is not linked.
+    // One user may own several customers (one per checkout email).
     const second = await createCustomer();
-    expect(await linkCustomerToUser(getDb(), { customerId: second.id, userId })).toBe(false);
+    expect(await linkCustomerToUser(getDb(), { customerId: second.id, userId })).toBe(true);
+  });
+
+  it("counts every customer a user owns towards the tier", async () => {
+    const userId = await createUser();
+    const first = await createCustomer(userId);
+    const second = await createCustomer();
+    await applySubscriptionSnapshot(getDb(), snapshot(first.id, { status: "canceled", endedAt: T0 }));
+    await applySubscriptionSnapshot(getDb(), snapshot(second.id, { productId: PRODUCT_IDS.VIP_ANNUAL }));
+    expect(await linkCustomerToUser(getDb(), { customerId: second.id, userId })).toBe(true);
+    expect((await getMemberTier(getDb(), userId, T0)).tier).toBe("vip");
   });
 
   it("derives the tier only from customers linked through NLB", async () => {
@@ -339,6 +349,63 @@ describe("Polar webhook with onboarding v2 on", () => {
     await deliver("subscription.created", data);
     const [externalCustomer] = await getDb().select().from(customers).where(eq(customers.email, data.customer_email as string));
     expect(externalCustomer.userId).toBeNull();
+  });
+
+  it("never links an existing customer with its own memberships to another user's nlb_user_id", async () => {
+    const victimEmail = `${nextId("victim")}@example.com`;
+    const victimCustomer = await createCustomer(null, victimEmail);
+    const victimSub = snapshot(victimCustomer.id, { productId: PRODUCT_IDS.VIP_ANNUAL, modifiedAt: new Date() });
+    await applySubscriptionSnapshot(getDb(), victimSub);
+    const attacker = await createUser();
+
+    await deliver("order.paid", {
+      id: nextId("ord"),
+      status: "paid",
+      paid: true,
+      customer_email: victimEmail,
+      product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+      amount: 46800,
+      metadata: { nlb_user_id: attacker },
+    });
+    await deliver("subscription.created", subscriptionData({ customer_email: victimEmail, metadata: { nlb_user_id: attacker } }));
+    await deliver("checkout.updated", {
+      id: nextId("chk"),
+      status: "succeeded",
+      customer_email: victimEmail,
+      product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+      metadata: { nlb_user_id: attacker },
+    });
+
+    const [row] = await getDb().select().from(customers).where(eq(customers.id, victimCustomer.id));
+    expect(row.userId).toBeNull();
+    expect((await getMemberTier(getDb(), attacker)).tier).toBe("none");
+    expect(await jobKeys()).not.toContain(`reconcile_access:${attacker}:discord_guild`);
+
+    // The real owner still claims it later through their verified email.
+    const victim = await createUser({ email: victimEmail });
+    await deliver("subscription.updated", { ...subscriptionData({ customer_email: victimEmail }), id: victimSub.polarSubscriptionId, product_id: PRODUCT_IDS.VIP_ANNUAL });
+    const [claimed] = await getDb().select().from(customers).where(eq(customers.id, victimCustomer.id));
+    expect(claimed.userId).toBe(victim);
+  });
+
+  it("trusts nlb_user_id for a customer with history when the email is that user's verified email", async () => {
+    const email = `${nextId("returning")}@example.com`;
+    const customer = await createCustomer(null, email);
+    await applySubscriptionSnapshot(getDb(), snapshot(customer.id, { status: "canceled", endedAt: T0 }));
+    const userId = await createUser({ email: email.toUpperCase() });
+    await deliver("subscription.created", subscriptionData({ customer_email: email, metadata: { nlb_user_id: userId } }));
+    const [row] = await getDb().select().from(customers).where(eq(customers.id, customer.id));
+    expect(row.userId).toBe(userId);
+  });
+
+  it("links a second customer of a user who already owns one", async () => {
+    const userId = await createUser({ verified: false });
+    await createCustomer(userId);
+    const data = subscriptionData({ metadata: { nlb_user_id: userId } });
+    await deliver("subscription.created", data);
+    const [row] = await getDb().select().from(customers).where(eq(customers.email, data.customer_email as string));
+    expect(row.userId).toBe(userId);
+    expect(await jobKeys()).toContain(`reconcile_access:${userId}:discord_guild`);
   });
 
   it("does not link an unverified email match and skips the welcome for old subscriptions", async () => {
