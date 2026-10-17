@@ -124,9 +124,17 @@ export default function SiteHeader() {
             </Link>
           )}
           <nav className="nav" aria-label={t('navPrimary')}>
-            {nav.map((item) => (
-              <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname}>{t(`nav.${item.key}`)}</NavLink>
-            ))}
+            {nav.map((item) =>
+              item.key === 'builderLeague' ? (
+                // Short label, shown only where the desktop bar has room for a seventh item.
+                <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname} className="nav-wide-only">
+                  <span aria-hidden>{t('nav.builderLeagueShort')}</span>
+                  <span className="sr-only">{t('nav.builderLeague')}</span>
+                </NavLink>
+              ) : (
+                <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname}>{t(`nav.${item.key}`)}</NavLink>
+              )
+            )}
           </nav>
           <div className="bar-actions">
             <LangSeg />

@@ -160,6 +160,8 @@ html.has-cursor, html.has-cursor * { cursor: none !important; }
 .menu-btn[aria-expanded="true"] span:first-child { transform: translateY(3.5px) rotate(45deg); }
 .menu-btn[aria-expanded="true"] span:last-child { transform: translateY(-3.5px) rotate(-45deg); }
 
+.nav .nav-wide-only { white-space: nowrap; }
+@media (max-width: 1535px) { .nav .nav-wide-only { display: none; } }
 @media (max-width: 1139px) { .nav { display: none; } .menu-btn { display: inline-flex; } .bar-actions { margin-left: auto; } }
 @media (max-width: 767px) { .bar-actions .seg, .bar-actions .signin { display: none; } }
 @media (max-width: 399px) { .brand-name { display: none; } .brand-short { display: inline; } .bar { gap: var(--s-3); } }
