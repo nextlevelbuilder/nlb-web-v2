@@ -90,7 +90,7 @@ A reversal is final. The reversed entry keeps its dedupe key, so re-approving th
    { "outcome": "uphold" | "overturn", "resolution": "...", "appealId": "<optional>" }
    ```
 
-   `overturn` approves the evidence and awards RP through the normal path (`resolveAppeal` in [`lib/builder-league/appeals.ts`](../lib/builder-league/appeals.ts)).
+   `overturn` approves the evidence and awards RP through the normal path (`resolveAppeal` in [`lib/builder-league/appeals.ts`](../lib/builder-league/appeals.ts)). The approval rules are checked before anything changes: when they fail, the overturn returns 409 and the appeal stays open. A rejected peer-help item that the counterparty never confirmed cannot be overturned (`counterparty_unconfirmed`), because the counterparty cannot confirm rejected evidence; uphold the appeal and ask the member to submit the item again so the counterparty can confirm it.
 4. **The disputed period has already been finalized.** Replay it (above). The correction lands as a new revision, never as an edit.
 
 Every decision, reversal and resolution writes a row to `builder_moderation_actions`. The trail is the record for any later dispute.

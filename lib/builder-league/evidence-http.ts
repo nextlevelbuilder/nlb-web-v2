@@ -80,7 +80,10 @@ export function formToBody(form: FormData): { body: Record<string, unknown>; fil
   return { body, files, returnTo: safeReturnTo(form.get("returnTo")) };
 }
 
-/** Reads a JSON or form body with size limits. Bodiless requests read as `{}`. */
+/**
+ * Reads a JSON or form body with size limits. Bodiless requests read as `{}`. Refuses cross-site browser
+ * requests for every caller; non-browser callers (API keys, MCP) send no Origin and pass `assertSameSite`.
+ */
 export async function readRequestInput(request: Request): Promise<RequestInput> {
   assertSameSite(request);
   const declared = Number(request.headers.get("content-length"));

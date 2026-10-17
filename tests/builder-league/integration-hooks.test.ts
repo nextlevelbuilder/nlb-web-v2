@@ -323,6 +323,20 @@ describe("directory launch events", () => {
     expect(await launchEvents()).toHaveLength(1);
   });
 
+  it("gives the launch claim back when a backfill fails before recording the launch", async () => {
+    vi.setSystemTime(APPROVED_AT);
+    await seedDirectory({ optIn: true });
+    await env.db.update(submissions).set({ status: "approved", reviewedAt: APPROVED_AT }).where(eq(submissions.id, "sub-1"));
+    await env.db.update(products).set({ status: "published" }).where(eq(products.id, "prod-a"));
+    later();
+    faults.project = true;
+    await expect(runBackfill(env.db, { userIds: ["alice"], dryRun: false }, ADMIN)).rejects.toThrow("project store unavailable");
+    expect(await env.db.select().from(scoreCapSlots)).toEqual([]);
+    faults.project = false;
+    await runBackfill(env.db, { userIds: ["alice"], dryRun: false }, ADMIN);
+    expect(await launchEvents()).toEqual([expect.objectContaining({ source: "backfill", subjectUserId: "alice" })]);
+  });
+
   it("evaluates rank and badges after a backfill that awarded RP", async () => {
     vi.setSystemTime(APPROVED_AT);
     await seedDirectory({ optIn: true });

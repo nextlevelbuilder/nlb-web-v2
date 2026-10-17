@@ -20,7 +20,7 @@ import { awardForEventDetailed, builderDedupeKey, recordBuilderEvent } from "./l
 import { recordModerationAction } from "./audit";
 import { getPrivacy } from "./privacy";
 import { refreshProgression } from "./progression-refresh";
-import { claimProductLaunch, productLaunchClaimedByOther, productLaunchRecorded } from "./directory-events";
+import { claimProductLaunch, productLaunchClaimedByOther, productLaunchRecorded, releaseProductLaunchClaim } from "./directory-events";
 import { findOrCreateProductProject } from "./projects";
 import { getEffectiveRuleset } from "./ruleset";
 import type { ActorRole, EventTypeKey } from "./types";
@@ -165,29 +165,37 @@ export async function backfillUser(db: AppDb, userId: string, context: BackfillC
       continue;
     }
 
-    const project = await findOrCreateProductProject(db, userId, record);
-    const { event, created } = await recordBuilderEvent(db, {
-      kind: "backfill",
-      subjectUserId: userId,
-      actorUserId: context.actorId,
-      actorRole: "system",
-      projectId: project.id,
-      eventType: LAUNCH_EVENT,
-      source: "backfill",
-      externalEventId: `product:${record.id}`,
-      occurredAt,
-      rulesetVersion: ruleset.version,
-      verification: "system_verified",
-      visibility: "private",
-      payload: { productSlug: record.slug, title: record.title },
-      provenance: {
-        source: BACKFILL_PROVENANCE_SOURCE,
-        importedAt: context.importedAt.toISOString(),
-        originalTable,
-        originalId,
-        productId: record.id,
-      },
-    });
+    let recorded: Awaited<ReturnType<typeof recordBuilderEvent>>;
+    try {
+      const project = await findOrCreateProductProject(db, userId, record);
+      recorded = await recordBuilderEvent(db, {
+        kind: "backfill",
+        subjectUserId: userId,
+        actorUserId: context.actorId,
+        actorRole: "system",
+        projectId: project.id,
+        eventType: LAUNCH_EVENT,
+        source: "backfill",
+        externalEventId: `product:${record.id}`,
+        occurredAt,
+        rulesetVersion: ruleset.version,
+        verification: "system_verified",
+        visibility: "private",
+        payload: { productSlug: record.slug, title: record.title },
+        provenance: {
+          source: BACKFILL_PROVENANCE_SOURCE,
+          importedAt: context.importedAt.toISOString(),
+          originalTable,
+          originalId,
+          productId: record.id,
+        },
+      });
+    } catch (err) {
+      // Give the claim back so a retry, or a co-owner's import, can still record the launch.
+      await releaseProductLaunchClaim(db, claim);
+      throw err;
+    }
+    const { event, created } = recorded;
     const award = await awardForEventDetailed(db, event.id, { actorId: context.actorId, actorRole: "system" });
     items.push({
       ...base,
