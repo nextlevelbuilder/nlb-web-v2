@@ -13,6 +13,8 @@ import { eq } from "drizzle-orm";
 import { safeFetchUrl } from "@/lib/moderation/safe-fetch";
 import { screenListingWithAi } from "@/lib/moderation/ai";
 import crypto from "crypto";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { recordDirectoryLaunchSafely } from "@/lib/builder-league/directory-events";
 
 export interface SubmitForReviewParams {
   productId: string;
@@ -133,6 +135,22 @@ export async function executeAutomatedChecks(
 }
 
 /**
+ * Builder League SHIP launch for the submitter of a first approval. Best-effort and off the response
+ * path: inside the Worker it continues through `waitUntil`; elsewhere (tests, scripts) it finishes
+ * inline. `recordDirectoryLaunchSafely` never throws, so the decision itself is never affected.
+ */
+async function scheduleBuilderLaunch(db: AppDb, input: Parameters<typeof recordDirectoryLaunchSafely>[1]): Promise<void> {
+  const task = recordDirectoryLaunchSafely(db, input);
+  try {
+    getCloudflareContext().ctx.waitUntil(task);
+    return;
+  } catch {
+    // No Worker request context.
+  }
+  await task;
+}
+
+/**
  * Record a named human moderation decision with immutable audit trail.
  */
 export async function recordModerationDecision(params: ModerationDecisionParams, customDb?: AppDb) {
@@ -226,6 +244,7 @@ export async function recordModerationDecision(params: ModerationDecisionParams,
         status: "pending",
       }),
     ]);
+    await scheduleBuilderLaunch(db, { submissionId: submission.id, productId: submission.productId, submitterId: submission.submitterId, approvedAt: now });
     return decision;
   }
 

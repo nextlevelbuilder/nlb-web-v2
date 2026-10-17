@@ -119,7 +119,7 @@ describe("approval", () => {
     const entryIds = new Set(outcomes.map((outcome) => (outcome.decision === "approve" ? outcome.award.entry?.id : null)));
     expect(entryIds.size).toBe(1);
     expect(await ledgerFor("alice")).toHaveLength(1);
-    expect(await env.db.select().from(builderEvents)).toHaveLength(1);
+    expect(await env.db.select().from(builderEvents).where(eq(builderEvents.kind, "activity"))).toHaveLength(1);
     expect((await auditFor(evidence.id)).filter((row) => row.action === "approve")).toHaveLength(1);
   });
 

@@ -19,6 +19,8 @@ import { BuilderApiError } from "./http";
 import { awardForEventDetailed, builderDedupeKey, recordBuilderEvent } from "./ledger";
 import { recordModerationAction } from "./audit";
 import { getPrivacy } from "./privacy";
+import { refreshProgression } from "./progression-refresh";
+import { productLaunchRecorded } from "./directory-events";
 import { findOrCreateProductProject } from "./projects";
 import { getEffectiveRuleset } from "./ruleset";
 import type { ActorRole, EventTypeKey } from "./types";
@@ -142,6 +144,11 @@ export async function backfillUser(db: AppDb, userId: string, context: BackfillC
       items.push({ ...base, action: "skipped", reason: "occurred_in_future", eventId: null, entryId: null });
       continue;
     }
+    // Launches recorded live from the directory (possibly for another org member) are not imported again.
+    if (await productLaunchRecorded(db, record.id, ["directory"])) {
+      items.push({ ...base, action: "skipped", reason: "recorded_from_directory", eventId: null, entryId: null });
+      continue;
+    }
     if (context.dryRun) {
       const existing = await eventExists(db, userId, record.id);
       items.push({ ...base, action: existing ? "existing" : "planned", reason: null, eventId: existing, entryId: null });
@@ -192,6 +199,9 @@ export async function backfillUser(db: AppDb, userId: string, context: BackfillC
       reasonCodes: [BACKFILL_PROVENANCE_SOURCE],
       notes: `${createdCount} launch event(s) imported`,
     });
+  }
+  if (!context.dryRun && items.some((item) => item.action === "created" && item.entryId)) {
+    await refreshProgression(db, userId, { actorId: context.actorId, trigger: "backfill" });
   }
   return { userId, optedIn: true, items };
 }

@@ -17,6 +17,7 @@ import { activityEvidence, builderPilotMembers, builderProjects, scoreLedger, us
 import { BuilderApiError, encodeCursor, type Cursor } from "./http";
 import { awardForEventDetailed, getBuilderEvent, recordBuilderEvent, reverseAward, type AwardResult, type BuilderEvent, type ScoreLedgerEntry } from "./ledger";
 import { recordModerationAction } from "./audit";
+import { refreshProgression } from "./progression-refresh";
 import { getEffectiveRuleset } from "./ruleset";
 import { STAGES, isEventTypeKey, type ActorRole, type EvidenceStatus, type Stage, type Verification } from "./types";
 import {
@@ -216,6 +217,8 @@ export async function completeApproval(db: AppDb, evidence: Evidence): Promise<O
       .returning();
     current = linked ?? (await getEvidence(db, evidence.id)) ?? evidence;
   }
+  // New RP may open a rank or badge. Replays skip it; the weekly finalization and badge reads catch up.
+  if (award.created) await refreshProgression(db, evidence.userId, { actorId: actor.actorRole === "system" ? null : actor.actorId, trigger: "approval" });
   return { evidence: current, event, award: { entry: award.entry, created: award.created, reason: award.reason } };
 }
 

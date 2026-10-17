@@ -152,7 +152,7 @@ describe("directory backfill", () => {
     const report = await runBackfill(env.db, { dryRun: false }, ADMIN, importedAt);
     expect(report.totals).toEqual({ created: 3, existing: 0, planned: 0, skipped: 0 });
 
-    const events = await env.db.select().from(builderEvents);
+    const events = await env.db.select().from(builderEvents).where(eq(builderEvents.kind, "backfill"));
     expect(events).toHaveLength(3);
     const byProduct = Object.fromEntries(events.map((event) => [(event.provenance as { productId: string }).productId, event]));
     expect(byProduct["launch-v1"]).toMatchObject({
@@ -203,7 +203,7 @@ describe("directory backfill", () => {
     expect(rerun.totals).toEqual({ created: 0, existing: 3, planned: 0, skipped: 0 });
     const dryRun = await runBackfill(env.db, {}, ADMIN);
     expect(dryRun.totals).toEqual({ created: 0, existing: 3, planned: 0, skipped: 0 });
-    expect(await env.db.select().from(builderEvents)).toHaveLength(3);
+    expect(await env.db.select().from(builderEvents).where(eq(builderEvents.kind, "backfill"))).toHaveLength(3);
     expect(await env.db.select().from(scoreLedger)).toHaveLength(3);
     expect((await env.db.select().from(builderProjects).where(eq(builderProjects.ownerUserId, "alice"))).length).toBe(5);
   });
@@ -223,6 +223,6 @@ describe("directory backfill", () => {
     const response = await call(() => backfillRoute(formRequest("/api/v1/builder-admin/backfill", "admin", form)));
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("https://nlb.test/studio/builder-league?notice=backfill_done_3");
-    expect(await env.db.select().from(builderEvents)).toHaveLength(3);
+    expect(await env.db.select().from(builderEvents).where(eq(builderEvents.kind, "backfill"))).toHaveLength(3);
   });
 });
