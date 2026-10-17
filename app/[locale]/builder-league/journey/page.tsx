@@ -28,7 +28,7 @@ export default async function JourneyPage({ params }: JourneyPageProps) {
   const user = await requirePrivatePageViewer(locale, "/builder-league/journey", db);
   const journey = await getJourney(db, user.id);
   const months = journeyMonths(journey.items);
-  const { stars, lanes } = layoutConstellation(journey.items, (item) => journeyItemLabel(item, copy));
+  const { stars, lanes } = layoutConstellation(journey.items, (item) => journeyItemLabel(item, copy, locale));
   const year = localYear(new Date());
 
   return (

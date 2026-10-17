@@ -39,6 +39,8 @@ interface Labels {
   eventTypes: Record<string, string>;
   stages: Record<string, string>;
   ranks: Record<string, string>;
+  /** Badge names by key; older claims may omit it. */
+  badges?: Record<string, string>;
 }
 
 interface Milestone { eventId: string; eventType: string; localDate: string; projectName: string | null; title: string | null }
@@ -118,7 +120,7 @@ export function buildCards(claim: Claim, locale: Locale): Card[] {
     const copy = labels.scenes[scene.key] ?? { title: scene.key, caption: "" };
     const card: Card = { numeral: romanNumeral(index + 1), kicker: labels.kicker, title: copy.title, body: copy.caption, facts: [] };
     if (scene.key === "year_in_numbers") card.facts = statFacts;
-    else if (scene.key === "league_highlights") card.facts = [...review.ranks.map((r) => labels.ranks[r.rank] ?? r.rank), ...review.badges.map((b) => b.badgeKey)];
+    else if (scene.key === "league_highlights") card.facts = [...review.ranks.map((r) => labels.ranks[r.rank] ?? r.rank), ...review.badges.map((b) => labels.badges?.[b.badgeKey] ?? b.badgeKey)];
     else if (scene.key === "next_year" && review.nextYearNote) card.body = `“${review.nextYearNote}”`;
     if (card.facts.length === 0) card.facts = scene.eventIds.map((id) => byId.get(id)).filter((m): m is Milestone => Boolean(m)).map(milestoneLine);
     card.facts = card.facts.slice(0, 4);

@@ -1,6 +1,7 @@
 import type { PublicYearReview, YearMilestone, YearReviewData, YearScene } from "@/lib/builder-league/year-review";
 import { eventTypeLabel, type JourneyCopy } from "@/content/builder-league/journey-copy";
 import { romanNumeral, type YearReviewCopy } from "@/content/builder-league/year-review-copy";
+import { badgeLabel } from "@/lib/builder-league/badges";
 import { formatDateKey, formatLocalDate, formatNumber } from "../journey/journey-format";
 
 type SceneMilestone = Pick<YearMilestone, "eventId" | "eventType" | "stage" | "occurredAt" | "localDate" | "projectName" | "title" | "backfill" | "provenanceLabel">;
@@ -98,7 +99,7 @@ export default function YearScenes({ model, copy, journeyCopy, locale }: YearSce
                   <li key={`rank-${rank.rank}`} className="border border-line px-3 py-1">{journeyCopy.ranks[rank.rank]}</li>
                 ))}
                 {model.badges.map((badge) => (
-                  <li key={`badge-${badge.badgeKey}-${badge.seasonKey}`} className="border border-line px-3 py-1">{badge.badgeKey}</li>
+                  <li key={`badge-${badge.badgeKey}-${badge.seasonKey}`} className="border border-line px-3 py-1">{badgeLabel(badge.badgeKey, locale)}</li>
                 ))}
               </ul>
             )}

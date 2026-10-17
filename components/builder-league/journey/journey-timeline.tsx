@@ -1,5 +1,6 @@
 import type { JourneyItem } from "@/lib/builder-league/journey";
 import { eventTypeLabel, type JourneyCopy } from "@/content/builder-league/journey-copy";
+import { badgeLabel } from "@/lib/builder-league/badges";
 import { formatLocalDate, formatMonthKey } from "./journey-format";
 
 interface JourneyTimelineProps {
@@ -20,9 +21,9 @@ const STATE_TONE: Record<JourneyItem["state"], string> = {
   revoked: "text-ink-3",
 };
 
-export function journeyItemLabel(item: JourneyItem, copy: JourneyCopy): string {
+export function journeyItemLabel(item: JourneyItem, copy: JourneyCopy, locale: string): string {
   if (item.source === "rank" && item.rank) return `${copy.kinds.rank}: ${copy.ranks[item.rank]}`;
-  if (item.source === "badge") return `${copy.kinds.badge}: ${item.badgeKey ?? ""}`;
+  if (item.source === "badge") return `${copy.kinds.badge}: ${item.badgeKey ? badgeLabel(item.badgeKey, locale) : ""}`;
   return item.title ?? eventTypeLabel(copy, item.eventType);
 }
 
@@ -65,7 +66,7 @@ export default function JourneyTimeline({ items, copy, locale }: JourneyTimeline
                     {item.learning && <span className="text-primary">{copy.learning}</span>}
                     <span className={STATE_TONE[item.state]}>{copy.states[item.state]}</span>
                   </div>
-                  <p className="mt-2 text-step-base font-medium text-ink">{journeyItemLabel(item, copy)}</p>
+                  <p className="mt-2 text-step-base font-medium text-ink">{journeyItemLabel(item, copy, locale)}</p>
                   {item.title && item.source !== "rank" && item.source !== "badge" && (
                     <p className="text-step-sm text-ink-2">{eventTypeLabel(copy, item.eventType)}</p>
                   )}
@@ -81,7 +82,7 @@ export default function JourneyTimeline({ items, copy, locale }: JourneyTimeline
                         <li key={`${relation.type}-${relation.itemId}`}>
                           <a className="link-arrow" href={`#step-${relation.itemId}`}>
                             {copy.relations[relation.type]}
-                            {byId.get(relation.itemId) ? `: ${journeyItemLabel(byId.get(relation.itemId)!, copy)}` : ""}
+                            {byId.get(relation.itemId) ? `: ${journeyItemLabel(byId.get(relation.itemId)!, copy, locale)}` : ""}
                           </a>
                         </li>
                       ))}

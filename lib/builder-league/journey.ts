@@ -196,8 +196,11 @@ export function buildJourney(inputs: JourneyInputs): Journey {
   const items: JourneyItem[] = [];
   const eventIdsWithEvidence = new Set<string>();
   const rankEventIds = new Set<string>();
+  // A badge award also writes a `badge` event; the award row is the one shown (it carries revocation).
+  const badgeAwardIds = new Set(badges.map((row) => row.id));
 
   for (const event of events) {
+    if (event.kind === "badge" && badgeAwardIds.has(stringOrNull((event.payload ?? {}).awardId) ?? "")) continue;
     const linked = event.evidenceId ? evidenceById.get(event.evidenceId) : undefined;
     if (linked) eventIdsWithEvidence.add(linked.id);
     const payload = event.payload ?? {};

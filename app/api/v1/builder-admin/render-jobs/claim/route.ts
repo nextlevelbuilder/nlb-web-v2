@@ -6,6 +6,7 @@ import { journeyCopy } from "@/content/builder-league/journey-copy";
 import { yearReviewCopy } from "@/content/builder-league/year-review-copy";
 import { wrappedCopy } from "@/content/builder-league/wrapped-copy";
 import { siteUrl } from "@/lib/seo";
+import { BADGES } from "@/lib/builder-league/badges";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ function renderLabels() {
         eventTypes: journeyCopy[locale].eventTypes,
         stages: journeyCopy[locale].stages,
         ranks: journeyCopy[locale].ranks,
+        badges: Object.fromEntries(BADGES.map((badge) => [badge.key, badge.name[locale]])),
       }];
     })
   );

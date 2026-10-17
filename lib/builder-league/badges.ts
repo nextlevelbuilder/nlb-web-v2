@@ -257,6 +257,12 @@ export function getBadge(key: string): BadgeDefinition | undefined {
   return BADGES.find((badge) => badge.key === key);
 }
 
+/** Display name of a badge in the page locale; unknown keys fall back to the key itself. */
+export function badgeLabel(key: string, locale: string): string {
+  const name = getBadge(key)?.name;
+  return name ? (locale === "vi" ? name.vi : name.en) : key;
+}
+
 export function isBadgeKey(value: string): value is BadgeKey {
   return (BADGE_KEYS as readonly string[]).includes(value);
 }

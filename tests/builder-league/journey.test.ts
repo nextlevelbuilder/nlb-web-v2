@@ -3,6 +3,8 @@ import { createLocalD1, type LocalD1 } from "../helpers/local-d1";
 import { activityEvidence, badgeAwards, builderProjects, users } from "@/lib/db/schema";
 import { getJourney, journeyMonths, paginateJourney, publicJourneyItems } from "@/lib/builder-league/journey";
 import { parseCursor } from "@/lib/builder-league/http";
+import { journeyItemLabel } from "@/components/builder-league/journey/journey-timeline";
+import { getJourneyCopy } from "@/content/builder-league/journey-copy";
 import { local, seedEvent } from "./year-review-fixtures";
 
 let t: LocalD1;
@@ -89,6 +91,17 @@ describe("builder journey", () => {
     expect(items.find((i) => i.id === "badge:bd1")).toMatchObject({ badgeKey: "first_ship", state: "verified" });
     expect(items.some((i) => i.id === "other")).toBe(false);
     expect(publicJourneyItems(items).map((i) => i.id)).toEqual(["pub"]);
+  });
+
+  it("shows a badge once when the award also wrote a badge event", async () => {
+    await t.db.insert(badgeAwards).values({ id: "bd1", userId: "u1", badgeKey: "signal_hunter", awardedAt: local(2026, 10, 9) });
+    await seedEvent(t.db, {
+      id: "badge-event", kind: "badge", eventType: "badge:signal_hunter", stage: "validate", occurredAt: local(2026, 10, 9),
+      verification: "system_verified", payload: { badgeKey: "signal_hunter", awardId: "bd1" },
+    });
+    const { items } = await getJourney(t.db, "u1");
+    expect(items.map((i) => i.id)).toEqual(["badge:bd1"]);
+    expect(journeyItemLabel(items[0], getJourneyCopy("vi"), "vi")).toBe(`${getJourneyCopy("vi").kinds.badge}: Thợ săn tín hiệu`);
   });
 
   it("paginates with the shared keyset cursor", async () => {
