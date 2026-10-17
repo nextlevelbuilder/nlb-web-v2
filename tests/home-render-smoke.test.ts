@@ -168,7 +168,7 @@ describe("homepage chapters render", () => {
     const html = renderHome("en");
     expect(html).toContain("Be the next one — submit from your terminal");
     expect(html.match(/class="lb-row is-open"/g)?.length).toBe(5);
-    expect(html).toContain("Star-magnitude chart: no products have been charted yet.");
+    expect(html).toContain(`aria-label="${en.home.directory.chartAltEmpty}"`);
     expect(html).not.toContain("From the logbook"); // no posts, no teaser
     expect(html).toContain("Every Monday"); // explanatory course cards without prices
     expect(html).not.toMatch(/Buy \$/);
@@ -185,7 +185,8 @@ describe("homepage chapters render", () => {
       launched: [{ slug: "alpha", title: "Alpha", tagline: "First", logoUrl: null, trustScore: 92 }],
       posts: [{ slug: "hello", title: "Hello builders", description: "Notes", publishedAt: "2026-10-01T00:00:00Z" }],
     });
-    expect(html).toContain("Star-magnitude chart: brighter stars have higher Trust scores. Alpha leads with Trust 92.");
+    const chartAlt = en.home.directory.chartAlt.replace("{name}", "Alpha").replace("{trust}", "92");
+    expect(html).toContain(`aria-label="${chartAlt.replaceAll("'", "&#x27;")}"`);
     expect(html.match(/class="pstar"/g)?.length).toBe(2);
     expect(html.match(/class="lb-row is-open"/g)?.length).toBe(3);
     expect(html).toContain('href="/products/alpha"');
