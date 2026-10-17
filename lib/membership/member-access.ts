@@ -93,10 +93,12 @@ async function hasOtherPurchases(db: AppDb, customerId: string, refs: PurchaseRe
 }
 
 /**
- * Whether `metadata.nlb_user_id` may link this customer. The metadata is server-set, but the buyer
- * chooses the checkout email, so it only proves who paid for this purchase, not who owns the
- * customer. It is trusted when the customer is new to us (nothing recorded besides this purchase)
- * or when its email equals that user's verified email (trim + lowercase).
+ * Whether `metadata.nlb_user_id` may link this customer. The metadata is server-set, but the checkout
+ * email is only a prefill the buyer can edit on Polar's page, so the metadata proves who paid for this
+ * purchase, not who owns the customer. Ownership is enforced here, at link time:
+ * - when the customer email is another user's verified email, that user owns it, never the payer;
+ * - otherwise it is trusted when the email equals the payer's verified email (trim + lowercase) or
+ *   the customer is new to us (nothing recorded besides this purchase).
  */
 export async function canLinkFromMetadata(
   db: AppDb,
@@ -111,6 +113,8 @@ export async function canLinkFromMetadata(
     .limit(1);
   if (!user) return false;
   if (user.emailVerified && user.email && normalizeEmail(user.email) === normalizeEmail(customer.email)) return true;
+  const emailOwner = await findVerifiedUserIdByEmail(db, customer.email);
+  if (emailOwner && emailOwner !== userId) return false;
   return !(await hasOtherPurchases(db, customer.id, refs));
 }
 

@@ -69,8 +69,10 @@ export async function POST(request: Request) {
     }
 
     // Onboarding v2: memberships land on the first-party onboarding page, and a signed-in buyer is
-    // bound to the Polar customer server-side. The checkout email of a signed-in buyer is their
-    // account email, never one from the body. Directory and toolkit checkouts are unchanged.
+    // bound to the Polar customer server-side. The checkout email of a signed-in buyer is prefilled
+    // with their account email, never one from the body. Polar lets the buyer edit it, so ownership
+    // is enforced when the customer is linked (`canLinkFromMetadata`), not here. Directory and
+    // toolkit checkouts are unchanged.
     const options: CheckoutSessionOptions = {};
     let checkoutEmail = caller ? caller.user.email : customerEmail;
     if (isOnboardingV2Enabled() && isMembershipProduct(productId)) {

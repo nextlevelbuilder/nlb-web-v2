@@ -429,6 +429,21 @@ describe("Polar webhook with onboarding v2 on", () => {
     expect(claimed.userId).toBe(victim);
   });
 
+  it("links a purchase made with another user's verified email to that user, not the payer", async () => {
+    const ownerEmail = `${nextId("owner")}@example.com`;
+    const owner = await createUser({ email: ownerEmail });
+    const payer = await createUser();
+
+    // The payer edits the prefilled Polar email to the owner's address; the customer row is new.
+    await deliver("subscription.created", subscriptionData({ customer_email: ownerEmail, metadata: { nlb_user_id: payer } }));
+
+    const [row] = await getDb().select().from(customers).where(eq(customers.email, ownerEmail));
+    expect(row.userId).toBe(owner);
+    expect((await getMemberTier(getDb(), payer)).tier).toBe("none");
+    expect((await getMemberTier(getDb(), owner)).tier).toBe("premium");
+    expect(await jobKeys()).not.toContain(`reconcile_access:${payer}:discord_guild`);
+  });
+
   it("trusts nlb_user_id for a customer with history when the email is that user's verified email", async () => {
     const email = `${nextId("returning")}@example.com`;
     const customer = await createCustomer(null, email);

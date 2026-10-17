@@ -128,6 +128,17 @@ describe("checkout ownership matrix", () => {
     expect(await reconcileJobsFor(user.id)).toEqual([]);
   });
 
+  it("never binds a checkout paid with another user's verified email to the payer", async () => {
+    const owner = await createTestUser();
+    checkoutGetMock.mockResolvedValue(polarCheckout({ customerEmail: owner.email, metadata: { nlb_user_id: user.id } }));
+    const body = await (await getStatus("?checkout_id=chk_other_verified")).json();
+    expect(body.payment).toBe("not_owner");
+    expect(body.membership).toBeNull();
+    const [row] = await getDb().select().from(customers).where(eq(customers.email, owner.email));
+    expect(row.userId).toBe(owner.id);
+    expect(await reconcileJobsFor(user.id)).toEqual([]);
+  });
+
   it("binds a second customer for a user who already owns one", async () => {
     await createMember(user, { productId: PRODUCT_IDS.PREMIUM_ANNUAL, status: "canceled" });
     checkoutGetMock.mockResolvedValue(polarCheckout({ customerEmail: "work-address@example.com", metadata: { nlb_user_id: user.id } }));
