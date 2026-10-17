@@ -54,6 +54,11 @@ export function safeReturnTo(value: unknown): string | null {
   return value;
 }
 
+/** `/vi` when a validated `returnTo` is a Vietnamese page, otherwise empty (English is unprefixed). */
+export function localePrefixOf(returnTo: string | null): string {
+  return returnTo?.startsWith("/vi/") ? "/vi" : "";
+}
+
 /** Fields that hold lists in forms: repeated inputs or one value per line. */
 const LIST_FIELDS = new Set(["links", "reasonCodes", "removeFiles", "userIds"]);
 /** Checkbox / select fields that carry booleans. */

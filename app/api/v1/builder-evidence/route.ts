@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db";
 import { requireBuilderLeagueUser } from "@/lib/builder-league/access";
 import { enforceUserRateLimit, ok, parseCursor, parseLimit, withBuilderErrors } from "@/lib/builder-league/http";
-import { handleWrite } from "@/lib/builder-league/evidence-http";
+import { handleWrite, localePrefixOf } from "@/lib/builder-league/evidence-http";
 import { latestAppeals, listOwnEvidence, parseEvidenceStatus, submitEvidence, toEvidenceDto } from "@/lib/builder-league/evidence";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +43,8 @@ export async function POST(request: Request) {
       return {
         response: ok(toEvidenceDto(evidence, "owner"), undefined, created ? 201 : 200),
         notice: created ? "submitted" : "already_submitted",
+        // Forms post from the "new" page so errors return there; success goes to the evidence itself.
+        redirectTo: `${localePrefixOf(input.returnTo)}/builder-league/evidence/${evidence.id}`,
       };
     }
   );

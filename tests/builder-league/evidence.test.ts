@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+const pageSession = vi.hoisted(() => ({ user: null as null | { id: string; name: string; email: string; role: string } }));
+
 vi.mock("@/lib/auth-api-key", () => ({
   resolveCaller: async (headers: Headers) => {
     const id = headers.get("x-test-user");
@@ -12,6 +14,22 @@ vi.mock("@/lib/polar", () => ({
   MEMBERSHIP_PLAN_PRODUCT_IDS: { premium: ["prod_premium"], vip: ["prod_vip"] },
   EARLYBIRD_MEMBERSHIP_PRODUCT_IDS: { premium: undefined, vip: undefined },
 }));
+vi.mock("@/lib/auth", () => ({
+  getAuth: () => ({ api: { getSession: async () => (pageSession.user ? { user: pageSession.user } : null) } }),
+}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw Object.assign(new Error("NEXT_HTTP_ERROR_FALLBACK;404"), { digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
+  },
+}));
+vi.mock("@/i18n/navigation", () => ({
+  getPathname: ({ href, locale }: { href: string; locale: string }) => (locale === "vi" ? `/vi${href}` : href),
+  redirect: ({ href, locale }: { href: { pathname: string }; locale: string }) => {
+    const target = locale === "vi" ? `/vi${href.pathname}` : href.pathname;
+    throw Object.assign(new Error("NEXT_REDIRECT"), { digest: `NEXT_REDIRECT;replace;${target};307;` });
+  },
+}));
 vi.mock("@opennextjs/cloudflare", () => ({
   getCloudflareContext: () => ({
     env: {
@@ -21,15 +39,19 @@ vi.mock("@opennextjs/cloudflare", () => ({
   }),
 }));
 
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { eq } from "drizzle-orm";
 import { runWithDb } from "@/lib/db";
-import { activityEvidence } from "@/lib/db/schema";
+import { activityEvidence, subscriptions } from "@/lib/db/schema";
 import { editEvidence, submitEvidence, withdrawEvidence, type SubmitEvidenceInput } from "@/lib/builder-league/evidence";
 import { decideEvidence } from "@/lib/builder-league/moderation";
 import { sniffEvidenceType } from "@/lib/builder-league/evidence-storage";
 import { GET as listRoute, POST as submitRoute } from "@/app/api/v1/builder-evidence/route";
 import { GET as getRoute, PATCH as patchRoute } from "@/app/api/v1/builder-evidence/[id]/route";
 import { GET as fileRoute } from "@/app/api/v1/builder-evidence/[id]/files/[key]/route";
+import { requireLeagueAdmin, requireLeagueMember } from "@/components/builder-league/evidence/league-access";
+import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evidence";
 import { GET as projectsRoute, POST as createProjectRoute } from "@/app/api/v1/builder-projects/route";
 import {
   TEST_NOW,
@@ -294,8 +316,8 @@ describe("no-JS form posts", () => {
     form.set("clientKey", "form-1");
     const ok = await call(() => submitRoute(formRequest("/api/v1/builder-evidence", "alice", form)));
     expect(ok.status).toBe(303);
-    expect(ok.headers.get("location")).toBe("https://nlb.test/vi/builder-league/evidence?notice=submitted");
     const [stored] = await env.db.select().from(activityEvidence).where(eq(activityEvidence.clientKey, "form-1"));
+    expect(ok.headers.get("location")).toBe(`https://nlb.test/vi/builder-league/evidence/${stored.id}?notice=submitted`);
     expect(stored.links).toEqual(["https://x.com/alice/status/9", "https://alice.dev/launch"]);
 
     form.set("clientKey", "form-2");
@@ -313,5 +335,51 @@ describe("no-JS form posts", () => {
     const refused = await call(() => submitRoute(new Request(crossSite, { headers })));
     expect(refused.status).toBe(403);
     expect(await refused.json()).toMatchObject({ error: { code: "cross_site_request" } });
+  });
+});
+
+describe("evidence pages access", () => {
+  const as = (id: string | null) => {
+    pageSession.user = id ? { id, name: id, email: `${id}@example.com`, role: id === "admin" || id === "mod2" ? "admin" : "user" } : null;
+  };
+  const notFoundError = expect.objectContaining({ digest: expect.stringContaining("404") });
+
+  it("answers 404 to everyone but admins and pilot members while the flag is off", async () => {
+    as("outsider");
+    await expect(call(() => requireLeagueMember("en", "/builder-league/evidence"))).rejects.toEqual(notFoundError);
+    as(null);
+    await expect(call(() => requireLeagueMember("vi", "/builder-league/evidence"))).rejects.toEqual(notFoundError);
+    as("alice");
+    expect((await call(() => requireLeagueMember("en", "/builder-league/evidence")))?.user.id).toBe("alice");
+    as("admin");
+    expect((await call(() => requireLeagueMember("en", "/builder-league/evidence")))?.access.isAdmin).toBe(true);
+    expect((await call(() => requireLeagueAdmin())).user.id).toBe("admin");
+    as("alice");
+    await expect(call(() => requireLeagueAdmin())).rejects.toEqual(notFoundError);
+  });
+
+  it("explains membership instead of hiding the page once the league is public", async () => {
+    vi.stubEnv("BUILDER_LEAGUE_ENABLED", "true");
+    as("mod2"); // admin without a membership still gets in
+    expect(await call(() => requireLeagueMember("en", "/builder-league/evidence"))).not.toBeNull();
+    await env.db.delete(subscriptions).where(eq(subscriptions.polarSubscriptionId, "sub_outsider"));
+    as("outsider");
+    expect(await call(() => requireLeagueMember("en", "/builder-league/evidence"))).toBeNull();
+    as(null);
+    await expect(call(() => requireLeagueMember("vi", "/builder-league/evidence"))).rejects.toEqual(
+      expect.objectContaining({ digest: expect.stringContaining("/vi/sign-in") })
+    );
+  });
+});
+
+describe("OpenAPI document", () => {
+  it("documents only routes that exist and references only defined schemas", () => {
+    for (const route of Object.keys(evidencePaths)) {
+      const dir = route.replace(/^\//, "").replace(/\{(\w+)\}/g, "[$1]");
+      expect(existsSync(path.resolve(process.cwd(), "app", dir, "route.ts")), route).toBe(true);
+    }
+    const refs: string[] = [...(JSON.stringify(evidencePaths).match(/#\/components\/schemas\/\w+/g) ?? [])];
+    refs.push(...(JSON.stringify(evidenceSchemas).match(/#\/components\/schemas\/\w+/g) ?? []));
+    for (const ref of new Set(refs)) expect(Object.keys(evidenceSchemas), ref).toContain(ref.split("/").pop());
   });
 });
