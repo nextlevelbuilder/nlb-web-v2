@@ -50,6 +50,7 @@ interface PolarWebhookPayload {
     started_at?: string | null;
     created_at?: string | null;
     modified_at?: string | null;
+    billing_reason?: string | null;
     customer?: {
       id?: string;
       email?: string;
@@ -453,8 +454,9 @@ async function handleSubscriptionEvent(event: PolarWebhookPayload, db: AppDb, ef
 }
 
 /**
- * Persist refunds. A full refund of a membership subscription order ends that subscription for
- * entitlement (terminal, see `markSubscriptionRefunded`); partial refunds keep access.
+ * Persist refunds. A full refund of the membership order that paid for the subscription's current
+ * period ends that subscription for entitlement (see `markSubscriptionRefunded`). Partial refunds,
+ * refunds of an earlier period's order and refunds of a mid-period plan-change charge keep access.
  */
 async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effects: WebhookEffects) {
   const order = event.data;
@@ -465,8 +467,14 @@ async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effect
   const productId = order.product_id || order.product?.id || "";
   if (order.status !== "refunded" || !order.subscription_id || !MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
 
+  if (order.billing_reason === "subscription_update") return;
+  const orderCreatedAt = parseDate(order.created_at);
+  if (!orderCreatedAt) {
+    console.warn(`order.refunded ${order.id} has no created_at; subscription access left unchanged`);
+    return;
+  }
   const refundedAt = parseDate(order.modified_at) ?? new Date();
-  const subscription = await markSubscriptionRefunded(db, order.subscription_id, refundedAt);
+  const subscription = await markSubscriptionRefunded(db, order.subscription_id, { refundedAt, orderCreatedAt });
   if (!subscription || !effects.onboardingV2) return;
 
   const [customer] = await db

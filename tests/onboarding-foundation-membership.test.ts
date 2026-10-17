@@ -105,18 +105,58 @@ describe("subscription sync ordering", () => {
     expect(await subscriptionRow(sub.polarSubscriptionId)).toMatchObject({ status: "canceled", endedAt: after(2000) });
   });
 
-  it("follows upgrades to another product and keeps a refund terminal against later deliveries", async () => {
+  it("follows upgrades to another product", async () => {
     const customer = await createCustomer();
     const sub = snapshot(customer.id);
     await applySubscriptionSnapshot(getDb(), sub);
     const upgraded = await applySubscriptionSnapshot(getDb(), { ...sub, productId: PRODUCT_IDS.VIP_ANNUAL, productName: null, modifiedAt: after(1000) });
     expect(upgraded.changed).toBe(true);
     expect(upgraded.row).toMatchObject({ polarProductId: PRODUCT_IDS.VIP_ANNUAL, productName: "Premium Annual" });
+  });
 
-    await markSubscriptionRefunded(getDb(), sub.polarSubscriptionId, after(2000));
-    await applySubscriptionSnapshot(getDb(), { ...sub, status: "active", modifiedAt: after(3000) });
+  it("ends access on a full refund of the current period's order, against older or replayed deliveries", async () => {
+    const customer = await createCustomer();
+    const sub = snapshot(customer.id);
+    await applySubscriptionSnapshot(getDb(), sub);
+
+    const refunded = await markSubscriptionRefunded(getDb(), sub.polarSubscriptionId, { refundedAt: after(2000), orderCreatedAt: T0 });
+    expect(refunded).toMatchObject({ status: "refunded", endedAt: after(2000) });
+    // A replay of the pre-refund state, or one stamped at the refund time, does not restore access.
+    await applySubscriptionSnapshot(getDb(), { ...sub, status: "active", modifiedAt: after(1000) });
+    await applySubscriptionSnapshot(getDb(), { ...sub, status: "active", modifiedAt: after(2000) });
     expect(await subscriptionRow(sub.polarSubscriptionId)).toMatchObject({ status: "refunded", endedAt: after(2000) });
-    expect(await markSubscriptionRefunded(getDb(), "sub-unknown", after(1))).toBeNull();
+    // Polar ending it later keeps it ended.
+    await applySubscriptionSnapshot(getDb(), { ...sub, status: "canceled", endedAt: after(2500), modifiedAt: after(2500) });
+    expect(await subscriptionRow(sub.polarSubscriptionId)).toMatchObject({ status: "canceled", endedAt: after(2000) });
+    expect(await markSubscriptionRefunded(getDb(), "sub-unknown", { refundedAt: after(1), orderCreatedAt: T0 })).toBeNull();
+  });
+
+  it("restores access when Polar later reports the refunded subscription running again", async () => {
+    const customer = await createCustomer();
+    const sub = snapshot(customer.id);
+    await applySubscriptionSnapshot(getDb(), sub);
+    await markSubscriptionRefunded(getDb(), sub.polarSubscriptionId, { refundedAt: after(2000), orderCreatedAt: T0 });
+
+    const resumed = await applySubscriptionSnapshot(getDb(), { ...sub, status: "active", modifiedAt: after(3000) });
+    expect(resumed.changed).toBe(true);
+    expect(resumed.row).toMatchObject({ status: "active", endedAt: null, polarModifiedAt: after(3000) });
+  });
+
+  it("keeps access when the refunded order paid for an earlier period or the period is unknown", async () => {
+    const customer = await createCustomer();
+    const renewed = snapshot(customer.id, { currentPeriodStart: after(365 * DAY), currentPeriodEnd: after(730 * DAY) });
+    await applySubscriptionSnapshot(getDb(), renewed);
+    // The first year's order, created a year before the current period started.
+    expect(await markSubscriptionRefunded(getDb(), renewed.polarSubscriptionId, { refundedAt: after(366 * DAY), orderCreatedAt: T0 })).toBeNull();
+    expect(await subscriptionRow(renewed.polarSubscriptionId)).toMatchObject({ status: "active", endedAt: null });
+    // The renewal order may be stamped slightly before the stored period start.
+    expect(
+      await markSubscriptionRefunded(getDb(), renewed.polarSubscriptionId, { refundedAt: after(366 * DAY), orderCreatedAt: after(365 * DAY - 60_000) })
+    ).toMatchObject({ status: "refunded" });
+
+    const unknownPeriod = snapshot(customer.id, { currentPeriodStart: null });
+    await applySubscriptionSnapshot(getDb(), unknownPeriod);
+    expect(await markSubscriptionRefunded(getDb(), unknownPeriod.polarSubscriptionId, { refundedAt: after(2000), orderCreatedAt: T0 })).toBeNull();
   });
 });
 
@@ -421,7 +461,7 @@ describe("Polar webhook with onboarding v2 on", () => {
   it("tracks past_due, revocation and refunds, queueing reconciles each time", async () => {
     const email = `${nextId("member")}@example.com`;
     const userId = await createUser({ email });
-    const base = subscriptionData({ customer_email: email });
+    const base = subscriptionData({ customer_email: email, current_period_start: new Date(Date.now() - DAY).toISOString() });
     await deliver("subscription.created", base);
     await getDb().delete(onboardingJobs);
 
@@ -435,13 +475,26 @@ describe("Polar webhook with onboarding v2 on", () => {
     await deliver("subscription.updated", { ...base, status: "active" });
     expect((await subscriptionRow(base.id)).status).toBe("past_due");
 
-    await deliver("order.refunded", {
-      id: nextId("ord"),
-      status: "refunded",
-      subscription_id: base.id,
-      product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
-      modified_at: new Date(Date.now() + 2000).toISOString(),
-    });
+    const refund = (overrides: Record<string, unknown>) =>
+      deliver("order.refunded", {
+        id: nextId("ord"),
+        status: "refunded",
+        subscription_id: base.id,
+        product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+        billing_reason: "subscription_cycle",
+        created_at: new Date().toISOString(),
+        modified_at: new Date(Date.now() + 2000).toISOString(),
+        ...overrides,
+      });
+    // Partial refunds, an earlier period's order, a plan-change charge or an order without a
+    // creation time keep access.
+    await refund({ status: "partially_refunded" });
+    await refund({ created_at: new Date(Date.now() - 400 * DAY).toISOString() });
+    await refund({ billing_reason: "subscription_update" });
+    await refund({ created_at: undefined });
+    expect((await subscriptionRow(base.id)).status).toBe("past_due");
+
+    await refund({});
     expect(await subscriptionRow(base.id)).toMatchObject({ status: "refunded" });
     expect((await getMemberTier(getDb(), userId)).tier).toBe("none");
 
