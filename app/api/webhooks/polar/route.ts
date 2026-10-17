@@ -37,7 +37,6 @@ interface PolarWebhookPayload {
     id?: string;
     status?: string;
     customer_id?: string;
-    customer_external_id?: string | null;
     subscription_id?: string | null;
     customer_email?: string;
     customer_name?: string;
@@ -59,7 +58,6 @@ interface PolarWebhookPayload {
       id?: string;
       email?: string;
       name?: string;
-      external_id?: string | null;
     };
     product?: {
       id?: string;
@@ -146,7 +144,7 @@ export async function POST(request: Request) {
         case "order.created":
         case "order.paid":
         case "order.updated":
-          await handleOrderCreated(event, eventId, db);
+          await handleOrderCreated(event, eventId, db, effects);
           await syncCourseVideoEntitlementFromOrder(event, db);
           break;
         case "order.refunded":
@@ -322,10 +320,11 @@ function scheduleJobRun(db: AppDb) {
 }
 
 /**
- * Link the Polar customer to an NLB user from server-trusted signals only, in order:
- * `metadata.nlb_user_id` (set by /api/checkout for a signed-in buyer), Polar's external customer id
- * (also set by /api/checkout), else a user whose verified email equals the customer email
- * (trim + lowercase only). Never overwrites an existing link. Returns the linked user id.
+ * Link the Polar customer to an NLB user from server-trusted signals only: `metadata.nlb_user_id`
+ * (set server-side by /api/checkout for a signed-in buyer and copied by Polar onto the checkout,
+ * subscription and order), else a user whose verified email equals the customer email (trim +
+ * lowercase only). Polar's external customer id is not used: existing customers may carry none or
+ * one set elsewhere. Never overwrites an existing link. Returns the linked user id.
  */
 async function linkCustomerFromEvent(
   customer: { id: string; email: string; userId?: string | null },
@@ -333,15 +332,9 @@ async function linkCustomerFromEvent(
   db: AppDb
 ): Promise<string | null> {
   if (customer.userId) return customer.userId;
-  const candidates = [
-    metadataString(data, "nlb_user_id"),
-    data?.customer?.external_id || null,
-    data?.customer_external_id || null,
-  ].filter((id): id is string => Boolean(id));
-  for (const candidate of candidates) {
-    if (await userExists(db, candidate)) {
-      return (await linkCustomerToUser(db, { customerId: customer.id, userId: candidate })) ? candidate : null;
-    }
+  const metadataUserId = metadataString(data, "nlb_user_id");
+  if (metadataUserId && (await userExists(db, metadataUserId))) {
+    return (await linkCustomerToUser(db, { customerId: customer.id, userId: metadataUserId })) ? metadataUserId : null;
   }
   const verifiedUserId = await findVerifiedUserIdByEmail(db, customer.email);
   if (!verifiedUserId) return null;
@@ -493,7 +486,7 @@ async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effect
   }
 }
 
-async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, db: AppDb) {
+async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, db: AppDb, effects: WebhookEffects) {
   const order = event.data;
   if (!order || !order.id) return;
 
@@ -524,6 +517,14 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
   if (!customer) {
     console.error("Could not find or create customer for order:", order.id);
     return;
+  }
+
+  // An order can be the first delivery carrying the buyer's `nlb_user_id`; a new link changes access.
+  const wasLinked = Boolean(customer.userId);
+  const linkedUserId = await linkCustomerFromEvent(customer, order, db);
+  if (linkedUserId && !wasLinked && effects.onboardingV2) {
+    await enqueueAccessReconcile(db, linkedUserId);
+    effects.jobsEnqueued = true;
   }
 
   const isPaid =

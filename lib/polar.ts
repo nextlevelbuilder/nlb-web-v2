@@ -175,7 +175,6 @@ export async function createCheckoutSession(
       products: [productId],
       successUrl,
       customerEmail,
-      ...(options.nlbUserId ? { externalCustomerId: options.nlbUserId } : {}),
       metadata: {
         ...(productSlug ? { productSlug } : {}),
         ...(options.nlbUserId ? { nlb_user_id: options.nlbUserId } : {}),

@@ -48,10 +48,11 @@ describe("checkout with onboarding v2 off", () => {
 describe("checkout with onboarding v2 on", () => {
   beforeEach(() => vi.stubEnv("ONBOARDING_V2_ENABLED", "true"));
 
-  it("sends memberships to the onboarding page and binds the signed-in user server-side", async () => {
+  it("sends memberships to the onboarding page and binds the signed-in user through metadata only", async () => {
     const request = await checkout({ productId: PRODUCT_IDS.VIP_QUARTERLY });
     expect(request.successUrl).toBe(`${env.NEXT_PUBLIC_APP_URL}/onboarding?checkout_id={CHECKOUT_ID}`);
-    expect(request.externalCustomerId).toBe("nlb-user-1");
+    // No Polar external id: existing customers may already carry none or another one.
+    expect(request).not.toHaveProperty("externalCustomerId");
     expect(request.metadata).toMatchObject({ nlb_user_id: "nlb-user-1", nlb_locale: "en" });
   });
 

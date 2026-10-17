@@ -303,6 +303,44 @@ describe("Polar webhook with onboarding v2 on", () => {
     expect(welcome.payload).toMatchObject({ locale: "vi" });
   });
 
+  it("links through nlb_user_id on checkout and order payloads and ignores Polar external ids", async () => {
+    const fromCheckout = await createUser({ verified: false });
+    const checkoutEmail = `${nextId("checkout")}@example.com`;
+    await deliver("checkout.updated", {
+      id: nextId("chk"),
+      status: "succeeded",
+      customer_email: checkoutEmail,
+      product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+      metadata: { nlb_user_id: fromCheckout },
+    });
+    const [checkoutCustomer] = await getDb().select().from(customers).where(eq(customers.email, checkoutEmail));
+    expect(checkoutCustomer.userId).toBe(fromCheckout);
+
+    const fromOrder = await createUser({ verified: false });
+    const orderEmail = `${nextId("order")}@example.com`;
+    await deliver("order.paid", {
+      id: nextId("ord"),
+      status: "paid",
+      paid: true,
+      customer_email: orderEmail,
+      product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+      amount: 46800,
+      metadata: { nlb_user_id: fromOrder },
+    });
+    const [orderCustomer] = await getDb().select().from(customers).where(eq(customers.email, orderEmail));
+    expect(orderCustomer.userId).toBe(fromOrder);
+    expect(await jobKeys()).toEqual([
+      `reconcile_access:${fromOrder}:discord_guild`,
+      `reconcile_access:${fromOrder}:telegram_group`,
+    ]);
+
+    const external = await createUser({ verified: false });
+    const data = subscriptionData({ customer_external_id: external, customer: { external_id: external } });
+    await deliver("subscription.created", data);
+    const [externalCustomer] = await getDb().select().from(customers).where(eq(customers.email, data.customer_email as string));
+    expect(externalCustomer.userId).toBeNull();
+  });
+
   it("does not link an unverified email match and skips the welcome for old subscriptions", async () => {
     const email = `${nextId("unverified")}@example.com`;
     await createUser({ verified: false, email });
