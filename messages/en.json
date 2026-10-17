@@ -1090,7 +1090,8 @@
       "unlinkFailed": "Could not remove access right now. Try again later.",
       "unlinked": "{provider} unlinked.",
       "unlinkQueued": "Removing your {provider} access, then unlinking. This updates within a minute.",
-      "unlinkFailedCode": "Could not remove your {provider} access ({code}), so it is still linked. Press Retry, or email us if it keeps failing."
+      "unlinkFailedCode": "Could not remove your {provider} access ({code}), so it is still linked. Press Retry, or email us if it keeps failing.",
+      "rejoin": "Rejoin or re-check"
     },
     "done": {
       "title": "You are all set",

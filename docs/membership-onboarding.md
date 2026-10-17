@@ -12,6 +12,7 @@ The whole flow sits behind `ONBOARDING_V2_ENABLED`. Off means the legacy flow (w
 - **Communities:** [`reconcileCommunityAccess`](../lib/community/reconcile.ts) applies the tier to each target and records it in `community_access_state`.
   - Discord ([adapter](../lib/community/discord-adapter.ts)): Premium role, or Premium + VIP roles. Revocation removes only those two roles and never kicks.
   - Telegram ([adapter](../lib/community/telegram-adapter.ts)): one shared group. The bot acts only on join requests from accounts linked through NLB: it approves a linked, entitled account and declines a linked account without a tier. Requests from accounts not linked through NLB are left untouched for the group admins. Revocation removes the member with a short ban followed by an unban, so they can rejoin after renewing. Admins and the owner are never touched.
+- **Rejoin:** an active member still sees Retry ("Rejoin or re-check") on each linked community. It re-runs reconcile, which re-adds a Discord member who left the server (`guilds.join`) and marks a Telegram member who left the group `waiting_for_join`, so the card offers the join link again. The bot does not subscribe to Telegram `chat_member` updates, so leaving is noticed on the next reconcile, not instantly.
 - **Shadow-safe:** a user who has not linked Discord or Telegram through NLB is never touched by reconcile, so existing members keep their current access until they connect.
 
 ## Jobs and cron

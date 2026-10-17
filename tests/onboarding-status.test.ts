@@ -216,7 +216,8 @@ describe("status helpers", () => {
     expect(nextActionFor("telegram", "vip", true, "waiting_for_join")).toBe("join");
     expect(nextActionFor("discord", "vip", true, "action_required")).toBe("reconnect");
     expect(nextActionFor("discord", "vip", true, "retrying")).toBe("retry");
-    expect(nextActionFor("telegram", "premium", true, "active")).toBe("none");
+    expect(nextActionFor("telegram", "premium", true, "active")).toBe("retry");
+    expect(nextActionFor("discord", "vip", true, "processing")).toBe("none");
   });
 
   it("derives the billing term from the product id", () => {

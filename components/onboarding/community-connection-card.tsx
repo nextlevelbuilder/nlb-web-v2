@@ -183,7 +183,7 @@ export default function CommunityConnectionCard({
           {showRetry && (
             <Button type="button" variant="outline" size="sm" className="gap-2" onClick={retry} disabled={busy !== null}>
               {busy === 'retry' ? <Loader2 aria-hidden className="animate-spin motion-reduce:animate-none" /> : <RefreshCw aria-hidden />}
-              {busy === 'retry' ? t('actions.retrying') : t('actions.retry')}
+              {busy === 'retry' ? t('actions.retrying') : connection.status === 'active' ? t('actions.rejoin') : t('actions.retry')}
             </Button>
           )}
           {allowUnlink && linked && !unlinking && (

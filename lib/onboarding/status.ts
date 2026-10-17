@@ -290,6 +290,9 @@ export function nextActionFor(
       return provider === "telegram" ? "join" : "retry";
     case "action_required":
       return "reconnect";
+    // An active member may have left the server or group since the last check; Retry re-checks,
+    // re-adds them to Discord or offers the Telegram join link again.
+    case "active":
     case "retrying":
     case "revoked":
     case "not_connected":

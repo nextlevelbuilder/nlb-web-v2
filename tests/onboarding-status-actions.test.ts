@@ -81,6 +81,22 @@ describe("POST /api/onboarding/retry", () => {
     expect(job.payload).toMatchObject({ userId: user.id, target: "discord_guild" });
   });
 
+  it("lets an active member re-check access to rejoin a community they left", async () => {
+    await linkDiscord(user);
+    applyMock.mockResolvedValueOnce({ appliedTier: "premium", status: "active" });
+    await reconcileCommunityAccess(getDb(), user.id, "discord_guild");
+    const status = await getOnboardingStatus(getDb(), user);
+    expect(status.connections.discord).toMatchObject({ status: "active", nextAction: "retry" });
+
+    const response = await postRetry({ target: "discord_guild" });
+    expect(response.status).toBe(202);
+    const [job] = await getDb()
+      .select()
+      .from(onboardingJobs)
+      .where(eq(onboardingJobs.dedupeKey, `reconcile_access:${user.id}:discord_guild`));
+    expect(job.status).toBe("pending");
+  });
+
   it("allows another request once the window has passed and keeps users independent", async () => {
     const start = new Date("2026-10-17T07:00:00Z");
     expect(await requestMemberReconcile(getDb(), user.id, "discord_guild", start)).toEqual({ ok: true });
