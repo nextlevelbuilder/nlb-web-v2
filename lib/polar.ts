@@ -3,6 +3,7 @@ import { env } from "./env";
 
 export const polar = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
+  server: env.POLAR_SERVER,
 });
 
 export const PRODUCT_IDS = {
@@ -65,11 +66,25 @@ export const ALLOWED_PRODUCT_IDS = new Set<string>([
 ]);
 
 /**
+ * Early-bird annual memberships are no longer offered at checkout, but their subscriptions still
+ * renew and grant membership. They count for entitlement only (never for legacy onboarding emails).
+ */
+export const EARLYBIRD_MEMBERSHIP_PRODUCT_IDS: Readonly<Record<MembershipPlan, string>> = {
+  premium: env.POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL,
+  vip: env.POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL,
+};
+
+/** Every product id that grants a membership tier: the four sold plans plus configured early-bird ids. */
+export const MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS = new Set<string>(
+  [...MEMBERSHIP_PRODUCT_IDS, ...Object.values(EARLYBIRD_MEMBERSHIP_PRODUCT_IDS)].filter(Boolean)
+);
+
+/**
  * Check if a product ID belongs to this website
  */
 export function isOurProduct(productId: string | undefined | null): boolean {
   if (!productId) return false;
-  return ALLOWED_PRODUCT_IDS.has(productId);
+  return ALLOWED_PRODUCT_IDS.has(productId) || MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId);
 }
 
 /**
@@ -128,10 +143,20 @@ export function extractProductIdsFromEvent(event: any): string[] {
   return [...new Set(productIds)]; // Remove duplicates
 }
 
+export interface CheckoutSessionOptions {
+  /** Overrides the default success redirect (used for the membership onboarding page). */
+  successUrl?: string;
+  /** Signed-in NLB user; stored as `metadata.nlb_user_id` and as Polar's external customer id. */
+  nlbUserId?: string;
+  /** Site locale of the buyer, stored as `metadata.nlb_locale` for the onboarding email. */
+  locale?: string;
+}
+
 export async function createCheckoutSession(
   productId: ProductId,
   customerEmail?: string,
-  productSlug?: string
+  productSlug?: string,
+  options: CheckoutSessionOptions = {}
 ) {
   try {
     // Validate product ID before making API call
@@ -140,9 +165,11 @@ export async function createCheckoutSession(
     }
 
     // Success redirect URL
-    const successUrl = productSlug
-      ? `${env.NEXT_PUBLIC_APP_URL}/studio/products/${productSlug}/preview?payment=success&session_id={CHECKOUT_ID}`
-      : `${env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_ID}`;
+    const successUrl =
+      options.successUrl ??
+      (productSlug
+        ? `${env.NEXT_PUBLIC_APP_URL}/studio/products/${productSlug}/preview?payment=success&session_id={CHECKOUT_ID}`
+        : `${env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_ID}`);
 
     const checkout = await polar.checkouts.create({
       products: [productId],
@@ -150,6 +177,8 @@ export async function createCheckoutSession(
       customerEmail,
       metadata: {
         ...(productSlug ? { productSlug } : {}),
+        ...(options.nlbUserId ? { nlb_user_id: options.nlbUserId } : {}),
+        ...(options.locale ? { nlb_locale: options.locale } : {}),
         productCategory: isPublishingProduct(productId) ? "developer_tooling" : "education_advisory",
         exposureGuaranteed: "false",
       },

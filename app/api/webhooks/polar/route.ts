@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb, type AppDb } from "@/lib/db";
 import { customers, subscriptions, orders } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -14,7 +15,13 @@ import {
   isMembershipProduct,
   isDirectoryProduct,
   extractProductIdsFromEvent,
+  MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS,
 } from "@/lib/polar";
+import { isOnboardingV2Enabled } from "@/lib/onboarding/flags";
+import { enqueueAccessReconcile, enqueueJob } from "@/lib/onboarding/jobs";
+import { runDueJobs } from "@/lib/onboarding/runner";
+import { linkCustomerFromPurchase, type PurchaseRefs } from "@/lib/membership/member-access";
+import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membership/subscription-sync";
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import crypto from "crypto";
@@ -26,6 +33,7 @@ interface PolarWebhookPayload {
     id?: string;
     status?: string;
     customer_id?: string;
+    subscription_id?: string | null;
     customer_email?: string;
     customer_name?: string;
     billing_name?: string;
@@ -38,6 +46,11 @@ interface PolarWebhookPayload {
     current_period_start?: string;
     current_period_end?: string;
     cancel_at_period_end?: boolean;
+    ended_at?: string | null;
+    started_at?: string | null;
+    created_at?: string | null;
+    modified_at?: string | null;
+    billing_reason?: string | null;
     customer?: {
       id?: string;
       email?: string;
@@ -108,25 +121,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "event_locked" }, { status: 500 });
     }
 
-    // 4. Execute domain event handler
+    // 4. Execute domain event handler. Provider work (community access, onboarding email) is only
+    // queued here; the job runner does it after the durable writes, never inline.
+    const effects: WebhookEffects = { onboardingV2: isOnboardingV2Enabled(), jobsEnqueued: false };
     try {
       switch (event.type) {
         case "checkout.updated":
           await handleCheckoutUpdated(event, eventId, db);
           break;
         case "subscription.created":
-          await handleSubscriptionCreated(event, eventId, db);
-          break;
         case "subscription.updated":
-          await handleSubscriptionUpdated(event, db);
+        case "subscription.active":
+        case "subscription.canceled":
+        case "subscription.uncanceled":
+        case "subscription.revoked":
+        case "subscription.past_due":
+          await handleSubscriptionEvent(event, db, effects);
           break;
         case "order.created":
         case "order.paid":
         case "order.updated":
-          await handleOrderCreated(event, eventId, db);
+          await handleOrderCreated(event, eventId, db, effects);
           await syncCourseVideoEntitlementFromOrder(event, db);
           break;
         case "order.refunded":
+          await handleOrderRefunded(event, db, effects);
           await syncCourseVideoEntitlementFromOrder(event, db);
           break;
         default:
@@ -134,6 +153,7 @@ export async function POST(request: Request) {
       }
 
       await completeWebhookEvent(db, eventId);
+      if (effects.jobsEnqueued) scheduleJobRun(db);
 
       return NextResponse.json({ received: true });
     } catch (error) {
@@ -262,6 +282,58 @@ async function sendOnboardingEmails({
   }
 }
 
+interface WebhookEffects {
+  /** `ONBOARDING_V2_ENABLED` at the time of delivery. Off keeps the legacy email flow unchanged. */
+  onboardingV2: boolean;
+  jobsEnqueued: boolean;
+}
+
+/** A purchase this recent counts as new for the onboarding welcome; older ones are renewals or existing members. */
+const NEW_MEMBERSHIP_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function parseDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function metadataString(data: PolarWebhookPayload["data"], key: string): string | null {
+  const value = data?.metadata?.[key];
+  return typeof value === "string" && value ? value : null;
+}
+
+/** Drain queued onboarding jobs after the response, when the Worker context is available. */
+function scheduleJobRun(db: AppDb) {
+  try {
+    const { ctx } = getCloudflareContext();
+    ctx.waitUntil(
+      runDueJobs(db, { limit: 5 }).catch(() => {
+        console.warn("onboarding job run after webhook failed; the cron will retry");
+      })
+    );
+  } catch {
+    // No Worker context (local Node, tests): the minute cron drains the queue.
+  }
+}
+
+/**
+ * Link the Polar customer to an NLB user from server-trusted signals only (see
+ * `linkCustomerFromPurchase`): `metadata.nlb_user_id` (set server-side by /api/checkout for a
+ * signed-in buyer and copied by Polar onto the checkout, subscription and order) when the customer
+ * is new to us or its email is that user's verified email, else a user whose verified email equals
+ * the customer email (trim + lowercase only). Polar's external customer id is not used: existing
+ * customers may carry none or one set elsewhere. Never overwrites an existing link. Returns the
+ * linked user id.
+ */
+async function linkCustomerFromEvent(
+  customer: { id: string; email: string; userId?: string | null },
+  data: PolarWebhookPayload["data"],
+  refs: PurchaseRefs,
+  db: AppDb
+): Promise<string | null> {
+  return linkCustomerFromPurchase(db, customer, { metadataUserId: metadataString(data, "nlb_user_id"), refs });
+}
+
 async function handleCheckoutUpdated(event: PolarWebhookPayload, eventId: string, db: AppDb) {
   const checkout = event.data;
   if (!checkout || checkout.status !== "succeeded") {
@@ -277,7 +349,7 @@ async function handleCheckoutUpdated(event: PolarWebhookPayload, eventId: string
   }
 
   // Synchronize customer identity; never dispatch onboarding emails from checkout events
-  await ensureCustomer(
+  const customer = await ensureCustomer(
     {
       email: customerEmail,
       name: customerName,
@@ -285,106 +357,138 @@ async function handleCheckoutUpdated(event: PolarWebhookPayload, eventId: string
     },
     db
   );
+  if (customer) {
+    await linkCustomerFromEvent(customer, checkout, { polarSubscriptionIds: [checkout.subscription_id] }, db);
+  }
 }
 
-async function handleSubscriptionCreated(event: PolarWebhookPayload, eventId: string, db: AppDb) {
-  const subscription = event.data;
-  if (!subscription) return;
-
-  const polarCustomerId =
-    subscription.customer_id || subscription.customer?.id;
-  const customerEmail =
-    subscription.customer?.email || subscription.customer_email;
-  const customerName =
-    subscription.customer?.name || subscription.customer_name;
-
-  let customer = null;
+async function resolveEventCustomer(data: NonNullable<PolarWebhookPayload["data"]>, db: AppDb) {
+  const polarCustomerId = data.customer_id || data.customer?.id;
+  const customerEmail = data.customer?.email || data.customer_email;
+  const customerName = data.customer?.name || data.customer_name;
   if (customerEmail) {
-    customer = await ensureCustomer(
-      {
-        email: customerEmail,
-        name: customerName,
-        polarCustomerId,
-      },
-      db
-    );
-  } else if (polarCustomerId) {
-    const [c] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.polarCustomerId, polarCustomerId))
-      .limit(1);
-    customer = c;
+    return ensureCustomer({ email: customerEmail, name: customerName, polarCustomerId }, db);
   }
+  if (polarCustomerId) {
+    const [c] = await db.select().from(customers).where(eq(customers.polarCustomerId, polarCustomerId)).limit(1);
+    return c ?? null;
+  }
+  return null;
+}
 
+/**
+ * Every `subscription.*` event carries the full subscription, so all of them persist the same way
+ * through `applySubscriptionSnapshot`, whose ordering rule keeps an older delivery from overwriting
+ * newer state. Legacy flag-off behaviour is kept: only `subscription.created` for an active
+ * membership sends the welcome and Form 01 emails, inline.
+ */
+async function handleSubscriptionEvent(event: PolarWebhookPayload, db: AppDb, effects: WebhookEffects) {
+  const subscription = event.data;
+  if (!subscription || !subscription.id) return;
+
+  const customer = await resolveEventCustomer(subscription, db);
   if (!customer) {
     console.error("Customer not found for subscription:", subscription.id);
     return;
   }
 
-  await db
-    .insert(subscriptions)
-    .values({
-      customerId: customer.id,
-      polarSubscriptionId: subscription.id || `sub_${crypto.randomUUID()}`,
-      polarProductId: subscription.product_id || subscription.product?.id || "",
-      productName: subscription.product?.name || "Premium Access",
-      status: subscription.status || "active",
-      currentPeriodStart: subscription.current_period_start
-        ? new Date(subscription.current_period_start)
-        : null,
-      currentPeriodEnd: subscription.current_period_end
-        ? new Date(subscription.current_period_end)
-        : null,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
-    })
-    .onConflictDoUpdate({
-      target: subscriptions.polarSubscriptionId,
-      set: {
-        status: subscription.status || "active",
-        currentPeriodStart: subscription.current_period_start
-          ? new Date(subscription.current_period_start)
-          : undefined,
-        currentPeriodEnd: subscription.current_period_end
-          ? new Date(subscription.current_period_end)
-          : undefined,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
-        updatedAt: new Date(),
-      },
-    });
-
   const productId = subscription.product_id || subscription.product?.id || "";
-  if (subscription.status === "active" && isMembershipProduct(productId) && subscription.id) {
-    await sendOnboardingEmails({
-      email: customer.email,
-      name: customer.name,
-      subscriptionId: subscription.id,
-      db,
+  await applySubscriptionSnapshot(db, {
+    polarSubscriptionId: subscription.id,
+    customerId: customer.id,
+    productId,
+    productName: subscription.product?.name ?? null,
+    status: subscription.status || "active",
+    currentPeriodStart: parseDate(subscription.current_period_start),
+    currentPeriodEnd: parseDate(subscription.current_period_end),
+    cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+    endedAt: parseDate(subscription.ended_at),
+    modifiedAt: parseDate(subscription.modified_at) ?? parseDate(subscription.created_at),
+  });
+
+  const userId = await linkCustomerFromEvent(customer, subscription, { polarSubscriptionIds: [subscription.id] }, db);
+
+  if (!effects.onboardingV2) {
+    if (event.type === "subscription.created" && subscription.status === "active" && isMembershipProduct(productId)) {
+      await sendOnboardingEmails({
+        email: customer.email,
+        name: customer.name,
+        subscriptionId: subscription.id,
+        db,
+      });
+    }
+    return;
+  }
+
+  if (!MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
+
+  if (userId) {
+    await enqueueAccessReconcile(db, userId);
+    effects.jobsEnqueued = true;
+  }
+
+  // New purchases only: renewals and members who bought long ago never get a welcome email.
+  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const startedAt = parseDate(subscription.started_at) ?? parseDate(subscription.created_at);
+  const isNewPurchase = !startedAt || Date.now() - startedAt.getTime() < NEW_MEMBERSHIP_WINDOW_MS;
+  if (
+    isActive &&
+    isNewPurchase &&
+    (event.type === "subscription.created" || event.type === "subscription.active") &&
+    isMembershipProduct(productId)
+  ) {
+    await enqueueJob(db, {
+      kind: "welcome_email",
+      dedupeKey: `welcome_email:${subscription.id}`,
+      payload: { customerId: customer.id, subscriptionId: subscription.id, locale: metadataString(subscription, "nlb_locale") },
+      onlyOnce: true,
     });
+    await enqueueJob(db, {
+      kind: "admin_notify",
+      dedupeKey: `admin_notify:new_membership:${subscription.id}`,
+      payload: { event: "new_membership", ref: subscription.id },
+      onlyOnce: true,
+    });
+    effects.jobsEnqueued = true;
   }
 }
 
-async function handleSubscriptionUpdated(event: PolarWebhookPayload, db: AppDb) {
-  const subscription = event.data;
-  if (!subscription || !subscription.id) return;
+/**
+ * Persist refunds. A full refund of the membership order that paid for the subscription's current
+ * period ends that subscription for entitlement (see `markSubscriptionRefunded`). Partial refunds,
+ * refunds of an earlier period's order and refunds of a mid-period plan-change charge keep access.
+ */
+async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effects: WebhookEffects) {
+  const order = event.data;
+  if (!order || !order.id || !order.status) return;
 
-  await db
-    .update(subscriptions)
-    .set({
-      status: subscription.status,
-      currentPeriodStart: subscription.current_period_start
-        ? new Date(subscription.current_period_start)
-        : null,
-      currentPeriodEnd: subscription.current_period_end
-        ? new Date(subscription.current_period_end)
-        : null,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.polarSubscriptionId, subscription.id));
+  await db.update(orders).set({ status: order.status }).where(eq(orders.polarOrderId, order.id));
+
+  const productId = order.product_id || order.product?.id || "";
+  if (order.status !== "refunded" || !order.subscription_id || !MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
+
+  if (order.billing_reason === "subscription_update") return;
+  const orderCreatedAt = parseDate(order.created_at);
+  if (!orderCreatedAt) {
+    console.warn(`order.refunded ${order.id} has no created_at; subscription access left unchanged`);
+    return;
+  }
+  const refundedAt = parseDate(order.modified_at) ?? new Date();
+  const subscription = await markSubscriptionRefunded(db, order.subscription_id, { refundedAt, orderCreatedAt });
+  if (!subscription || !effects.onboardingV2) return;
+
+  const [customer] = await db
+    .select({ userId: customers.userId })
+    .from(customers)
+    .where(eq(customers.id, subscription.customerId))
+    .limit(1);
+  if (customer?.userId) {
+    await enqueueAccessReconcile(db, customer.userId);
+    effects.jobsEnqueued = true;
+  }
 }
 
-async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, db: AppDb) {
+async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, db: AppDb, effects: WebhookEffects) {
   const order = event.data;
   if (!order || !order.id) return;
 
@@ -415,6 +519,19 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
   if (!customer) {
     console.error("Could not find or create customer for order:", order.id);
     return;
+  }
+
+  // An order can be the first delivery carrying the buyer's `nlb_user_id`; a new link changes access.
+  const wasLinked = Boolean(customer.userId);
+  const linkedUserId = await linkCustomerFromEvent(
+    customer,
+    order,
+    { polarSubscriptionIds: [order.subscription_id], polarOrderIds: [order.id] },
+    db
+  );
+  if (linkedUserId && !wasLinked && effects.onboardingV2) {
+    await enqueueAccessReconcile(db, linkedUserId);
+    effects.jobsEnqueued = true;
   }
 
   const isPaid =
