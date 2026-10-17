@@ -1134,7 +1134,9 @@
       "error": "Could not upgrade right now. Try again or email hello@nextlevelbuilder.io.",
       "upgrading": "Upgrading…",
       "success": "You are now VIP. Your community access updates within a minute.",
-      "rateLimited": "Please wait a few seconds before trying again."
+      "rateLimited": "Please wait a few seconds before trying again.",
+      "pastDue": "Update your payment method first. Polar could not take your last payment, so the upgrade is paused until it goes through.",
+      "alreadyVip": "You are already a VIP member. Refreshing your plan…"
     },
     "support": "Questions about your membership? Email"
   }

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { onboardingJobs, subscriptions } from "@/lib/db/schema";
+import { customers, onboardingJobs, subscriptions } from "@/lib/db/schema";
 import { PRODUCT_IDS } from "@/lib/polar";
 import { vipProductForPremium } from "@/lib/onboarding/status";
-import { createMember, createTestUser, sessionFor, type TestUser } from "./helpers/onboarding-fixtures";
+import { createMember, createTestUser, nextId, sessionFor, type TestUser } from "./helpers/onboarding-fixtures";
 
 const getSessionMock = vi.fn();
 const updateMock = vi.fn();
@@ -100,9 +100,44 @@ describe("POST /api/onboarding/upgrade", () => {
     expect(await reconcileTargets(user.id)).toEqual(["discord_guild", "telegram_group"]);
   });
 
-  it("returns 409 when there is no active Premium subscription to switch", async () => {
-    expect((await postUpgrade()).status).toBe(409);
+  it("returns 409 no_membership only when no membership subscription is linked at all", async () => {
+    const response = await postUpgrade();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "no_membership" });
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 already_vip for a VIP member, even with a separate Premium subscription", async () => {
     await createMember(user, { productId: PRODUCT_IDS.VIP_ANNUAL });
+    const [second] = await getDb()
+      .insert(customers)
+      .values({ email: `${nextId("second")}@example.com`, name: "Member", userId: user.id })
+      .returning();
+    await getDb().insert(subscriptions).values({
+      customerId: second.id,
+      polarSubscriptionId: nextId("sub"),
+      polarProductId: PRODUCT_IDS.PREMIUM_QUARTERLY,
+      productName: "Premium",
+      status: "active",
+      currentPeriodEnd: new Date(Date.now() + 90 * DAY),
+    });
+    const response = await postUpgrade();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "already_vip" });
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 past_due for a past-due Premium subscription instead of a new checkout", async () => {
+    const customer = await createMember(user, { productId: PRODUCT_IDS.PREMIUM_ANNUAL, status: "past_due" });
+    await getDb().update(subscriptions).set({ pastDueSince: new Date() }).where(eq(subscriptions.customerId, customer.id));
+    const response = await postUpgrade();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "past_due" });
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 no_upgradeable_subscription when only ended memberships are linked", async () => {
+    await createMember(user, { productId: PRODUCT_IDS.PREMIUM_ANNUAL, status: "canceled" });
     const response = await postUpgrade();
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: "no_upgradeable_subscription" });

@@ -1134,7 +1134,9 @@
       "error": "Chưa thể nâng cấp lúc này. Hãy thử lại hoặc email hello@nextlevelbuilder.io.",
       "upgrading": "Đang nâng cấp…",
       "success": "Bạn đã là thành viên VIP. Quyền truy cập cộng đồng sẽ được cập nhật trong vòng một phút.",
-      "rateLimited": "Vui lòng đợi vài giây rồi thử lại."
+      "rateLimited": "Vui lòng đợi vài giây rồi thử lại.",
+      "pastDue": "Hãy cập nhật phương thức thanh toán trước. Polar chưa thu được khoản thanh toán gần nhất nên việc nâng cấp tạm dừng cho đến khi thanh toán thành công.",
+      "alreadyVip": "Bạn đã là thành viên VIP. Đang làm mới thông tin gói…"
     },
     "support": "Có câu hỏi về membership? Email cho"
   }

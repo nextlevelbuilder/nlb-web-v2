@@ -21,6 +21,7 @@ import {
   toMembershipState,
 } from "@/lib/membership/member-access";
 import { applySubscriptionSnapshot } from "@/lib/membership/subscription-sync";
+import { tierForProductId } from "@/lib/membership/tiers";
 import { getPastDueGraceDays } from "@/lib/onboarding/flags";
 import { enqueueAccessReconcile, enqueueJob } from "@/lib/onboarding/jobs";
 import { runDueJobs } from "@/lib/onboarding/runner";
@@ -515,15 +516,23 @@ export function vipProductForPremium(productId: string): string {
   return termForProductId(productId) === "quarterly" ? PRODUCT_IDS.VIP_QUARTERLY : PRODUCT_IDS.VIP_ANNUAL;
 }
 
+/**
+ * Why an upgrade cannot run. Only `no_membership` (no membership subscription linked at all) lets
+ * the client start a new VIP checkout; every other code keeps the member on their subscription.
+ */
+export type UpgradeRefusal = "no_membership" | "already_vip" | "past_due" | "no_upgradeable_subscription";
+
 export type UpgradeResult =
   | { ok: true; membership: MembershipSummary | null }
   | { ok: false; error: "rate_limited"; retryAfterMs: number }
-  | { ok: false; error: "no_upgradeable_subscription" | "upgrade_failed" };
+  | { ok: false; error: UpgradeRefusal | "upgrade_failed" };
 
 /**
  * Premium → VIP in place: the member's linked, active Premium subscription switches product on
  * Polar and the difference is invoiced immediately, so no second subscription is created. The
- * local row is refreshed from Polar's answer and community access is reconciled to VIP.
+ * local row is refreshed from Polar's answer and community access is reconciled to VIP. A VIP
+ * member, a past-due Premium subscription or any other linked membership is refused without
+ * offering a new checkout, so a member never ends up paying for two subscriptions.
  */
 export async function upgradeMembershipToVip(
   db: AppDb,
@@ -531,14 +540,24 @@ export async function upgradeMembershipToVip(
   polar: PolarSubscriptionUpdater,
   now: Date = new Date()
 ): Promise<UpgradeResult> {
-  const premium = (await getLinkedSubscriptions(db, userId))
+  const memberships = (await getLinkedSubscriptions(db, userId)).filter((row) => tierForProductId(row.polarProductId) !== null);
+  if (memberships.length === 0) return { ok: false, error: "no_membership" };
+  const graceDays = getPastDueGraceDays();
+  if (resolveEffectiveTier(memberships.map(toMembershipState), now, graceDays).tier === "vip") {
+    return { ok: false, error: "already_vip" };
+  }
+
+  const premium = memberships
     .filter(
       (row) =>
         UPGRADEABLE_STATUSES.has(row.status) &&
-        resolveEffectiveTier([toMembershipState(row)], now, getPastDueGraceDays()).tier === "premium"
+        resolveEffectiveTier([toMembershipState(row)], now, graceDays).tier === "premium"
     )
     .sort((a, b) => (b.currentPeriodEnd?.getTime() ?? 0) - (a.currentPeriodEnd?.getTime() ?? 0))[0];
-  if (!premium) return { ok: false, error: "no_upgradeable_subscription" };
+  if (!premium) {
+    const pastDue = memberships.some((row) => row.status === "past_due" && !row.endedAt);
+    return { ok: false, error: pastDue ? "past_due" : "no_upgradeable_subscription" };
+  }
 
   const limited = await memberRateLimit(db, userId, now);
   if (limited) return { ok: false, error: "rate_limited", retryAfterMs: limited.retryAfterMs };

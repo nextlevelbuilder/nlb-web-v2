@@ -22,7 +22,9 @@ export async function POST(request: Request) {
         { status: 429, headers: { "retry-after": String(retryAfter) } }
       );
     }
-    const status = result.error === "no_upgradeable_subscription" ? 409 : 502;
+    // 409: no_membership (the client may start a VIP checkout), already_vip, past_due or
+    // no_upgradeable_subscription (the client must not start a second subscription).
+    const status = result.error === "upgrade_failed" ? 502 : 409;
     return NextResponse.json({ error: result.error }, { status });
   }
   scheduleOnboardingJobRun(db);
