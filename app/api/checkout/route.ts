@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { resolveCaller } from "@/lib/auth-api-key";
 import { MCP_ASSERTION_HEADER } from "@/lib/auth-mcp-delegation";
-import { createCheckoutSession, PRODUCT_IDS, type ProductId } from "@/lib/polar";
+import { getAuth } from "@/lib/auth";
+import { createCheckoutSession, isMembershipProduct, PRODUCT_IDS, type CheckoutSessionOptions, type ProductId } from "@/lib/polar";
+import { env } from "@/lib/env";
+import { isOnboardingV2Enabled, onboardingPath } from "@/lib/onboarding/flags";
+import { defaultLocale, isLocale, locales, type Locale } from "@/i18n/routing";
 import { z } from "zod";
 
 const checkoutSchema = z.object({
@@ -18,7 +22,31 @@ const checkoutSchema = z.object({
   ]),
   customerEmail: z.string().email().optional(),
   productSlug: z.string().optional(),
+  locale: z.enum(locales).optional(),
 });
+
+/** Buyer locale: explicit body field, else the `/vi` prefix of the page that started checkout, else the default. */
+function resolveCheckoutLocale(request: Request, bodyLocale: Locale | undefined): Locale {
+  if (bodyLocale) return bodyLocale;
+  try {
+    const referer = request.headers.get("referer");
+    const first = referer ? new URL(referer).pathname.split("/")[1] : undefined;
+    if (isLocale(first)) return first;
+  } catch {
+    // Malformed referer: fall through to the default.
+  }
+  return defaultLocale;
+}
+
+/** The signed-in NLB user id from the Better Auth session cookie, if any. Never trusted from the body. */
+async function sessionUserId(request: Request): Promise<string | undefined> {
+  try {
+    const session = await getAuth().api.getSession({ headers: request.headers });
+    return session?.user?.id ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 export async function POST(request: Request) {
   let requestBody: any;
 
@@ -31,17 +59,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     requestBody = await request.json();
-    const { productId, customerEmail, productSlug } = checkoutSchema.parse(requestBody);
+    const { productId, customerEmail, productSlug, locale } = checkoutSchema.parse(requestBody);
 
     if (caller && customerEmail && customerEmail.toLowerCase() !== caller.user.email.toLowerCase()) {
       return NextResponse.json({ error: "Customer email must match the authenticated user" }, { status: 403 });
     }
 
-    const checkout = await createCheckoutSession(
-      productId as ProductId,
-      caller ? caller.user.email : customerEmail,
-      productSlug as string | undefined
-    );
+    // Onboarding v2: memberships land on the first-party onboarding page, and a signed-in buyer is
+    // bound to the Polar customer server-side. Directory and toolkit checkouts are unchanged.
+    const options: CheckoutSessionOptions = {};
+    if (isOnboardingV2Enabled() && isMembershipProduct(productId)) {
+      const checkoutLocale = resolveCheckoutLocale(request, locale);
+      options.successUrl = `${env.NEXT_PUBLIC_APP_URL}${onboardingPath(checkoutLocale)}?checkout_id={CHECKOUT_ID}`;
+      options.locale = checkoutLocale;
+      options.nlbUserId = caller ? caller.user.id : await sessionUserId(request);
+    }
+
+    const checkoutArgs = [productId as ProductId, caller ? caller.user.email : customerEmail, productSlug as string | undefined] as const;
+    const checkout = Object.keys(options).length > 0
+      ? await createCheckoutSession(...checkoutArgs, options)
+      : await createCheckoutSession(...checkoutArgs);
 
     if (!checkout.url) {
       console.error("Checkout created but no URL returned:", checkout);
