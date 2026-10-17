@@ -9,7 +9,7 @@ import {
   isOurProduct,
 } from "@/lib/polar";
 
-// Mock Resend and Discord notifications
+// Mock Resend and Discord notifications. The database is the real local D1 from the test setup.
 const sendWelcomeEmailMock = vi.fn().mockResolvedValue({ success: true, data: { id: "msg_welcome_123" } });
 const sendForm01EmailMock = vi.fn().mockResolvedValue({ success: true, data: { id: "msg_form01_123" } });
 const sendDiscordSalesMock = vi.fn().mockResolvedValue(true);
@@ -30,97 +30,6 @@ vi.mock("@/lib/discord", () => ({
 vi.mock("@polar-sh/sdk/webhooks", () => ({
   validateEvent: vi.fn().mockReturnValue(true),
   WebhookVerificationError: class WebhookVerificationError extends Error {},
-}));
-
-// Mock database state and tables for webhook routing tests
-const deliveryIntentsStore = new Map<string, any>();
-const webhookEventsStore = new Set<string>();
-const customersStore = new Map<string, any>();
-const subscriptionsStore = new Map<string, any>();
-const ordersStore = new Map<string, any>();
-
-function createMockDb() {
-  return {
-    insert: vi.fn((table: any) => ({
-      values: vi.fn((vals: any) => {
-        const row = Array.isArray(vals) ? vals[0] : vals;
-        return {
-          onConflictDoNothing: vi.fn((opts?: any) => {
-            const claim = async () => {
-                // Table: deliveryIntents
-                if (row.idempotencyKey) {
-                  if (deliveryIntentsStore.has(row.idempotencyKey)) {
-                    return [];
-                  }
-                  deliveryIntentsStore.set(row.idempotencyKey, { ...row, id: `intent_${Date.now()}` });
-                  return [deliveryIntentsStore.get(row.idempotencyKey)];
-                }
-                // Table: webhookEvents
-                if (row.eventId) {
-                  if (webhookEventsStore.has(row.eventId)) {
-                    return [];
-                  }
-                  webhookEventsStore.add(row.eventId);
-                  return [{ ...row, id: `evt_row_${Date.now()}` }];
-                }
-                return [{ ...row, id: "gen_id" }];
-            };
-            // D1 reports affected rows through `run().meta.changes`, like the real driver.
-            return {
-              returning: vi.fn().mockImplementation(claim),
-              run: vi.fn().mockImplementation(async () => ({ meta: { changes: (await claim()).length } })),
-            };
-          }),
-          onConflictDoUpdate: vi.fn((opts?: any) => {
-            return {
-              returning: vi.fn().mockImplementation(async () => {
-                if (row.email) {
-                  // customers table
-                  customersStore.set(row.email, { id: `cust_${customersStore.size + 1}`, ...row });
-                  return [customersStore.get(row.email)];
-                }
-                if (row.polarSubscriptionId) {
-                  // subscriptions table
-                  subscriptionsStore.set(row.polarSubscriptionId, { id: `sub_${subscriptionsStore.size + 1}`, ...row });
-                  return [subscriptionsStore.get(row.polarSubscriptionId)];
-                }
-                if (row.polarOrderId) {
-                  // orders table
-                  ordersStore.set(row.polarOrderId, { id: `order_${ordersStore.size + 1}`, ...row });
-                  return [ordersStore.get(row.polarOrderId)];
-                }
-                return [{ ...row, id: "updated_id" }];
-              }),
-            };
-          }),
-          returning: vi.fn().mockResolvedValue([{ ...row, id: "ret_id" }]),
-        };
-      }),
-    })),
-    select: vi.fn(() => ({
-      from: vi.fn((table: any) => ({
-        where: vi.fn((cond: any) => ({
-          limit: vi.fn().mockResolvedValue([]),
-          orderBy: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-    })),
-    update: vi.fn((table: any) => ({
-      set: vi.fn((vals: any) => ({
-        where: vi.fn(() =>
-          Object.assign(Promise.resolve([{ ...vals }]), { run: vi.fn().mockResolvedValue({ meta: { changes: 0 } }) })
-        ),
-      })),
-    })),
-  };
-}
-
-let mockDb = createMockDb();
-
-vi.mock("@/lib/db", () => ({
-  getDb: () => mockDb,
 }));
 
 describe("Polar Product Classification & Single Source of Truth", () => {
@@ -176,12 +85,6 @@ describe("Polar Product Classification & Single Source of Truth", () => {
 describe("Polar Webhook Route: Email Isolation & Idempotency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    deliveryIntentsStore.clear();
-    webhookEventsStore.clear();
-    customersStore.clear();
-    subscriptionsStore.clear();
-    ordersStore.clear();
-    mockDb = createMockDb();
   });
 
   it("AC1: Directory purchase should produce ZERO Welcome and ZERO Form 01 emails across all events", async () => {

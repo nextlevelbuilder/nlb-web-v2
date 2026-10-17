@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "nextlevelbuilder-web",
   "account_id": "7ac87c90789159ae1b10b7d78f5dcc08",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2025-09-01",
   "compatibility_flags": [
     "nodejs_compat",
@@ -14,6 +14,9 @@
   "preview_urls": false,
   "observability": {
     "enabled": true
+  },
+  "triggers": {
+    "crons": ["* * * * *", "17 * * * *"]
   },
   "services": [
     {
@@ -32,7 +35,10 @@
     "NEXT_PUBLIC_APP_URL": "https://nextlevelbuilder.io",
     "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
     "COURSES_ACCESS_PLANS": "vip",
-    "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08"
+    "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08",
+    "ONBOARDING_V2_ENABLED": "false",
+    "MEMBERSHIP_PAST_DUE_GRACE_DAYS": "7",
+    "POLAR_SERVER": "production"
   },
   "d1_databases": [
     {
@@ -63,6 +69,9 @@
       "name": "nextlevelbuilder-web-staging",
       "workers_dev": true,
       "preview_urls": false,
+      "triggers": {
+        "crons": ["* * * * *", "17 * * * *"]
+      },
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
@@ -80,7 +89,10 @@
         "NEXT_PUBLIC_APP_URL": "https://staging.nextlevelbuilder.io",
         "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
         "COURSES_ACCESS_PLANS": "vip",
-        "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08"
+        "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08",
+        "ONBOARDING_V2_ENABLED": "true",
+        "MEMBERSHIP_PAST_DUE_GRACE_DAYS": "7",
+        "POLAR_SERVER": "sandbox"
       },
       "d1_databases": [
         {
