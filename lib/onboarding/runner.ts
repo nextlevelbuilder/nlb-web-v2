@@ -2,12 +2,12 @@ import { eq } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { customers } from "@/lib/db/schema";
 import { reconcileCommunityAccess } from "@/lib/community/reconcile";
-import { COMMUNITY_TARGETS, ProviderError, type CommunityTarget } from "@/lib/community/types";
+import { COMMUNITY_TARGETS, PROVIDER_FETCH_TIMEOUT_MS, ProviderError, isFetchTimeout, type CommunityTarget } from "@/lib/community/types";
 import { sendOnboardingWelcomeEmail } from "@/lib/email-onboarding-welcome";
 import { resyncMembershipSubscriptions, type PolarSubscriptionReader } from "@/lib/membership/polar-resync";
 import { getOnboardingEnv } from "./flags";
 import { purgeExpiredNonces } from "./nonces";
-import { claimDueJobs, completeJob, DEFAULT_JOB_LEASE_MS, failJob, type OnboardingJob } from "./jobs";
+import { claimDueJobs, completeJob, DEFAULT_JOB_LEASE_MS, failJob, renewJobLease, type OnboardingJob } from "./jobs";
 
 export interface RunDueJobsOptions {
   limit?: number;
@@ -20,6 +20,8 @@ export interface RunDueJobsSummary {
   done: number;
   retried: number;
   dead: number;
+  /** Claimed jobs another runner re-took before this one reached them; left to that runner. */
+  lost: number;
 }
 
 function payloadString(job: OnboardingJob, key: string): string {
@@ -49,7 +51,9 @@ async function runWelcomeEmail(db: AppDb, job: OnboardingJob): Promise<void> {
     locale: typeof job.payload.locale === "string" ? job.payload.locale : null,
     idempotencyKey: `nlb-onboarding-welcome-${subscriptionId}`,
   });
-  if (!result.success) throw new ProviderError("email_send_failed", { retryable: true });
+  if (!result.success) {
+    throw result.error instanceof ProviderError ? result.error : new ProviderError("email_send_failed", { retryable: true });
+  }
 }
 
 /** Internal admin ping. Optional: without `LARK_ADMIN_WEBHOOK_URL` the job completes as a no-op. */
@@ -58,11 +62,17 @@ async function runAdminNotify(job: OnboardingJob): Promise<void> {
   if (!url) return;
   const event = typeof job.payload.event === "string" ? job.payload.event : "onboarding_event";
   const ref = typeof job.payload.ref === "string" ? ` ${job.payload.ref}` : "";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ msg_type: "text", content: { text: `[NLB onboarding] ${event}${ref}` } }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ msg_type: "text", content: { text: `[NLB onboarding] ${event}${ref}` } }),
+      signal: AbortSignal.timeout(PROVIDER_FETCH_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new ProviderError(isFetchTimeout(error) ? "admin_notify_timeout" : "admin_notify_network", { retryable: true });
+  }
   if (!response.ok) {
     throw new ProviderError(`admin_notify_http_${response.status}`, { retryable: response.status >= 500 || response.status === 429 });
   }
@@ -107,14 +117,22 @@ export async function runOnboardingCron(
 }
 
 /**
- * Drain due onboarding jobs once: claim with a lease, run each, then complete or back off. Called by
- * the minute cron and after enqueue through `waitUntil`. Logs carry job ids and kinds only.
+ * Drain due onboarding jobs once: claim with a lease, renew it as each job starts, run it, then
+ * complete or back off. Called by the minute cron and after enqueue through `waitUntil`. Logs carry
+ * job ids and kinds only.
  */
 export async function runDueJobs(db: AppDb, options: RunDueJobsOptions = {}): Promise<RunDueJobsSummary> {
   const now = options.now ?? (() => new Date());
-  const jobs = await claimDueJobs(db, options.limit ?? 10, options.leaseMs ?? DEFAULT_JOB_LEASE_MS, now());
-  const summary: RunDueJobsSummary = { claimed: jobs.length, done: 0, retried: 0, dead: 0 };
-  for (const job of jobs) {
+  const leaseMs = options.leaseMs ?? DEFAULT_JOB_LEASE_MS;
+  const claimed = await claimDueJobs(db, options.limit ?? 10, leaseMs, now());
+  const summary: RunDueJobsSummary = { claimed: claimed.length, done: 0, retried: 0, dead: 0, lost: 0 };
+  for (const claim of claimed) {
+    const job = await renewJobLease(db, claim, leaseMs, now());
+    if (!job) {
+      summary.lost += 1;
+      console.warn(`onboarding job ${claim.id} (${claim.kind}) was re-taken by another runner; skipped`);
+      continue;
+    }
     try {
       await dispatch(db, job);
       await completeJob(db, job, now());

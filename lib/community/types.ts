@@ -51,6 +51,14 @@ export interface CommunityAdapter {
   apply(input: ApplyInput): Promise<ApplyResult>;
 }
 
+/** Upper bound for one provider HTTP call (Discord, Telegram, Polar, admin webhook) made by jobs. */
+export const PROVIDER_FETCH_TIMEOUT_MS = 10_000;
+
+/** Whether a fetch failed because its `AbortSignal.timeout` fired. */
+export function isFetchTimeout(error: unknown): boolean {
+  return error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+}
+
 /** A provider call failed. `code` is safe to store and log; the message must not carry secrets or PII. */
 export class ProviderError extends Error {
   readonly code: string;

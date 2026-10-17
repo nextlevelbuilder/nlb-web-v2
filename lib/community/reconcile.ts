@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { communityAccessState, communityConnections } from "@/lib/db/schema";
 import { getMemberTier } from "@/lib/membership/member-access";
@@ -33,6 +33,10 @@ async function writeState(
 /**
  * Converge one user's access on one community target. The desired tier comes only from
  * `getMemberTier` (verified Polar state of the customer linked through NLB), never from the client.
+ * A connection with a pending unlink converges to no access instead, and its row is deleted once the
+ * adapter reports the access revoked (or the account was never in the community); any other outcome
+ * keeps the row so the unlink is retried. Running unlink here, under the same job dedupe key as every
+ * other reconcile for this user and target, serializes it with grants.
  * The outcome is recorded in `community_access_state`. Retryable failures are recorded as
  * `retrying` and rethrown as `ProviderError` so the job backs off; permanent ones are recorded and
  * returned.
@@ -54,6 +58,7 @@ export async function reconcileCommunityAccess(
     .from(communityAccessState)
     .where(and(eq(communityAccessState.userId, userId), eq(communityAccessState.target, target)))
     .limit(1);
+  const unlinking = Boolean(connection?.unlinkRequestedAt);
 
   let result: ApplyResult;
   try {
@@ -61,7 +66,7 @@ export async function reconcileCommunityAccess(
       db,
       userId,
       target,
-      desiredTier,
+      desiredTier: unlinking ? "none" : desiredTier,
       connection: connection ?? null,
       current: current ?? null,
     });
@@ -80,6 +85,13 @@ export async function reconcileCommunityAccess(
   if (result.retryable) {
     await writeState(db, userId, target, desiredTier, { ...result, status: "retrying" }, now);
     throw new ProviderError(result.errorCode ?? "retryable", { retryable: true, retryAfterMs: result.retryAfterMs });
+  }
+
+  if (connection && unlinking && (result.status === "revoked" || result.status === "not_connected")) {
+    await db
+      .delete(communityConnections)
+      .where(and(eq(communityConnections.id, connection.id), isNotNull(communityConnections.unlinkRequestedAt)));
+    result = { status: "not_connected", appliedTier: "none" };
   }
 
   await writeState(db, userId, target, desiredTier, result, now);

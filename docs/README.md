@@ -13,6 +13,7 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [builder-league-adr.md](./builder-league-adr.md) | Understand Builder League scoring: the ledger, rulesets, caps, time windows, privacy and the rollout flag |
 | [builder-league-runbook.md](./builder-league-runbook.md) | Operate the Builder League: moderation, appeals, replays, finalization, renders, privacy requests, pilot, flag, backups, costs |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
+| [membership-onboarding.md](./membership-onboarding.md) | Operate post-checkout onboarding: tier rules, Discord/Telegram access, jobs and cron, secrets, backfill, rollback |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |
 | [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md) | Understand the one-way Neon → D1 data copy and its risks |
 | [cutover-runbook.md](./cutover-runbook.md) | Move `nextlevelbuilder.io` from the Digitop account to hi@ |

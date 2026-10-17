@@ -2,6 +2,7 @@ import { resend } from "./resend";
 import { env } from "./env";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/routing";
 import { onboardingPath } from "@/lib/onboarding/flags";
+import { PROVIDER_FETCH_TIMEOUT_MS, ProviderError } from "@/lib/community/types";
 
 export interface OnboardingWelcomeEmailProps {
   email: string;
@@ -55,16 +56,30 @@ export function renderOnboardingWelcomeEmail({ name, locale }: { name?: string |
   return { subject: copy.subject, html, text, url };
 }
 
+/**
+ * Send the welcome email. The Resend SDK takes no abort signal, so the call is bounded by racing a
+ * timer: after `PROVIDER_FETCH_TIMEOUT_MS` it fails with a retryable `resend_timeout`, and the
+ * idempotency key keeps a late first attempt and the retry from both delivering.
+ */
 export async function sendOnboardingWelcomeEmail({ email, name, locale, idempotencyKey }: OnboardingWelcomeEmailProps) {
   const { subject, html, text } = renderOnboardingWelcomeEmail({ name, locale });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new ProviderError("resend_timeout", { retryable: true })), PROVIDER_FETCH_TIMEOUT_MS);
+  });
   try {
-    const result = await resend.emails.send(
-      { from: `Next Level Builders <${env.RESEND_FROM_EMAIL}>`, to: [email], subject, html, text },
-      { idempotencyKey }
-    );
+    const result = await Promise.race([
+      resend.emails.send(
+        { from: `Next Level Builders <${env.RESEND_FROM_EMAIL}>`, to: [email], subject, html, text },
+        { idempotencyKey }
+      ),
+      timeout,
+    ]);
     if (result.error) return { success: false as const, error: result.error };
     return { success: true as const, data: result.data };
   } catch (error) {
     return { success: false as const, error };
+  } finally {
+    clearTimeout(timer);
   }
 }

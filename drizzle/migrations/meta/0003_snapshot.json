@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "2360bdff-82c0-48d8-b263-e44746b862ae",
-  "prevId": "a1d5def3-625f-40d8-b831-d29707e4c96a",
+  "prevId": "fb705240-c92d-41d3-b51a-6de64b9d9347",
   "tables": {
     "accounts": {
       "name": "accounts",
@@ -1134,6 +1134,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "unlink_requested_at": {
+          "name": "unlink_requested_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "linked_at": {
           "name": "linked_at",
           "type": "integer",
@@ -1433,12 +1440,12 @@
           ],
           "isUnique": true
         },
-        "customers_user_id_unique": {
-          "name": "customers_user_id_unique",
+        "customers_user_id_idx": {
+          "name": "customers_user_id_idx",
           "columns": [
             "user_id"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {},

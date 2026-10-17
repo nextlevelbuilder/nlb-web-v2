@@ -38,15 +38,18 @@ function resolveCheckoutLocale(request: Request, bodyLocale: Locale | undefined)
   return defaultLocale;
 }
 
-/** The signed-in NLB user id from the Better Auth session cookie, if any. Never trusted from the body. */
-async function sessionUserId(request: Request): Promise<string | undefined> {
+/** The signed-in NLB user from the Better Auth session cookie, if any. Never trusted from the body. */
+async function sessionUser(request: Request): Promise<{ id: string; email: string | null } | undefined> {
   try {
     const session = await getAuth().api.getSession({ headers: request.headers });
-    return session?.user?.id ?? undefined;
+    const user = session?.user;
+    if (!user?.id) return undefined;
+    return { id: user.id, email: typeof user.email === "string" && user.email ? user.email : null };
   } catch {
     return undefined;
   }
 }
+
 export async function POST(request: Request) {
   let requestBody: any;
 
@@ -66,16 +69,24 @@ export async function POST(request: Request) {
     }
 
     // Onboarding v2: memberships land on the first-party onboarding page, and a signed-in buyer is
-    // bound to the Polar customer server-side. Directory and toolkit checkouts are unchanged.
+    // bound to the Polar customer server-side. The checkout email of a signed-in buyer is prefilled
+    // with their account email, never one from the body. Polar lets the buyer edit it, so ownership
+    // is enforced when the customer is linked (`canLinkFromMetadata`), not here. Directory and
+    // toolkit checkouts are unchanged.
     const options: CheckoutSessionOptions = {};
+    let checkoutEmail = caller ? caller.user.email : customerEmail;
     if (isOnboardingV2Enabled() && isMembershipProduct(productId)) {
       const checkoutLocale = resolveCheckoutLocale(request, locale);
       options.successUrl = `${env.NEXT_PUBLIC_APP_URL}${onboardingPath(checkoutLocale)}?checkout_id={CHECKOUT_ID}`;
       options.locale = checkoutLocale;
-      options.nlbUserId = caller ? caller.user.id : await sessionUserId(request);
+      const buyer = caller ? { id: caller.user.id, email: caller.user.email } : await sessionUser(request);
+      if (buyer) {
+        options.nlbUserId = buyer.id;
+        checkoutEmail = buyer.email ?? undefined;
+      }
     }
 
-    const checkoutArgs = [productId as ProductId, caller ? caller.user.email : customerEmail, productSlug as string | undefined] as const;
+    const checkoutArgs = [productId as ProductId, checkoutEmail, productSlug as string | undefined] as const;
     const checkout = Object.keys(options).length > 0
       ? await createCheckoutSession(...checkoutArgs, options)
       : await createCheckoutSession(...checkoutArgs);

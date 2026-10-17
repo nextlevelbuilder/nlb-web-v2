@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNotNull, lte, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { subscriptions } from "@/lib/db/schema";
 
@@ -34,17 +34,32 @@ const statusRank = (column: unknown) => sql`(case ${column}
   else 3 end)`;
 
 /**
+ * A locally refunded row that Polar later reports as running again: an `active` or `trialing` state
+ * stamped strictly after the refund. Polar keeps billing such a subscription (for example a renewal
+ * after a refunded earlier period), so access follows it again.
+ */
+const resumedAfterRefund = sql`(
+  ${subscriptions.status} = 'refunded'
+  and excluded.status in ('active', 'trialing')
+  and excluded.ended_at is null
+  and excluded.polar_modified_at is not null
+  and ${subscriptions.polarModifiedAt} is not null
+  and excluded.polar_modified_at > ${subscriptions.polarModifiedAt}
+)`;
+
+/**
  * Ordering rule for out-of-order and replayed deliveries. An incoming state overwrites the stored one
  * only when all hold:
  * 1. the stored subscription has not ended, or the incoming state is also ended (ended is terminal:
- *    Polar never resumes an ended subscription, and a local full refund ends it too);
+ *    Polar never resumes an ended subscription), or the row ended only through a local refund and
+ *    Polar reports it running again afterwards (see `resumedAfterRefund`);
  * 2. it is not older: stored `polar_modified_at` is unknown, or incoming is strictly newer, or both
  *    are equal and the incoming status ranks at least as high (see `statusRank`).
  * An incoming state with no timestamp only fills a row that has none either.
  * `past_due_since` keeps the first time the subscription entered `past_due` and clears on leaving it.
  */
 const newerState = sql`(
-  (${subscriptions.endedAt} is null or excluded.ended_at is not null)
+  (${subscriptions.endedAt} is null or excluded.ended_at is not null or ${resumedAfterRefund})
   and (
     ${subscriptions.polarModifiedAt} is null
     or (excluded.polar_modified_at is not null and (
@@ -119,7 +134,7 @@ export async function applySubscriptionSnapshot(
         currentPeriodEnd: sql`coalesce(excluded.current_period_end, ${subscriptions.currentPeriodEnd})`,
         cancelAtPeriodEnd: sql`excluded.cancel_at_period_end`,
         pastDueSince: sql`case when excluded.status = 'past_due' then coalesce(${subscriptions.pastDueSince}, excluded.past_due_since) else null end`,
-        endedAt: sql`coalesce(${subscriptions.endedAt}, excluded.ended_at)`,
+        endedAt: sql`case when ${resumedAfterRefund} then null else coalesce(${subscriptions.endedAt}, excluded.ended_at) end`,
         polarModifiedAt: sql`coalesce(excluded.polar_modified_at, ${subscriptions.polarModifiedAt})`,
         updatedAt: now,
       },
@@ -135,14 +150,20 @@ export async function applySubscriptionSnapshot(
   return { row: after ?? null, changed };
 }
 
+/** How far before the stored period start an order may be created and still pay for that period. */
+export const CURRENT_PERIOD_ORDER_TOLERANCE_MS = 60 * 60 * 1000;
+
 /**
- * A full refund of a subscription order ends that subscription for entitlement, whatever Polar
- * reports later (see the terminal rule above). Returns the row when one was updated.
+ * A full refund of the order that paid for the subscription's current period ends that subscription
+ * for entitlement. A refund of an order from an earlier period (created before the stored
+ * `current_period_start`, less a small clock tolerance) changes nothing, and neither does one for a
+ * row with no known period start. Only a later Polar state that shows the subscription running again
+ * restores access (see `resumedAfterRefund`). Returns the row when one was updated.
  */
 export async function markSubscriptionRefunded(
   db: AppDb,
   polarSubscriptionId: string,
-  refundedAt: Date,
+  { refundedAt, orderCreatedAt }: { refundedAt: Date; orderCreatedAt: Date },
   now: Date = new Date()
 ): Promise<SubscriptionRow | null> {
   const [row] = await db
@@ -154,7 +175,13 @@ export async function markSubscriptionRefunded(
       polarModifiedAt: sql`max(coalesce(${subscriptions.polarModifiedAt}, 0), ${refundedAt.getTime()})`,
       updatedAt: now,
     })
-    .where(eq(subscriptions.polarSubscriptionId, polarSubscriptionId))
+    .where(
+      and(
+        eq(subscriptions.polarSubscriptionId, polarSubscriptionId),
+        isNotNull(subscriptions.currentPeriodStart),
+        lte(subscriptions.currentPeriodStart, new Date(orderCreatedAt.getTime() + CURRENT_PERIOD_ORDER_TOLERANCE_MS))
+      )
+    )
     .returning();
   return row ?? null;
 }

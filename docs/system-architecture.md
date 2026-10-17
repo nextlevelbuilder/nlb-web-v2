@@ -64,6 +64,7 @@ Bot protection: votes require a Turnstile token, verified server-side in [`lib/d
 
 - Checkout sessions are created in [`lib/polar.ts`](../lib/polar.ts) (memberships, directory listings) and [`lib/courses/course-checkout.ts`](../lib/courses/course-checkout.ts) (course videos). Success URLs are derived from `NEXT_PUBLIC_APP_URL`.
 - Webhooks arrive at `POST /api/webhooks/polar` and are verified with the Polar SDK (Standard Webhooks, `POLAR_WEBHOOK_SECRET`). The route fails closed when the secret is empty. Idempotency comes from the unique event id in `webhook_events`. A delivery claims an event with an atomic conditional update on `locked_until` (a 5-minute lease), so concurrent redeliveries cannot process it twice; a failure releases the lease for Polar's retry ([`lib/domain/webhook-event-lock.ts`](../lib/domain/webhook-event-lock.ts)). Side effects (Resend email, Discord) go through delivery intents ([`lib/domain/events.ts`](../lib/domain/events.ts)).
+- After a membership payment, onboarding links the buyer to the subscription and grants Discord and Telegram access from the effective tier, through a D1 job queue drained by the worker cron (behind `ONBOARDING_V2_ENABLED`). See [membership-onboarding.md](./membership-onboarding.md).
 - Membership plans (Premium, VIP) and the FOMO seat caps are in [`lib/home`](../lib/home) and [`lib/polar.ts`](../lib/polar.ts). Seat counts come from real `active` subscriptions, not fabricated numbers (a contract decision).
 
 ## Content features

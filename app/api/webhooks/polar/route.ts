@@ -20,11 +20,7 @@ import {
 import { isOnboardingV2Enabled } from "@/lib/onboarding/flags";
 import { enqueueAccessReconcile, enqueueJob } from "@/lib/onboarding/jobs";
 import { runDueJobs } from "@/lib/onboarding/runner";
-import {
-  findVerifiedUserIdByEmail,
-  linkCustomerToUser,
-  userExists,
-} from "@/lib/membership/member-access";
+import { linkCustomerFromPurchase, type PurchaseRefs } from "@/lib/membership/member-access";
 import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membership/subscription-sync";
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
 import { recordPaidShareConversion } from "@/lib/builder-league/attribution";
@@ -55,6 +51,7 @@ interface PolarWebhookPayload {
     started_at?: string | null;
     created_at?: string | null;
     modified_at?: string | null;
+    billing_reason?: string | null;
     customer?: {
       id?: string;
       email?: string;
@@ -321,25 +318,21 @@ function scheduleJobRun(db: AppDb) {
 }
 
 /**
- * Link the Polar customer to an NLB user from server-trusted signals only: `metadata.nlb_user_id`
- * (set server-side by /api/checkout for a signed-in buyer and copied by Polar onto the checkout,
- * subscription and order), else a user whose verified email equals the customer email (trim +
- * lowercase only). Polar's external customer id is not used: existing customers may carry none or
- * one set elsewhere. Never overwrites an existing link. Returns the linked user id.
+ * Link the Polar customer to an NLB user from server-trusted signals only (see
+ * `linkCustomerFromPurchase`): `metadata.nlb_user_id` (set server-side by /api/checkout for a
+ * signed-in buyer and copied by Polar onto the checkout, subscription and order) when the customer
+ * is new to us or its email is that user's verified email, else a user whose verified email equals
+ * the customer email (trim + lowercase only). Polar's external customer id is not used: existing
+ * customers may carry none or one set elsewhere. Never overwrites an existing link. Returns the
+ * linked user id.
  */
 async function linkCustomerFromEvent(
   customer: { id: string; email: string; userId?: string | null },
   data: PolarWebhookPayload["data"],
+  refs: PurchaseRefs,
   db: AppDb
 ): Promise<string | null> {
-  if (customer.userId) return customer.userId;
-  const metadataUserId = metadataString(data, "nlb_user_id");
-  if (metadataUserId && (await userExists(db, metadataUserId))) {
-    return (await linkCustomerToUser(db, { customerId: customer.id, userId: metadataUserId })) ? metadataUserId : null;
-  }
-  const verifiedUserId = await findVerifiedUserIdByEmail(db, customer.email);
-  if (!verifiedUserId) return null;
-  return (await linkCustomerToUser(db, { customerId: customer.id, userId: verifiedUserId })) ? verifiedUserId : null;
+  return linkCustomerFromPurchase(db, customer, { metadataUserId: metadataString(data, "nlb_user_id"), refs });
 }
 
 async function handleCheckoutUpdated(event: PolarWebhookPayload, eventId: string, db: AppDb) {
@@ -365,7 +358,9 @@ async function handleCheckoutUpdated(event: PolarWebhookPayload, eventId: string
     },
     db
   );
-  if (customer) await linkCustomerFromEvent(customer, checkout, db);
+  if (customer) {
+    await linkCustomerFromEvent(customer, checkout, { polarSubscriptionIds: [checkout.subscription_id] }, db);
+  }
 }
 
 async function resolveEventCustomer(data: NonNullable<PolarWebhookPayload["data"]>, db: AppDb) {
@@ -412,7 +407,7 @@ async function handleSubscriptionEvent(event: PolarWebhookPayload, db: AppDb, ef
     modifiedAt: parseDate(subscription.modified_at) ?? parseDate(subscription.created_at),
   });
 
-  const userId = await linkCustomerFromEvent(customer, subscription, db);
+  const userId = await linkCustomerFromEvent(customer, subscription, { polarSubscriptionIds: [subscription.id] }, db);
   // Builder League share attribution: no-op without a signup attribution or an effective tier.
   if (userId && MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) await recordPaidShareConversion(db, userId);
 
@@ -462,8 +457,9 @@ async function handleSubscriptionEvent(event: PolarWebhookPayload, db: AppDb, ef
 }
 
 /**
- * Persist refunds. A full refund of a membership subscription order ends that subscription for
- * entitlement (terminal, see `markSubscriptionRefunded`); partial refunds keep access.
+ * Persist refunds. A full refund of the membership order that paid for the subscription's current
+ * period ends that subscription for entitlement (see `markSubscriptionRefunded`). Partial refunds,
+ * refunds of an earlier period's order and refunds of a mid-period plan-change charge keep access.
  */
 async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effects: WebhookEffects) {
   const order = event.data;
@@ -474,8 +470,14 @@ async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effect
   const productId = order.product_id || order.product?.id || "";
   if (order.status !== "refunded" || !order.subscription_id || !MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
 
+  if (order.billing_reason === "subscription_update") return;
+  const orderCreatedAt = parseDate(order.created_at);
+  if (!orderCreatedAt) {
+    console.warn(`order.refunded ${order.id} has no created_at; subscription access left unchanged`);
+    return;
+  }
   const refundedAt = parseDate(order.modified_at) ?? new Date();
-  const subscription = await markSubscriptionRefunded(db, order.subscription_id, refundedAt);
+  const subscription = await markSubscriptionRefunded(db, order.subscription_id, { refundedAt, orderCreatedAt });
   if (!subscription || !effects.onboardingV2) return;
 
   const [customer] = await db
@@ -524,7 +526,12 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
 
   // An order can be the first delivery carrying the buyer's `nlb_user_id`; a new link changes access.
   const wasLinked = Boolean(customer.userId);
-  const linkedUserId = await linkCustomerFromEvent(customer, order, db);
+  const linkedUserId = await linkCustomerFromEvent(
+    customer,
+    order,
+    { polarSubscriptionIds: [order.subscription_id], polarOrderIds: [order.id] },
+    db
+  );
   if (linkedUserId && !wasLinked && effects.onboardingV2) {
     await enqueueAccessReconcile(db, linkedUserId);
     effects.jobsEnqueued = true;

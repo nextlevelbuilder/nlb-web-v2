@@ -8,7 +8,11 @@ export type OnboardingJob = typeof onboardingJobs.$inferSelect;
 export const JOB_MAX_ATTEMPTS = 10;
 export const JOB_BASE_BACKOFF_MS = 30_000;
 export const JOB_MAX_BACKOFF_MS = 60 * 60 * 1000;
-export const DEFAULT_JOB_LEASE_MS = 60_000;
+/**
+ * Lease per job, renewed as each job of a batch starts. A reconcile makes at most about seven
+ * provider calls of up to `PROVIDER_FETCH_TIMEOUT_MS` each, so two minutes covers one job.
+ */
+export const DEFAULT_JOB_LEASE_MS = 120_000;
 
 export interface EnqueueJobInput {
   kind: OnboardingJobKind;
@@ -121,6 +125,25 @@ export async function claimDueJobs(
 /** Owned by this claim: same row, same lease. A lost or re-taken lease makes every write a no-op. */
 const ownedBy = (job: OnboardingJob) =>
   and(eq(onboardingJobs.id, job.id), eq(onboardingJobs.lockedUntil, job.lockedUntil ?? new Date(0)));
+
+/**
+ * Extend this claim's lease right before the job runs, so a batch claimed with one lease never
+ * leaves a later job unprotected. Returns the job with its new lease, or null when another runner
+ * re-took it after the original lease expired (the caller must then skip it).
+ */
+export async function renewJobLease(
+  db: AppDb,
+  job: OnboardingJob,
+  leaseMs: number = DEFAULT_JOB_LEASE_MS,
+  now: Date = new Date()
+): Promise<OnboardingJob | null> {
+  const [renewed] = await db
+    .update(onboardingJobs)
+    .set({ lockedUntil: new Date(now.getTime() + leaseMs), updatedAt: now })
+    .where(ownedBy(job))
+    .returning();
+  return renewed ?? null;
+}
 
 /** Release the lease without changing status (used when the job was re-enqueued mid-run). */
 async function releaseLease(db: AppDb, job: OnboardingJob, now: Date): Promise<void> {
