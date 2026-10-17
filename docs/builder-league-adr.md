@@ -78,4 +78,4 @@ Everything is private by default: leaderboard, passport, wrapped and peer mentio
 - Every scoring change needs a new ruleset version, a seed row and an effective date.
 - Reading a member's total costs an aggregate query; snapshots keep public pages cheap.
 - Moderation is required for most RP, so the moderation queue is on the critical path for a good member experience.
-- Membership and Discord identity are read through one adapter ([`lib/builder-league/membership.ts`](../lib/builder-league/membership.ts)), so the onboarding work can replace it in one place.
+- Membership tier (`getMemberTier`, customers linked through `customers.user_id`) and the Discord identity (`community_connections`) are read through one read-only adapter ([`lib/builder-league/membership.ts`](../lib/builder-league/membership.ts)).

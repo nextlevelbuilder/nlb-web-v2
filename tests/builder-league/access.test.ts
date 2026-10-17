@@ -3,17 +3,20 @@ import type { ResolvedCaller } from "@/lib/auth-api-key";
 
 const resolveCallerMock = vi.fn<(headers: Headers) => Promise<ResolvedCaller | null>>();
 vi.mock("@/lib/auth-api-key", () => ({ resolveCaller: (headers: Headers) => resolveCallerMock(headers) }));
-vi.mock("@/lib/polar", () => ({ MEMBERSHIP_PLAN_PRODUCT_IDS: { premium: ["prod_premium"], vip: ["prod_vip"] } }));
+vi.mock("@/lib/polar", () => ({
+  MEMBERSHIP_PLAN_PRODUCT_IDS: { premium: ["prod_premium"], vip: ["prod_vip"] },
+  EARLYBIRD_MEMBERSHIP_PRODUCT_IDS: { premium: undefined, vip: undefined },
+}));
 
 import { createLocalD1, type LocalD1 } from "../helpers/local-d1";
-import { builderPilotMembers, customers, subscriptions, users } from "@/lib/db/schema";
+import { builderPilotMembers, communityConnections, customers, subscriptions, users } from "@/lib/db/schema";
 import {
   getViewerAccess,
   isBuilderLeagueEnabled,
   requireBuilderLeagueAdmin,
   requireBuilderLeagueUser,
 } from "@/lib/builder-league/access";
-import { getCommunityTier } from "@/lib/builder-league/membership";
+import { getCommunityTier, getDiscordIdentity } from "@/lib/builder-league/membership";
 
 let local: LocalD1;
 const DAY = 86_400_000;
@@ -26,12 +29,12 @@ beforeAll(async () => {
     { id: "paid", name: "Paid", email: "Paid@Example.com", emailVerified: true },
     { id: "vip", name: "Vip", email: "vip@example.com", emailVerified: true },
     { id: "free-pilot", name: "Free pilot", email: "free@example.com", emailVerified: true },
-    { id: "unverified", name: "Unverified", email: "unverified@example.com", emailVerified: false },
+    { id: "unlinked", name: "Unlinked", email: "unlinked@example.com", emailVerified: true },
     { id: "lapsed", name: "Lapsed", email: "lapsed@example.com", emailVerified: true },
   ]);
-  const subscribe = async (email: string, product: string, status: string, end: Date | null) => {
+  const subscribe = async (email: string, product: string, status: string, end: Date | null, userId: string | null) => {
     const id = crypto.randomUUID();
-    await local.db.insert(customers).values({ id, email });
+    await local.db.insert(customers).values({ id, email, userId });
     await local.db.insert(subscriptions).values({
       customerId: id,
       polarSubscriptionId: `sub_${email}`,
@@ -42,11 +45,12 @@ beforeAll(async () => {
     });
   };
   const future = new Date(Date.now() + 30 * DAY);
-  await subscribe("pilot@example.com", "prod_premium", "active", future);
-  await subscribe("paid@example.com", "prod_premium", "trialing", null);
-  await subscribe("vip@example.com", "prod_vip", "active", future);
-  await subscribe("unverified@example.com", "prod_vip", "active", future);
-  await subscribe("lapsed@example.com", "prod_premium", "active", new Date(Date.now() - DAY));
+  await subscribe("pilot@example.com", "prod_premium", "active", future, "pilot");
+  await subscribe("paid@example.com", "prod_premium", "trialing", null, "paid");
+  await subscribe("vip@example.com", "prod_vip", "active", future, "vip");
+  await subscribe("unlinked@example.com", "prod_vip", "active", future, null);
+  await subscribe("lapsed@example.com", "prod_premium", "canceled", new Date(Date.now() - DAY), "lapsed");
+  await local.db.insert(communityConnections).values({ userId: "pilot", provider: "discord", externalUserId: "123456789", displayName: "pilot#1" });
   await local.db.insert(builderPilotMembers).values([
     { userId: "pilot", addedBy: "admin" },
     { userId: "free-pilot", addedBy: "admin" },
@@ -71,14 +75,19 @@ const caller = (id: string, authType: ResolvedCaller["authType"] = "session", ro
 const request = (method = "GET") => new Request("https://example.test/api/v1/builder-me", { method });
 
 describe("community tier", () => {
-  it("reads active or trialing paid subscriptions through the verified email", async () => {
+  it("reads the effective tier of the customer linked to the user", async () => {
     expect(await getCommunityTier(local.db, "pilot")).toBe("premium");
     expect(await getCommunityTier(local.db, "paid")).toBe("premium");
     expect(await getCommunityTier(local.db, "vip")).toBe("vip");
     expect(await getCommunityTier(local.db, "free-pilot")).toBe("none");
-    expect(await getCommunityTier(local.db, "unverified")).toBe("none");
+    expect(await getCommunityTier(local.db, "unlinked")).toBe("none");
     expect(await getCommunityTier(local.db, "lapsed")).toBe("none");
     expect(await getCommunityTier(local.db, "missing")).toBe("none");
+  });
+
+  it("reads the linked Discord identity from community connections", async () => {
+    expect(await getDiscordIdentity(local.db, "pilot")).toMatchObject({ externalUserId: "123456789", username: "pilot#1" });
+    expect(await getDiscordIdentity(local.db, "paid")).toBeNull();
   });
 });
 

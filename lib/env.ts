@@ -36,6 +36,28 @@ const envSchema = z.object({
   POLAR_ORG_ID: validUUID,
   POLAR_ORG_SLUG: requiredString("POLAR_ORG_SLUG"),
   POLAR_WEBHOOK_SECRET: z.string().optional().default(""),
+  // "sandbox" targets sandbox-api.polar.sh; anything else (including unset) is production.
+  POLAR_SERVER: z
+    .string()
+    .optional()
+    .transform((value): "sandbox" | "production" => (value === "sandbox" ? "sandbox" : "production")),
+
+  // Early-bird annual memberships: no longer sold, but still counted for entitlement.
+  POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL: z.string().optional().default(""),
+  POLAR_PRODUCT_VIP_EARLYBIRD_ANNUAL: z.string().optional().default(""),
+
+  // Post-checkout onboarding. Read per request through lib/onboarding/flags.ts; declared here for validation.
+  ONBOARDING_V2_ENABLED: z.string().optional(),
+  MEMBERSHIP_PAST_DUE_GRACE_DAYS: z.string().regex(/^\d+$/).or(z.literal("")).optional(),
+  ONBOARDING_ENCRYPTION_KEY: z.string().optional(),
+  LARK_ADMIN_WEBHOOK_URL: z.string().url().or(z.literal("")).optional(),
+  DISCORD_CLIENT_ID: z.string().optional(),
+  DISCORD_CLIENT_SECRET: z.string().optional(),
+  DISCORD_VIP_ROLE_ID: z.string().optional(),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_BOT_USERNAME: z.string().optional(),
+  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+  TELEGRAM_GROUP_CHAT_ID: z.string().optional(),
 
   // Polar.sh Product IDs - Premium Package
   POLAR_PRODUCT_PREMIUM_QUARTERLY: validUUID.default("c73457af-f2e7-4cda-a216-7c32f66e0b81"),

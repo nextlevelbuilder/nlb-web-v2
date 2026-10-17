@@ -35,6 +35,8 @@ POLAR_ORG_ID=
 POLAR_ORG_SLUG=
 # Standard Webhooks signing secret of the Polar webhook endpoint.
 POLAR_WEBHOOK_SECRET=
+# Polar API server: "sandbox" or "production" (default production). Must match the access token.
+POLAR_SERVER=
 # Server-side Polar product id: Premium early-bird annual.
 POLAR_PRODUCT_PREMIUM_EARLYBIRD_ANNUAL=
 # Server-side Polar product id: Premium quarterly.
@@ -89,6 +91,32 @@ DISCORD_GUILD_ID=
 DISCORD_PREMIUM_ROLE_ID=
 # Incoming webhook URL for sales notifications.
 DISCORD_SALES_WEBHOOK_URL=
+# Discord OAuth2 application client id (member account linking).
+DISCORD_CLIENT_ID=
+# Discord OAuth2 application client secret.
+DISCORD_CLIENT_SECRET=
+# Role id granted to VIP members (Premium uses DISCORD_PREMIUM_ROLE_ID).
+DISCORD_VIP_ROLE_ID=
+
+# --- Post-checkout onboarding ---
+# "true" enables the first-party onboarding flow; anything else keeps the legacy email + form flow.
+ONBOARDING_V2_ENABLED=
+# Days a past_due membership keeps community access (default 7).
+MEMBERSHIP_PAST_DUE_GRACE_DAYS=
+# AES-GCM key for provider tokens at rest: base64 of 32 random bytes (openssl rand -base64 32).
+ONBOARDING_ENCRYPTION_KEY=
+# Optional internal Lark incoming webhook for admin notifications.
+LARK_ADMIN_WEBHOOK_URL=
+
+# --- Telegram ---
+# Bot token from @BotFather.
+TELEGRAM_BOT_TOKEN=
+# Bot username without @ (deep links t.me/<bot>?start=...).
+TELEGRAM_BOT_USERNAME=
+# Secret checked against X-Telegram-Bot-Api-Secret-Token on the bot webhook.
+TELEGRAM_WEBHOOK_SECRET=
+# Member supergroup chat id (negative number).
+TELEGRAM_GROUP_CHAT_ID=
 
 # --- MCP delegation (toolkits MCP worker) ---
 # "true" to advertise the MCP OAuth protected resource.

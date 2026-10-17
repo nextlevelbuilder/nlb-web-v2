@@ -25,7 +25,7 @@ const v2 = getRuleset("v2");
 
 function seededRulesets(): Map<string, { effectiveFrom: number; checksum: string; definition: string }> {
   const dir = path.resolve(import.meta.dirname, "../../drizzle/migrations");
-  const sql = readFileSync(path.join(dir, "0002_builder_league.sql"), "utf8");
+  const sql = readFileSync(path.join(dir, "0003_builder_league.sql"), "utf8");
   const seeds = new Map<string, { effectiveFrom: number; checksum: string; definition: string }>();
   const pattern = /INSERT INTO `score_rulesets` .*? VALUES \('([^']+)', (\d+), '([0-9a-f]{64})', '((?:[^']|'')*)', \d+\);/g;
   for (const match of sql.matchAll(pattern)) {

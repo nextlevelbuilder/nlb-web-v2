@@ -19,6 +19,8 @@ export const customers = sqliteTable("customers", {
   name: text("name"),
   polarCustomerId: text("polar_customer_id").unique(),
   discordId: text("discord_id"),
+  /** Verified NLB user who owns this Polar customer. Set only from server-trusted signals. */
+  userId: text("user_id").unique(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
 });
@@ -33,6 +35,12 @@ export const subscriptions = sqliteTable("subscriptions", {
   currentPeriodStart: integer("current_period_start", { mode: "timestamp_ms" }),
   currentPeriodEnd: integer("current_period_end", { mode: "timestamp_ms" }),
   cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }).default(false),
+  /** When the status first became `past_due`; cleared when it leaves `past_due`. */
+  pastDueSince: integer("past_due_since", { mode: "timestamp_ms" }),
+  /** When the subscription ended for good (revoked, canceled after period end, or fully refunded). */
+  endedAt: integer("ended_at", { mode: "timestamp_ms" }),
+  /** Polar `modified_at` of the last applied state; older deliveries never overwrite newer state. */
+  polarModifiedAt: integer("polar_modified_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
 });
@@ -711,6 +719,118 @@ export const apiIdempotencyKeys = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
   },
   (t) => [primaryKey({ columns: [t.callerId, t.key] })]
+);
+
+// ==========================================
+// 12. Post-checkout onboarding & community access
+// ==========================================
+
+export type CommunityProvider = "discord" | "telegram";
+export type CommunityTargetValue = "discord_guild" | "telegram_group";
+export type MembershipTierValue = "none" | "premium" | "vip";
+export type CommunityAccessStatusValue =
+  | "not_connected"
+  | "waiting_for_join"
+  | "processing"
+  | "active"
+  | "retrying"
+  | "action_required"
+  | "revoked";
+export type OnboardingJobKind = "reconcile_access" | "welcome_email" | "admin_notify";
+export type OnboardingJobStatus = "pending" | "running" | "done" | "dead";
+export type OnboardingNonceKind = "discord_oauth" | "telegram_link";
+
+/** Minimal member form filled after checkout. One row per user. */
+export const onboardingProfiles = sqliteTable("onboarding_profiles", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  goal: text("goal"),
+  profileLinks: text("profile_links", { mode: "json" }).$type<string[]>(),
+  skills: text("skills"),
+  phone: text("phone"),
+  commitmentAcceptedAt: integer("commitment_accepted_at", { mode: "timestamp_ms" }),
+  completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+});
+
+/**
+ * A community account (Discord user, Telegram user) linked through NLB. Provider tokens are stored
+ * encrypted (lib/crypto/secret-box.ts). Unlink deletes the row only after access was revoked.
+ */
+export const communityConnections = sqliteTable(
+  "community_connections",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    provider: text("provider").$type<CommunityProvider>().notNull(),
+    externalUserId: text("external_user_id").notNull(),
+    displayName: text("display_name"),
+    accessTokenEnc: text("access_token_enc"),
+    refreshTokenEnc: text("refresh_token_enc"),
+    tokenExpiresAt: integer("token_expires_at", { mode: "timestamp_ms" }),
+    linkedAt: integer("linked_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [
+    unique("community_connections_provider_external_unique").on(t.provider, t.externalUserId),
+    unique("community_connections_user_provider_unique").on(t.userId, t.provider),
+  ]
+);
+
+/** Last reconciled access per user and community target. */
+export const communityAccessState = sqliteTable(
+  "community_access_state",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    target: text("target").$type<CommunityTargetValue>().notNull(),
+    desiredTier: text("desired_tier").$type<MembershipTierValue>().notNull().default("none"),
+    appliedTier: text("applied_tier").$type<MembershipTierValue>().notNull().default("none"),
+    status: text("status").$type<CommunityAccessStatusValue>().notNull().default("not_connected"),
+    errorCode: text("error_code"),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [unique("community_access_state_user_target_unique").on(t.userId, t.target)]
+);
+
+/**
+ * D1 outbox for onboarding side effects, drained by the minute cron and by `waitUntil` after
+ * enqueue. `dedupe_key` collapses repeated requests for the same work into one row.
+ */
+export const onboardingJobs = sqliteTable(
+  "onboarding_jobs",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    kind: text("kind").$type<OnboardingJobKind>().notNull(),
+    dedupeKey: text("dedupe_key").notNull().unique(),
+    payload: text("payload", { mode: "json" }).$type<Record<string, unknown>>().notNull(),
+    status: text("status").$type<OnboardingJobStatus>().notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextRunAt: integer("next_run_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
+    /** Redacted: error class or provider code only, never emails, tokens or names. */
+    lastError: text("last_error"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [index("onboarding_jobs_due_idx").on(t.status, t.nextRunAt)]
+);
+
+/** Single-use, hashed nonces for OAuth state and Telegram deep links. */
+export const onboardingNonces = sqliteTable(
+  "onboarding_nonces",
+  {
+    nonceHash: text("nonce_hash").primaryKey(),
+    kind: text("kind").$type<OnboardingNonceKind>().notNull(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    payloadEnc: text("payload_enc"),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  },
+  (t) => [index("onboarding_nonces_expires_idx").on(t.expiresAt)]
 );
 
 export * from "./builder-league-schema";
