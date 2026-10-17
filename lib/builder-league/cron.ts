@@ -19,6 +19,12 @@ import { ensureYearSnapshot, listYearParticipants, yearWindow } from "./year-rev
 
 export const USERS_PER_RUN = 100;
 
+/**
+ * The existing hourly trigger in wrangler.jsonc (shared with the membership resync). Hourly is enough for
+ * daily period finalization and the Dec 30/31 year cutoffs, so the league adds no schedule of its own.
+ */
+export const BUILDER_LEAGUE_CRON = "17 * * * *";
+
 export interface BuilderLeagueCronEnv {
   DB: D1Database;
   BUILDER_EVIDENCE?: RenderBucket | null;
