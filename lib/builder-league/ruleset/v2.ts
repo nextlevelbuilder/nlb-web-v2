@@ -13,10 +13,10 @@ import {
 } from "./v1";
 
 /**
- * Production deploy date of ruleset v2 (Asia/Ho_Chi_Minh). Placeholder: the orchestrator sets the real
- * deploy date before the production release. Events that occurred before it keep scoring under v1.
+ * Production deploy date of ruleset v2 (Asia/Ho_Chi_Minh). Events that occurred before it keep scoring
+ * under v1.
  */
-export const V2_EFFECTIVE_FROM = "2026-10-20T00:00:00+07:00";
+export const V2_EFFECTIVE_FROM = "2026-10-17T00:00:00+07:00";
 
 /**
  * v2 keeps the v1 rank thresholds and conditions and adds the Contributor path: approved Contributor
