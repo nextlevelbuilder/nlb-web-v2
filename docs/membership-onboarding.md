@@ -32,7 +32,7 @@ Admins inspect and retry jobs at `GET/POST /api/admin/onboarding/jobs`.
 
 ## Configuration
 
-Vars in `wrangler.jsonc`, per environment: `ONBOARDING_V2_ENABLED` (`"true"` on staging, `"false"` on production), `MEMBERSHIP_PAST_DUE_GRACE_DAYS`, `POLAR_SERVER` (`sandbox` on staging). Never create a secret with one of these names; the deploy fails when a var and a secret collide.
+Vars in `wrangler.jsonc`, per environment: `ONBOARDING_V2_ENABLED` (`"true"` on staging and production), `MEMBERSHIP_PAST_DUE_GRACE_DAYS`, `POLAR_SERVER` (`sandbox` on staging). Never create a secret with one of these names; the deploy fails when a var and a secret collide.
 
 Worker secrets (names in [`.dev.vars.example`](../.dev.vars.example)):
 
@@ -47,7 +47,7 @@ Worker secrets (names in [`.dev.vars.example`](../.dev.vars.example)):
 
 Set secrets without echoing them, for example `wr secret bulk <file> --env staging` from a file outside the repo, using the `wr` helper in [deployment-guide.md](./deployment-guide.md#wrangler-access).
 
-Register the Telegram webhook once per environment (prints only `ok` and the description):
+Register the Telegram webhook once per environment (prints only `ok` and the description). A bot has exactly one webhook: staging and production currently share one bot whose webhook points at production, so Telegram on staging stays inactive until staging gets its own bot.
 
 ```bash
 TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=... npx tsx scripts/telegram/set-webhook.ts --url https://staging.nextlevelbuilder.io/api/telegram/webhook
@@ -68,6 +68,6 @@ npx tsx scripts/onboarding/backfill-customer-links.ts --target production --appl
 ## Rollout and rollback
 
 1. Staging: flag on, Polar sandbox, test guild and test supergroup. Smoke test Premium and VIP: checkout, onboarding form, Discord consent and roles, Telegram `/start` and join request, then cancel/revoke in the Polar sandbox and confirm removal.
-2. Production: deploy with the flag off. Enabling it is a separate decision: set the secrets above, register the production Telegram webhook, then flip `ONBOARDING_V2_ENABLED` in `wrangler.jsonc`.
+2. Production: first deployed with the flag off, then enabled after setting the secrets above, registering the production Telegram webhook and running the customer backfill.
 
 Rollback: set `ONBOARDING_V2_ENABLED` to `"false"` and deploy. The legacy flow returns, cron jobs stop, and the additive migration can stay in place.
