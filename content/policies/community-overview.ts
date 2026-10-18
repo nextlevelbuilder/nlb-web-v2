@@ -1,9 +1,10 @@
+import { describeRankGates, rulesetNotice } from "@/lib/builder-league/ruleset/policy-text";
 import type { PolicyEntry } from "./policy-types";
 
-/** Community policy ported verbatim from the original site (messages.policies["overview"]). */
+/** Community policy ported verbatim from the original site (messages.policies["overview"]); RP and rank text follows Builder League ruleset v2. */
 export const communityOverviewPolicy: PolicyEntry = {
   group: "community",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-17",
   legalReviewPending: false,
   content: {
     en: {
@@ -29,18 +30,16 @@ export const communityOverviewPolicy: PolicyEntry = {
         },
         {
           heading: "Ranking System",
-          content:
-            "Rank is based on contributions, independent from membership type:\n• Apprentice: New members (0–45 days)\n• Builder: ≥8 SHIPs + 80% feedback\n• Architect: ≥20 SHIPs + 90% feedback + highlighted post\n• Master: ≥50 SHIPs + Featured/Contributor\n• Legend: ≥100 SHIPs + Mentor nomination",
+          content: `Rank is based on verified contributions and is independent from membership type. A rank you reach is never downgraded automatically:\n${describeRankGates("en")}`,
         },
         {
           heading: "Required Commitments",
           content:
-            "• Complete personal information (verified by admin)\n• Submit Feedback Weekly every week\n• Read and agree to all community guidelines\n• SHIP 4 posts/month OR be approved as a Contributor",
+            "• Complete personal information (verified by admin)\n• Submit Feedback Weekly every week\n• Read and agree to all community guidelines\n• SHIP at least 4 public posts/month OR be approved as a Contributor",
         },
         {
           heading: "Ranking Points (RP)",
-          content:
-            "• SHIP a post: +10 RP\n• SHIP gets highlighted: +25 RP\n• Feedback weekly: +5 RP\n• Active in Discord (week): +3 RP\n• Help a member: +8 RP\n• Featured contributor: +50 RP\n• Contributor work/week: +15 RP",
+          content: `RP rewards verified progress across four stages: VALIDATE, BUILD, SHIP and CONTRIBUTE. The full RP table, with the limits of each activity, is in the Membership Types & Ranks policy.\n\n${rulesetNotice("en")}`,
         },
       ],
     },
@@ -67,18 +66,16 @@ export const communityOverviewPolicy: PolicyEntry = {
         },
         {
           heading: "Hệ thống Hạng (Ranking)",
-          content:
-            "Hạng dựa trên đóng góp, độc lập với loại thành viên:\n• Apprentice: Mới vào (0–45 ngày)\n• Builder: ≥8 SHIP + 80% feedback\n• Architect: ≥20 SHIP + 90% feedback + bài highlight\n• Master: ≥50 SHIP + Featured/Contributor\n• Legend: ≥100 SHIP + Mentor đề cử",
+          content: `Hạng dựa trên đóng góp đã xác minh và độc lập với loại thành viên. Hạng đã đạt sẽ không bao giờ bị tự động hạ:\n${describeRankGates("vi")}`,
         },
         {
           heading: "Cam kết bắt buộc",
           content:
-            "• Điền đầy đủ thông tin cá nhân (verify bởi BQT)\n• Submit Feedback Weekly mỗi tuần\n• Đọc hiểu và đồng ý toàn bộ quy chế\n• SHIP 4 bài/tháng HOẶC được duyệt làm Contributor",
+            "• Điền đầy đủ thông tin cá nhân (verify bởi BQT)\n• Submit Feedback Weekly mỗi tuần\n• Đọc hiểu và đồng ý toàn bộ quy chế\n• SHIP tối thiểu 4 bài public/tháng HOẶC được duyệt làm Contributor",
         },
         {
           heading: "Ranking Points (RP)",
-          content:
-            "• SHIP bài viết: +10 RP\n• SHIP được highlight: +25 RP\n• Feedback weekly: +5 RP\n• Hoạt động Discord (tuần): +3 RP\n• Giúp member: +8 RP\n• Đóng góp nổi bật: +50 RP\n• Contributor work/tuần: +15 RP",
+          content: `RP ghi nhận tiến độ đã xác minh qua bốn giai đoạn: VALIDATE, BUILD, SHIP và CONTRIBUTE. Bảng RP đầy đủ, kèm giới hạn của từng hoạt động, nằm trong quy chế Phân loại & Hạng thành viên.\n\n${rulesetNotice("vi")}`,
         },
       ],
     },

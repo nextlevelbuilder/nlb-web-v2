@@ -91,6 +91,12 @@ const envSchema = z.object({
   MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://mcp.nextlevelbuilder.io/mcp"),
   MCP_DELEGATION_SECRET: z.string().min(32).optional(),
 
+  // Builder League feature flag ("true" | "false"). Optional: a missing value means off.
+  BUILDER_LEAGUE_ENABLED: z.enum(["true", "false"]).optional(),
+  // Shared secret of the Discord bot for POST /api/v1/builder-admin/ingest/discord (32+ chars). Optional:
+  // without it the bot authenticates with an admin API key.
+  BUILDER_INGEST_SECRET: z.string().min(32).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 

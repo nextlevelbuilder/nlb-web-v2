@@ -6,6 +6,7 @@ import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
 import { DISCOVERY_PATHS, MCP_ENDPOINT } from "@/lib/discovery/agent-discovery-documents";
+import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 
 /** Latest published blog posts in both locales; the blog is optional here, so failures only drop the section. */
 async function blogLines(baseUrl: string): Promise<string[]> {
@@ -47,6 +48,7 @@ export async function GET() {
       `- [REST API reference](${baseUrl}/api-docs.md): Endpoints, authentication and schemas.`,
       `- [Leaderboards](${baseUrl}/leaderboards.md): Daily, weekly and monthly rankings from organic votes.`,
       `- [Policies](${baseUrl}/policies.md): Community and publication rules.`,
+      ...publicWrappedPaths().map((path) => `- [Community Wrapped ${path.slice(-4)}](${baseUrl}${path}.md): What the community validated, built and shipped that year, from verified activity only.`),
       `- [Blog](${baseUrl}/blog.md): Build logs, product lessons and engineering notes.`,
       `- [Courses](${baseUrl}/courses.md): Recorded build sessions, sold per video or included with VIP.`,
       `- [Full content](${baseUrl}/llms-full.txt): Full public pages and approved product documents, including every block.`,

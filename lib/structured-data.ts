@@ -194,3 +194,39 @@ export function courseListJsonLd(courses: CourseJsonLdInput[], locale: string): 
     }),
   };
 }
+
+export interface CommunityWrappedJsonLdInput {
+  year: number;
+  locale: string;
+  /** Visible page title and description. */
+  name: string;
+  description: string;
+  /** Local (Asia/Ho_Chi_Minh) dates the figures cover, `YYYY-MM-DD`. */
+  coverageStart: string;
+  coverageEnd: string;
+  status: "provisional" | "final";
+  version: number;
+  modifiedAt: Date;
+}
+
+/** Community Wrapped as a schema.org Dataset of aggregate community figures, created by NLB. */
+export function communityWrappedJsonLd(input: CommunityWrappedJsonLdInput): JsonLd {
+  const url = `${siteUrl()}${localizedPath(`/wrapped/${input.year}`, input.locale)}`;
+  const organization = { "@id": organizationId(), "@type": "Organization", name: "Next Level Builders", url: siteUrl() };
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "@id": `${url}#dataset`,
+    name: input.name,
+    description: input.description,
+    url,
+    inLanguage: input.locale,
+    temporalCoverage: `${input.coverageStart}/${input.coverageEnd}`,
+    creator: organization,
+    publisher: organization,
+    isAccessibleForFree: true,
+    version: String(input.version),
+    creativeWorkStatus: input.status === "final" ? "Final" : "Provisional",
+    dateModified: input.modifiedAt.toISOString(),
+  };
+}

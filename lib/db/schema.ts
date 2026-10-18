@@ -842,3 +842,5 @@ export const onboardingNonces = sqliteTable(
   },
   (t) => [index("onboarding_nonces_expires_idx").on(t.expiresAt)]
 );
+
+export * from "./builder-league-schema";

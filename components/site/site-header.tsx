@@ -9,7 +9,8 @@ import BrandMark from './brand-mark';
 import LangSeg from './lang-seg';
 import SoundToggle from './sound-toggle';
 import ThemeSeg from './theme-seg';
-import { NAV, isCurrentNavItem, type NavItem } from './site-nav-items';
+import { isCurrentNavItem, navItemsFor, type NavItem } from './site-nav-items';
+import { useBuilderLeagueNav } from './use-builder-league-nav';
 
 const DESKTOP = '(min-width: 1140px)';
 
@@ -96,6 +97,7 @@ export default function SiteHeader() {
   };
 
   const user = session?.user;
+  const nav = navItemsFor(useBuilderLeagueNav(user));
   const who = user ? user.name || user.email || '' : '';
   const joinHref = onHome ? '#pricing' : undefined;
 
@@ -122,9 +124,17 @@ export default function SiteHeader() {
             </Link>
           )}
           <nav className="nav" aria-label={t('navPrimary')}>
-            {NAV.map((item) => (
-              <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname}>{t(`nav.${item.key}`)}</NavLink>
-            ))}
+            {nav.map((item) =>
+              item.key === 'builderLeague' ? (
+                // Short label, shown only where the desktop bar has room for a seventh item.
+                <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname} className="nav-wide-only">
+                  <span aria-hidden>{t('nav.builderLeagueShort')}</span>
+                  <span className="sr-only">{t('nav.builderLeague')}</span>
+                </NavLink>
+              ) : (
+                <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname}>{t(`nav.${item.key}`)}</NavLink>
+              )
+            )}
           </nav>
           <div className="bar-actions">
             <LangSeg />
@@ -163,7 +173,7 @@ export default function SiteHeader() {
 
       <div className="menu" id="menu" ref={menu} hidden={!open} onClick={onMenuClick}>
         <nav aria-label={t('navMobile')}>
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink key={item.key} item={item} onHome={onHome} pathname={pathname}>
               <b>{t(`nav.${item.key}`)}</b><span>{item.numeral}</span>
             </NavLink>

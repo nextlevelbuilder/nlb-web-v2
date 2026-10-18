@@ -2,7 +2,7 @@
  * Primary navigation shared by the desktop header and the full-screen menu.
  * Pure data + helpers (no React) so the routing rules are unit-testable.
  */
-export type NavKey = 'courses' | 'directory' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs';
+export type NavKey = 'courses' | 'directory' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs' | 'builderLeague';
 
 export interface NavItem {
   key: NavKey;
@@ -23,6 +23,17 @@ export const NAV: readonly NavItem[] = [
   { key: 'pricing', route: { pathname: '/', hash: 'pricing' }, homeAnchor: '#pricing', numeral: 'VI' },
   { key: 'buildWithUs', route: '/build-with-us/instructions', numeral: 'VII' },
 ];
+
+/**
+ * Builder League entry, appended to the menu only for viewers who can reach it (flag on, admin or pilot);
+ * see `useBuilderLeagueNav`. Kept out of `NAV` so the public menu never advertises a hidden feature.
+ */
+export const BUILDER_LEAGUE_NAV: NavItem = { key: 'builderLeague', route: '/builder-league', numeral: 'X' };
+
+/** The menu for a viewer: the public items, plus the Builder League entry when it is reachable. */
+export function navItemsFor(showBuilderLeague: boolean): readonly NavItem[] {
+  return showBuilderLeague ? [...NAV, BUILDER_LEAGUE_NAV] : NAV;
+}
 
 /** `aria-current="page"` rule: the exact route, or a nested path that no more specific nav item owns. */
 export function isCurrentNavItem(pathname: string, item: NavItem): boolean {
