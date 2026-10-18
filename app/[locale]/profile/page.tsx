@@ -21,6 +21,7 @@ import { Link, getPathname } from "@/i18n/navigation";
 import ProfileSignOutButton from "./profile-sign-out-button";
 import AccountIdentityHeader from "@/components/profile/account-identity-header";
 import ApiKeysManager from "@/components/profile/api-keys-manager";
+import AccountMembershipSection from "@/components/onboarding/account-membership-section";
 import { getTranslations } from "next-intl/server";
 import { BlockSchema } from "@/packages/contracts/src";
 
@@ -128,6 +129,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 <ProfileSignOutButton />
               </>
             }
+          />
+
+          <AccountMembershipSection
+            locale={locale}
+            user={{ id: user.id, email: user.email, emailVerified: Boolean(user.emailVerified) }}
           />
 
           <section aria-labelledby="profile-studio" className="surface-panel flex flex-col justify-between gap-6 p-6 sm:p-8 md:flex-row md:items-center">
