@@ -36,7 +36,7 @@
     "NEXT_PUBLIC_ASSETS_URL": "https://cdn.nextlevelbuilder.io",
     "COURSES_ACCESS_PLANS": "vip",
     "CF_ACCOUNT_ID": "7ac87c90789159ae1b10b7d78f5dcc08",
-    "ONBOARDING_V2_ENABLED": "false",
+    "ONBOARDING_V2_ENABLED": "true",
     "MEMBERSHIP_PAST_DUE_GRACE_DAYS": "7",
     "POLAR_SERVER": "production"
   },
