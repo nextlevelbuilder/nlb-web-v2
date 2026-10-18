@@ -1,0 +1,72 @@
+# Renders queued Builder League Year in Review videos outside the Worker.
+#
+# The Worker only queues jobs and stores the finished files in its private R2 bucket. This workflow
+# claims jobs through the admin API, renders them with headless Chrome and ffmpeg, and uploads the
+# results (scripts/builder-league/render-year-video.ts).
+#
+# Repository secrets (create them in Settings → Secrets and variables → Actions):
+#   NLB_API_BASE        Site origin, for example https://nextlevelbuilder.io
+#   NLB_RENDER_API_KEY  An NLB API key (nlb_live_…) created by an admin account. The renderer
+#                       endpoints accept only admins, so a non-admin key gets 403.
+# While either secret is missing the job exits without doing anything.
+name: Builder League render
+
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: Jobs to render in this run
+        default: "5"
+      locale:
+        description: Caption and card language (en or vi)
+        default: en
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: builder-league-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NLB_API_BASE: ${{ secrets.NLB_API_BASE }}
+      NLB_RENDER_API_KEY: ${{ secrets.NLB_RENDER_API_KEY }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$NLB_API_BASE" ] || [ -z "$NLB_RENDER_API_KEY" ]; then
+            echo "Render secrets are not set; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.ready == 'true'
+        with:
+          sparse-checkout: scripts/builder-league
+
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.ready == 'true'
+        with:
+          node-version: 24
+
+      - name: Install ffmpeg and fonts
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-dejavu-core
+
+      - name: Render queued videos
+        if: steps.config.outputs.ready == 'true'
+        env:
+          RENDER_MAX: ${{ inputs.max || '5' }}
+          RENDER_LOCALE: ${{ inputs.locale || 'en' }}
+        run: node scripts/builder-league/render-year-video.ts --max "$RENDER_MAX" --locale "$RENDER_LOCALE"

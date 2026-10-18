@@ -2,6 +2,11 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { ProductDocumentSchema } from "@/packages/contracts/src/product";
 import { trafficPaths, trafficSchemas } from "@/lib/traffic/openapi";
 import { blogPaths, blogSchemas } from "@/lib/blog/blog-openapi";
+import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evidence";
+import { rankingsPaths, rankingsSchemas } from "@/lib/builder-league/openapi/rankings";
+import { progressionPaths, progressionSchemas } from "@/lib/builder-league/openapi/progression";
+import { journeyPaths, journeySchemas } from "@/lib/builder-league/openapi/journey";
+import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/privacy";
 
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
@@ -35,6 +40,11 @@ export const openApiSpec = {
     paths: {
       ...trafficPaths,
       ...blogPaths,
+      ...evidencePaths,
+      ...rankingsPaths,
+      ...progressionPaths,
+      ...journeyPaths,
+      ...privacyPaths,
       "/api/v1/products/{slug}/pulse": {
         get: {
           summary: "Read product website health history",
@@ -334,11 +344,22 @@ export const openApiSpec = {
           type: "apiKey",
           in: "cookie",
           name: "better-auth.session_token"
+        },
+        BuilderIngestSecret: {
+          type: "apiKey",
+          in: "header",
+          name: "x-nlb-builder-ingest-secret",
+          description: "Shared secret of the Builder League Discord bot (server env BUILDER_INGEST_SECRET)."
         }
       },
       schemas: {
         ...trafficSchemas,
         ...blogSchemas,
+        ...evidenceSchemas,
+        ...rankingsSchemas,
+        ...progressionSchemas,
+        ...journeySchemas,
+        ...privacySchemas,
         PulseSummary: {
           type: "object",
           properties: {

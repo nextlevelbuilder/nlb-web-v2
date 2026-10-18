@@ -1,9 +1,12 @@
+import { requireEvent } from "@/lib/builder-league/ruleset/policy-text";
 import type { PolicyEntry } from "./policy-types";
 
-/** Community policy ported verbatim from the original site (messages.policies["ship-policy"]). */
+const post = requireEvent("ship_public_post");
+
+/** Community policy ported verbatim from the original site (messages.policies["ship-policy"]); RP and rank text follows Builder League ruleset v2. */
 export const shipPolicy: PolicyEntry = {
   group: "community",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-17",
   legalReviewPending: false,
   content: {
     en: {
@@ -19,7 +22,7 @@ export const shipPolicy: PolicyEntry = {
         {
           heading: "Minimum SHIP Commitment",
           content:
-            "• Quantity: At least 4 times/month (avg. once/week), not all at the end of the month\n• Format: Public posts with links (blog, social media, website...)\n• Report: Share the link in the #ship Discord channel\n• Purpose: So the community can support, engage, and give feedback",
+            `• Quantity: At least 4 public posts/month (avg. once/week), not all at the end of the month — approved Contributors are exempt\n• Format: Public posts with links (blog, social media, website...)\n• Report: Share the link in the #ship Discord channel\n• Purpose: So the community can support, engage, and give feedback\n• RP: each verified public post earns +${post.rp} RP, up to ${post.caps[0].max} posts/week`,
         },
         {
           heading: "What Counts as a SHIP",
@@ -56,7 +59,7 @@ export const shipPolicy: PolicyEntry = {
         {
           heading: "Cam kết SHIP tối thiểu",
           content:
-            "• Số lượng: Tối thiểu 4 lần/tháng (trung bình 1 lần/tuần), không gom cuối tháng\n• Hình thức: Bài viết public có link (blog, social media, website...)\n• Báo cáo: Post link vào channel #ship trên Discord\n• Mục đích: Để cộng đồng hỗ trợ tương tác, feedback",
+            `• Số lượng: Tối thiểu 4 bài public/tháng (trung bình 1 lần/tuần), không gom cuối tháng — Contributor đã được duyệt được miễn\n• Hình thức: Bài viết public có link (blog, social media, website...)\n• Báo cáo: Post link vào channel #ship trên Discord\n• Mục đích: Để cộng đồng hỗ trợ tương tác, feedback\n• RP: mỗi bài public được xác minh nhận +${post.rp} RP, tính tối đa ${post.caps[0].max} bài/tuần`,
         },
         {
           heading: "Những gì được tính là SHIP",

@@ -23,6 +23,7 @@ import { runDueJobs } from "@/lib/onboarding/runner";
 import { linkCustomerFromPurchase, type PurchaseRefs } from "@/lib/membership/member-access";
 import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membership/subscription-sync";
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
+import { recordPaidShareConversion } from "@/lib/builder-league/attribution";
 import { WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { verifyPolarWebhook } from "@/lib/polar-webhook-signature";
 import crypto from "crypto";
@@ -408,6 +409,8 @@ async function handleSubscriptionEvent(event: PolarWebhookPayload, db: AppDb, ef
   });
 
   const userId = await linkCustomerFromEvent(customer, subscription, { polarSubscriptionIds: [subscription.id] }, db);
+  // Builder League share attribution: no-op without a signup attribution or an effective tier.
+  if (userId && MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) await recordPaidShareConversion(db, userId);
 
   if (!effects.onboardingV2) {
     if (event.type === "subscription.created" && subscription.status === "active" && isMembershipProduct(productId)) {

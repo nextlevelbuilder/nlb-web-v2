@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width={{WIDTH}}, height={{HEIGHT}}">
+<title>{{TITLE}}</title>
+<!--
+  One scene of the Year in Review video: an antique star-atlas plate in the dark "observatory" theme.
+  Self-contained (no network, system fonts) so a headless browser renders it identically every time.
+  Placeholders are filled by scripts/builder-league/render-year-video.ts and are HTML-escaped there.
+-->
+<style>
+  :root {
+    --w: {{WIDTH}}px; --h: {{HEIGHT}}px;
+    --bg: #070b16; --ink: #ece6d6; --ink-2: #b9b2a1; --ink-3: #7f7a6e; --accent: #e9c46a; --line: rgba(236, 230, 214, 0.18);
+    --unit: calc(min(var(--w), var(--h)) / 100);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--w); height: var(--h); background: var(--bg); color: var(--ink); overflow: hidden; }
+  body {
+    font-family: "Be Vietnam Pro", "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(ellipse at 20% 15%, rgba(110, 90, 180, 0.22), transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(233, 196, 106, 0.10), transparent 50%),
+      var(--bg);
+  }
+  .sky { position: absolute; inset: 0; }
+  .plate {
+    position: absolute; inset: calc(var(--unit) * 6);
+    border: 1px solid var(--line); padding: calc(var(--unit) * 7);
+    display: flex; flex-direction: column; gap: calc(var(--unit) * 4);
+  }
+  .plate::before {
+    content: ""; position: absolute; inset: calc(var(--unit) * 1.5); border: 1px solid var(--line); pointer-events: none;
+  }
+  .head { display: flex; align-items: center; gap: calc(var(--unit) * 3); font-family: "JetBrains Mono", Consolas, "DejaVu Sans Mono", monospace; font-size: calc(var(--unit) * 2.6); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+  .rn { font-family: "Noto Serif", Cambria, "DejaVu Serif", "Times New Roman", serif; font-style: italic; font-size: calc(var(--unit) * 7); color: var(--accent); letter-spacing: 0; text-transform: none; line-height: 1; }
+  .rule { flex: 1; height: 1px; background: var(--line); }
+  .main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--unit) * 4); }
+  h1 { font-family: "Noto Serif", Cambria, "DejaVu Serif", "Times New Roman", serif; font-weight: 300; font-style: italic; font-size: calc(var(--unit) * 9); line-height: 1.05; text-wrap: balance; }
+  .body { font-size: calc(var(--unit) * 3.6); line-height: 1.45; color: var(--ink-2); max-width: 36ch; }
+  .facts { list-style: none; display: flex; flex-direction: column; gap: calc(var(--unit) * 1.6); font-size: calc(var(--unit) * 3.2); }
+  .facts li { border-top: 1px solid var(--line); padding-top: calc(var(--unit) * 1.4); }
+  .foot { display: flex; justify-content: space-between; gap: calc(var(--unit) * 3); font-family: "JetBrains Mono", Consolas, "DejaVu Sans Mono", monospace; font-size: calc(var(--unit) * 2.2); color: var(--ink-3); letter-spacing: 0.12em; }
+</style>
+</head>
+<body>
+  <svg class="sky" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{{STARS}}</svg>
+  <main class="plate">
+    <div class="head"><span class="rn">{{NUMERAL}}</span><span class="rule"></span><span>{{KICKER}}</span></div>
+    <div class="main">
+      <h1>{{TITLE}}</h1>
+      <p class="body">{{BODY}}</p>
+      <ul class="facts">{{FACTS}}</ul>
+    </div>
+    <div class="foot"><span>{{FOOTER_LEFT}}</span><span>{{FOOTER_RIGHT}}</span></div>
+  </main>
+</body>
+</html>
