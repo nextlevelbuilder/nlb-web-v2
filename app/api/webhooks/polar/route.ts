@@ -23,7 +23,8 @@ import { runDueJobs } from "@/lib/onboarding/runner";
 import { linkCustomerFromPurchase, type PurchaseRefs } from "@/lib/membership/member-access";
 import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membership/subscription-sync";
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
-import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
+import { WebhookVerificationError } from "@polar-sh/sdk/webhooks";
+import { verifyPolarWebhook } from "@/lib/polar-webhook-signature";
 import crypto from "crypto";
 
 interface PolarWebhookPayload {
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
   const body = await request.text();
   const webhookId = request.headers.get("webhook-id") || "";
 
-  // 1. Verify webhook signature using Polar SDK
+  // 1. Verify the webhook signature (legacy Polar or Standard Webhooks secret)
   try {
     const headers = {
       "webhook-id": webhookId,
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       "webhook-signature": request.headers.get("webhook-signature") || "",
     };
 
-    validateEvent(body, headers, env.POLAR_WEBHOOK_SECRET);
+    verifyPolarWebhook(body, headers, env.POLAR_WEBHOOK_SECRET);
   } catch (error) {
     if (error instanceof WebhookVerificationError) {
       return NextResponse.json(
