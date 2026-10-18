@@ -966,5 +966,183 @@
       "title": "Từ nhật ký hành trình",
       "all": "Đọc blog"
     }
+  },
+  "onboarding": {
+    "metaTitle": "Thiết lập membership",
+    "eyebrow": "Onboarding",
+    "title": "Thiết lập membership của bạn",
+    "lede": "Ba bước ngắn: cho chúng mình biết bạn đang build gì, liên kết Discord, rồi vào nhóm Telegram.",
+    "loading": "Đang kiểm tra membership…",
+    "membershipLine": "Membership {tier} đang hoạt động",
+    "tier": {
+      "premium": "Premium",
+      "vip": "VIP",
+      "none": "Chưa có membership"
+    },
+    "signIn": {
+      "title": "Đăng nhập để tiếp tục",
+      "desc": "Dùng email bạn đã thanh toán để chúng mình khớp khoản thanh toán với tài khoản của bạn.",
+      "cta": "Đăng nhập"
+    },
+    "loadError": {
+      "title": "Chưa tải được trang onboarding",
+      "desc": "Kiểm tra kết nối mạng rồi thử lại."
+    },
+    "verifying": {
+      "title": "Đang xác nhận thanh toán",
+      "desc": "Polar đang xác nhận thanh toán của bạn. Thường chỉ mất vài giây.",
+      "slowTitle": "Việc xác nhận lâu hơn bình thường",
+      "slowDesc": "Thanh toán có thể vẫn đang được xử lý. Hãy kiểm tra lại sau một phút, hoặc email cho chúng mình kèm địa chỉ bạn dùng khi thanh toán.",
+      "checkAgain": "Kiểm tra lại"
+    },
+    "notOwner": {
+      "title": "Lượt thanh toán này thuộc về tài khoản khác",
+      "desc": "Hãy đăng nhập bằng email bạn đã dùng khi thanh toán để tiếp tục.",
+      "switchAccount": "Đăng nhập bằng email khác"
+    },
+    "failed": {
+      "title": "Thanh toán chưa hoàn tất",
+      "desc": "Polar chưa hoàn tất khoản thanh toán này nên chưa có membership nào được tạo.",
+      "cta": "Quay lại bảng giá"
+    },
+    "noMembership": {
+      "title": "Tài khoản này chưa có membership",
+      "desc": "Chúng mình không tìm thấy membership Premium hoặc VIP cho tài khoản này. Nếu bạn thanh toán bằng email khác, hãy đăng nhập bằng email đó.",
+      "cta": "Xem các gói membership"
+    },
+    "steps": {
+      "label": "Bước {n}/3"
+    },
+    "profile": {
+      "title": "Bạn đang build gì?",
+      "desc": "Chỉ hai câu bắt buộc. Phần còn lại không bắt buộc, bạn có thể lưu lại và quay lại sau.",
+      "required": "(bắt buộc)",
+      "optional": "(không bắt buộc)",
+      "goal": "Bạn muốn build sản phẩm gì?",
+      "goalHint": "Một hoặc hai câu, tối đa 500 ký tự.",
+      "links": "Liên kết hồ sơ",
+      "linksHint": "Tối đa 3 liên kết, ví dụ GitHub, LinkedIn, X hoặc portfolio.",
+      "linkLabel": "Liên kết hồ sơ {n}",
+      "skills": "Kỹ năng",
+      "skillsPlaceholder": "Next.js, thiết kế sản phẩm, growth…",
+      "phone": "Số điện thoại",
+      "phoneHint": "Chỉ dùng để đội ngũ liên hệ với bạn về membership.",
+      "commitment": "Mình cam kết SHIP công khai, chia sẻ tiến độ với cộng đồng và tuân thủ <link>các cam kết thành viên</link>.",
+      "save": "Lưu tiến độ",
+      "submit": "Lưu và tiếp tục",
+      "saving": "Đang lưu…",
+      "saved": "Đã lưu tiến độ.",
+      "completed": "Đã hoàn tất hồ sơ.",
+      "edit": "Sửa câu trả lời",
+      "errors": {
+        "goal": "Hãy cho chúng mình biết bạn muốn build gì, tối đa 500 ký tự.",
+        "commitmentAccepted": "Hãy đồng ý với các cam kết thành viên để tiếp tục.",
+        "profileLinks": "Dùng tối đa 3 liên kết bắt đầu bằng http:// hoặc https://.",
+        "skills": "Phần kỹ năng tối đa 200 ký tự.",
+        "phone": "Nhập số điện thoại hợp lệ hoặc để trống.",
+        "generic": "Chưa lưu được. Hãy thử lại."
+      }
+    },
+    "discord": {
+      "name": "Discord",
+      "title": "Liên kết Discord",
+      "desc": "Chúng mình sẽ thêm bạn vào server NLB và gán role đúng với gói của bạn.",
+      "connect": "Liên kết Discord",
+      "reconnect": "Liên kết lại Discord",
+      "linked": "Đã liên kết Discord. Role của bạn đang được áp dụng.",
+      "error": "Có lỗi xảy ra. Hãy thử lại sau ít phút.",
+      "errors": {
+        "discord_denied": "Bạn đã huỷ cấp quyền Discord. Hãy liên kết lại khi sẵn sàng.",
+        "discord_state": "Liên kết Discord đã hết hạn hoặc được mở ở phiên khác. Hãy bắt đầu lại từ trang này.",
+        "discord_in_use": "Tài khoản Discord này đã được liên kết với một tài khoản NLB khác. Hãy đăng nhập bằng tài khoản đó hoặc dùng tài khoản Discord khác. Nếu tài khoản NLB này đã liên kết một Discord khác, hãy hủy liên kết bên dưới trước.",
+        "discord_failed": "Discord chưa phản hồi. Hãy thử lại sau ít phút.",
+        "membership_required": "Cần có gói Premium hoặc VIP còn hiệu lực để vào Discord. Hãy mua hoặc gia hạn gói, rồi kết nối Discord lại."
+      }
+    },
+    "telegram": {
+      "name": "Telegram",
+      "title": "Vào nhóm Telegram",
+      "desc": "Liên kết tài khoản Telegram với bot của chúng mình, rồi gửi yêu cầu vào nhóm thành viên.",
+      "connect": "Liên kết Telegram",
+      "reconnect": "Liên kết lại Telegram",
+      "join": "Gửi yêu cầu vào nhóm",
+      "openedHint": "Telegram đã mở. Bấm Start trong cuộc trò chuyện với bot rồi quay lại đây. Trang này tự cập nhật.",
+      "joinHint": "Telegram đã mở. Hãy gửi yêu cầu tham gia; bot sẽ duyệt thành viên trong vòng một phút.",
+      "error": "Chưa tạo được liên kết Telegram. Hãy thử lại."
+    },
+    "status": {
+      "not_connected": "Chưa liên kết",
+      "waiting_for_join": "Đang chờ bạn gửi yêu cầu vào nhóm",
+      "processing": "Đang xử lý",
+      "active": "Đang hoạt động",
+      "retrying": "Đang tự động thử lại",
+      "action_required": "Cần bạn xử lý",
+      "revoked": "Đã gỡ quyền truy cập",
+      "unlinking": "Đang huỷ liên kết"
+    },
+    "actions": {
+      "linkedAs": "Đã liên kết với",
+      "retry": "Thử lại",
+      "retrying": "Đang thử lại…",
+      "retryQueued": "Đã xếp lịch thử lại. Trạng thái sẽ cập nhật trong vòng một phút.",
+      "rateLimited": "Vui lòng chờ {seconds} giây trước khi thử lại.",
+      "unlink": "Huỷ liên kết",
+      "unlinkConfirm": "Huỷ liên kết {provider}? Quyền thành viên của bạn ở đó sẽ bị gỡ.",
+      "unlinkFailed": "Chưa gỡ được quyền truy cập lúc này. Hãy thử lại sau.",
+      "unlinked": "Đã huỷ liên kết {provider}.",
+      "unlinkQueued": "Đang gỡ quyền truy cập {provider} rồi huỷ liên kết. Trạng thái sẽ cập nhật trong vòng một phút.",
+      "unlinkFailedCode": "Chưa gỡ được quyền truy cập {provider} ({code}) nên tài khoản vẫn đang liên kết. Hãy bấm Thử lại, hoặc email cho chúng mình nếu vẫn lỗi.",
+      "rejoin": "Tham gia lại hoặc kiểm tra lại"
+    },
+    "done": {
+      "title": "Bạn đã sẵn sàng",
+      "desc": "Hồ sơ đã được lưu và quyền truy cập cộng đồng đang hoạt động. Chào mừng bạn đến với Next Level Builders.",
+      "account": "Đến trang tài khoản"
+    },
+    "support": {
+      "prefix": "Gặp khó khăn? Email cho"
+    }
+  },
+  "accountMembership": {
+    "title": "Membership",
+    "desc": "Gói của bạn, ngày gia hạn và quyền truy cập cộng đồng.",
+    "none": "Tài khoản này chưa có membership đang hoạt động.",
+    "noneCta": "Xem các gói membership",
+    "tierLabel": "Hạng",
+    "planLabel": "Gói",
+    "renewsLabel": "Gia hạn vào",
+    "endsLabel": "Truy cập đến",
+    "term": {
+      "quarterly": "Theo quý",
+      "annual": "Theo năm"
+    },
+    "subscriptionStatus": {
+      "active": "Đang hoạt động",
+      "trialing": "Dùng thử",
+      "past_due": "Quá hạn thanh toán",
+      "canceled": "Đã huỷ",
+      "other": "Đang cập nhật"
+    },
+    "cancelAtPeriodEnd": "Membership của bạn sẽ kết thúc vào cuối kỳ hiện tại. Bạn vẫn giữ quyền truy cập đến lúc đó và có thể quay lại bất cứ lúc nào bằng cách gia hạn.",
+    "pastDue": "Polar chưa thu được khoản thanh toán gần nhất. Quyền truy cập được giữ thêm 7 ngày để bạn cập nhật thẻ.",
+    "communityTitle": "Quyền truy cập cộng đồng",
+    "banner": {
+      "title": "Hoàn tất thiết lập membership",
+      "desc": "Liên kết Discord và Telegram để nhận quyền thành viên tự động. Chỉ mất khoảng một phút.",
+      "cta": "Hoàn tất thiết lập"
+    },
+    "upgrade": {
+      "title": "Nâng cấp lên VIP",
+      "desc": "Ưu tiên DM với Mentor, truy cập sớm và ưu tiên xét duyệt Partner, cộng thêm mọi quyền lợi của Premium.",
+      "note": "Bạn giữ nguyên chu kỳ thanh toán hiện tại. Polar thu ngay phần chênh lệch cho thời gian còn lại của kỳ này và quyền lợi VIP có hiệu lực ngay lập tức.",
+      "cta": "Nâng cấp lên VIP",
+      "error": "Chưa thể nâng cấp lúc này. Hãy thử lại hoặc email hello@nextlevelbuilder.io.",
+      "upgrading": "Đang nâng cấp…",
+      "success": "Bạn đã là thành viên VIP. Quyền truy cập cộng đồng sẽ được cập nhật trong vòng một phút.",
+      "rateLimited": "Vui lòng đợi vài giây rồi thử lại.",
+      "pastDue": "Hãy cập nhật phương thức thanh toán trước. Polar chưa thu được khoản thanh toán gần nhất nên việc nâng cấp tạm dừng cho đến khi thanh toán thành công.",
+      "alreadyVip": "Bạn đã là thành viên VIP. Đang làm mới thông tin gói…"
+    },
+    "support": "Có câu hỏi về membership? Email cho"
   }
 }

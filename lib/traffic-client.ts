@@ -37,7 +37,7 @@ export type TrafficPage = {
   directory: boolean;
 };
 
-const PRIVATE_PATHS = /^\/(?:sign-in|sign-up|profile|account|oauth|success)(?:\/|$)/;
+const PRIVATE_PATHS = /^\/(?:sign-in|sign-up|profile|account|oauth|success|onboarding)(?:\/|$)/;
 const PREVIEW_PATHS = /^\/studio\/products\/[^/]+\/preview(?:\/|$)/;
 const PRODUCT_PATH = /^\/products\/([a-z0-9-]+)$/;
 

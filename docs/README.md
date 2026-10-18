@@ -11,6 +11,7 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [design-guidelines.md](./design-guidelines.md) | Work on UI: Constellation tokens, themes, motion, i18n copy |
 | [blog-and-agent-management.md](./blog-and-agent-management.md) | Manage blog posts over REST, the `nlb` CLI or MCP |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
+| [membership-onboarding.md](./membership-onboarding.md) | Operate post-checkout onboarding: tier rules, Discord/Telegram access, jobs and cron, secrets, backfill, rollback |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |
 | [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md) | Understand the one-way Neon → D1 data copy and its risks |
 | [cutover-runbook.md](./cutover-runbook.md) | Move `nextlevelbuilder.io` from the Digitop account to hi@ |
