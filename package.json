@@ -50,6 +50,7 @@
     "remark-gfm": "4.0.1",
     "remark-stringify": "11.0.0",
     "resend": "^4.0.0",
+    "standardwebhooks": "^1.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "unified": "11.0.5",

@@ -43,7 +43,7 @@ Worker secrets (names in [`.dev.vars.example`](../.dev.vars.example)):
 | `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_PREMIUM_ROLE_ID`, `DISCORD_VIP_ROLE_ID` | Bot in the guild with Manage Roles and Create Instant Invite; its role must sit above both member roles. |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_GROUP_CHAT_ID` | Bot is an admin of the group with "Invite users" and "Ban users". Use the supergroup id (`-100…`); a group migrates to a new id when it becomes a supergroup. |
 | `LARK_ADMIN_WEBHOOK_URL` | optional internal admin notification. |
-| Polar token, webhook secret, product ids | staging uses Polar sandbox values. |
+| Polar token, webhook secret, product ids | staging uses Polar sandbox values. The webhook secret is the endpoint's secret as Polar shows it, in either format: `polar_whs_…` (older endpoints) or `whsec_…` (Standard Webhooks signature, verified by [`verifyPolarWebhook`](../lib/polar-webhook-signature.ts)). |
 
 Set secrets without echoing them, for example `wr secret bulk <file> --env staging` from a file outside the repo, using the `wr` helper in [deployment-guide.md](./deployment-guide.md#wrangler-access).
 
