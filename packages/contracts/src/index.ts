@@ -6,4 +6,5 @@ export * from "./hasher.js";
 export * from "./api.js";
 export * from "./blog.js";
 export * from "./builder-league.js";
+export * from "./onboarding.js";
 export * from "./traffic.js";
