@@ -2,9 +2,10 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { mcp } from "@better-auth/mcp";
 import { jwt } from "better-auth/plugins";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import { getCurrentAdapter, type Verification } from "better-auth";
+import { getCurrentAdapter, type BetterAuthPlugin, type HookEndpointContext, type Verification } from "better-auth";
 import { getCurrentAuthEndpointContext } from "@better-auth/core/context";
 import { z } from "zod";
+import { mcpClientIdMetadataDiscovery } from "@/lib/mcp-oauth-cimd";
 
 export const MCP_OAUTH_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"];
 export const MCP_OAUTH_DEFAULT_RESOURCE = "https://mcp.nextlevelbuilder.io/mcp";
@@ -95,6 +96,8 @@ export function getMcpOAuthPlugins() {
     resource,
     scopes: MCP_OAUTH_SCOPES,
     grantTypes: ["authorization_code", "refresh_token"],
+    // Client ID Metadata Documents are the MCP 2026-07-28 default; Dynamic Client Registration stays for older clients.
+    extensions: [{ clientDiscovery: mcpClientIdMetadataDiscovery }],
     allowDynamicClientRegistration: true,
     allowUnauthenticatedClientRegistration: true,
     allowPublicClientPrelogin: true,
@@ -144,5 +147,24 @@ export function getMcpOAuthPlugins() {
     // Better Auth composes plugin database hooks with its other plugins and application hooks.
     init: () => ({ options: { databaseHooks: { verification: { create: { before: bindAuthorizationCodeToConsent } } } } }),
   };
-  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding];
+  // RFC 8707: without a resource the provider issues an audience-less opaque token. This server protects a
+  // single MCP resource, so an authorization request that omits it is bound to that resource; any other
+  // value is still validated (and rejected) by the provider.
+  const defaultResource = {
+    id: "mcp-default-resource",
+    schema: {},
+    hooks: {
+      before: [{
+        matcher: (ctx: HookEndpointContext) => ctx.path === "/oauth2/authorize",
+        handler: createAuthMiddleware(async (ctx) => {
+          const source = ctx.method === "POST" ? "body" : "query";
+          const params: unknown = ctx[source];
+          const values = params && typeof params === "object" ? params as Record<string, unknown> : {};
+          if (values.resource !== undefined) return;
+          return { context: { [source]: { ...values, resource } } };
+        }),
+      }],
+    },
+  } satisfies BetterAuthPlugin;
+  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding, defaultResource];
 }
