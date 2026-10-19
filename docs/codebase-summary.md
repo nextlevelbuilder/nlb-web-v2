@@ -12,7 +12,7 @@ Where each concern lives. This page lists entry points only, not inventories. Ru
 | Shared UI | `components/ui/` (shadcn/Radix primitives), `components/site/` (site shell), `components/constellation/` (home chapters), `components/home/` (checkout state) | Motion engine: `lib/constellation/`. |
 | Public REST API | `app/api/v1/` | Contract: [`lib/openapi.ts`](../lib/openapi.ts) → `/api/openapi.json`, `/api-docs` |
 | Product document contract | [`packages/contracts/src/`](../packages/contracts/src) | Imported as `@/packages/contracts/...` by the web app and as `@nextlevelbuilder/contracts` by the CLI and MCP workspaces. |
-| Agent toolkits (`nlb` CLI, MCP worker) | [`packages/cli/`](../packages/cli), [`packages/mcp/`](../packages/mcp) | npm workspaces with `packages/contracts`. Per-package docs in [`docs/toolkits/`](./toolkits); deploy in [deployment-guide.md](./deployment-guide.md#mcp-worker) |
+| Agent toolkits (`nlb` CLI, MCP worker) | [`packages/cli/`](../packages/cli), [`packages/mcp/`](../packages/mcp) | npm workspaces with `packages/contracts`. The web Worker mounts the MCP server at `/mcp` ([`lib/mcp-worker-mount.ts`](../lib/mcp-worker-mount.ts)). Per-package docs in [`docs/toolkits/`](./toolkits) |
 | Caller auth (API key, session, MCP delegation) | [`lib/auth-api-key.ts`](../lib/auth-api-key.ts), [`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts) | |
 | Better Auth (sign-in, OAuth provider) | [`lib/auth.ts`](../lib/auth.ts), [`lib/mcp-oauth-config.ts`](../lib/mcp-oauth-config.ts), `app/api/auth/[...all]` | |
 | Database | [`lib/db/schema.ts`](../lib/db/schema.ts), [`lib/db/index.ts`](../lib/db/index.ts), `drizzle/migrations/` | |

@@ -253,3 +253,34 @@ nlb blog restore <id> <revisionId> --version 5
 - Writes send a fresh `Idempotency-Key` header.
 - Common options: `-k, --api-key`, `-u, --url`, `--json` (prints the API `{ data }` response).
 
+### 17. `nlb builder ...`
+
+Builder League through `/api/v1/builder-*`. Authenticate with a member API key (`--api-key`, `NLB_API_KEY`, or `nlb config set api-key`) or a Better Auth session cookie (`-c, --cookie`, `NLB_SESSION_COOKIE`).
+
+```bash
+nlb builder access                            # is Builder League open to you here?
+nlb builder me
+nlb builder passport <userId>
+nlb builder projects list | create <file>
+nlb builder evidence list --status submitted --limit 20
+nlb builder evidence get <id>
+nlb builder evidence submit evidence.json --client-key <key>   # always self_reported
+nlb builder evidence update <id> <file> | withdraw <id> | appeal <id>
+nlb builder journey | missions | badges
+nlb builder rankings --board build --period month --key 2026-10
+nlb builder seasons show | join --track build --goal "Ship v1"
+nlb builder rewards list
+nlb builder capsule show --year 2026 | save --year 2026 --visibility private
+nlb builder year get 2026 | shares 2026 | unshare 2026 <linkId> | videos 2026 | render 2026
+nlb builder wrapped 2026
+```
+
+- API keys can only submit `self_reported` evidence; the server rejects any `verification` or `status` field.
+- Session cookie only (API keys are refused): `privacy <file>`, `evidence confirm <id>`, `rewards claim <id>`, `year hide <year> [scenes...]`, `year share <year>`.
+- Admin session only: `admin queue`, `admin decide <id>`, `admin resolve-appeal <id>`, `admin backfill`.
+- `<file>` is a JSON file, or `-` for stdin. When Builder League is off for the caller, commands print "Builder League is not enabled on this environment".
+- Common options: `-k, --api-key`, `-c, --cookie`, `-u, --url`, `--json`.
+
+### 18. `nlb onboarding status`
+
+Shows the signed-in member's onboarding progress from `GET /api/v1/onboarding-status`: payment, membership, profile completion, and Discord and Telegram access with the next action for each. Options: `-k, --api-key`, `-u, --url`, `--json`.

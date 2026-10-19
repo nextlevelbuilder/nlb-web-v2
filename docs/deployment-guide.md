@@ -7,12 +7,7 @@ nextlevelbuilder.io runs as two Cloudflare Workers on the **hi@nextlevelbuilder.
 | production | `nextlevelbuilder-web` | `main` | https://nextlevelbuilder-web.hi-7ac.workers.dev | nextlevelbuilder.io, www |
 | staging | `nextlevelbuilder-web-staging` | `dev` | https://nextlevelbuilder-web-staging.hi-7ac.workers.dev | staging.nextlevelbuilder.io |
 
-The MCP server is a third Worker on the same account, built from [`packages/mcp`](../packages/mcp) in this repository:
-
-| Environment | Worker | Branch | Endpoint |
-|---|---|---|---|
-| production | `nlb-directory-mcp` | `main` | https://mcp.nextlevelbuilder.io/mcp |
-| staging | `nlb-directory-mcp-staging` | `dev` | https://mcp-staging.nextlevelbuilder.io/mcp |
+Each web Worker also serves the MCP server from [`packages/mcp`](../packages/mcp) at `/mcp`: https://nextlevelbuilder.io/mcp in production and https://staging.nextlevelbuilder.io/mcp on staging ([MCP server](#mcp-server)).
 
 Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Production is the top-level config, and staging is `env.staging`. What each binding is for: [system-architecture.md](./system-architecture.md#cloudflare-bindings).
 
@@ -38,7 +33,7 @@ wr secret list --env staging
 
 [`.github/workflows/ci-deploy.yml`](../.github/workflows/ci-deploy.yml):
 - Every push and PR to `dev` or `main` runs type-check, lint and test for the web app, then builds, type-checks and tests the `packages/*` workspaces (`npm run build:packages`, `type-check:packages`, `test:packages`).
-- A push to `dev` applies D1 migrations to staging, builds and deploys the staging web Worker, then deploys the staging MCP Worker.
+- A push to `dev` applies D1 migrations to staging, builds the packages and the staging web Worker (which includes the MCP server) and deploys it.
 - A push to `main` does the same for production. The workflow file owns the env selection and the build-time `NEXT_PUBLIC_*` values.
 - PR runs get no secrets.
 
@@ -56,7 +51,7 @@ scripts/provision-cloudflare.sh secrets staging     # Worker secrets piped from 
 scripts/provision-cloudflare.sh secrets production
 ```
 
-- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets; the same value must be on the MCP worker ([cutover-runbook.md](./cutover-runbook.md)).
+- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets. The in-worker MCP server signs its delegation assertions with it and the API verifies them with the same binding.
 - Because `BETTER_AUTH_URL` is the final domain, OAuth sign-in works only there.
 - Course video secrets (`CF_STREAM_API_TOKEN`, signing key, customer subdomain) are set by hand once Stream is enabled: [courses.md](./courses.md#one-time-setup-cloudflare-stream).
 - Builder League: the `BUILDER_LEAGUE_ENABLED` var lives in `wrangler.jsonc` (`false` in production). The optional `BUILDER_INGEST_SECRET` (32+ characters, shared with the Discord bot) is set by hand with `wr secret put BUILDER_INGEST_SECRET --env <env>`; without it the bot uses an admin API key. The private evidence buckets `nlb-builder-evidence` and `nlb-builder-evidence-staging` are not in the provisioning script; create them once with `wr r2 bucket create <name>`. The render workflow ([`builder-league-render.yml`](../.github/workflows/builder-league-render.yml)) needs the repository secrets `NLB_API_BASE` and `NLB_RENDER_API_KEY` (an admin's API key). Operations: [builder-league-runbook.md](./builder-league-runbook.md).
@@ -93,30 +88,23 @@ Also export the other `NEXT_PUBLIC_*` values the workflow sets (Polar product id
 
 Roll back a bad deploy with `wr deployments list --env=<env>`, then `wr rollback <version-id> --env=<env>`.
 
-## MCP worker
+## MCP server
 
-Config: [`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc). Production is the top-level config and staging is `env.staging`. Its custom domains are declared there, so `wrangler deploy` attaches them.
+[`worker.ts`](../worker.ts) hands `/mcp`, `/sse`, `/message` and `/.well-known/oauth-protected-resource[/mcp]` to [`lib/mcp-worker-mount.ts`](../lib/mcp-worker-mount.ts), which runs `@nextlevelbuilder/mcp/http` before Next.js. Its calls back to this site (JWKS, delegated `/api/v1` requests) go to the Next.js handler in-process, because a Worker cannot reliably fetch its own hostname. It ships with every web deploy; `npm run build:worker` builds the packages first.
 
-```bash
-npm run deploy:mcp:staging      # builds contracts, deploys nlb-directory-mcp-staging
-npm run deploy:mcp:production   # deploys nlb-directory-mcp
-```
+Configuration lives in the web Worker:
+- `MCP_OAUTH_RESOURCE` (var): the canonical endpoint, `<site>/mcp`.
+- `MCP_OAUTH_LEGACY_RESOURCES` (var, comma-separated): older resources that tokens are still issued and accepted for. Production lists `https://mcp.nextlevelbuilder.io/mcp`. A request on a legacy resource's host is served as that resource.
+- `MCP_DELEGATION_SECRET` (secret): signs and verifies the `x-nlb-mcp-assertion` the MCP server sends to `/api/v1`. To rotate it, pipe a new value without printing it: `openssl rand -base64 48 | tr -d '\n' | wr secret put MCP_DELEGATION_SECRET --env staging`.
 
-Run these with the same account pin and token rule as `wr` above. The MCP worker needs two secrets per environment:
-- `MCP_DELEGATION_SECRET`: **identical** to the web worker of the same environment. Generate one value and pipe it to both workers without printing it:
+### Moving `mcp.nextlevelbuilder.io` onto the web Worker
 
-  ```bash
-  secret=$(openssl rand -base64 48)
-  printf %s "$secret" | wr secret put MCP_DELEGATION_SECRET --env staging
-  printf %s "$secret" | (cd packages/mcp && env -u CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID=7ac87c90789159ae1b10b7d78f5dcc08 \
-    npx wrangler secret put MCP_DELEGATION_SECRET --env staging)
-  unset secret
-  ```
+Until this is done, `mcp.nextlevelbuilder.io` is still served by the old standalone Worker `nlb-directory-mcp`, which keeps working for existing clients. After the in-worker MCP server is live in production:
+1. In the Cloudflare dashboard (hi@ account), remove the `mcp.nextlevelbuilder.io` custom domain from `nlb-directory-mcp`.
+2. Add it as a custom domain on `nextlevelbuilder-web`. Requests on that host are served as the legacy resource, so existing tokens and discovery keep working.
+3. Check `https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource/mcp` and one authorized tool call, then delete `nlb-directory-mcp`.
 
-  Assertions signed with an old value fail until both sides match.
-- `WORKER_AUTH_TOKEN`: optional, only for the static-token fallback when OAuth is disabled.
-
-The web worker's `MCP_OAUTH_RESOURCE` var must equal the MCP worker's `NLB_OAUTH_RESOURCE` for the same environment, otherwise tokens are issued for the wrong audience and the MCP worker rejects them. Protocol and OAuth details: [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server).
+The standalone entry ([`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc)) remains for self-hosting; CI no longer deploys it. Protocol and OAuth details: [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server).
 
 ## npm packages
 

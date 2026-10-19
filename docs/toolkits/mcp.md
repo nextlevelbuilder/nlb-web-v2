@@ -40,110 +40,60 @@ npx @nextlevelbuilder/mcp
 
 ---
 
-### 2. Cloudflare Workers Transport (Edge Deployment)
-Hosted endpoint: **https://mcp.nextlevelbuilder.io/mcp**. Check service status at [health](https://mcp.nextlevelbuilder.io/health).
+### 2. Hosted Streamable HTTP endpoint
 
-The package exports a pure Web-standard fetch handler compatible with Cloudflare Workers without Node-only dependencies:
+Hosted endpoint: **https://nextlevelbuilder.io/mcp** (staging: `https://staging.nextlevelbuilder.io/mcp`). The nlb-web-v2 Worker serves it in-process through `@nextlevelbuilder/mcp/http`; mounting and configuration are in [deployment-guide.md](../deployment-guide.md#mcp-server). The old host `https://mcp.nextlevelbuilder.io/mcp` keeps working for existing clients.
 
 ```typescript
-import { handleWorkerFetch } from "@nextlevelbuilder/mcp/worker";
+import { createNlbMcpHttpHandler } from "@nextlevelbuilder/mcp/http";
 
-export default {
-  fetch: handleWorkerFetch
-};
+const mcp = createNlbMcpHttpHandler({
+  apiBaseUrl: "https://nextlevelbuilder.io",
+  resource: "https://nextlevelbuilder.io/mcp",
+  oauthIssuer: "https://nextlevelbuilder.io/api/auth",
+  delegationSecret: env.MCP_DELEGATION_SECRET,
+});
+const response = await mcp(request); // null when the path is not an MCP route
 ```
 
-Endpoints supported:
-- `POST /mcp` or `POST /`: Stateless Streamable HTTP JSON-RPC requests; notifications return `202` with an empty body.
-- `GET /mcp` and `DELETE /mcp`: `405` (no persistent stream or session).
-- `GET /sse`: Legacy SSE stream initialization. Its in-memory sessions require the same isolate, so use `/mcp` on Cloudflare.
-- `GET /health`: Diagnostic status endpoint.
+Routes:
+- `POST /mcp`: MCP 2026-07-28 over stateless Streamable HTTP. Clients on 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05 are served through the SDK's legacy path. Notifications return `202`.
+- `GET /mcp`, `DELETE /mcp`: `405` (no standalone stream or session).
+- `GET /.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp`: RFC 9728 protected-resource metadata.
+- `GET /sse` + `POST /message?sessionId=`: the deprecated HTTP+SSE transport, bridged onto `/mcp`.
+- `OPTIONS` on any of the above: CORS preflight. Requests with an untrusted `Host` or `Origin` get `403`.
 
-The server negotiates protocol `2025-06-18` and retains `2024-11-05` for legacy clients. HTTP clients send `Content-Type: application/json`, `Accept: application/json, text/event-stream`, and the negotiated `MCP-Protocol-Version` on subsequent requests. The Worker does not issue a session ID.
-
-#### Deploy from this repository
-
-The [Deploy MCP workflow](../.github/workflows/deploy-mcp.yml) deploys production after the main-branch CI succeeds. It also supports manual dispatch on `main`, running the same build, test and type checks before deployment. Repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` authorize deployment. Existing Worker secrets, including OAuth delegation credentials, remain managed in Cloudflare.
-
-Requires Node.js 22+ and pnpm. Run from the repository root:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm --filter @nextlevelbuilder/mcp exec wrangler login
-pnpm --filter @nextlevelbuilder/mcp run deploy:check
-pnpm --filter @nextlevelbuilder/mcp run deploy
-```
-
-[`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc) owns the Worker name, Cloudflare account, custom domain, entry point, and upstream API URL. The configured account owns the `nextlevelbuilder.io` zone. The `custom_domain` route lets Cloudflare manage DNS and HTTPS for `mcp.nextlevelbuilder.io`. The build command builds the shared contracts before bundling the Worker. To deploy elsewhere, update both `account_id` and `routes` for the destination zone. Wrangler also prints the deployed `workers.dev` URL; the MCP endpoint is `<worker-url>/mcp`.
-
-For local development, run `pnpm --filter @nextlevelbuilder/mcp dev:worker` (default port 8787).
-
-#### Authentication and browser access
-
-Public directory reads are available without authentication. Private traffic reads (`get_product_traffic`) require OAuth `mcp:read` or a valid static Worker token plus an upstream API key. Blog revisions (`blog_list_revisions`) follow the same rule. Remote mutations (`submit_product`, `cast_vote`, `upload_media`, `create_checkout`, `create_api_key`, `revoke_api_key`, and the blog write tools) require an OAuth access token with the appropriate scope or `Authorization: Bearer <WORKER_AUTH_TOKEN>`. For legacy static-token clients, set a strong token as a Cloudflare secret to enable authorized writes:
-
-```bash
-pnpm --filter @nextlevelbuilder/mcp exec wrangler secret put WORKER_AUTH_TOKEN
-```
-
-With static-token authentication, each tool still requires its upstream credentials (`api_key` or `session_cookie`) when applicable. An optional `NLB_API_KEY` Worker secret supplies a default API key for tools that use it. OAuth calls use the signed-in account as described below. Never put credentials in Wrangler `vars` or commit them. Local development secrets belong in `packages/mcp/.dev.vars`, which is ignored by git.
-
-Requests without `Origin` (native MCP clients) are accepted. Browser origins must match the Worker origin or the comma-separated `NLB_ALLOWED_ORIGINS` variable; configure exact trusted origins if using a browser client.
-
-Remote client configuration (Cursor):
+An OAuth client needs only the endpoint:
 
 ```json
 {
   "mcpServers": {
-    "nlb-directory": {
-      "url": "https://mcp.nextlevelbuilder.io/mcp",
-      "headers": {
-        "Authorization": "Bearer <WORKER_AUTH_TOKEN>"
-      }
-    }
+    "nlb-directory": { "url": "https://nextlevelbuilder.io/mcp" }
   }
 }
 ```
 
-Omit `headers` for read-only access. Streamable HTTP behavior follows the [MCP transport specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports).
+Self-hosting: [`packages/mcp/wrangler.jsonc`](../../packages/mcp/wrangler.jsonc) builds a standalone Worker (`@nextlevelbuilder/mcp/worker`) on the same handler, adding `GET /health` and a `POST /` alias. It accepts a static `WORKER_AUTH_TOKEN` secret for full tool access when OAuth is off; each tool then still needs its upstream `api_key` (or the optional `NLB_API_KEY` secret). Keep local secrets in `packages/mcp/.dev.vars`, which git ignores. NLB's own CI no longer deploys this Worker.
 
-### 3. OAuth with an NLB account
+### 3. OAuth 2.1 with an NLB account
 
-The checked-in Worker configuration enables OAuth with `NLB_OAUTH_ENABLED=true` for production and staging. Deployments require the matching web provider, database migration and shared delegation secret to be ready first; the configuration alone does not verify live availability. Existing static-token and stdio configurations remain supported.
+The authorization server is the web's Better Auth provider at `<site>/api/auth`, found through `/.well-known/oauth-protected-resource/mcp`. It uses the existing NLB sign-in methods and asks the user to approve the requesting application.
 
-When enabled, clients discover the web authorization server through `/.well-known/oauth-protected-resource/mcp` (also available at the well-known root). Its issuer is `https://nextlevelbuilder.io/api/auth`. The web uses existing NLB sign-in methods and asks the user to approve the requesting application. Public clients use Authorization Code with S256 PKCE; dynamic client registration supports existing MCP clients. Clients requesting `offline_access` receive refresh tokens.
+- Authorization Code with PKCE S256 only; `iss` is on every authorization response (RFC 9207).
+- Clients may use a Client ID Metadata Document URL as `client_id`, or register dynamically (kept for older clients).
+- Tokens are bound to the MCP resource (RFC 8707). An authorization request without `resource` is bound to the canonical one. Access tokens last five minutes; refresh tokens rotate and reuse revokes the family.
 
 | Scope | Permission |
 | --- | --- |
-| `mcp:read` | Read directory data, query authorized product traffic, read blog drafts and revisions (admins), and validate documents |
-| `mcp:write` | Submit products, upload media, vote, create checkout links, and create/update/publish/archive/restore blog posts (admins) |
+| `mcp:read` | Read directory data, authorized product traffic, blog drafts and revisions (admins), Builder League and onboarding status |
+| `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions |
 | `mcp:keys` | List, create and revoke the user's API keys; newly created keys can outlive this OAuth grant |
 
-Unauthenticated public reads remain available. Protected calls return HTTP `401` with OAuth discovery information, and an authenticated request missing the required scope returns `403`. Start sign-in using your client's OAuth login feature or when it encounters a protected call. An OAuth client needs only the endpoint configuration:
+Public reads need no token. A protected call without a valid token returns `401` with a `WWW-Authenticate` challenge (`resource_metadata`, `scope`); a token missing the tool's scope returns `403 insufficient_scope`.
 
-```json
-{
-  "mcpServers": {
-    "nlb-directory": { "url": "https://mcp.nextlevelbuilder.io/mcp" }
-  }
-}
-```
+OAuth calls act as the signed-in account: do not pass `api_key`, `session_cookie` or a different `api_url`. The server validates the token's type, signature, issuer, audience, expiry and scopes, then calls the API with a separate `x-nlb-mcp-assertion` that lasts at most 60 seconds and is bound to the user, scope, HTTP method and path. OAuth access tokens and session cookies are never forwarded. The web reloads the current user and keeps its organization, ownership and Turnstile checks.
 
-OAuth calls use the signed-in account. Do not pass `api_key`, `session_cookie`, or a different `api_url`. The Worker validates access-token type, signature, issuer, resource audience, expiry and scopes. It sends a separate assertion lasting at most 60 seconds to opted-in NLB API routes, bound to the user, scope, HTTP method and path. OAuth access tokens and web session cookies are not forwarded. The web reloads current user status and retains organization/ownership checks; voting still needs a valid Turnstile token when the web requires one.
-
-Access tokens last five minutes. Manage and disconnect authorized clients at the web's `/oauth/connections` page. Disconnecting revokes that user's refresh-token families for the client and removes consent. Pending authorization codes are bound to that consent and cannot be exchanged after disconnect, even if the user later reconnects. Already issued JWTs can remain valid until their five-minute expiry. Revoking OAuth consent does not revoke API keys previously created through `mcp:keys`; revoke those keys separately.
-
-#### Rollout order
-
-1. In the web repository, generate/review the OAuth schema migration, apply it to staging using the direct database connection, and deploy the web changes through CI. Follow its `docs/deployment-guide.md` for production migration and deployment.
-2. Configure `MCP_OAUTH_RESOURCE` on the web and `NLB_OAUTH_RESOURCE` on this Worker to the same canonical MCP endpoint. The web's `BETTER_AUTH_URL` and Worker's `NLB_OAUTH_ISSUER` must identify the same issuer (`<web-origin>/api/auth`); `NLB_API_URL` must match that web origin.
-3. Provision the same independently generated, high-entropy `MCP_DELEGATION_SECRET` (at least 32 bytes) on both Workers. Keep it separate from `BETTER_AUTH_SECRET` and `WORKER_AUTH_TOKEN`, and out of source control.
-4. Enable the web provider with `MCP_OAUTH_ENABLED=true`. Verify authorization-server metadata, JWKS, sign-in/consent, PKCE and refresh on staging before production.
-5. Deploy this Worker with `NLB_OAUTH_ENABLED=true` (already set in the checked-in configuration). Verify discovery, an OAuth-authorized call and a denied call on the custom domain. Keep staging and production resources/secrets isolated.
-
-The `staging` Wrangler environment uses `https://staging.nextlevelbuilder.io` and the separate MCP resource `https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp`. Use `pnpm --filter @nextlevelbuilder/mcp run deploy --env staging` to deploy it, and add `--env staging` to Wrangler secret commands when provisioning its independent secrets. Production commands omit `--env staging` and use the custom domain.
-
-To disable new OAuth access, set `NLB_OAUTH_ENABLED=false` and deploy the MCP Worker. Legacy static-token callers continue working. Web/schema rollback follows the web repository's forward-only migration policy.
+Manage and disconnect authorized clients at `/oauth/connections`. Disconnecting revokes the user's refresh-token families for that client and removes consent; already issued access tokens stay valid until they expire. API keys created through `mcp:keys` must be revoked separately.
 
 ---
 
@@ -268,3 +218,35 @@ Wrap `/api/v1/blog/*` (see [blog contracts](contracts.md#blog-management)). Non-
 - A stale `version` returns a tool error `{ error, status: 409, currentVersion }`. Re-read with `blog_get_post` and retry. A server validation failure returns `{ error, status: 400, details: [{ path, message }] }`.
 - OAuth: reads need `mcp:read` and writes need `mcp:write`. `blog_list_posts` and `blog_get_post` stay public when the caller is anonymous and forward the signed-in identity when one is present. Anonymous legacy Worker callers never use the Worker's configured `NLB_API_KEY` for blog reads.
 
+### 18. Builder League tools
+
+All call `/api/v1/builder-*` as the signed-in member. Reads need `mcp:read`, writes `mcp:write`.
+
+| Tool | Route |
+| --- | --- |
+| `builder_get_access` | `GET /api/v1/builder-access` |
+| `builder_get_me` | `GET /api/v1/builder-me` |
+| `builder_list_projects` · `builder_create_project` | `GET` · `POST /api/v1/builder-projects` |
+| `builder_list_evidence` · `builder_get_evidence` | `GET /api/v1/builder-evidence[/{id}]` |
+| `builder_submit_evidence` | `POST /api/v1/builder-evidence` (always `self_reported`) |
+| `builder_update_evidence` · `builder_withdraw_evidence` | `PATCH /api/v1/builder-evidence/{id}` |
+| `builder_appeal_evidence` | `POST /api/v1/builder-evidence/{id}/appeal` |
+| `builder_get_journey` | `GET /api/v1/builder-journey` |
+| `builder_list_missions` · `builder_list_badges` | `GET /api/v1/builder-missions`, `/builder-badges` |
+| `builder_get_seasons` · `builder_join_season` | `GET` · `POST /api/v1/builder-seasons` |
+| `builder_get_rankings` | `GET /api/v1/builder-rankings` |
+| `builder_list_rewards` | `GET /api/v1/builder-rewards` |
+| `builder_get_time_capsule` · `builder_save_time_capsule` | `GET` · `POST /api/v1/builder-time-capsule` |
+| `builder_get_passport` | `GET /api/v1/builder-passport/{userId}` |
+| `builder_get_year` | `GET /api/v1/builder-year/{year}` |
+| `builder_list_share_links` · `builder_revoke_share_link` | `GET /api/v1/builder-year/{year}/share`, `DELETE …/share/{id}` |
+| `builder_list_year_videos` · `builder_request_year_video` | `GET` · `POST /api/v1/builder-year/{year}/render` |
+| `builder_get_community_wrapped` | `GET /api/v1/builder-wrapped/{year}` |
+| `builder_admin_list_queue` | `GET /api/v1/builder-admin/queue` (admin role) |
+| `builder_admin_backfill_preview` | `POST /api/v1/builder-admin/backfill`, always a dry run (admin role) |
+
+Agents can only submit `self_reported` evidence and can never approve, award or confirm. Peer confirmation, reward claims, privacy settings, hidden scenes, share-link creation, admin decisions, appeal resolution and backfill apply need a signed-in person and are only in the CLI. When `BUILDER_LEAGUE_ENABLED` is off for the caller, tools return "Builder League is not enabled on this environment".
+
+### 19. `onboarding_get_status`
+
+Returns the signed-in member's onboarding status from `GET /api/v1/onboarding-status` (`mcp:read`): membership tier and the Discord and Telegram access steps. Returns 404 when onboarding is disabled on the environment.

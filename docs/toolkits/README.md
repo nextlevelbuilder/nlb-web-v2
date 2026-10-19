@@ -23,7 +23,7 @@ nlb-web-v2/
 |---|---|
 | **`@nextlevelbuilder/contracts`** | Product document and block schemas, layout templates, the canonical SHA-256 hasher, and API wire contracts (blog, Builder League, traffic). The web app imports the same source. |
 | **`@nextlevelbuilder/cli`** | The `nlb` binary: validation, preview, submissions, rankings, stats, traffic, blog management, Builder League and onboarding status. |
-| **`@nextlevelbuilder/mcp`** | MCP server for local IDEs (stdio) and the hosted Worker at `https://mcp.nextlevelbuilder.io/mcp` (OAuth 2.1). |
+| **`@nextlevelbuilder/mcp`** | MCP server for local IDEs (stdio) and the hosted endpoint `https://nextlevelbuilder.io/mcp` (OAuth 2.1), served by the web Worker. |
 | **`skills/nlb-submit`** | AgentSkill for repository scanning, block formatting and directory submission. |
 
 ---

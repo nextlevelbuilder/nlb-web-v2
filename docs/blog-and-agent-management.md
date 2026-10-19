@@ -1,6 +1,6 @@
 # Blog and agent management
 
-Blog posts are an ordered list of typed **widget blocks**, like a page builder, not free HTML. Humans and agents manage them through one REST API. The `nlb` CLI and the MCP server in the toolkits repo are thin wrappers around that API.
+Blog posts are an ordered list of typed **widget blocks**, like a page builder, not free HTML. Humans and agents manage them through one REST API. The `nlb` CLI and the MCP server ([`packages/cli`](../packages/cli), [`packages/mcp`](../packages/mcp)) are thin wrappers around that API.
 
 ## Why blocks
 
@@ -38,10 +38,10 @@ The contract is `/api/openapi.json` (blog paths in [`lib/blog/blog-openapi.ts`](
 | `PATCH /posts/{idOrSlug}` | admin | `nlb blog update <id> <file> --version N` | `blog_update_post` |
 | `DELETE /posts/{idOrSlug}?version=N` | admin. Archives the post (soft delete). | `nlb blog archive` | `blog_archive_post` |
 | `POST /posts/{idOrSlug}/publish` · `/unpublish` | admin | `nlb blog publish` · `unpublish` | `blog_publish_post` · `blog_unpublish_post` |
-| `GET /posts/{idOrSlug}/revisions` · `/revisions/{revisionId}` | admin | `nlb blog revisions` | `blog_list_revisions` |
+| `GET /posts/{idOrSlug}/revisions` · `/revisions/{revisionId}` | admin | `nlb blog revisions` · `nlb blog revision` | `blog_list_revisions` · `blog_get_revision` |
 | `POST /posts/{idOrSlug}/revisions/{revisionId}/restore` | admin | `nlb blog restore` | `blog_restore_revision` |
 
-Paths are relative to `/api/v1/blog`. The exact flags and arguments are owned by the toolkits docs (see [below](#cli-and-mcp)).
+Paths are relative to `/api/v1/blog`. The exact flags and arguments are owned by the toolkit docs (see [below](#cli-and-mcp)).
 
 ### Write semantics
 
@@ -53,19 +53,34 @@ Paths are relative to `/api/v1/blog`. The exact flags and arguments are owned by
 ### Credentials for agents
 
 - An admin creates an API key on `/profile`. Send it as `Authorization: Bearer <key>` or `x-api-key: <key>`. Keys are stored as SHA-256 hashes, so a key cannot be recovered after it is created.
-- MCP clients authenticate to `mcp.nextlevelbuilder.io` with OAuth (`mcp:read`, `mcp:write`). The MCP worker then calls this API with a short-lived `x-nlb-mcp-assertion`, never with the user's token (see [system-architecture.md](./system-architecture.md#auth)).
+- MCP clients authenticate to `https://nextlevelbuilder.io/mcp` with OAuth (`mcp:read`, `mcp:write`). The MCP server then calls this API with a short-lived `x-nlb-mcp-assertion`, never with the user's token (see [system-architecture.md](./system-architecture.md#auth)).
 - Delete temporary keys after smoke tests.
 
 ## CLI and MCP
 
-They are owned by `nextlevelbuilder/nlb-directory-toolkits`. Use these sources for the current flags and arguments:
-- CLI: `docs/cli.md`, section "`nlb blog ...` (admin)". There are 11 `nlb blog` subcommands, covering every row above.
-- MCP: `docs/mcp.md`, section "Blog management tools".
-- Wire contracts and limits: `docs/contracts.md#blog-management`.
+Both live in this repository. Use these sources for the current flags and arguments:
+- CLI: [toolkits/cli.md](./toolkits/cli.md), section "`nlb blog ...` (admin)".
+- MCP: [toolkits/mcp.md](./toolkits/mcp.md), section "Blog management tools".
+- Wire contracts and limits: [toolkits/contracts.md](./toolkits/contracts.md#blog-management).
 
-> Availability: the blog CLI commands and MCP tools are on toolkits branch `feat/blog-management` and are not merged to `main`. A published `@nextlevelbuilder/cli` or a deployed MCP worker does not have them until that branch is merged and released.
+## MCP server
 
-The MCP worker allows only `nextlevelbuilder.io`, `staging.nextlevelbuilder.io` and loopback as API targets. It cannot reach the workers.dev hosts until after [cutover](./cutover-runbook.md).
+The web Worker serves MCP at `https://nextlevelbuilder.io/mcp` (staging: `https://staging.nextlevelbuilder.io/mcp`). How it is mounted and configured: [deployment-guide.md](./deployment-guide.md#mcp-server).
+
+- **Protocol**: MCP 2026-07-28 over stateless Streamable HTTP, through the official SDK v2 (`@modelcontextprotocol/server`). Clients on 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05 are served through the SDK's legacy path, and the deprecated HTTP+SSE transport is bridged at `/sse` + `/message`.
+- **OAuth 2.1, resource server**: `/.well-known/oauth-protected-resource/mcp` (RFC 9728) names the authorization server `<site>/api/auth`. Calls without a valid token get `401` with a `WWW-Authenticate` challenge carrying `resource_metadata` and `scope`; a token without the tool's scope gets `403 insufficient_scope`. Tokens must carry this resource as audience (RFC 8707) and are never passed through to the API.
+- **OAuth 2.1, authorization server** ([`lib/mcp-oauth-config.ts`](../lib/mcp-oauth-config.ts)): PKCE S256 only, `iss` on every authorization response (RFC 9207), Client ID Metadata Documents ([`lib/mcp-oauth-cimd.ts`](../lib/mcp-oauth-cimd.ts)), Dynamic Client Registration kept for older clients, rotating refresh tokens.
+- **Scopes**: `mcp:read` for reads, `mcp:write` for writes, `mcp:keys` for API key management.
+- **Coverage**: directory products, rankings, traffic, votes, uploads and checkout; API keys; blog management (the table above); Builder League (28 tools, below); membership onboarding status (`onboarding_get_status`, backed by `GET /api/v1/onboarding-status`).
+
+### Builder League over MCP and CLI
+
+Every `builder_*` tool and `nlb builder ...` command calls the `/api/v1/builder-*` routes. The full mapping is in [toolkits/mcp.md](./toolkits/mcp.md) and [toolkits/cli.md](./toolkits/cli.md).
+
+- **Ledger rule**: API keys and MCP agents can only submit `self_reported` evidence. Any `verification` or `status` field is rejected with 400, and approving, awarding or confirming needs a signed-in person (`403 session_required`). The routes enforce this; [`tests/builder-league/agent-ledger-guard.test.ts`](../tests/builder-league/agent-ledger-guard.test.ts) checks it route by route.
+- **Not exposed over MCP**: peer confirmation, reward claims, privacy settings, hidden Wrapped scenes, share-link creation, admin decisions, appeal resolution and backfill apply. The CLI offers them with a session cookie (`--cookie` or `NLB_SESSION_COOKIE`).
+- **Admin**: MCP exposes only the read-only moderation queue and a backfill preview that is always a dry run, and both still require the admin role.
+- **Flag off**: while `BUILDER_LEAGUE_ENABLED` is not `true` (and the caller is not a pilot member or admin), tools and commands report "Builder League is not enabled on this environment"; a 404 on a single item may also mean the item does not exist.
 
 ## Public pages
 

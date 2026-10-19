@@ -56,7 +56,7 @@ Staging and production share the `nlb-media-staging` bucket for `MEDIA_STAGING`.
 Programmatic callers are resolved in one place, `resolveCaller` in [`lib/auth-api-key.ts`](../lib/auth-api-key.ts). It accepts:
 1. An `nlb_live_` API key in `Authorization: Bearer` or `x-api-key`.
 2. A session cookie.
-3. An MCP delegation assertion in `x-nlb-mcp-assertion`, signed with `MCP_DELEGATION_SECRET`. The MCP worker (`mcp.nextlevelbuilder.io`, built from [`packages/mcp`](../packages/mcp)) mints it, bound to user, scope, method and path, with a lifetime of at most 60 s ([`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts)). Each assertion is single-use: its `jti` is recorded in the `MCP_DELEGATION_JTI` KV for the token lifetime and a reuse is rejected. KV is eventually consistent, so a replay at the same instant from another location is not guaranteed to be caught.
+3. An MCP delegation assertion in `x-nlb-mcp-assertion`, signed with `MCP_DELEGATION_SECRET`. The MCP server ([`packages/mcp`](../packages/mcp), mounted in this Worker at `/mcp` by [`lib/mcp-worker-mount.ts`](../lib/mcp-worker-mount.ts)) mints it, bound to user, scope, method and path, with a lifetime of at most 60 s ([`lib/auth-mcp-delegation.ts`](../lib/auth-mcp-delegation.ts)). Each assertion is single-use: its `jti` is recorded in the `MCP_DELEGATION_JTI` KV for the token lifetime and a reuse is rejected. KV is eventually consistent, so a replay at the same instant from another location is not guaranteed to be caught.
 
 Bot protection: votes require a Turnstile token, verified server-side in [`lib/domain/analytics.ts`](../lib/domain/analytics.ts).
 
@@ -76,4 +76,4 @@ Bot protection: votes require a Turnstile token, verified server-side in [`lib/d
 
 ## Environments
 
-The worker names, URLs and the branch mapping are in [deployment-guide.md](./deployment-guide.md). The MCP worker is a separate Worker deployed from this repository; see [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server) for its protocol and OAuth model.
+The worker names, URLs and the branch mapping are in [deployment-guide.md](./deployment-guide.md). The same Worker serves the MCP server at `/mcp`; see [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server) for its protocol and OAuth model.
