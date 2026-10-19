@@ -89,7 +89,7 @@
       },
       "vars": {
         "MCP_OAUTH_ENABLED": "true",
-        "MCP_OAUTH_RESOURCE": "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp",
+        "MCP_OAUTH_RESOURCE": "https://mcp-staging.nextlevelbuilder.io/mcp",
         "BUILDER_LEAGUE_ENABLED": "true",
         "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFVjUpt2OL12upHT",
         "NEXT_PUBLIC_APP_URL": "https://staging.nextlevelbuilder.io",

@@ -1,8 +1,8 @@
 name: CI and Deploy
 
-# dev  -> staging worker  (nextlevelbuilder-web-staging)
-# main -> production worker (nextlevelbuilder-web)
-# Pull requests run checks only.
+# dev  -> staging workers    (nextlevelbuilder-web-staging, nlb-directory-mcp-staging)
+# main -> production workers (nextlevelbuilder-web, nlb-directory-mcp)
+# Pull requests run checks only. The npm packages (contracts, cli, mcp) are published by release-packages.yml.
 on:
   push:
     branches: [dev, main]
@@ -26,6 +26,11 @@ jobs:
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
+      - name: Build, typecheck and test packages
+        run: |
+          npm run build:packages
+          npm run type-check:packages
+          npm run test:packages
 
   deploy:
     name: Migrate and deploy (${{ github.ref_name == 'main' && 'production' || 'staging' }})
@@ -66,4 +71,9 @@ jobs:
       - name: Build worker
         run: npm run build:worker
       - name: Deploy worker
+        run: npx wrangler deploy $WRANGLER_ENV_FLAG
+      # The MCP worker mints delegation assertions the web verifies, so it ships after the web.
+      # Its MCP_DELEGATION_SECRET must equal the web worker's (docs/cutover-runbook.md).
+      - name: Deploy MCP worker
+        working-directory: packages/mcp
         run: npx wrangler deploy $WRANGLER_ENV_FLAG

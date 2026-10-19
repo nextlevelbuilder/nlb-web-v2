@@ -2,12 +2,12 @@
  * Machine-readable discovery documents for AI agents and API clients:
  *
  * - `/.well-known/mcp.json`: an MCP Server Card (SEP-2127 schema) for the NLB directory MCP server.
- *   SEP-2127 recommends `<mcp-url>/server-card` on the MCP host itself; that host is deployed from the
- *   nlb-directory-toolkits repo, so this site publishes the same card at the conventional domain path.
+ *   SEP-2127 recommends `<mcp-url>/server-card` on the MCP host itself; that host is the separate
+ *   `nlb-directory-mcp` worker (packages/mcp), so this site publishes the same card at the conventional domain path.
  * - `/.well-known/ai-catalog.json`: the domain AI Catalog listing that card plus the REST API.
  * - `/.well-known/api-catalog`: an RFC 9727 linkset pointing at the OpenAPI document and its docs.
  *
- * The MCP facts mirror nlb-directory-toolkits/packages/mcp (server name, version, protocol versions)
+ * The MCP facts mirror packages/mcp (server name, version, protocol versions served by MCP SDK v2)
  * and the live https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource document.
  */
 import { siteUrl } from "@/lib/seo";
@@ -16,10 +16,17 @@ import { DISCOVERY_PATHS } from "./discovery-link-header";
 export { DISCOVERY_PATHS };
 
 export const MCP_ENDPOINT = "https://mcp.nextlevelbuilder.io/mcp";
+const STAGING_MCP_ENDPOINT = "https://mcp-staging.nextlevelbuilder.io/mcp";
 export const MCP_SERVER_VERSION = "0.2.1";
-export const MCP_PROTOCOL_VERSIONS = ["2025-06-18", "2024-11-05"] as const;
+/** 2026-07-28 is the stateless revision; the older ones are served through the SDK's legacy path. */
+export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"] as const;
 export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"] as const;
-const TOOLKITS_REPOSITORY = "https://github.com/nextlevelbuilder/nlb-directory-toolkits";
+const TOOLKITS_REPOSITORY = "https://github.com/nextlevelbuilder/nlb-web-v2";
+
+/** The MCP worker that pairs with this site: staging web uses the staging MCP worker. */
+export function mcpEndpoint(site = siteUrl()): string {
+  return new URL(site).hostname === "staging.nextlevelbuilder.io" ? STAGING_MCP_ENDPOINT : MCP_ENDPOINT;
+}
 const SERVER_CARD_SCHEMA = "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json";
 
 
@@ -35,25 +42,26 @@ export function discoveryHeaders(contentType: string): HeadersInit {
 
 export function mcpServerCard() {
   const site = siteUrl();
+  const endpoint = mcpEndpoint(site);
   return {
     $schema: SERVER_CARD_SCHEMA,
     name: "io.nextlevelbuilder/directory",
     version: MCP_SERVER_VERSION,
     title: "Next Level Builders Directory",
-    description: "Search, read and submit products in the Next Level Builders directory, check rankings and traffic and manage API keys from any MCP client.",
+    description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding.",
     websiteUrl: `${site}/build-with-us/instructions`,
     repository: { url: TOOLKITS_REPOSITORY, source: "github", subfolder: "packages/mcp" },
     icons: [
       { src: `${site}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
       { src: `${site}/icon.svg`, mimeType: "image/svg+xml", sizes: ["any"] },
     ],
-    remotes: [{ type: "streamable-http", url: MCP_ENDPOINT, supportedProtocolVersions: [...MCP_PROTOCOL_VERSIONS] }],
+    remotes: [{ type: "streamable-http", url: endpoint, supportedProtocolVersions: [...MCP_PROTOCOL_VERSIONS] }],
     packages: [{ registryType: "npm", identifier: "@nextlevelbuilder/mcp", version: MCP_SERVER_VERSION, transport: { type: "stdio" } }],
     _meta: {
       "io.nextlevelbuilder/discovery": {
         serverName: "nlb-directory-mcp",
         authorization: {
-          protectedResourceMetadata: "https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource",
+          protectedResourceMetadata: new URL("/.well-known/oauth-protected-resource/mcp", endpoint).href,
           authorizationServer: `${site}/api/auth`,
           scopesSupported: [...MCP_SCOPES],
           apiKeyHeader: "Authorization: Bearer nlb_live_…",

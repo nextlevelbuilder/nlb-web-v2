@@ -8,7 +8,7 @@ interface __BaseEnv_CloudflareEnv {
 	DB: D1Database;
 	ASSETS: Fetcher;
 	MCP_OAUTH_ENABLED: "true";
-	MCP_OAUTH_RESOURCE: "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp" | "https://mcp.nextlevelbuilder.io/mcp";
+	MCP_OAUTH_RESOURCE: "https://mcp-staging.nextlevelbuilder.io/mcp" | "https://mcp.nextlevelbuilder.io/mcp";
 	BUILDER_LEAGUE_ENABLED: "true" | "false";
 	NEXT_PUBLIC_ASSETS_URL: "https://cdn.nextlevelbuilder.io";
 	COURSES_ACCESS_PLANS: "vip";
@@ -73,7 +73,7 @@ declare namespace Cloudflare {
 		DB: D1Database;
 		ASSETS: Fetcher;
 		MCP_OAUTH_ENABLED: "true";
-		MCP_OAUTH_RESOURCE: "https://nlb-directory-mcp-staging.digitop-vn.workers.dev/mcp";
+		MCP_OAUTH_RESOURCE: "https://mcp-staging.nextlevelbuilder.io/mcp";
 		BUILDER_LEAGUE_ENABLED: "true";
 		NEXT_PUBLIC_ASSETS_URL: "https://cdn.nextlevelbuilder.io";
 		COURSES_ACCESS_PLANS: "vip";

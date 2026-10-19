@@ -10,7 +10,7 @@ metadata:
   author: Next Level Builders
   version: "0.2.0"
   homepage: "https://nextlevelbuilder.io"
-  repository: "https://github.com/nextlevelbuilder/nlb-directory-toolkits"
+  repository: "https://github.com/nextlevelbuilder/nlb-web-v2"
   license: "MIT"
 ---
 

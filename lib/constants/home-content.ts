@@ -226,7 +226,7 @@ export const PARTNERS: Partner[] = [
   },
 ];
 
-/** Real commands from nlb-directory-toolkits (@nextlevelbuilder/cli and @nextlevelbuilder/mcp). */
+/** Real commands from the packages/cli and packages/mcp workspaces (@nextlevelbuilder/cli and @nextlevelbuilder/mcp). */
 export const TOOLKIT_COMMANDS = {
   template: "npx @nextlevelbuilder/cli template developer-cli --out product.json",
   validate: "npx @nextlevelbuilder/cli validate product.json",
@@ -235,7 +235,7 @@ export const TOOLKIT_COMMANDS = {
   mcp: "npx -y @nextlevelbuilder/mcp",
 } as const;
 
-export const TOOLKITS_REPO_URL = "https://github.com/nextlevelbuilder/nlb-directory-toolkits";
+export const TOOLKITS_REPO_URL = "https://github.com/nextlevelbuilder/nlb-web-v2/tree/main/packages";
 export const API_DOCS_PATH = "/api-docs";
 
 /** Proof figures from content-spec-v2 (beat 5). Labels live in messages: home.proof.s1..s4. */

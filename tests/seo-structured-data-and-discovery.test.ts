@@ -116,7 +116,7 @@ describe("agent discovery documents", () => {
   it("publishes an MCP server card for the live endpoint", () => {
     const card = mcpServerCard();
     expect(card.$schema).toBe("https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json");
-    expect(card.remotes).toEqual([{ type: "streamable-http", url: MCP_ENDPOINT, supportedProtocolVersions: ["2025-06-18", "2024-11-05"] }]);
+    expect(card.remotes).toEqual([{ type: "streamable-http", url: MCP_ENDPOINT, supportedProtocolVersions: ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"] }]);
     expect(JSON.stringify(card._meta)).toContain("https://example.test/api/openapi.json");
   });
 

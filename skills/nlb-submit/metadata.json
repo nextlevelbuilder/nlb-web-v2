@@ -5,7 +5,7 @@
   "description": "Scan, format, validate, and submit products to Next Level Builders Directory",
   "author": "Next Level Builders",
   "homepage": "https://nextlevelbuilder.io",
-  "repository": "https://github.com/nextlevelbuilder/nlb-directory-toolkits",
+  "repository": "https://github.com/nextlevelbuilder/nlb-web-v2",
   "license": "MIT",
   "keywords": ["directory", "showcase", "nextlevelbuilder", "mcp", "cli", "agent-skill"]
 }
