@@ -1,231 +1,155 @@
-import { TOOLS, McpToolDefinition } from "./tools/index.js";
-import { BLOG_WRITE_TOOLS, ToolError, isPrivateReadTool, requiredToolScope, type ToolContext } from "./tool-context.js";
+import {
+  McpServer,
+  fromJsonSchema,
+  requireScopes,
+  type CallToolResult,
+  type JsonSchemaType,
+  type StandardSchemaWithJSON,
+  type ToolAnnotations
+} from "@modelcontextprotocol/server";
+import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/server/validators/cf-worker";
+import { TOOLS, type McpToolDefinition } from "./tools/index.js";
+import {
+  ToolError,
+  isMutatingTool,
+  isPrivateReadTool,
+  requiredToolScope,
+  type ToolContext
+} from "./tool-context.js";
 
-export const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2024-11-05"] as const;
+export const SERVER_NAME = "nlb-directory-mcp";
+/** Must match packages/mcp/package.json "version" (asserted by tests/server.test.ts). */
 export const SERVER_VERSION = "0.2.1";
 
-export interface JsonRpcRequest {
-  jsonrpc: "2.0";
-  id?: string | number | null;
-  method: string;
-  params?: Record<string, unknown>;
+/** Tools that mutate remote state; unauthenticated HTTP callers may not run them. */
+export const MUTATING_TOOLS: ReadonlySet<string> = new Set(TOOLS.map((tool) => tool.name).filter(isMutatingTool));
+
+/** Tools whose effect cannot be undone by another call (advertised as destructive). */
+const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set(["revoke_api_key", "blog_archive_post"]);
+
+/** Whether an HTTP caller must prove an identity (OAuth or the Worker token) before running the tool. */
+export function toolRequiresIdentity(name: string): boolean {
+  return MUTATING_TOOLS.has(name) || isPrivateReadTool(name) || requiredToolScope(name) !== "mcp:read";
 }
 
-export interface JsonRpcResponse {
-  jsonrpc: "2.0";
-  id: string | number | null;
-  result?: unknown;
-  error?: {
-    code: number;
-    message: string;
-    data?: unknown;
+/**
+ * Who is calling, resolved by the transport before the server is built.
+ * - `local`: stdio; trusted process credentials from the environment, no gating.
+ * - `anonymous` / `worker`: HTTP without OAuth; `worker` presented WORKER_AUTH_TOKEN.
+ * - `oauth`: HTTP with a verified access token; `contextFor` mints the per-tool context.
+ */
+export type McpCaller =
+  | { kind: "local" }
+  | { kind: "anonymous"; env: NonNullable<ToolContext["env"]>; fetch?: typeof fetch }
+  | { kind: "worker"; env: NonNullable<ToolContext["env"]>; fetch?: typeof fetch }
+  | { kind: "oauth"; subject: string; scopes: string[]; contextFor: (toolName: string) => ToolContext };
+
+/** Denial of an HTTP caller that lacks the identity a tool needs. */
+export class ToolAuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ToolAuthorizationError";
+  }
+}
+
+/** Resolves the ToolContext for one tool call, enforcing the authorization rules for that caller. */
+export function toolContextFor(caller: McpCaller, toolName: string, args: Record<string, unknown>): ToolContext | undefined {
+  switch (caller.kind) {
+    case "local":
+      return undefined;
+    case "worker":
+      return { workerAuth: true, env: caller.env, ...(caller.fetch ? { fetch: caller.fetch } : {}) };
+    case "anonymous":
+      if (MUTATING_TOOLS.has(toolName)) {
+        throw new ToolAuthorizationError(`Unauthorized: Tool '${toolName}' performs remote mutation and requires a valid Worker authorization token.`);
+      }
+      if (isPrivateReadTool(toolName)) {
+        throw new ToolAuthorizationError(toolName === "get_product_traffic"
+          ? "Unauthorized: Private product traffic requires a valid Worker authorization token."
+          : `Unauthorized: Tool '${toolName}' reads private data and requires a valid Worker authorization token.`);
+      }
+      return { workerAuth: false, env: caller.env, ...(caller.fetch ? { fetch: caller.fetch } : {}) };
+    case "oauth": {
+      // The HTTP layer already answered 403 for a missing scope; this re-check keeps the rule local to the call.
+      if (!caller.scopes.includes(requiredToolScope(toolName))) throw new ToolAuthorizationError("Insufficient OAuth scope");
+      const context = caller.contextFor(toolName);
+      if (args.api_key !== undefined || args.session_cookie !== undefined ||
+          (args.api_url !== undefined && args.api_url !== context.env?.NLB_API_URL)) {
+        throw new ToolAuthorizationError("OAuth calls cannot override API URL or user credentials");
+      }
+      return context;
+    }
+  }
+}
+
+function annotationsFor(tool: McpToolDefinition): ToolAnnotations {
+  const readOnly = !MUTATING_TOOLS.has(tool.name) &&
+    (requiredToolScope(tool.name) === "mcp:read" || /^(list|get)_/.test(tool.name));
+  const defaults: ToolAnnotations = readOnly
+    ? { readOnlyHint: true }
+    : { readOnlyHint: false, destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name) };
+  // A definition may carry its own hints; they win over the derived defaults.
+  const own = (tool as McpToolDefinition & { annotations?: ToolAnnotations }).annotations;
+  return own ? { ...defaults, ...own } : defaults;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function successResult(output: unknown): CallToolResult {
+  return {
+    content: [{ type: "text", text: JSON.stringify(output, null, 2) ?? "null" }],
+    ...(isPlainObject(output) ? { structuredContent: output } : {}),
+    isError: false
   };
 }
 
-const MUTATING_TOOLS: Record<string, true> = {
-  submit_product: true,
-  cast_vote: true,
-  upload_media: true,
-  create_checkout: true,
-  create_api_key: true,
-  revoke_api_key: true,
-  ...Object.fromEntries(BLOG_WRITE_TOOLS.map((name) => [name, true as const]))
-};
+function errorResult(error: unknown): CallToolResult {
+  const message = error instanceof Error ? error.message : String(error);
+  const payload = error instanceof ToolError ? { ...error.data, error: message } : { error: message };
+  return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }], isError: true };
+}
 
-export class McpServer {
-  private readonly tools: Map<string, McpToolDefinition> = new Map();
+// One validator for all tools: @cfworker/json-schema runs on workerd and Node without code generation.
+const validator = new CfWorkerJsonSchemaValidator();
 
-  constructor() {
-    for (const tool of TOOLS) {
-      this.tools.set(tool.name, tool);
-    }
+type ToolInputSchema = StandardSchemaWithJSON<Record<string, unknown>, Record<string, unknown>>;
+
+/** Same advertised schema, but accepts any input: used only when the call will be refused anyway. */
+function acceptAnyInput(schema: ToolInputSchema): ToolInputSchema {
+  return { "~standard": { ...schema["~standard"], validate: (value) => ({ value: value as Record<string, unknown> }) } };
+}
+
+/** Anonymous HTTP callers are refused mutating and private tools before their input is validated. */
+function refusedBeforeValidation(caller: McpCaller, name: string): boolean {
+  return caller.kind === "anonymous" && (MUTATING_TOOLS.has(name) || isPrivateReadTool(name));
+}
+
+/**
+ * Builds a fresh MCP server exposing every tool in TOOLS, in registry order.
+ * The same factory serves 2026-07-28 (stateless) and 2025-era clients over HTTP and stdio.
+ */
+export function createNlbMcpServer(caller: McpCaller = { kind: "local" }): McpServer {
+  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { capabilities: { tools: { listChanged: false } } });
+  for (const tool of TOOLS) {
+    // McpToolDefinition.inputSchema is plain JSON Schema; its loose property map is narrower than the SDK's JSONSchema type.
+    const schema = fromJsonSchema<Record<string, unknown>>(tool.inputSchema as JsonSchemaType, validator);
+    server.registerTool(tool.name, {
+      description: tool.description,
+      inputSchema: refusedBeforeValidation(caller, tool.name) ? acceptAnyInput(schema) : schema,
+      annotations: annotationsFor(tool),
+      // HTTP 403 insufficient_scope before invocation when an OAuth token lacks the tool's scope.
+      scopeChallenge: requireScopes(requiredToolScope(tool.name))
+    }, async (args) => {
+      const toolArgs = isPlainObject(args) ? args : {};
+      try {
+        const context = toolContextFor(caller, tool.name, toolArgs);
+        return successResult(await tool.handler(toolArgs, context));
+      } catch (error) {
+        return errorResult(error);
+      }
+    });
   }
-
-  public getTool(name: string): McpToolDefinition | undefined {
-    return this.tools.get(name);
-  }
-
-  public listTools(): McpToolDefinition[] {
-    return Array.from(this.tools.values());
-  }
-
-  public async handleMessage(
-    rawMessage: unknown,
-    context?: ToolContext
-  ): Promise<JsonRpcResponse | null> {
-    if (typeof rawMessage !== "object" || rawMessage === null) {
-      return {
-        jsonrpc: "2.0",
-        id: null,
-        error: { code: -32600, message: "Invalid Request: Payload must be a JSON object" }
-      };
-    }
-
-    const req = rawMessage as Partial<JsonRpcRequest>;
-    const id = req.id !== undefined ? req.id : null;
-
-    if (req.jsonrpc !== "2.0") {
-      return {
-        jsonrpc: "2.0",
-        id,
-        error: { code: -32600, message: "Invalid Request: 'jsonrpc' must be exactly '2.0'" }
-      };
-    }
-
-    if (!req.method || typeof req.method !== "string") {
-      return {
-        jsonrpc: "2.0",
-        id,
-        error: { code: -32600, message: "Invalid Request: Missing or invalid 'method'" }
-      };
-    }
-
-    const isNotification = req.id === undefined;
-
-    switch (req.method) {
-      case "initialize": {
-        const requestedVersion = req.params?.protocolVersion;
-        const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.find((version) => version === requestedVersion)
-          ?? SUPPORTED_PROTOCOL_VERSIONS[0];
-        const result = {
-          protocolVersion,
-          serverInfo: {
-            name: "nlb-directory-mcp",
-            version: SERVER_VERSION
-          },
-          capabilities: {
-            tools: {
-              listChanged: false
-            }
-          }
-        };
-        return isNotification ? null : { jsonrpc: "2.0", id, result };
-      }
-
-      case "notifications/initialized":
-      case "initialized": {
-        return null;
-      }
-
-      case "ping": {
-        return isNotification ? null : { jsonrpc: "2.0", id, result: {} };
-      }
-
-      case "tools/list": {
-        const toolsList = Array.from(this.tools.values()).map((t) => ({
-          name: t.name,
-          description: t.description,
-          inputSchema: t.inputSchema
-        }));
-        return isNotification ? null : { jsonrpc: "2.0", id, result: { tools: toolsList } };
-      }
-
-      case "tools/call": {
-        const params = req.params;
-        if (!params || typeof params !== "object") {
-          return isNotification
-            ? null
-            : {
-                jsonrpc: "2.0",
-                id,
-                error: { code: -32602, message: "Invalid params: 'params' must be an object" }
-              };
-        }
-
-        const toolName = typeof params.name === "string" ? params.name : "";
-        const toolArgs = typeof params.arguments === "object" && params.arguments !== null ? (params.arguments as Record<string, unknown>) : {};
-
-        const tool = this.tools.get(toolName);
-        if (!tool) {
-          return isNotification
-            ? null
-            : {
-                jsonrpc: "2.0",
-                id,
-                error: { code: -32601, message: `Tool not found: ${toolName}` }
-              };
-        }
-        if (context?.oauth && !context.oauth.scopes.includes(requiredToolScope(toolName))) {
-          return isNotification ? null : { jsonrpc: "2.0", id, error: { code: -32001, message: "Insufficient OAuth scope" } };
-        }
-        if (context && !context.oauth && context.workerAuth !== true && MUTATING_TOOLS[toolName]) {
-          return isNotification
-            ? null
-            : {
-                jsonrpc: "2.0",
-                id,
-                error: {
-                  code: -32001,
-                  message: `Unauthorized: Tool '${toolName}' performs remote mutation and requires a valid Worker authorization token.`
-                }
-              };
-        }
-
-        if (context && !context.oauth && context.workerAuth !== true && isPrivateReadTool(toolName)) {
-          return isNotification ? null : {
-            jsonrpc: "2.0",
-            id,
-            error: {
-              code: -32001,
-              message: toolName === "get_product_traffic"
-                ? "Unauthorized: Private product traffic requires a valid Worker authorization token."
-                : `Unauthorized: Tool '${toolName}' reads private data and requires a valid Worker authorization token.`
-            }
-          };
-        }
-
-        try {
-          if (context?.oauth) {
-            if (toolArgs.api_key !== undefined || toolArgs.session_cookie !== undefined ||
-                (toolArgs.api_url !== undefined && toolArgs.api_url !== context.env?.NLB_API_URL)) {
-              throw new Error("OAuth calls cannot override API URL or user credentials");
-            }
-          }
-          const output = await tool.handler(toolArgs, context);
-          return isNotification
-            ? null
-            : {
-                jsonrpc: "2.0",
-                id,
-                result: {
-                  content: [
-                    {
-                      type: "text",
-                      text: JSON.stringify(output, null, 2)
-                    }
-                  ],
-                  isError: false
-                }
-              };
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return isNotification
-            ? null
-            : {
-                jsonrpc: "2.0",
-                id,
-                result: {
-                  content: [
-                    {
-                      type: "text",
-                      text: JSON.stringify(err instanceof ToolError ? { ...err.data, error: errorMessage } : { error: errorMessage }, null, 2)
-                    }
-                  ],
-                  isError: true
-                }
-              };
-        }
-      }
-
-      default: {
-        return isNotification
-          ? null
-          : {
-              jsonrpc: "2.0",
-              id,
-              error: { code: -32601, message: `Method not found: ${req.method}` }
-            };
-      }
-    }
-  }
+  return server;
 }

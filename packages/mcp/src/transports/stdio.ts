@@ -1,39 +1,15 @@
-import { createInterface } from "node:readline";
-import { McpServer } from "../server.js";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { createNlbMcpServer, SERVER_NAME } from "../server.js";
 
+/**
+ * Serves MCP over stdio (2026-07-28 and 2025-era clients). No OAuth: the local process is trusted
+ * and tools read NLB_API_KEY / NLB_API_URL / NLB_SESSION_COOKIE from the environment.
+ */
 export function startStdioServer(): void {
-  const server = new McpServer();
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
+  const handle = serveStdio(() => createNlbMcpServer({ kind: "local" }), {
+    onerror: (error) => process.stderr.write(`[${SERVER_NAME}] ${error.message}\n`)
   });
-
-  rl.on("line", async (line: string) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      const response = await server.handleMessage(parsed);
-      if (response !== null) {
-        process.stdout.write(JSON.stringify(response) + "\n");
-      }
-    } catch (err) {
-      const parseError = {
-        jsonrpc: "2.0",
-        id: null,
-        error: {
-          code: -32700,
-          message: `Parse error: ${err instanceof Error ? err.message : String(err)}`
-        }
-      };
-      process.stdout.write(JSON.stringify(parseError) + "\n");
-    }
-  });
-
   process.on("SIGINT", () => {
-    rl.close();
-    process.exit(0);
+    handle.close().finally(() => process.exit(0));
   });
 }

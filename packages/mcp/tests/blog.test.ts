@@ -1,12 +1,12 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
-import { McpServer } from "../src/server.js";
-import { handleWorkerFetch } from "../src/transports/worker.js";
 import { requiredToolScope } from "../src/tool-context.js";
+import { callTool as callOverHttp, modernRequest, rpc } from "./helpers.js";
 
-const server = new McpServer();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ENV = { NLB_API_KEY: "nlb_live_server", NLB_API_URL: "https://staging.nextlevelbuilder.io" };
-const AUTHED = { workerAuth: true, env: ENV };
+const WORKER_ENV = { ...ENV, WORKER_AUTH_TOKEN: "worker-test" };
+const AUTHED = { Authorization: "Bearer worker-test" };
+const ANONYMOUS: Record<string, string> = {};
 
 const post = {
   id: "post_1", locale: "en", slug: "hello-world", title: "Hello world", description: null,
@@ -25,10 +25,9 @@ function call(fetchFn: ReturnType<typeof mockFetch>, index = 0) {
   return { url: new URL(url), init, headers: init.headers as Record<string, string>, body: init.body ? JSON.parse(String(init.body)) : undefined };
 }
 
-async function callTool(name: string, args: Record<string, unknown>, context: Record<string, unknown> = AUTHED) {
-  const res = await server.handleMessage({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }, context);
-  const result = res?.result as { isError: boolean; content: { text: string }[] } | undefined;
-  return { res, isError: result?.isError, payload: result ? JSON.parse(result.content[0].text) : undefined };
+/** tools/call over HTTP; AUTHED presents the Worker token, ANONYMOUS presents nothing. */
+function callTool(name: string, args: Record<string, unknown>, headers: Record<string, string> = AUTHED) {
+  return callOverHttp(name, args, WORKER_ENV, headers);
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -39,12 +38,14 @@ const BLOG_TOOL_NAMES = [
 ];
 
 describe("MCP blog tools", () => {
-  it("registers all 11 blog tools with schemas and agent guidance", () => {
-    const names = server.listTools().map((t) => t.name);
-    for (const name of BLOG_TOOL_NAMES) expect(names).toContain(name);
-    expect(server.getTool("blog_list_blocks")!.description).toMatch(/before composing/i);
-    expect(server.getTool("blog_update_post")!.inputSchema.required).toEqual(["post_id", "changes", "version"]);
-    expect(server.getTool("blog_restore_revision")!.inputSchema.required).toEqual(["post_id", "revision_id", "version"]);
+  it("registers all 11 blog tools with schemas and agent guidance", async () => {
+    const { body } = await rpc(modernRequest("tools/list"));
+    const tools = body.result!.tools as Array<{ name: string; description: string; inputSchema: { required?: string[] } }>;
+    const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+    for (const name of BLOG_TOOL_NAMES) expect(byName).toHaveProperty(name);
+    expect(byName.blog_list_blocks.description).toMatch(/before composing/i);
+    expect(byName.blog_update_post.inputSchema.required).toEqual(["post_id", "changes", "version"]);
+    expect(byName.blog_restore_revision.inputSchema.required).toEqual(["post_id", "revision_id", "version"]);
     expect(requiredToolScope("blog_create_post")).toBe("mcp:write");
     expect(requiredToolScope("blog_list_posts")).toBe("mcp:read");
   });
@@ -107,7 +108,8 @@ describe("MCP blog tools", () => {
     vi.stubGlobal("fetch", fetchFn);
     const missing = await callTool("blog_publish_post", { post_id: "post_1" });
     expect(missing.isError).toBe(true);
-    expect(missing.payload.error).toContain("version");
+    // Rejected by the advertised JSON Schema (required: version) before the handler runs.
+    expect(JSON.stringify(missing.payload)).toContain("version");
     expect((await callTool("blog_update_post", { post_id: "post_1", version: 2, changes: { slug: "Bad Slug" } })).isError).toBe(true);
     expect((await callTool("blog_create_post", { post: { ...createPayload, blocks: Array(61).fill(post.blocks[0]) } })).isError).toBe(true);
     expect(fetchFn).not.toHaveBeenCalled();
@@ -148,9 +150,12 @@ describe("MCP blog tools", () => {
   it("blocks anonymous Worker writes and private reads, and never lends the server key to anonymous reads", async () => {
     const fetchFn = mockFetch({ data: [], pagination: { limit: 20, offset: 0, count: 0 } });
     vi.stubGlobal("fetch", fetchFn);
-    const anonymous = { workerAuth: false, env: ENV };
-    expect((await callTool("blog_create_post", { post: createPayload }, anonymous)).res?.error?.code).toBe(-32001);
-    expect((await callTool("blog_list_revisions", { post_id: "post_1" }, anonymous)).res?.error?.code).toBe(-32001);
+    const anonymous = ANONYMOUS;
+    for (const [name, args] of [["blog_create_post", { post: createPayload }], ["blog_list_revisions", { post_id: "post_1" }]] as const) {
+      const denied = await callTool(name, args, anonymous);
+      expect(denied.isError).toBe(true);
+      expect(denied.payload.error).toContain("Unauthorized");
+    }
     expect(fetchFn).not.toHaveBeenCalled();
 
     await callTool("blog_list_posts", { status: "draft" }, anonymous);
@@ -161,9 +166,9 @@ describe("MCP blog tools", () => {
   it("rejects unauthenticated Worker HTTP writes before fetching", async () => {
     const fetchFn = vi.fn();
     vi.stubGlobal("fetch", fetchFn);
-    const body = { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "blog_publish_post", arguments: { post_id: "p", version: 1 } } };
-    const result = await handleWorkerFetch(new Request("https://worker.example/mcp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }), { NLB_API_KEY: "nlb_live_server" });
-    expect((await result.json() as { error: { code: number } }).error.code).toBe(-32001);
+    const result = await callOverHttp("blog_publish_post", { post_id: "p", version: 1 }, { NLB_API_KEY: "nlb_live_server" });
+    expect(result.isError).toBe(true);
+    expect(result.payload.error).toContain("Unauthorized");
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

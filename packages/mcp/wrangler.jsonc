@@ -10,7 +10,7 @@
     { "pattern": "mcp.nextlevelbuilder.io", "custom_domain": true }
   ],
   "build": {
-    "command": "pnpm --filter @nextlevelbuilder/contracts build"
+    "command": "npm --prefix ../.. run build -w @nextlevelbuilder/contracts"
   },
   "vars": {
     "NLB_API_URL": "https://nextlevelbuilder.io",

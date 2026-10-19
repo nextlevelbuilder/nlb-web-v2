@@ -1,78 +1,89 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { McpServer } from "../src/server.js";
+import { SERVER_VERSION } from "../src/server.js";
+import { TOOLS } from "../src/tools/index.js";
+import { BASE, LEGACY, MODERN, legacyRequest, modernRequest, rpc } from "./helpers.js";
 
-describe("MCP: Server JSON-RPC 2.0 Engine", () => {
-  const server = new McpServer();
+const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
 
-  it("should handle 'initialize' request", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 1,
-      method: "initialize",
-      params: { protocolVersion: "2024-11-05" }
-    });
-
-    expect(res).toBeDefined();
-    expect(res?.id).toBe(1);
-    expect(res?.result).toBeDefined();
-    const result = res?.result as { serverInfo: { name: string }; protocolVersion: string };
-    expect(result.serverInfo.name).toBe("nlb-directory-mcp");
-    expect(result.protocolVersion).toBe("2024-11-05");
+describe("MCP server over SDK v2", () => {
+  it("reports the package version", () => {
+    expect(SERVER_VERSION).toBe(packageJson.version);
   });
 
-  it("should handle 'ping' request", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: "ping-123",
-      method: "ping"
-    });
-    expect(res?.id).toBe("ping-123");
-    expect(res?.result).toEqual({});
-  });
-
-  it.each(["2025-06-18", "unknown-version"])("negotiates HTTP protocol for %s", async (protocolVersion) => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion }
-    });
-    expect(res?.result).toMatchObject({ protocolVersion: "2025-06-18", serverInfo: { version: "0.2.1" } });
-  });
-
-  it("should return list of tools on 'tools/list'", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 2,
-      method: "tools/list"
+  describe(`${MODERN} (stateless) clients`, () => {
+    it("answers server/discover with server info and tool capability", async () => {
+      const { status, body } = await rpc(modernRequest("server/discover"));
+      expect(status).toBe(200);
+      expect(body.error).toBeUndefined();
+      expect(JSON.stringify(body.result)).toContain("nlb-directory-mcp");
+      expect(JSON.stringify(body.result)).toContain(MODERN);
     });
 
-    const result = res?.result as { tools: Array<{ name: string }> };
-    expect(result.tools).toBeDefined();
-    expect(result.tools.length).toBeGreaterThanOrEqual(6);
-    const toolNames = result.tools.map((t) => t.name);
-    expect(toolNames).toContain("validate_listing");
-    expect(toolNames).toContain("submit_product");
-    expect(toolNames).toContain("get_product");
-    expect(toolNames).toContain("get_product_markdown");
-    expect(toolNames).toContain("list_products");
-    expect(toolNames).toContain("get_leaderboard");
-    expect(toolNames).toContain("get_stats");
-    expect(toolNames).toContain("check_health");
-    expect(toolNames).toContain("cast_vote");
-    expect(toolNames).toContain("upload_media");
-    expect(toolNames).toContain("create_checkout");
-    expect(toolNames).toContain("list_templates");
+    it("lists every registered tool in registry order with annotations", async () => {
+      const { body } = await rpc(modernRequest("tools/list"));
+      const tools = body.result!.tools as Array<{ name: string; inputSchema: { type: string }; annotations?: Record<string, boolean> }>;
+      expect(tools.map((tool) => tool.name)).toEqual(TOOLS.map((tool) => tool.name));
+      const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+      expect(byName.list_products.annotations).toMatchObject({ readOnlyHint: true });
+      expect(byName.submit_product.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false });
+      expect(byName.revoke_api_key.annotations).toMatchObject({ destructiveHint: true });
+      expect(byName.blog_archive_post.annotations).toMatchObject({ destructiveHint: true });
+      expect(byName.get_product_traffic.inputSchema).toMatchObject({ type: "object", required: ["slug"] });
+    });
+
+    it("calls a tool and returns JSON text plus structuredContent", async () => {
+      const { status, body } = await rpc(modernRequest("tools/call", { name: "list_templates", arguments: {} }));
+      expect(status).toBe(200);
+      expect(body.result!.isError).toBe(false);
+      const parsed = JSON.parse(body.result!.content![0].text);
+      expect(parsed.templates).toHaveLength(5);
+      expect(body.result!.structuredContent).toEqual(parsed);
+    });
+
+    it("returns an error for an unknown tool", async () => {
+      const { body } = await rpc(modernRequest("tools/call", { name: "no_such_tool", arguments: {} }));
+      expect(body.error?.code ?? (body.result?.isError ? 0 : undefined)).toBeDefined();
+    });
   });
 
-  it("should return error for unknown method", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 99,
-      method: "unknown/method"
+  describe(`${LEGACY} clients`, () => {
+    it("completes initialize, tools/list and tools/call", async () => {
+      const init = await rpc(legacyRequest("initialize", {
+        protocolVersion: LEGACY, capabilities: {}, clientInfo: { name: "legacy", version: "1.0.0" }
+      }, {}, undefined));
+      expect(init.status).toBe(200);
+      expect(init.body.result).toMatchObject({ protocolVersion: LEGACY, serverInfo: { name: "nlb-directory-mcp", version: SERVER_VERSION } });
+
+      const list = await rpc(legacyRequest("tools/list"));
+      expect((list.body.result!.tools as unknown[]).length).toBe(TOOLS.length);
+
+      const call = await rpc(legacyRequest("tools/call", { name: "list_templates", arguments: { template_name: "developer-cli" } }));
+      const parsed = JSON.parse(call.body.result!.content![0].text);
+      expect(parsed.template.slug).toBe("dev-tool");
     });
-    expect(res?.error).toBeDefined();
-    expect(res?.error?.code).toBe(-32601);
-  });
-  it("should return error for invalid request payload", async () => {
-    const res = await server.handleMessage("invalid");
-    expect(res?.error?.code).toBe(-32600);
+
+    it.each(["2025-06-18", "2025-03-26", "2024-11-05"])("negotiates %s", async (protocolVersion) => {
+      const { body } = await rpc(legacyRequest("initialize", {
+        protocolVersion, capabilities: {}, clientInfo: { name: "legacy", version: "1.0.0" }
+      }, {}, undefined));
+      expect(body.result).toMatchObject({ protocolVersion });
+    });
+
+    it("answers ping and acknowledges notifications without a body", async () => {
+      expect((await rpc(legacyRequest("ping"))).body.result).toEqual({});
+      const notification = await fetchWorker(new Request(`${BASE}/mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", "MCP-Protocol-Version": LEGACY },
+        body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })
+      }));
+      expect(notification.status).toBe(202);
+      expect(await notification.text()).toBe("");
+    });
   });
 });
+
+async function fetchWorker(request: Request) {
+  const { handleWorkerFetch } = await import("../src/transports/worker.js");
+  return handleWorkerFetch(request);
+}

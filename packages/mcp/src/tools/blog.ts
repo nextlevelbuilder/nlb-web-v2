@@ -12,6 +12,7 @@ import {
   BlogPostResponseSchema,
   BlogPostUpdateInputSchema,
   BlogRevisionListResponseSchema,
+  BlogRevisionResponseSchema,
   BlogValidateResponseSchema,
   BlogVersionSchema,
   describeBlogApiFailure
@@ -133,7 +134,12 @@ const enc = encodeURIComponent;
 
 const ListBlocksArgs = z.object(credentialArgs);
 const ValidateArgs = z.object({ blocks: BlogBlocksSchema, ...credentialArgs });
-const ListPostsArgs = BlogPostListQuerySchema.extend(credentialArgs);
+// The web route caps limit at 100 and offset at 100000; reject earlier with a clear message.
+const ListPostsArgs = BlogPostListQuerySchema.extend({
+  limit: z.number().int().min(1).max(100).optional(),
+  offset: z.number().int().min(0).max(100_000).optional(),
+  ...credentialArgs
+});
 const GetPostArgs = z.object({ id_or_slug: z.string().min(1), locale: BlogLocaleSchema.optional(), ...credentialArgs });
 const CreatePostArgs = z.object({ post: BlogPostCreateInputSchema, idempotency_key: idempotencyArg, ...credentialArgs });
 const UpdatePostArgs = z.object({
@@ -145,6 +151,7 @@ const UpdatePostArgs = z.object({
 });
 const VersionedPostArgs = z.object({ post_id: z.string().min(1), version: BlogVersionSchema, idempotency_key: idempotencyArg, ...credentialArgs });
 const ListRevisionsArgs = z.object({ post_id: z.string().min(1), ...credentialArgs });
+const GetRevisionArgs = ListRevisionsArgs.extend({ revision_id: z.string().min(1) });
 const RestoreRevisionArgs = VersionedPostArgs.extend({ revision_id: z.string().min(1) });
 
 // --- JSON Schemas advertised to agents ---
@@ -229,8 +236,8 @@ export function createBlogTools(resolveEnv: ResolveToolEnv): McpToolDefinition[]
           locale: { type: "string", enum: [...BLOG_LOCALES] },
           status: { type: "string", enum: [...BLOG_STATUSES, "all"], description: "Default published" },
           tag: { type: "string" },
-          limit: { type: "integer", minimum: 1 },
-          offset: { type: "integer", minimum: 0 },
+          limit: { type: "integer", minimum: 1, maximum: 100, description: "Default 20" },
+          offset: { type: "integer", minimum: 0, maximum: 100000 },
           ...credentialProps
         }
       },
@@ -326,6 +333,19 @@ export function createBlogTools(resolveEnv: ResolveToolEnv): McpToolDefinition[]
       handler: async (args, context) => {
         const a = parseArgs(ListRevisionsArgs, args, "blog_list_revisions");
         return request(a, context, { method: "GET", path: `/api/v1/blog/posts/${enc(a.post_id)}/revisions`, schema: BlogRevisionListResponseSchema });
+      }
+    },
+    {
+      name: "blog_get_revision",
+      description: "Get one blog post revision including its full post snapshot (to inspect before blog_restore_revision). Requires an admin identity.",
+      inputSchema: {
+        type: "object",
+        properties: { post_id: postIdProp, revision_id: { type: "string", minLength: 1, description: "Revision id from blog_list_revisions" }, ...credentialProps },
+        required: ["post_id", "revision_id"]
+      },
+      handler: async (args, context) => {
+        const a = parseArgs(GetRevisionArgs, args, "blog_get_revision");
+        return request(a, context, { method: "GET", path: `/api/v1/blog/posts/${enc(a.post_id)}/revisions/${enc(a.revision_id)}`, schema: BlogRevisionResponseSchema });
       }
     },
     {

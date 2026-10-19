@@ -1,5 +1,7 @@
 import type { ToolContext } from "../tool-context.js";
 import { createBlogTools } from "./blog.js";
+import { createBuilderLeagueTools } from "./builder-league.js";
+import { createOnboardingTools } from "./onboarding.js";
 import {
   toServerDocumentSafe,
   computeContentHashSync,
@@ -1058,5 +1060,7 @@ export const TOOLS: McpToolDefinition[] = [
   },
 
   // Blog management (/api/v1/blog/*)
-  ...createBlogTools(resolveToolEnv)
+  ...createBlogTools(resolveToolEnv),
+  ...createBuilderLeagueTools(resolveToolEnv),
+  ...createOnboardingTools(resolveToolEnv)
 ];

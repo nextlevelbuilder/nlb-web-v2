@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { McpServer } from "../src/server.js";
 import { validateAllowedApiUrl } from "../src/tools/index.js";
 import { createDocumentFromTemplate } from "@nextlevelbuilder/contracts";
+import { callTool } from "./helpers.js";
 
 describe("MCP: Tools Execution & Security", () => {
-  const server = new McpServer();
-
   it("should execute validate_listing tool with valid document", async () => {
     const doc = createDocumentFromTemplate("ai-agent-tool", {
       name: "Smart MCP Agent",
@@ -15,22 +13,10 @@ describe("MCP: Tools Execution & Security", () => {
       websiteUrl: "https://agent.example.com"
     });
 
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 10,
-      method: "tools/call",
-      params: {
-        name: "validate_listing",
-        arguments: { document: doc }
-      }
-    });
-
-    expect(res?.result).toBeDefined();
-    const result = res?.result as { content: Array<{ text: string }> };
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.valid).toBe(true);
-    expect(parsed.contentHash).toBeDefined();
-    expect(parsed.contentHash).toHaveLength(64);
+    const { isError, payload } = await callTool("validate_listing", { document: doc });
+    expect(isError).toBe(false);
+    expect(payload.valid).toBe(true);
+    expect(payload.contentHash).toHaveLength(64);
   });
 
   it("should reject unauthenticated worker mutation in submit_product", async () => {
@@ -42,52 +28,20 @@ describe("MCP: Tools Execution & Security", () => {
       websiteUrl: "https://example.com"
     });
 
-    const res = await server.handleMessage(
-      {
-        jsonrpc: "2.0",
-        id: 99,
-        method: "tools/call",
-        params: {
-          name: "submit_product",
-          arguments: { document: doc }
-        }
-      },
-      { workerAuth: false } // Unauthenticated worker caller without explicit api_key
-    );
-
-    expect(res?.error).toBeDefined();
-    expect(res?.error?.code).toBe(-32001);
-    expect(res?.error?.message).toContain("Unauthorized");
+    const { status, isError, payload } = await callTool("submit_product", { document: doc });
+    expect(status).toBe(200);
+    expect(isError).toBe(true);
+    expect(payload.error).toContain("Unauthorized");
   });
-  it("should reject all mutating tools when workerAuth is not true", async () => {
-    const mutatingTools = [
-      "submit_product",
-      "cast_vote",
-      "upload_media",
-      "create_checkout",
-      "create_api_key",
-      "revoke_api_key"
-    ];
 
-    for (const toolName of mutatingTools) {
-      const res = await server.handleMessage(
-        {
-          jsonrpc: "2.0",
-          id: 100,
-          method: "tools/call",
-          params: {
-            name: toolName,
-            arguments: {}
-          }
-        },
-        { workerAuth: false }
-      );
-      expect(res?.error).toBeDefined();
-      expect(res?.error?.code).toBe(-32001);
-      expect(res?.error?.message).toContain("Unauthorized");
+  it("should reject all mutating tools when the caller presents no Worker token", async () => {
+    const env = { WORKER_AUTH_TOKEN: "worker-token" };
+    for (const toolName of ["submit_product", "cast_vote", "upload_media", "create_checkout", "create_api_key", "revoke_api_key"]) {
+      const { isError, payload } = await callTool(toolName, {}, env);
+      expect(isError, toolName).toBe(true);
+      expect(payload.error, toolName).toContain("Unauthorized");
     }
   });
-
 
   it("should reject arbitrary unauthorized API endpoints to prevent SSRF", () => {
     expect(() => validateAllowedApiUrl("https://evil-attacker.com")).toThrow(/Access to 'evil-attacker.com' is disallowed/);
@@ -101,36 +55,19 @@ describe("MCP: Tools Execution & Security", () => {
   });
 
   it("should execute list_templates tool", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 11,
-      method: "tools/call",
-      params: {
-        name: "list_templates",
-        arguments: {}
-      }
-    });
-
-    const result = res?.result as { content: Array<{ text: string }> };
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.templates).toBeDefined();
-    expect(parsed.templates.length).toBe(5);
+    const { payload } = await callTool("list_templates");
+    expect(payload.templates).toHaveLength(5);
   });
 
   it("should return single template details when template_name passed to list_templates", async () => {
-    const res = await server.handleMessage({
-      jsonrpc: "2.0",
-      id: 12,
-      method: "tools/call",
-      params: {
-        name: "list_templates",
-        arguments: { template_name: "developer-cli" }
-      }
-    });
+    const { payload } = await callTool("list_templates", { template_name: "developer-cli" });
+    expect(payload.template.slug).toBe("dev-tool");
+    expect(payload.template.name).toContain("Developer");
+  });
 
-    const result = res?.result as { content: Array<{ text: string }> };
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.template.slug).toBe("dev-tool");
-    expect(parsed.template.name).toContain("Developer");
+  it("should validate arguments against the tool JSON Schema before running it", async () => {
+    const { isError, payload } = await callTool("list_templates", { template_name: 42 });
+    expect(isError).toBe(true);
+    expect(String(payload)).toMatch(/validation/i);
   });
 });
