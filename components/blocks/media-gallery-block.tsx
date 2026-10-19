@@ -1,5 +1,5 @@
 import React from "react";
-import type { Block } from "@/packages/contracts/src";
+import type { Block } from "@nextlevelbuilder/contracts";
 import { BlockSection } from "./block-section";
 import { DEFAULT_BLOCK_LABELS, numberedLabel, type BlockLabels } from "./block-labels";
 

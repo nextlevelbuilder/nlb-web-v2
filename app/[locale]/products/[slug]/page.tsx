@@ -11,7 +11,7 @@ import ChapterPlate from "@/components/constellation/chapter-plate";
 import ProductLogo from "@/components/product-logo";
 import { directoryCopy } from "@/content/pages/directory-copy";
 import { toPageLocale } from "@/content/pages/page-locale";
-import type { Block } from "@/packages/contracts/src";
+import type { Block } from "@nextlevelbuilder/contracts";
 import { pageMetadata, serializeJsonLd, localizedPath } from "@/lib/seo";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/structured-data";
 import "./product-page.css";

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clickhouseQuery } from "@/lib/traffic/clickhouse";
 import { allowTrafficRequest, readTrafficBody } from "@/lib/traffic/collection";
 import { deviceCategory, publicTraffic, publicTrafficRange, queryTraffic, recordTraffic, referrerHost, trafficRange, visitorHash } from "@/lib/traffic/traffic";
-import { TrafficEventSchema } from "@/packages/contracts/src";
+import { TrafficEventSchema } from "@nextlevelbuilder/contracts";
 
 const now = new Date("2026-09-12T08:00:00.000Z");
 const range = { from: "2026-09-10T00:00:00.000Z", to: "2026-09-12T00:00:00.000Z" };

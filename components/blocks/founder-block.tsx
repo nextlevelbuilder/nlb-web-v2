@@ -1,5 +1,5 @@
 import React from "react";
-import type { FounderBlock } from "@/packages/contracts/src";
+import type { FounderBlock } from "@nextlevelbuilder/contracts";
 import { BlockSection } from "./block-section";
 import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 

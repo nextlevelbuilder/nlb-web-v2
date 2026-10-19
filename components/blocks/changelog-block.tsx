@@ -1,5 +1,5 @@
 import React from "react";
-import type { ChangelogBlock } from "@/packages/contracts/src";
+import type { ChangelogBlock } from "@nextlevelbuilder/contracts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GitCommit } from "lucide-react";

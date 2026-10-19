@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { z } from "zod";
-import { PublicTrafficSummarySchema, TrafficSummarySchema, type TrafficSummary } from "@/packages/contracts/src";
+import { PublicTrafficSummarySchema, TrafficSummarySchema, type TrafficSummary } from "@nextlevelbuilder/contracts";
 import { clickhouseQuery } from "./clickhouse";
 import { trafficConfig } from "./config";
 

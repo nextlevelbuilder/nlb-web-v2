@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ProductDocumentSchema } from "@/packages/contracts/src/product-document";
-import { BlockSchema } from "@/packages/contracts/src/blocks";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 import { POST } from "@/app/api/v1/products/route";
 
 vi.mock("@/lib/auth-api-key", () => ({ resolveCaller: vi.fn(async () => ({ user: { id: "builder" } })) }));

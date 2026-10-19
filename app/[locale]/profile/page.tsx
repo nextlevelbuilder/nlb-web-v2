@@ -23,7 +23,7 @@ import AccountIdentityHeader from "@/components/profile/account-identity-header"
 import ApiKeysManager from "@/components/profile/api-keys-manager";
 import AccountMembershipSection from "@/components/onboarding/account-membership-section";
 import { getTranslations } from "next-intl/server";
-import { BlockSchema } from "@/packages/contracts/src";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 export const dynamic = "force-dynamic";
 

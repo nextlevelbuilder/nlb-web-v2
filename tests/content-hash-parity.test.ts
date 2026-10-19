@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { describe, expect, it } from "vitest";
-import { computeContentHash, computeContentHashSync, ProductDocumentSchema } from "@/packages/contracts/src";
-import { LAYOUT_TEMPLATES } from "@/packages/contracts/src/templates";
+import { computeContentHash, computeContentHashSync, ProductDocumentSchema } from "@nextlevelbuilder/contracts";
+import { LAYOUT_TEMPLATES } from "@nextlevelbuilder/contracts";
 
 // The hash the web computed with node:crypto before the contracts merged. Stored revisions depend on it.
 function legacyHash(value: unknown): string {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeContentHashSync, ProductDocumentSchema, type ProductDocument } from "@/packages/contracts/src";
+import { computeContentHashSync, ProductDocumentSchema, type ProductDocument } from "@nextlevelbuilder/contracts";
 
 describe("Catalog Contracts & Canonical Hash Computation", () => {
   it("should generate identical content hashes regardless of object key order", () => {

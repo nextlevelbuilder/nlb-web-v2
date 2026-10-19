@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import type { ProductDocument } from "@/packages/contracts/src";
+import type { ProductDocument } from "@nextlevelbuilder/contracts";
 import PreviewPublishButton from "@/components/studio/preview-publish-button";
 import { getTranslations } from "next-intl/server";
 

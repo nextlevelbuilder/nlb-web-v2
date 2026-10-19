@@ -6,7 +6,7 @@ import ProductLogo from '@/components/product-logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, X, Send, ExternalLink } from 'lucide-react';
-import type { Block } from '@/packages/contracts/src';
+import type { Block } from '@nextlevelbuilder/contracts';
 
 export interface StudioPreviewModalProps {
   isOpen: boolean;

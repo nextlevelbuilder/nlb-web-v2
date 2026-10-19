@@ -1,5 +1,5 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { ProductDocumentSchema } from "@/packages/contracts/src/product-document";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { trafficPaths, trafficSchemas } from "@/lib/traffic/openapi";
 import { blogPaths, blogSchemas } from "@/lib/blog/blog-openapi";
 import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evidence";

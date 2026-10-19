@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { LAYOUT_TEMPLATES } from '@/packages/contracts/src/templates';
-import { BlockSchema } from '@/packages/contracts/src/blocks';
-import { ProductDocumentSchema, type ProductDocument } from '@/packages/contracts/src/product-document';
+import { LAYOUT_TEMPLATES } from '@nextlevelbuilder/contracts';
+import { BlockSchema } from '@nextlevelbuilder/contracts';
+import { ProductDocumentSchema, type ProductDocument } from '@nextlevelbuilder/contracts';
 import { studioError, validateStudioDocument } from './studio-draft';
 
 export interface StudioToolState {

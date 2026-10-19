@@ -1,5 +1,5 @@
 import React from "react";
-import type { GridBlock } from "@/packages/contracts/src";
+import type { GridBlock } from "@nextlevelbuilder/contracts";
 import { BlockSection } from "./block-section";
 import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 

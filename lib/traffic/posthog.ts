@@ -1,4 +1,4 @@
-import { RealtimeTrafficSchema, type RealtimeTraffic } from "@/packages/contracts/src";
+import { RealtimeTrafficSchema, type RealtimeTraffic } from "@nextlevelbuilder/contracts";
 import { visitorHash, trafficCount } from "./traffic";
 import { trafficConfig } from "./config";
 

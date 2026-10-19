@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GET as getDocs } from "@/app/api-docs/route";
 import { GET as getLegacyDocs } from "@/app/api/docs/route";
 import { GET as getSpec } from "@/app/api/openapi.json/route";
-import { BlockSchema } from "@/packages/contracts/src/blocks";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 describe("interactive API documentation", () => {
   it("serves a readable index and pinned interactive reference at the requested URL", async () => {

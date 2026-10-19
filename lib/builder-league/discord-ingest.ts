@@ -21,7 +21,7 @@ import { z } from "zod";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type { AppDb } from "@/lib/db";
 import { activityEvidence, communityConnections, users } from "@/lib/db/schema";
-import { HttpUrlSchema } from "@/packages/contracts/src/http-url";
+import { HttpUrlSchema } from "@nextlevelbuilder/contracts";
 import { getViewerAccess } from "./access";
 import { EARLIEST_OCCURRED_AT, type Evidence } from "./evidence";
 import { getEffectiveRuleset } from "./ruleset";

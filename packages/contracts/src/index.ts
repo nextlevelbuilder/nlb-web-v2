@@ -8,3 +8,4 @@ export * from "./blog.js";
 export * from "./builder-league.js";
 export * from "./onboarding.js";
 export * from "./traffic.js";
+export { HttpUrlSchema } from "./http-url.js";

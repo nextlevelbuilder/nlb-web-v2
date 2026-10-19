@@ -1,5 +1,5 @@
 import React from "react";
-import type { HeroBlock } from "@/packages/contracts/src";
+import type { HeroBlock } from "@nextlevelbuilder/contracts";
 import { ArrowUpRight } from "lucide-react";
 import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";
 import { OrbitMotif } from "./orbit-motif";

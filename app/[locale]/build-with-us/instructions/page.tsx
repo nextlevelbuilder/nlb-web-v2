@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { pageMetadata } from "@/lib/seo";
-import { BlockSchema } from "@/packages/contracts/src/blocks";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

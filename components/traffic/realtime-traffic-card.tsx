@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Activity } from 'lucide-react';
-import { RealtimeTrafficSchema } from '@/packages/contracts/src';
+import { RealtimeTrafficSchema } from '@nextlevelbuilder/contracts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTrafficData } from './use-traffic-data';
