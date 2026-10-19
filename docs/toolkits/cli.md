@@ -1,0 +1,255 @@
+# CLI Documentation (`@nextlevelbuilder/cli`)
+
+The `@nextlevelbuilder/cli` package provides the `nlb` binary for validating, previewing, submitting, and inspecting products on the Next Level Builders Directory.
+
+## Installation
+
+```bash
+# Run directly via npx (recommended)
+npx @nextlevelbuilder/cli <command>
+
+# Or install globally
+npm install -g @nextlevelbuilder/cli
+```
+
+## Commands
+
+### 1. `nlb validate <file.json>`
+Validates a product document JSON file against `@nextlevelbuilder/contracts` Zod schemas and outputs the deterministic SHA-256 canonical hash.
+
+```bash
+nlb validate product.json
+nlb validate product.json --json
+```
+
+**Options**:
+- `--json`: Output machine-readable JSON result `{ valid: boolean, contentHash?: string, errors?: Array }`.
+
+---
+
+### 2. `nlb preview <file.json>`
+Renders a visual terminal preview of the product document with Unicode box borders and syntax-colored blocks.
+
+```bash
+nlb preview product.json
+nlb preview product.json --json
+```
+
+---
+
+### 3. `nlb submit <file.json>`
+Submits a product revision into the Next Level Builders Directory review queue. If a paid publishing slot is not yet active, the command provides a direct Polar checkout URL.
+
+```bash
+nlb submit product.json --org <ORG_UUID> --api-key <YOUR_API_KEY>
+nlb submit product.json --org <ORG_UUID> --fast-track
+nlb submit product.json --org <ORG_UUID> --pay-only
+nlb submit product.json --dry-run
+nlb submit product.json --json
+```
+
+**Options**:
+- `-o, --org <orgId>`: Organization UUID identifier (required, find at `/studio`).
+- `-k, --api-key <key>`: Next Level Builders API Key (`nlb_live_...` or `NLB_API_KEY` env var).
+- `-u, --url <url>`: Directory base URL (default: `https://nextlevelbuilder.io`).
+- `-n, --notes <notes>`: Notes for the moderation review team.
+- `--fast-track`: Request fast-track priority review.
+- `--pay-only`: Generate Polar checkout session without immediate moderation submission.
+- `--dry-run`: Validate schema, compute hash, and simulate submission without sending network mutation.
+- `--json`: Output result as JSON.
+
+---
+
+### 4. `nlb list`
+Lists products registered on the directory with Trust Scores and status.
+
+```bash
+nlb list
+nlb list --limit 10 --offset 0
+nlb list --page 2
+nlb list --json
+```
+
+**Options**:
+- `-l, --limit <limit>`: Max products to return (1-50, default: 20).
+- `--offset <offset>`: Pagination offset (default: 0).
+- `-p, --page <page>`: Page number (calculated into offset).
+- `--json`: Output products list in machine-readable JSON format.
+
+---
+
+### 5. `nlb get <slug>`
+Fetches detailed product information and block summaries by product slug, or exports raw LLM-optimized Markdown.
+
+```bash
+# Structured view:
+nlb get my-product-slug
+
+# Raw Markdown for LLMs / AI agents:
+nlb get my-product-slug --markdown
+nlb get my-product-slug --markdown > product.md
+
+# JSON metadata:
+nlb get my-product-slug --json
+```
+
+**Options**:
+- `-m, --markdown`: Print raw LLM Markdown representation directly to stdout.
+- `--json`: Output full product object in JSON format.
+
+---
+
+### 6. `nlb rankings [window]`
+Fetches transparent community ranking snapshots and leaderboards.
+
+```bash
+# Daily snapshot (default):
+nlb rankings
+
+# Weekly or monthly window:
+nlb rankings weekly
+nlb rankings monthly
+nlb rankings --json
+```
+
+---
+
+### 7. `nlb stats`
+Displays live global platform metrics and directory statistics.
+
+```bash
+nlb stats
+nlb stats --json
+```
+
+Outputs:
+- Published products count
+- Outbound click-outs
+- Registered builders
+- Total community votes
+
+---
+
+### 8. `nlb vote <productId>`
+Casts an organic community vote for a product. Note: Organic voting requires user session authentication to prevent automated bot voting.
+
+```bash
+nlb vote <PRODUCT_UUID> --cookie "<SESSION_COOKIE>"
+nlb vote <PRODUCT_UUID> --token "<TURNSTILE_TOKEN>"
+```
+
+---
+
+### 9. `nlb upload <filepath>`
+Uploads images (up to 10MB) or videos (up to 100MB) to Next Level Builders media storage with client-side format and size verification.
+
+```bash
+nlb upload screenshot.png
+nlb upload demo.mp4 --folder "showcase"
+nlb upload asset.png --json
+```
+
+---
+
+### 10. `nlb checkout <productId>`
+Generates a Polar checkout session URL for purchasing directory publishing slots or memberships using a Polar product UUID.
+
+```bash
+nlb checkout <POLAR_PRODUCT_UUID> --email builder@example.com --slug my-tool
+```
+
+---
+
+### 11. `nlb keys [list|create|revoke]`
+Manages developer API keys. Requires user session cookie authentication.
+
+```bash
+# List active API keys:
+nlb keys list --cookie "<SESSION_COOKIE>"
+
+# Create a new key:
+nlb keys create "CI Deployment Key" --cookie "<SESSION_COOKIE>"
+
+# Revoke a key by ID:
+nlb keys revoke <KEY_ID> --cookie "<SESSION_COOKIE>"
+```
+---
+
+### 12. `nlb template [slug]`
+Lists available layout templates or generates a starter JSON file with supported block blueprints.
+
+```bash
+# List all templates:
+nlb template
+
+# Generate starter file:
+nlb template dev-tool --out product.json
+nlb template saas-launch --out saas.json
+nlb template ai-agent --out agent.json
+```
+
+---
+
+### 13. `nlb config`
+Reads or sets CLI configuration stored in `~/.nlb/config.json`.
+
+```bash
+nlb config
+nlb config set api-key nlb_live_your_key_here
+nlb config set url https://staging.nextlevelbuilder.io
+```
+
+### 14. `nlb doctor`
+Performs system, configuration, API connectivity, and database health diagnostics. Evaluates semantic database health.
+
+```bash
+nlb doctor
+nlb doctor -u https://staging.nextlevelbuilder.io
+nlb doctor --json
+```
+
+### 15. `nlb traffic <slug>`
+
+Queries organization-authorized traffic for the NLB-hosted product page, including totals, daily series, referrers, countries, devices, and active visitors.
+
+```bash
+# Uses your existing NLB_API_KEY or saved CLI API key:
+nlb traffic my-product
+nlb traffic my-product --from 2026-08-01T00:00:00Z --to 2026-08-31T00:00:00Z --json
+```
+
+**Options**:
+- `-k, --api-key <key>`: Override the configured API key; it must be authorized for the product organization.
+- `-u, --url <url>`: Directory API base URL.
+- `--from <iso>`: UTC ISO start timestamp; defaults to 30 days before the end.
+- `--to <iso>`: UTC ISO end timestamp; defaults to now.
+- `--json`: Print the complete `{ data: ... }` traffic response.
+
+Ranges must be increasing, end no later than now, and span at most 90 days. Unavailable analytics set a nonzero exit status.
+
+Visitor counts measure daily sessions. Identifiers reset each UTC day, so a returning session on the next day counts again; period totals do not represent unique people across the full range. Human output labels this as `Daily visitor sessions`; JSON preserves the API's `visitors` field.
+
+To show aggregate traffic publicly, add the [Analytics block](contracts.md#17-canonical-server-block-types) to your product JSON and submit it through `nlb submit product.json --org <ORG_UUID>`. `nlb validate` and `nlb preview` accept the block and its defaults. Publishing this block opts into public aggregate traffic; detailed breakdowns remain private.
+
+### 16. `nlb blog ...` (admin)
+
+Manages NLB blog posts through `/api/v1/blog/*`. Reads of published posts and the block catalogue are public; drafts, revisions and every write need an admin account's API key (`--api-key`, `NLB_API_KEY`, or `nlb config set api-key`).
+
+```bash
+nlb blog blocks --json                        # block catalogue: read before composing posts
+nlb blog validate post.json                   # server-side block validation ({ blocks } or a full post)
+nlb blog list --locale en --status all --tag news
+nlb blog get hello-world --locale en
+nlb blog create post.json                     # creates a draft (version 1)
+cat changes.json | nlb blog update <id> - --version 3
+nlb blog publish <id> --version 4             # also: unpublish, archive
+nlb blog revisions <id>
+nlb blog restore <id> <revisionId> --version 5
+```
+
+- `<file>` is a JSON file, or `-` to read stdin. Payloads are checked locally for the structural limits (slug format, lengths, at most 60 blocks, at most 200 KB of serialized blocks, at most 12 tags) before sending. Block props are validated by the server.
+- `update`, `publish`, `unpublish`, `archive` and `restore` require `--version N`, the post's current version. A stale version exits non-zero with the server's `currentVersion` (in `--json`: `{ success: false, status: 409, currentVersion }`). Re-read the post and retry.
+- Validation failures (HTTP 400) print each `path: message`; `--json` includes `details`.
+- Writes send a fresh `Idempotency-Key` header.
+- Common options: `-k, --api-key`, `-u, --url`, `--json` (prints the API `{ data }` response).
+
