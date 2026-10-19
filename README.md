@@ -101,7 +101,7 @@ Manage secret API keys in your builder profile (`/profile`) to authenticate auto
 
 - **Developer toolkits:** [`packages/cli`](packages/cli), [`packages/mcp`](packages/mcp) and [`packages/contracts`](packages/contracts) in this repository
 - **CLI:** `@nextlevelbuilder/cli` (`nlb submit <product.json> --api-key <KEY>`)
-- **MCP Server:** HTTP endpoint `https://mcp.nextlevelbuilder.io/mcp` or `@nextlevelbuilder/mcp` for compatible clients
+- **MCP Server:** HTTP endpoint `https://nextlevelbuilder.io/mcp` or `@nextlevelbuilder/mcp` for compatible clients
 - **REST APIs:** Authenticate via `Authorization: Bearer <KEY>` or `x-api-key: <KEY>`
 ---
 

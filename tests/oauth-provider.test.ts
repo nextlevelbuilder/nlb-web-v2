@@ -13,7 +13,7 @@ import { clearClientIdMetadataCache } from "@/lib/mcp-oauth-cimd";
 
 const origin = "http://localhost:3000";
 const issuer = `${origin}/api/auth`;
-const resource = "https://mcp.nextlevelbuilder.io/mcp";
+const resource = "https://nextlevelbuilder.io/mcp";
 const callback = "http://127.0.0.1:9876/callback";
 const verifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
 const challenge = createHash("sha256").update(verifier).digest("base64url");
@@ -378,6 +378,26 @@ describe("MCP authorization spec 2026-07-28 compliance", () => {
         refresh_token: issued.refresh_token, resource: "https://wrong.example/mcp" }, undefined, true);
       expect(refreshElsewhere.status).toBe(400);
     }
+  });
+
+  it("keeps issuing and refreshing tokens for a configured legacy resource", async () => {
+    const legacy = "https://mcp.nextlevelbuilder.io/mcp";
+    vi.stubEnv("MCP_OAUTH_LEGACY_RESOURCES", `${legacy}/`);
+    const f = await fixture();
+    f.query.set("resource", legacy);
+    const { code } = await f.approve();
+    const issued = await (await f.request("/oauth2/token", { ...f.tokenBody(code), resource: legacy }, undefined, true)).json();
+    const jwks = await (await f.request("/jwks")).json();
+    const { payload } = await jwtVerify(issued.access_token, createLocalJWKSet(jwks), { issuer, audience: legacy });
+    expect([payload.aud].flat()).toEqual([legacy]);
+    const refreshed = await f.request("/oauth2/token", { grant_type: "refresh_token", client_id: f.client.client_id,
+      refresh_token: issued.refresh_token, resource: legacy }, undefined, true);
+    expect(refreshed.status, await refreshed.clone().text()).toBe(200);
+  });
+
+  it("rejects a malformed legacy resource", () => {
+    vi.stubEnv("MCP_OAUTH_LEGACY_RESOURCES", "http://mcp.example.com/mcp");
+    expect(() => getMcpOAuthPlugins()).toThrow(/MCP_OAUTH_LEGACY_RESOURCES/);
   });
 
   it("binds a POST authorization request without resource to the MCP resource", async () => {

@@ -39,7 +39,7 @@ vi.mock("@/lib/polar", () => ({
 }));
 
 const SECRET = "test-mcp-delegation-secret-with-at-least-32-bytes";
-const ISSUER = "https://mcp.nextlevelbuilder.io/mcp";
+const ISSUER = "https://nextlevelbuilder.io/mcp";
 const ORIGIN = "https://nextlevelbuilder.io";
 const context = { scope: "mcp:write" as const, method: "POST", path: "/api/v1/products" };
 const account = {

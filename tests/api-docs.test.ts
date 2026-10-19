@@ -15,7 +15,7 @@ describe("interactive API documentation", () => {
     expect(html).not.toContain("proxy.scalar.com");
     expect(html).toContain("/api/v1/products/{slug}/pulse");
     expect(html).toContain("/api/v1/products/{slug}/traffic");
-    expect(html).toContain("https://mcp.nextlevelbuilder.io/mcp");
+    expect(html).toContain("https://nextlevelbuilder.io/mcp");
     expect(html).toContain('href="/api-docs.md"');
   });
 

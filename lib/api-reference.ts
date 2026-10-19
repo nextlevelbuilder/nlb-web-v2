@@ -47,7 +47,7 @@ export function renderApiReference() {
 <p>Explore request schemas, generate code snippets and send real requests with the interactive reference below.</p>
 <p>Create an API key in <a href="/profile">your profile</a>. Builder endpoints accept <code>Authorization: Bearer nlb_live_…</code> or <code>x-api-key: nlb_live_…</code>. Organization membership is required. Voting and key management require a signed-in browser session.</p>
 <p>Use the current website origin for session requests. Requests sent with “Test Request” run against the server you select and can save drafts or submit for review. Credentials are not persisted by this reference.</p>
-<p>HTTP MCP: <a href="https://mcp.nextlevelbuilder.io/mcp">https://mcp.nextlevelbuilder.io/mcp</a>. To design a draft in your browser, enable WebMCP in Studio and connect your client.</p>
+<p>HTTP MCP: <a href="https://nextlevelbuilder.io/mcp">https://nextlevelbuilder.io/mcp</a>. To design a draft in your browser, enable WebMCP in Studio and connect your client.</p>
 </header>
 <main id="endpoint-index"><details><summary>Readable endpoint index</summary><ul>${operations}</ul></details>
 <noscript><p>Enable JavaScript for the interactive request console. The endpoint index and OpenAPI document remain available without JavaScript.</p></noscript></main>

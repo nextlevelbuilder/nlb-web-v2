@@ -8,7 +8,7 @@ import { z } from "zod";
 import { mcpClientIdMetadataDiscovery } from "@/lib/mcp-oauth-cimd";
 
 export const MCP_OAUTH_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"];
-export const MCP_OAUTH_DEFAULT_RESOURCE = "https://mcp.nextlevelbuilder.io/mcp";
+export const MCP_OAUTH_DEFAULT_RESOURCE = "https://nextlevelbuilder.io/mcp";
 
 const authorizationCodeGrantSchema = z.object({
   type: z.literal("authorization_code"),
@@ -77,23 +77,37 @@ export function isMcpOAuthEnabled(): boolean {
 }
 
 export function getMcpOAuthResource(): string {
-  const configured = getBinding("MCP_OAUTH_RESOURCE");
-  const resource = configured || MCP_OAUTH_DEFAULT_RESOURCE;
-  const url = new URL(resource);
+  return normalizeResource(getBinding("MCP_OAUTH_RESOURCE") || MCP_OAUTH_DEFAULT_RESOURCE, "MCP_OAUTH_RESOURCE");
+}
+
+function normalizeResource(value: string, name: string): string {
+  const url = new URL(value);
   const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   if ((url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) ||
-      url.username || url.password || resource.includes("?") || resource.includes("#")) {
-    throw new Error("MCP_OAUTH_RESOURCE must be HTTPS (or an explicit local loopback HTTP URL), without credentials, query, or fragment.");
+      url.username || url.password || value.includes("?") || value.includes("#")) {
+    throw new Error(`${name} must be HTTPS (or an explicit local loopback HTTP URL), without credentials, query, or fragment.`);
   }
   return url.href.replace(/\/$/, "");
 }
 
+/**
+ * Resources that tokens issued before MCP moved into this worker are bound to (for example
+ * https://mcp.nextlevelbuilder.io/mcp). The authorization server keeps issuing and refreshing tokens for
+ * them so existing clients on the old host keep working.
+ */
+export function getMcpOAuthLegacyResources(): string[] {
+  return (getBinding("MCP_OAUTH_LEGACY_RESOURCES") ?? "").split(",").map(value => value.trim()).filter(Boolean)
+    .map(value => normalizeResource(value, "MCP_OAUTH_LEGACY_RESOURCES"));
+}
+
 export function getMcpOAuthPlugins() {
   const resource = getMcpOAuthResource();
+  const legacyResources = getMcpOAuthLegacyResources().filter(value => value !== resource);
   const provider = mcp({
     loginPage: "/sign-in",
     consentPage: "/oauth/consent",
     resource,
+    ...(legacyResources.length ? { resources: legacyResources } : {}),
     scopes: MCP_OAUTH_SCOPES,
     grantTypes: ["authorization_code", "refresh_token"],
     // Client ID Metadata Documents are the MCP 2026-07-28 default; Dynamic Client Registration stays for older clients.
@@ -106,8 +120,11 @@ export function getMcpOAuthPlugins() {
     accessTokenExpiresIn: 300,
     refreshTokenExpiresIn: 60 * 60 * 24 * 30,
     refreshTokenReuseInterval: 0,
-    enforcePerClientResources: true,
-    identifierValidator: (identifier) => identifier === resource,
+    // Every client may target every MCP resource this server issues for. Per-client links would strand
+    // clients registered before the resource moved to the web origin, and they add nothing while the
+    // configured resources are all the same MCP server.
+    enforcePerClientResources: false,
+    identifierValidator: (identifier) => identifier === resource || legacyResources.includes(identifier),
     resourcePrivileges: () => false,
     clientPrivileges: () => false,
     async customTokenResponseFields({ grantType, verificationValue }) {

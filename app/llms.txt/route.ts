@@ -5,7 +5,7 @@ import { listPostSummaries } from "@/lib/blog/blog-queries";
 import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
-import { DISCOVERY_PATHS, MCP_ENDPOINT } from "@/lib/discovery/agent-discovery-documents";
+import { DISCOVERY_PATHS, mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 
 /** Latest published blog posts in both locales; the blog is optional here, so failures only drop the section. */
@@ -53,7 +53,7 @@ export async function GET() {
       `- [Courses](${baseUrl}/courses.md): Recorded build sessions, sold per video or included with VIP.`,
       `- [Full content](${baseUrl}/llms-full.txt): Full public pages and approved product documents, including every block.`,
       "## Agent interfaces",
-      `- MCP server (streamable HTTP, MCP 2026-07-28 with 2025 fallback, OAuth 2.1 or API key): ${MCP_ENDPOINT}`,
+      `- MCP server (streamable HTTP, MCP 2026-07-28 with 2025 fallback, OAuth 2.1 or API key): ${mcpEndpoint()}`,
       `- [MCP server card](${baseUrl}${DISCOVERY_PATHS.serverCard}): Server identity, transports, auth and links.`,
       `- [AI catalog](${baseUrl}${DISCOVERY_PATHS.aiCatalog}): Every AI-facing interface of this domain.`,
       `- [OpenAPI](${baseUrl}${DISCOVERY_PATHS.openApi}): REST API description; [API catalog](${baseUrl}${DISCOVERY_PATHS.apiCatalog}) (RFC 9727).`,

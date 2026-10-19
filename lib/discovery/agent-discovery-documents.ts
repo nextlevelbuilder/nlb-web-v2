@@ -1,31 +1,29 @@
 /**
  * Machine-readable discovery documents for AI agents and API clients:
  *
- * - `/.well-known/mcp.json`: an MCP Server Card (SEP-2127 schema) for the NLB directory MCP server.
- *   SEP-2127 recommends `<mcp-url>/server-card` on the MCP host itself; that host is the separate
- *   `nlb-directory-mcp` worker (packages/mcp), so this site publishes the same card at the conventional domain path.
+ * - `/.well-known/mcp.json`: an MCP Server Card (SEP-2127 schema) for the NLB MCP server, which this
+ *   worker serves at `<site>/mcp` (packages/mcp, routed in worker.ts).
  * - `/.well-known/ai-catalog.json`: the domain AI Catalog listing that card plus the REST API.
  * - `/.well-known/api-catalog`: an RFC 9727 linkset pointing at the OpenAPI document and its docs.
  *
  * The MCP facts mirror packages/mcp (server name, version, protocol versions served by MCP SDK v2)
- * and the live https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource document.
+ * and the `<site>/.well-known/oauth-protected-resource/mcp` document.
  */
 import { siteUrl } from "@/lib/seo";
 import { DISCOVERY_PATHS } from "./discovery-link-header";
 
 export { DISCOVERY_PATHS };
 
-export const MCP_ENDPOINT = "https://mcp.nextlevelbuilder.io/mcp";
-const STAGING_MCP_ENDPOINT = "https://mcp-staging.nextlevelbuilder.io/mcp";
+export const MCP_ENDPOINT = "https://nextlevelbuilder.io/mcp";
 export const MCP_SERVER_VERSION = "0.2.1";
 /** 2026-07-28 is the stateless revision; the older ones are served through the SDK's legacy path. */
 export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"] as const;
 export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"] as const;
 const TOOLKITS_REPOSITORY = "https://github.com/nextlevelbuilder/nlb-web-v2";
 
-/** The MCP worker that pairs with this site: staging web uses the staging MCP worker. */
+/** The MCP endpoint this site serves. */
 export function mcpEndpoint(site = siteUrl()): string {
-  return new URL(site).hostname === "staging.nextlevelbuilder.io" ? STAGING_MCP_ENDPOINT : MCP_ENDPOINT;
+  return new URL("/mcp", site).href;
 }
 const SERVER_CARD_SCHEMA = "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json";
 
