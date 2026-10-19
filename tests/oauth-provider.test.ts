@@ -414,12 +414,32 @@ describe("MCP authorization spec 2026-07-28 compliance", () => {
       application_type: "web", token_endpoint_auth_method: "none", grant_types: ["authorization_code"], response_types: ["code"] });
     expect(web.status, await web.clone().text()).toBe(201);
     expect(await web.json()).toMatchObject({ application_type: "web", token_endpoint_auth_method: "none" });
+    for (const redirect of ["http://localhost:33418/callback", "http://127.0.0.1:8976/callback", "com.example.mcp:/oauth/callback"]) {
+      const native = await f.request("/oauth2/register", { client_name: "Desktop MCP client", redirect_uris: [redirect],
+        token_endpoint_auth_method: "none", grant_types: ["authorization_code", "refresh_token"], response_types: ["code"] });
+      expect(native.status, await native.clone().text()).toBe(201);
+      expect(await native.json()).toMatchObject({ application_type: "native" });
+    }
+    const mixed = await f.request("/oauth2/register", { client_name: "Mixed", token_endpoint_auth_method: "none",
+      redirect_uris: ["http://localhost:33418/callback", "https://client.example.org/callback"] });
+    expect(mixed.status).toBe(400);
+    const plainHttp = await f.request("/oauth2/register", { client_name: "Plain HTTP", token_endpoint_auth_method: "none",
+      redirect_uris: ["http://client.example.org/callback"] });
+    expect(plainHttp.status).toBe(400);
     const invalid = await f.request("/oauth2/register", { client_name: "Bad", redirect_uris: [callback], application_type: "desktop",
       token_endpoint_auth_method: "none" });
     expect(invalid.status).toBe(400);
+    // A registration cannot opt out of PKCE: the flag is dropped and authorize still demands a challenge.
     const noPkce = await f.request("/oauth2/register", { client_name: "No PKCE", redirect_uris: [callback],
       token_endpoint_auth_method: "none", require_pkce: false });
-    expect(noPkce.status).toBe(400);
+    const noPkceClient = await noPkce.json();
+    expect(noPkceClient.require_pkce).not.toBe(false);
+    const withoutChallenge = new URLSearchParams(f.query);
+    withoutChallenge.set("client_id", noPkceClient.client_id);
+    withoutChallenge.delete("code_challenge");
+    withoutChallenge.delete("code_challenge_method");
+    const noPkceLocation = await redirectLocation(await f.request(`/oauth2/authorize?${withoutChallenge}`));
+    expect(noPkceLocation).not.toContain("/sign-in?");
     for (const redirect of [`${callback}/extra`, `${callback}?x=1`, "http://127.0.0.1:9876/Callback"]) {
       f.query.set("redirect_uri", redirect);
       const location = await redirectLocation(await f.request(`/oauth2/authorize?${f.query}`));

@@ -183,5 +183,38 @@ export function getMcpOAuthPlugins() {
       }],
     },
   } satisfies BetterAuthPlugin;
-  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding, defaultResource];
+  // Registration defaults application_type to "web", which forbids loopback redirects. Desktop and CLI MCP
+  // clients register http://localhost or 127.0.0.1 callbacks (RFC 8252) without sending application_type,
+  // so a registration whose redirects are all loopback or private-use schemes is treated as native.
+  const nativeRegistrationDefault = {
+    id: "mcp-native-registration-default",
+    schema: {},
+    hooks: {
+      before: [{
+        matcher: (ctx: HookEndpointContext) => ctx.path === "/oauth2/register",
+        handler: createAuthMiddleware(async (ctx) => {
+          const body: unknown = ctx.body;
+          if (!body || typeof body !== "object") return;
+          const values = body as Record<string, unknown>;
+          if (values.application_type !== undefined || !Array.isArray(values.redirect_uris)) return;
+          if (values.redirect_uris.length === 0 || !values.redirect_uris.every(isNativeRedirectUri)) return;
+          return { context: { body: { ...values, application_type: "native" } } };
+        }),
+      }],
+    },
+  } satisfies BetterAuthPlugin;
+  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding, defaultResource, nativeRegistrationDefault];
+}
+
+function isNativeRedirectUri(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  if (url.protocol === "https:") return false;
+  if (url.protocol === "http:") return ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  return true;
 }
