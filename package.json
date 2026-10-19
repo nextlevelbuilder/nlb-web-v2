@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env=staging",
-    "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env=\"\"",
+    "build:worker": "npm run build:packages && opennextjs-cloudflare build",
+    "preview": "npm run build:worker && opennextjs-cloudflare preview",
+    "deploy:staging": "npm run build:worker && opennextjs-cloudflare deploy --env=staging",
+    "deploy:production": "npm run build:worker && opennextjs-cloudflare deploy --env=\"\"",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
@@ -22,9 +22,7 @@
     "db:migrate:production": "wrangler d1 migrations apply DB --remote --env=\"\"",
     "build:packages": "npm run build --workspaces",
     "test:packages": "npm run test --workspaces",
-    "type-check:packages": "npm run type-check --workspaces",
-    "deploy:mcp:staging": "npm run deploy:staging -w @nextlevelbuilder/mcp",
-    "deploy:mcp:production": "npm run deploy:production -w @nextlevelbuilder/mcp"
+    "type-check:packages": "npm run type-check --workspaces"
   },
   "dependencies": {
     "@better-auth/mcp": "1.7.2",
