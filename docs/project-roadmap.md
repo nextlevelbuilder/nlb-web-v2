@@ -8,7 +8,7 @@ Status as of 2026-10-13. This page is a stateful record, so update the date when
 |---|---|
 | **M1: v2 site on hi@** (feature parity, Constellation design, D1, CI/CD, data migrated) | Deployed to staging and production on workers.dev. Domain cutover pending. |
 | **M2: Courses** (Stream signed URLs, a Polar product per video, VIP access) | Code deployed. Stream not enabled yet, so no videos are playable. |
-| **Blog** (block posts managed via REST, CLI, MCP) | Live on v2. The toolkits CLI and MCP tools are on `feat/blog-management`, not merged or released. |
+| **Blog** (block posts managed via REST, CLI, MCP) | Live on v2. The CLI and MCP tools live in `packages/` of this repo; the next `packages-v*` release publishes them. |
 | **Cutover** | Blocked on owner actions (below) |
 
 ## Blocked on the account owner
@@ -25,7 +25,6 @@ These come from the codebase review and the live check. Remove an item once it i
 - Hardening: a banned-user check on API keys, and an idempotent moderation decide.
 - Low review items: the `createCourseVideoSchema` locale default.
 - Set `CF_STREAM_API_TOKEN` (Stream: Edit) with the signing key once Stream is enabled; registering or publishing a video returns 503 until then ([courses.md](./courses.md#one-time-setup-cloudflare-stream)).
-- Put the rotated `MCP_DELEGATION_SECRET` from `.env` on the MCP worker when it moves to hi@ ([cutover-runbook.md](./cutover-runbook.md)).
 
 ## Open product questions
 

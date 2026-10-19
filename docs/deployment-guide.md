@@ -7,7 +7,12 @@ nextlevelbuilder.io runs as two Cloudflare Workers on the **hi@nextlevelbuilder.
 | production | `nextlevelbuilder-web` | `main` | https://nextlevelbuilder-web.hi-7ac.workers.dev | nextlevelbuilder.io, www |
 | staging | `nextlevelbuilder-web-staging` | `dev` | https://nextlevelbuilder-web-staging.hi-7ac.workers.dev | staging.nextlevelbuilder.io |
 
-Until the [cutover](./cutover-runbook.md), the final domains still serve the old site from the Digitop account.
+The MCP server is a third Worker on the same account, built from [`packages/mcp`](../packages/mcp) in this repository:
+
+| Environment | Worker | Branch | Endpoint |
+|---|---|---|---|
+| production | `nlb-directory-mcp` | `main` | https://mcp.nextlevelbuilder.io/mcp |
+| staging | `nlb-directory-mcp-staging` | `dev` | https://mcp-staging.nextlevelbuilder.io/mcp |
 
 Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Production is the top-level config, and staging is `env.staging`. What each binding is for: [system-architecture.md](./system-architecture.md#cloudflare-bindings).
 
@@ -32,8 +37,8 @@ wr secret list --env staging
 ## CI/CD
 
 [`.github/workflows/ci-deploy.yml`](../.github/workflows/ci-deploy.yml):
-- Every push and PR to `dev` or `main` runs type-check, lint and test.
-- A push to `dev` applies D1 migrations to staging, builds and deploys staging.
+- Every push and PR to `dev` or `main` runs type-check, lint and test for the web app, then builds, type-checks and tests the `packages/*` workspaces (`npm run build:packages`, `type-check:packages`, `test:packages`).
+- A push to `dev` applies D1 migrations to staging, builds and deploys the staging web Worker, then deploys the staging MCP Worker.
 - A push to `main` does the same for production. The workflow file owns the env selection and the build-time `NEXT_PUBLIC_*` values.
 - PR runs get no secrets.
 
@@ -87,6 +92,40 @@ Also export the other `NEXT_PUBLIC_*` values the workflow sets (Polar product id
 `npm run deploy:staging` (`--env=staging`) and `npm run deploy:production` (`--env=""`) build and deploy in one step with the environment pinned, but they do not apply the account pin, the token rule or the build-time values above.
 
 Roll back a bad deploy with `wr deployments list --env=<env>`, then `wr rollback <version-id> --env=<env>`.
+
+## MCP worker
+
+Config: [`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc). Production is the top-level config and staging is `env.staging`. Its custom domains are declared there, so `wrangler deploy` attaches them.
+
+```bash
+npm run deploy:mcp:staging      # builds contracts, deploys nlb-directory-mcp-staging
+npm run deploy:mcp:production   # deploys nlb-directory-mcp
+```
+
+Run these with the same account pin and token rule as `wr` above. The MCP worker needs two secrets per environment:
+- `MCP_DELEGATION_SECRET`: **identical** to the web worker of the same environment. Generate one value and pipe it to both workers without printing it:
+
+  ```bash
+  secret=$(openssl rand -base64 48)
+  printf %s "$secret" | wr secret put MCP_DELEGATION_SECRET --env staging
+  printf %s "$secret" | (cd packages/mcp && env -u CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID=7ac87c90789159ae1b10b7d78f5dcc08 \
+    npx wrangler secret put MCP_DELEGATION_SECRET --env staging)
+  unset secret
+  ```
+
+  Assertions signed with an old value fail until both sides match.
+- `WORKER_AUTH_TOKEN`: optional, only for the static-token fallback when OAuth is disabled.
+
+The web worker's `MCP_OAUTH_RESOURCE` var must equal the MCP worker's `NLB_OAUTH_RESOURCE` for the same environment, otherwise tokens are issued for the wrong audience and the MCP worker rejects them. Protocol and OAuth details: [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server).
+
+## npm packages
+
+`@nextlevelbuilder/contracts`, `@nextlevelbuilder/cli` and `@nextlevelbuilder/mcp` are published by [`release-packages.yml`](../.github/workflows/release-packages.yml):
+1. Bump `version` in all three `packages/*/package.json` to the same value and merge to `main`.
+2. Push a tag `packages-v<version>` on that `main` commit.
+3. The workflow builds, tests, packs and runs `npm publish --provenance` through npm trusted publishing (OIDC, no token).
+
+Each package's trusted publisher on npmjs.com must name repository `nextlevelbuilder/nlb-web-v2` and workflow `release-packages.yml`. `workflow_dispatch` builds and packs without publishing.
 
 ## Media
 

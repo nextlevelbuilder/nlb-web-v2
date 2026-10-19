@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `nlb-directory-toolkits` monorepo is engineered according to the **One Source of Truth / Thin Adapters** pattern:
+The agent toolkits in `packages/` are engineered according to the **One Source of Truth / Thin Adapters** pattern:
 
 ```text
                                   ┌─────────────────────────────┐

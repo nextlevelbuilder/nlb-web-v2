@@ -1,9 +1,7 @@
-# Next Level Builders Directory Toolkits
+# Next Level Builders agent toolkits
 
-> Monorepo containing the official TypeScript Contracts, CLI (`nlb`), Model Context Protocol (MCP) Server, and AgentSkill for **[Next Level Builders Directory](https://nextlevelbuilder.io)**.
+> The official TypeScript contracts, CLI (`nlb`), Model Context Protocol (MCP) server and AgentSkill for **[Next Level Builders](https://nextlevelbuilder.io)**. They live in the `packages/` npm workspaces of nlb-web-v2; the old `nlb-directory-toolkits` repository is superseded.
 
-[![CI](https://github.com/nextlevelbuilder/nlb-directory-toolkits/actions/workflows/ci.yml/badge.svg)](https://github.com/nextlevelbuilder/nlb-directory-toolkits/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/@nextlevelbuilder/cli.svg)](https://www.npmjs.com/package/@nextlevelbuilder/cli)
 
 ---
@@ -11,22 +9,22 @@
 ## 📦 Packages & Architecture
 
 ```text
-nlb-directory-toolkits/
+nlb-web-v2/
 ├── packages/
-│   ├── contracts/       # @nextlevelbuilder/contracts: Zod schemas, 17 block types, 5 templates, SHA-256 hasher, wire APIs
-│   ├── cli/             # @nextlevelbuilder/cli: `nlb` binary (validate, preview, submit, list, get, rankings, stats, traffic, doctor, vote, keys, upload, checkout, blog)
-│   └── mcp/             # @nextlevelbuilder/mcp: Model Context Protocol server (stdio & Cloudflare Workers, 27 tools)
+│   ├── contracts/       # @nextlevelbuilder/contracts: Zod schemas shared by the web app, CLI and MCP
+│   ├── cli/             # @nextlevelbuilder/cli: the `nlb` binary
+│   └── mcp/             # @nextlevelbuilder/mcp: MCP server (stdio and Cloudflare Workers)
 ├── skills/
-│   └── nlb-submit/      # SKILL.md: Standard AgentSkill for Claude Code, Cursor, Codex, OpenCode, skills.sh
-└── docs/                # Detailed guides for CLI, MCP, Contracts, and Architecture
+│   └── nlb-submit/      # SKILL.md: AgentSkill for Claude Code, Cursor, Codex, OpenCode, skills.sh
+└── docs/toolkits/       # CLI, MCP, contracts and architecture guides
 ```
 
-| Package | Description | Status |
-|---|---|---|
-| **`@nextlevelbuilder/contracts`** | Canonical server-synchronized schemas for 17 block types, 5 layout templates, deterministic canonical SHA-256 hasher, and API wire contracts. | [![npm](https://img.shields.io/badge/contracts-v0.2.1-blue)](packages/contracts) |
-| **`@nextlevelbuilder/cli`** | Developer & agent CLI binary `nlb` with validation, terminal preview, submissions with Polar payments, rankings, stats, doctor, voting, and uploads. | [![npm](https://img.shields.io/badge/cli-v0.2.1-green)](packages/cli) |
-| **`@nextlevelbuilder/mcp`** | Model Context Protocol server exposing 27 tools (including blog management) for local AI IDEs and Cloudflare Workers edge runtime. | [![npm](https://img.shields.io/badge/mcp-v0.2.1-purple)](packages/mcp) |
-| **`skills/nlb-submit`** | Cross-marketplace AgentSkill for autonomous repository scanning, block formatting, and directory submission. | [![skill](https://img.shields.io/badge/skill-nlb--submit-orange)](skills/nlb-submit/SKILL.md) |
+| Package | Description |
+|---|---|
+| **`@nextlevelbuilder/contracts`** | Product document and block schemas, layout templates, the canonical SHA-256 hasher, and API wire contracts (blog, Builder League, traffic). The web app imports the same source. |
+| **`@nextlevelbuilder/cli`** | The `nlb` binary: validation, preview, submissions, rankings, stats, traffic, blog management, Builder League and onboarding status. |
+| **`@nextlevelbuilder/mcp`** | MCP server for local IDEs (stdio) and the hosted Worker at `https://mcp.nextlevelbuilder.io/mcp` (OAuth 2.1). |
+| **`skills/nlb-submit`** | AgentSkill for repository scanning, block formatting and directory submission. |
 
 ---
 
@@ -56,7 +54,7 @@ npx @nextlevelbuilder/cli stats
 # Query your product's NLB page traffic using the configured API key:
 npx @nextlevelbuilder/cli traffic my-awesome-tool --json
 
-# Manage blog posts (admin API key; see docs/cli.md):
+# Manage blog posts (admin API key; see cli.md):
 npx @nextlevelbuilder/cli blog blocks --json
 npx @nextlevelbuilder/cli blog publish <postId> --version 3
 
@@ -118,76 +116,36 @@ Every listing in Next Level Builders is composed of modular, strongly-typed bloc
 14. **`verification`**: Metric and platform provenance proofs.
 15. **`milestones`**: Key historical achievements with metrics.
 16. **`caseStudy`**: In-depth customer story with problem, solution, and quantifiable results.
-17. **`analytics`**: Real NLB product page traffic with configurable title and 7/30/90-day period. Publishing opts into public aggregate totals and daily series; detailed traffic remains organization-authorized. See [Analytics block and traffic contracts](docs/contracts.md).
+17. **`analytics`**: Real NLB product page traffic with configurable title and 7/30/90-day period. Publishing opts into public aggregate totals and daily series; detailed traffic remains organization-authorized. See [Analytics block and traffic contracts](./contracts.md).
 
 ---
 
-## 🛠️ Development & Monorepo Workflow
+## 🛠️ Development
 
-### Prerequisites
-- Node.js >= 18.0.0
-- pnpm >= 9.0.0
+Requires Node.js 20+ (CI uses 24). Run from the nlb-web-v2 root:
 
-### Commands
 ```bash
-# Install dependencies
-pnpm install
-
-# Build all packages in topological order
-pnpm build
-
-# Run comprehensive test suite across all packages (Vitest)
-pnpm test
-
-# Typecheck with TypeScript strict mode
-pnpm type-check
+npm ci
+npm run build:packages        # contracts first, then cli and mcp
+npm run test:packages         # Vitest in each workspace
+npm run type-check:packages
 ```
+
+Run one workspace with `npm run <script> -w @nextlevelbuilder/<name>`.
 
 ---
 
 ## 📖 Documentation
-- [CLI Reference](docs/cli.md) — Comprehensive command and flag documentation
-- [MCP Reference](docs/mcp.md) — Tool specifications and Cloudflare Workers deployment
-- [Contracts Reference](docs/contracts.md) — Zod schemas and layout templates
-- [System Architecture](docs/architecture.md) — Core/adapter boundary and cryptographic design
+- [CLI Reference](./cli.md): commands and flags
+- [MCP Reference](./mcp.md): tools, protocol, OAuth and Workers deployment
+- [Contracts Reference](./contracts.md): Zod schemas and layout templates
+- [System Architecture](./architecture.md): core/adapter boundary and hashing
 
 ---
 
 ## 📄 License
-MIT © [Next Level Builders](https://nextlevelbuilder.io)
+MIT © [Next Level Builders](https://nextlevelbuilder.io). Each package ships its own `LICENSE`.
 
 ## Publishing packages
 
-[Release workflow](.github/workflows/release.yml) publishes all three packages on a
-`v<version>` tag whose commit belongs to `main`. The tag must match every package
-version. Merge a reviewed version change first, then create the matching tag.
-Manual workflow runs build, test, type-check and upload `npm-packages` tarballs
-without publishing. Release builds use Node 24 and npm 11.19.0. pnpm packs the
-workspace dependencies into registry-compatible versions; npm publishes those
-archives using GitHub OIDC and automatically attaches provenance.
-
-Configure each package's npm Trusted Publisher with:
-
-- Provider: GitHub Actions
-- Repository: `nextlevelbuilder/nlb-directory-toolkits`
-- Workflow filename: `release.yml`
-- Environment: leave empty
-- Allowed action: direct `npm publish`
-
-No `NPM_TOKEN` or `NODE_AUTH_TOKEN` repository secret is required. npm requires a
-package to exist before trust can be configured. For the first release only, run
-the workflow manually, download and inspect its three tarballs, and publish them
-with an authenticated maintainer account (contracts first). Then register each
-package using npm 11.15.0 or later with account 2FA enabled:
-
-```bash
-npm trust github @nextlevelbuilder/contracts --repo nextlevelbuilder/nlb-directory-toolkits --file release.yml --allow-publish --yes
-npm trust github @nextlevelbuilder/cli --repo nextlevelbuilder/nlb-directory-toolkits --file release.yml --allow-publish --yes
-npm trust github @nextlevelbuilder/mcp --repo nextlevelbuilder/nlb-directory-toolkits --file release.yml --allow-publish --yes
-```
-
-Publish subsequent versions through tags and verify the workflow, registry
-versions and provenance before calling the release complete. If a release partly
-publishes, inspect the registry before retrying: npm versions are immutable.
-See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and
-[npm trust](https://docs.npmjs.com/cli/v11/commands/npm-trust/) for account setup.
+Releases are published from nlb-web-v2 by [`release-packages.yml`](../../.github/workflows/release-packages.yml); the procedure and trusted-publisher settings are in [deployment-guide.md](../deployment-guide.md#npm-packages). npm versions are immutable: if a release partly publishes, inspect the registry before retrying.
