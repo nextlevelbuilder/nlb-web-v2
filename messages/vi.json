@@ -486,7 +486,8 @@
     "invalidOtp": "Vui lòng nhập đầy đủ mã OTP 6 chữ số.",
     "verifyFailed": "Mã OTP không hợp lệ hoặc đã hết hạn.",
     "loginSuccess": "Đăng nhập thành công! Đang chuyển hướng...",
-    "oauthNotConfigured": "{provider} OAuth chưa được cấu hình. Vui lòng đăng nhập bằng mã Email OTP."
+    "oauthNotConfigured": "{provider} OAuth chưa được cấu hình. Vui lòng đăng nhập bằng mã Email OTP.",
+    "oauthLinkExpired": "Liên kết đăng nhập từ ứng dụng của bạn đã hết hạn. Hãy quay lại ứng dụng và kết nối lại."
   },
   "profile": {
     "loginRequiredTitle": "Yêu Cầu Đăng Nhập",

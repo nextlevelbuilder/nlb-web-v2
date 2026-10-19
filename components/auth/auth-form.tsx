@@ -17,6 +17,11 @@ import {
 import { authClient, signIn } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  isInvalidOAuthSignatureError,
+  isOAuthSignInLinkExpired,
+  isOAuthSignInQuery,
+} from '@/lib/auth-oauth-sign-in-link';
 
 /** Email OTP creates the account on first verification, so sign-in and sign-up share one form. */
 type AuthResult = { error?: { message?: string } | null; data?: { url?: unknown } | null } | null | undefined;
@@ -46,13 +51,21 @@ export default function AuthForm() {
   // Only local continuations may be used by the ordinary sign-in flow.
   const callbackUrl = requestedCallback?.startsWith('/') && !requestedCallback.startsWith('//') && !/[\\\x00-\x20]/.test(requestedCallback)
     ? requestedCallback : '/studio';
-  const isOAuth = searchParams.has('sig') && searchParams.has('ba_param');
+  const isOAuth = isOAuthSignInQuery(searchParams);
+  /** An expired authorize link cannot be repaired here; the user must restart from their app. */
+  const failureMessage = (error: NonNullable<NonNullable<AuthResult>['error']>, fallback: string) =>
+    isOAuth && isInvalidOAuthSignatureError(error) ? t('oauthLinkExpired') : error.message || fallback;
 
   // Step 1: Send OTP to email
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       setError(t('invalidEmail'));
+      return;
+    }
+    if (isOAuthSignInLinkExpired(searchParams)) {
+      setSuccess(null);
+      setError(t('oauthLinkExpired'));
       return;
     }
 
@@ -74,7 +87,7 @@ export default function AuthForm() {
       });
 
       if (res?.error) {
-        throw new Error(res.error.message || t('sendFailed'));
+        throw new Error(failureMessage(res.error, t('sendFailed')));
       }
 
       setStep('otp');
@@ -112,7 +125,7 @@ export default function AuthForm() {
       });
 
       if (res?.error) {
-        throw new Error(res.error.message || t('verifyFailed'));
+        throw new Error(failureMessage(res.error, t('verifyFailed')));
       }
 
       if (isOAuth) {
