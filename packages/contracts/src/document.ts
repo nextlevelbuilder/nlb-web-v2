@@ -1,26 +1,15 @@
 import { z } from "zod";
 import { AnalyticsBlockSchema, BlockSchema, type Block } from "./blocks.js";
-import { SafeHttpUrlSchema } from "./blocks.js";
+import { SafeHttpUrlSchema } from "./http-url.js";
+import { ProductDocumentSchema, type ProductDocument } from "./product-document.js";
 import { canonicalizeJson, computeContentHashSync, computeContentHash } from "./hasher.js";
 
 export const Sha256HexHashSchema = z
   .string()
   .regex(/^[a-f0-9]{64}$/, "Hash must be a 64-character lowercase hexadecimal SHA-256 string");
 
-// 1. Canonical Server Product Document Schema (strictly matching nlb-web server contract)
-export const ProductDocumentSchema = z.object({
-  schemaVersion: z.literal(1).default(1),
-  title: z.string().min(1).max(100),
-  tagline: z.string().min(1).max(200),
-  description: z.string().min(10).max(2000),
-  websiteUrl: z.string().url(),
-  logoUrl: z.string().url().optional(),
-  categorySlugs: z.array(z.string()).min(1).max(5),
-  tagSlugs: z.array(z.string()).max(10).default([]),
-  blocks: z.array(BlockSchema).default([]),
-});
-
-export type ProductDocument = z.infer<typeof ProductDocumentSchema>;
+// 1. Canonical server product document schema (owned by the web API).
+export { ProductDocumentSchema, type ProductDocument };
 
 // 2. Author Product Metadata & Document Schema (allows developer convenience like name, category, tags)
 export const AuthorProductDocumentSchema = z.object({

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ProductDocumentSchema, ProductSummarySchema, ProductRevisionSchema } from "./document.js";
-import { SafeHttpUrlSchema } from "./blocks.js";
+import { SafeHttpUrlSchema } from "./http-url.js";
 
 // 1. POST /api/v1/products - Create Product Draft
 export const ProductCreateInputSchema = z.object({

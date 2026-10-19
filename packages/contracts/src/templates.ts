@@ -1,19 +1,27 @@
-import type { Block } from "./blocks";
+import type { Block } from "./blocks.js";
+import { ProductDocument, ProductDocumentSchema } from "./document.js";
 
 export interface LayoutTemplate {
   id: string;
+  slug: string;
   name: string;
   description: string;
   badge: string;
+  recommendedCategory?: string;
+  blockTypes?: Block["type"][];
   generateBlocks: (meta: { title: string; tagline: string; websiteUrl: string; screenshotUrl?: string }) => Block[];
+  buildDocument?: (overrides: Partial<ProductDocument> & { title?: string; name?: string; slug?: string; tagline: string; description?: string; websiteUrl: string }) => ProductDocument;
 }
 
 export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   {
     id: "saas-launch",
+    slug: "saas-launch",
     name: "SaaS Launch Template",
     description: "Standard high-conversion layout for software products, micro-SaaS, and web platforms.",
     badge: "Most Popular",
+    recommendedCategory: "saas",
+    blockTypes: ["hero", "mediaGallery", "grid", "techStack", "faq", "cta"],
     generateBlocks: (meta) => [
       {
         id: "hero-1",
@@ -26,22 +34,41 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
           badge: "Verified Launch"
         }
       },
-      ...(meta.screenshotUrl ? [{
-        id: "media-1",
-        type: "mediaGallery" as const,
-        props: {
-          images: [{ url: meta.screenshotUrl, aspectRatio: "16:9" as const, caption: `${meta.title} Official Dashboard Preview` }]
-        }
-      }] : []),
+      ...(meta.screenshotUrl
+        ? [
+            {
+              id: "media-1",
+              type: "mediaGallery" as const,
+              props: {
+                images: [
+                  {
+                    url: meta.screenshotUrl,
+                    aspectRatio: "16:9" as const,
+                    caption: `${meta.title} Official Dashboard Preview`
+                  }
+                ]
+              }
+            }
+          ]
+        : []),
       {
         id: "grid-1",
         type: "grid",
         props: {
           columns: 3,
           items: [
-            { title: "Sub-millisecond Latency", description: "Engineered for maximum edge performance and instant client responses." },
-            { title: "Deterministic Security", description: "Protected by Turnstile verification and cryptographic audit hashes." },
-            { title: "Frictionless Integration", description: "Connect with developer CLI tools, MCP servers, and modern SDKs." }
+            {
+              title: "Sub-millisecond Latency",
+              description: "Engineered for maximum edge performance and instant client responses."
+            },
+            {
+              title: "Deterministic Security",
+              description: "Protected by Turnstile verification and cryptographic audit hashes."
+            },
+            {
+              title: "Frictionless Integration",
+              description: "Connect with developer CLI tools, MCP servers, and modern SDKs."
+            }
           ]
         }
       },
@@ -62,8 +89,14 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
         type: "faq",
         props: {
           items: [
-            { question: `How does ${meta.title} work?`, answer: `${meta.title} provides a streamlined, high-trust developer experience.` },
-            { question: "Can I integrate with my existing workflow?", answer: "Yes, standard APIs and CLI tools are provided out of the box." }
+            {
+              question: `How does ${meta.title} work?`,
+              answer: `${meta.title} provides a streamlined, high-trust developer experience.`
+            },
+            {
+              question: "Can I integrate with my existing workflow?",
+              answer: "Yes, standard APIs and CLI tools are provided out of the box."
+            }
           ]
         }
       },
@@ -81,9 +114,12 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   },
   {
     id: "ai-agent",
+    slug: "ai-agent",
     name: "AI Tool & Autonomous Agent Template",
     description: "Designed for LLM applications, AI agents, cognitive memory layers, and MCP toolkits.",
     badge: "AI Native",
+    recommendedCategory: "ai-agent",
+    blockTypes: ["hero", "mediaGallery", "grid", "milestones", "cta"],
     generateBlocks: (meta) => [
       {
         id: "hero-1",
@@ -96,22 +132,41 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
           badge: "AI Agent Framework"
         }
       },
-      ...(meta.screenshotUrl ? [{
-        id: "media-1",
-        type: "mediaGallery" as const,
-        props: {
-          images: [{ url: meta.screenshotUrl, aspectRatio: "16:9" as const, caption: `${meta.title} Agent Runtime Console` }]
-        }
-      }] : []),
+      ...(meta.screenshotUrl
+        ? [
+            {
+              id: "media-1",
+              type: "mediaGallery" as const,
+              props: {
+                images: [
+                  {
+                    url: meta.screenshotUrl,
+                    aspectRatio: "16:9" as const,
+                    caption: `${meta.title} Agent Runtime Console`
+                  }
+                ]
+              }
+            }
+          ]
+        : []),
       {
         id: "grid-1",
         type: "grid",
         props: {
           columns: 3,
           items: [
-            { title: "Continuous Reasoning", description: "Multi-model reasoning protocols with autonomous verification loops." },
-            { title: "Long-Term Memory", description: "Episodic and semantic memory that survives session resets." },
-            { title: "Model Context Protocol", description: "Full MCP server integration for Cursor, Claude Code, and Codex." }
+            {
+              title: "Continuous Reasoning",
+              description: "Multi-model reasoning protocols with autonomous verification loops."
+            },
+            {
+              title: "Long-Term Memory",
+              description: "Episodic and semantic memory that survives session resets."
+            },
+            {
+              title: "Model Context Protocol",
+              description: "Full MCP server integration for Cursor, Claude Code, and Codex."
+            }
           ]
         }
       },
@@ -120,8 +175,16 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
         type: "milestones",
         props: {
           items: [
-            { title: "v1.0 Architecture Released", date: "2026-08", description: "Core autonomous execution protocol finalized." },
-            { title: "10,000+ Agent Tasks Executed", date: "2026-09", description: "High-throughput production milestone reached." }
+            {
+              title: "v1.0 Architecture Released",
+              date: "2026-08",
+              description: "Core autonomous execution protocol finalized."
+            },
+            {
+              title: "10,000+ Agent Tasks Executed",
+              date: "2026-09",
+              description: "High-throughput production milestone reached."
+            }
           ]
         }
       },
@@ -139,9 +202,12 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   },
   {
     id: "dev-tool",
+    slug: "dev-tool",
     name: "Developer Framework & CLI Template",
     description: "Tailored for command-line tools, backend engines, npm packages, and infrastructure frameworks.",
     badge: "Developer First",
+    recommendedCategory: "developer-tools",
+    blockTypes: ["hero", "techStack", "grid", "changelog", "cta"],
     generateBlocks: (meta) => [
       {
         id: "hero-1",
@@ -171,8 +237,14 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
         props: {
           columns: 2,
           items: [
-            { title: "Zero Configuration Required", description: "Sane defaults with declarative config overrides when needed." },
-            { title: "CI/CD Automation", description: "Seamless execution in GitHub Actions, GitLab CI, and Docker." }
+            {
+              title: "Zero Configuration Required",
+              description: "Sane defaults with declarative config overrides when needed."
+            },
+            {
+              title: "CI/CD Automation",
+              description: "Seamless execution in GitHub Actions, GitLab CI, and Docker."
+            }
           ]
         }
       },
@@ -184,10 +256,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
             {
               version: "1.0.0",
               date: "2026-09-02",
-              changes: [
-                "Initial stable release with full CLI suite",
-                "Cryptographic SHA-256 validation"
-              ]
+              changes: ["Initial stable release with full CLI suite", "Cryptographic SHA-256 validation"]
             }
           ]
         }
@@ -206,9 +275,12 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   },
   {
     id: "community-curated",
+    slug: "community-curated",
     name: "Curated Directory / Community Template",
     description: "Ideal for curated catalogs, founder collectives, community directories, and knowledge wikis.",
     badge: "Community Hub",
+    recommendedCategory: "community",
+    blockTypes: ["hero", "founder", "grid", "cta"],
     generateBlocks: (meta) => [
       {
         id: "hero-1",
@@ -256,9 +328,12 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   },
   {
     id: "minimalist",
+    slug: "minimalist",
     name: "Minimalist High-Impact Showcase",
     description: "Compact single-fold layout highlighting essential product screenshots, core metrics, and primary CTA.",
     badge: "Minimalist",
+    recommendedCategory: "showcase",
+    blockTypes: ["hero", "mediaGallery", "cta"],
     generateBlocks: (meta) => [
       {
         id: "hero-1",
@@ -270,13 +345,23 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
           primaryCtaUrl: meta.websiteUrl
         }
       },
-      ...(meta.screenshotUrl ? [{
-        id: "media-1",
-        type: "mediaGallery" as const,
-        props: {
-          images: [{ url: meta.screenshotUrl, aspectRatio: "16:9" as const, caption: `${meta.title} Showcase Screenshot` }]
-        }
-      }] : []),
+      ...(meta.screenshotUrl
+        ? [
+            {
+              id: "media-1",
+              type: "mediaGallery" as const,
+              props: {
+                images: [
+                  {
+                    url: meta.screenshotUrl,
+                    aspectRatio: "16:9" as const,
+                    caption: `${meta.title} Showcase Screenshot`
+                  }
+                ]
+              }
+            }
+          ]
+        : []),
       {
         id: "cta-1",
         type: "cta",
@@ -290,3 +375,81 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ]
   }
 ];
+
+export function listTemplates(): LayoutTemplate[] {
+  return LAYOUT_TEMPLATES;
+}
+
+const SLUG_ALIASES: Record<string, string> = {
+  "developer-cli": "dev-tool",
+  "ai-agent-tool": "ai-agent",
+  "curated-community": "community-curated",
+  "minimalist-showcase": "minimalist"
+};
+
+export function getTemplate(slugOrName: string): LayoutTemplate | undefined {
+  const raw = slugOrName.toLowerCase().trim();
+  const query = SLUG_ALIASES[raw] || raw;
+  return LAYOUT_TEMPLATES.find(
+    (t) =>
+      t.id.toLowerCase() === query ||
+      t.slug.toLowerCase() === query ||
+      t.name.toLowerCase() === query ||
+      t.name.toLowerCase().includes(query)
+  );
+}
+
+export function buildDocumentFromTemplate(
+  templateSlug: string,
+  overrides: {
+    title?: string;
+    name?: string;
+    slug?: string;
+    tagline?: string;
+    description?: string;
+    websiteUrl?: string;
+    categorySlugs?: string[];
+    tagSlugs?: string[];
+    screenshotUrl?: string;
+  }
+): ProductDocument {
+  const t = getTemplate(templateSlug) || LAYOUT_TEMPLATES[0];
+  const title = overrides.title || overrides.name || "My Project";
+  const tagline = overrides.tagline || "Built for high-impact developers.";
+  const description = overrides.description || `${title} provides high-trust capabilities for modern builders.`;
+  const websiteUrl = overrides.websiteUrl || "https://example.com";
+  const categorySlugs = overrides.categorySlugs && overrides.categorySlugs.length > 0 ? overrides.categorySlugs : [t.recommendedCategory || "developer-tools"];
+  const tagSlugs = overrides.tagSlugs || ["ai", "devtools"];
+
+  const blocks = t.generateBlocks({
+    title,
+    tagline,
+    websiteUrl,
+    screenshotUrl: overrides.screenshotUrl
+  });
+
+  return ProductDocumentSchema.parse({
+    schemaVersion: 1,
+    title,
+    tagline,
+    description: description.length < 10 ? `${description} - Next Level Builders` : description,
+    websiteUrl,
+    categorySlugs,
+    tagSlugs,
+    blocks
+  });
+}
+
+// Attach buildDocument method to each template
+for (const t of LAYOUT_TEMPLATES) {
+  t.buildDocument = (overrides) => buildDocumentFromTemplate(t.slug, overrides);
+}
+
+export const createDocumentFromTemplate = buildDocumentFromTemplate;
+
+// Backward compatibility aliases
+export const SaasLaunchTemplate = LAYOUT_TEMPLATES[0];
+export const AiAgentTemplate = LAYOUT_TEMPLATES[1];
+export const DeveloperCliTemplate = LAYOUT_TEMPLATES[2];
+export const CuratedCommunityTemplate = LAYOUT_TEMPLATES[3];
+export const MinimalistShowcaseTemplate = LAYOUT_TEMPLATES[4];

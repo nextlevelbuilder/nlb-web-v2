@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { HttpUrlSchema } from "./http-url";
-import { BlockSchema } from "./blocks";
+import { HttpUrlSchema } from "./http-url.js";
+import { BlockSchema } from "./blocks.js";
 
 // Product Listing Document Schema
 export const ProductDocumentSchema = z.object({

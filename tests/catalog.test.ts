@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeContentHash, ProductDocumentSchema, type ProductDocument } from "@/packages/contracts/src";
+import { computeContentHashSync, ProductDocumentSchema, type ProductDocument } from "@/packages/contracts/src";
 
 describe("Catalog Contracts & Canonical Hash Computation", () => {
   it("should generate identical content hashes regardless of object key order", () => {
@@ -44,8 +44,8 @@ describe("Catalog Contracts & Canonical Hash Computation", () => {
       categorySlugs: ["ai-tools", "developer-tools"],
     };
 
-    const hash1 = computeContentHash(doc1);
-    const hash2 = computeContentHash(doc2);
+    const hash1 = computeContentHashSync(doc1);
+    const hash2 = computeContentHashSync(doc2);
 
     expect(hash1).toBe(hash2);
     expect(hash1.length).toBe(64); // SHA-256 hex string

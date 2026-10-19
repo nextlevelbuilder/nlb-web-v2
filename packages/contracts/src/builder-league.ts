@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HttpUrlSchema } from "./http-url";
+import { HttpUrlSchema } from "./http-url.js";
 
 /**
  * Public Builder League API payloads (`/api/v1/builder-*`) for external clients (CLI, MCP).
