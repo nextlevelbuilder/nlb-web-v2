@@ -15,8 +15,10 @@ import { voteCommand } from "./commands/vote.js";
 import { uploadCommand } from "./commands/upload.js";
 import { checkoutCommand } from "./commands/checkout.js";
 import { registerBlogCommands, type BlogCommandDeps } from "./commands/blog.js";
+import { registerBuilderCommands, type BuilderCommandDeps } from "./commands/builder.js";
+import { registerOnboardingCommands, type OnboardingCommandDeps } from "./commands/onboarding.js";
 
-export function createProgram(deps: { blog?: BlogCommandDeps } = {}): Command {
+export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderCommandDeps; onboarding?: OnboardingCommandDeps } = {}): Command {
   const program = new Command();
 
   program
@@ -195,6 +197,8 @@ export function createProgram(deps: { blog?: BlogCommandDeps } = {}): Command {
     });
 
   registerBlogCommands(program, deps.blog);
+  registerBuilderCommands(program, deps.builder);
+  registerOnboardingCommands(program, deps.onboarding);
 
   return program;
 }

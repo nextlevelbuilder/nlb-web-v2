@@ -241,6 +241,20 @@ export function registerBlogCommands(program: Command, deps: BlogCommandDeps = {
       });
     });
 
+  withCommonOptions(blog.command("revision").description("Get one revision, including its content snapshot"))
+    .argument("<id>", "Post id")
+    .argument("<revisionId>", "Revision id")
+    .action(async (id: string, revisionId: string, opts: BlogCommonOptions) => {
+      await runBlogAction(opts, deps, (c) => c.getRevision(id, revisionId), ({ data }) => {
+        console.log(pc.cyan(`\nRevision v${data.version} of post ${safe(data.postId)}`));
+        console.log(`id: ${safe(data.id)} | createdAt: ${safe(data.createdAt)} | note: ${safe(data.note ?? "-")}`);
+        if (data.snapshot) {
+          console.log(`snapshot: ${safe(data.snapshot.locale)}/${safe(data.snapshot.slug)} "${safe(data.snapshot.title)}" (${data.snapshot.blocks.length} blocks)`);
+        }
+        console.log(pc.dim("Use --json for the full snapshot.\n"));
+      });
+    });
+
   withCommonOptions(blog.command("restore").description("Restore a revision's content as a new version (status unchanged)"))
     .argument("<id>", "Post id")
     .argument("<revisionId>", "Revision id to restore")

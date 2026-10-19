@@ -185,4 +185,14 @@ describe("CLI blog commands", () => {
     expect(error).toBeInstanceOf(BlogApiError);
     expect((error as BlogApiError).currentVersion).toBe(7);
   });
+
+  it("gets one revision with its snapshot", async () => {
+    const revision = { id: "rev_9", postId: "post_1", version: 2, note: null, actorId: "u_1", createdAt: "2026-10-13T00:00:00.000Z", snapshot: post };
+    const fetchFn = mockFetch({ data: revision });
+    const { json } = await run(["revision", "post_1", "rev_9", "--json"], { fetchFn });
+    expect(json()).toEqual({ data: revision });
+    const c = call(fetchFn);
+    expect(c.init.method).toBe("GET");
+    expect(c.url.pathname).toBe("/api/v1/blog/posts/post_1/revisions/rev_9");
+  });
 });

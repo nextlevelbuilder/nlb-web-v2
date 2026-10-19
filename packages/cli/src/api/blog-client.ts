@@ -9,6 +9,7 @@ import {
   BlogPostResponseSchema,
   BlogPostUpdateInputSchema,
   BlogRevisionListResponseSchema,
+  BlogRevisionResponseSchema,
   BlogValidateInputSchema,
   BlogValidateResponseSchema,
   BlogVersionInputSchema,
@@ -20,6 +21,7 @@ import {
   type BlogPostListResponse,
   type BlogPostResponse,
   type BlogRevisionListResponse,
+  type BlogRevisionResponse,
   type BlogValidateResponse
 } from "@nextlevelbuilder/contracts";
 
@@ -184,6 +186,10 @@ export class NlbBlogClient {
 
   async listRevisions(id: string): Promise<BlogRevisionListResponse> {
     return this.send({ method: "GET", path: `/api/v1/blog/posts/${enc(id)}/revisions`, schema: BlogRevisionListResponseSchema });
+  }
+
+  async getRevision(id: string, revisionId: string): Promise<BlogRevisionResponse> {
+    return this.send({ method: "GET", path: `/api/v1/blog/posts/${enc(id)}/revisions/${enc(revisionId)}`, schema: BlogRevisionResponseSchema });
   }
 
   async restoreRevision(id: string, revisionId: string, version: number): Promise<BlogPostResponse> {

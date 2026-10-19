@@ -18,4 +18,8 @@ export * from "./commands/config.js";
 export * from "./commands/doctor.js";
 export * from "./commands/blog.js";
 export * from "./api/blog-client.js";
+export * from "./commands/builder.js";
+export * from "./api/builder-client.js";
+export * from "./commands/onboarding.js";
+export * from "./api/onboarding-client.js";
 export * from "./cli.js";
