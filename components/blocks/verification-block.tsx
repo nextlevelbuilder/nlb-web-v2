@@ -1,5 +1,5 @@
 import React from "react";
-import type { VerificationBlock } from "@/packages/contracts/src";
+import type { VerificationBlock } from "@nextlevelbuilder/contracts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Calendar, FileText } from "lucide-react";

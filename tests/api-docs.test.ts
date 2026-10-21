@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GET as getDocs } from "@/app/api-docs/route";
 import { GET as getLegacyDocs } from "@/app/api/docs/route";
 import { GET as getSpec } from "@/app/api/openapi.json/route";
-import { BlockSchema } from "@/packages/contracts/src/blocks";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 describe("interactive API documentation", () => {
   it("serves a readable index and pinned interactive reference at the requested URL", async () => {
@@ -15,7 +15,7 @@ describe("interactive API documentation", () => {
     expect(html).not.toContain("proxy.scalar.com");
     expect(html).toContain("/api/v1/products/{slug}/pulse");
     expect(html).toContain("/api/v1/products/{slug}/traffic");
-    expect(html).toContain("https://mcp.nextlevelbuilder.io/mcp");
+    expect(html).toContain("https://nextlevelbuilder.io/mcp");
     expect(html).toContain('href="/api-docs.md"');
   });
 

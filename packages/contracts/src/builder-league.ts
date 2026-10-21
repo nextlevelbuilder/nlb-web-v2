@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HttpUrlSchema } from "./http-url";
+import { HttpUrlSchema } from "./http-url.js";
 
 /**
  * Public Builder League API payloads (`/api/v1/builder-*`) for external clients (CLI, MCP).
@@ -312,3 +312,251 @@ export type BuilderJourney = z.infer<typeof BuilderJourneySchema>;
 export type BuilderBadge = z.infer<typeof BuilderBadgeSchema>;
 export type BuilderMission = z.infer<typeof BuilderMissionSchema>;
 export type BuilderMissionPlan = z.infer<typeof BuilderMissionPlanSchema>;
+
+// ---------------------------------------------------------------------------
+// Generic envelope for endpoints without a dedicated response schema here
+// ---------------------------------------------------------------------------
+
+/** `{ data, pagination? }` with an unvalidated `data`; extra keys are kept. */
+export const BuilderEnvelopeSchema = z
+  .object({ data: z.unknown().refine((value) => value !== undefined, "data is required"), pagination: BuilderPaginationSchema.optional() })
+  .passthrough();
+export type BuilderEnvelope = z.infer<typeof BuilderEnvelopeSchema>;
+
+// ---------------------------------------------------------------------------
+// Member request inputs (bodies and queries). None of them carries a verification level, a status or
+// an approval: API keys and MCP agents may only submit `self_reported` activity, and the server sets
+// the evidence source from the credential.
+// ---------------------------------------------------------------------------
+
+const optionalId = z.string().max(300).nullish();
+const evidenceLinks = z.array(HttpUrlSchema.max(2048)).max(10);
+const occurredAt = z.union([z.string().max(40), z.number()]);
+const cursor = z.string().min(1).max(500);
+
+/** Query of `GET /api/v1/builder-evidence`. */
+export const BuilderEvidenceListQuerySchema = z.object({
+  status: z.enum(BUILDER_EVIDENCE_STATUSES).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  cursor: cursor.optional(),
+}).strict();
+
+/** JSON body of `PATCH /api/v1/builder-evidence/{id}` (edit while `submitted` or `needs_info`). */
+export const EditBuilderEvidenceSchema = z.object({
+  title: z.string().min(3).max(140),
+  summary: z.string().max(5000),
+  occurredAt,
+  links: evidenceLinks,
+  projectId: optionalId,
+  counterparty: optionalId,
+  visibility,
+  /** File names (as listed in `files`) to delete. */
+  removeFiles: z.array(z.string().max(64)).max(10),
+}).partial().strict().refine((value) => Object.keys(value).length > 0, "Send at least one field to change.");
+
+/** `POST /api/v1/builder-evidence/{id}/appeal`. */
+export const BuilderAppealInputSchema = z.object({ reason: z.string().min(20).max(2000) }).strict();
+
+/** `POST /api/v1/builder-projects`. */
+export const CreateBuilderProjectSchema = z.object({
+  name: z.string().min(2).max(80),
+  summary: z.string().max(500).optional(),
+  stage: stage.optional(),
+  productId: z.string().max(300).nullish(),
+  visibility: visibility.optional(),
+}).strict();
+
+/** Query of `GET /api/v1/builder-journey`. */
+export const BuilderJourneyQuerySchema = z.object({
+  limit: z.number().int().min(1).max(200).optional(),
+  cursor: cursor.optional(),
+  project: z.string().min(1).max(300).optional(),
+}).strict();
+
+/** Query of `GET /api/v1/builder-rankings`. */
+export const BuilderRankingsQuerySchema = z.object({
+  board: z.enum(BUILDER_BOARD_KEYS).optional(),
+  period: z.enum(BUILDER_PERIOD_TYPES).optional(),
+  /** Period key such as 2026-W42, 2026-10, 2026 or S2026-1. Defaults to the current period. */
+  key: z.string().min(1).max(32).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+}).strict();
+
+export const BUILDER_LOCALES = ["en", "vi"] as const;
+export const BuilderLocaleSchema = z.enum(BUILDER_LOCALES);
+
+export const BUILDER_SEASON_TRACKS = ["open", "validate", "build", "ship", "contribute"] as const;
+/** `POST /api/v1/builder-seasons`: join or update the current or next season. */
+export const BuilderSeasonEnrollmentInputSchema = z.object({
+  seasonKey: z.string().min(1).max(32).optional(),
+  track: z.enum(BUILDER_SEASON_TRACKS).optional(),
+  goal: z.string().max(280).nullish(),
+}).strict();
+
+/** `POST /api/v1/builder-time-capsule`. */
+export const BuilderTimeCapsuleInputSchema = z.object({
+  year: z.number().int().min(2000).max(2100).optional(),
+  kind: z.enum(["intent", "reflection"]),
+  body: z.string().min(1).max(4000),
+  visibility: visibility.optional(),
+}).strict();
+
+/** Calendar year (Asia/Ho_Chi_Minh) of Year in Review and Community Wrapped paths. */
+export const BuilderYearSchema = z.number().int().min(2026).max(2100);
+
+export const BUILDER_RENDER_FORMATS = ["9x16", "16x9"] as const;
+/** `POST /api/v1/builder-year/{year}/render`. */
+export const BuilderRenderInputSchema = z.object({ format: z.enum(BUILDER_RENDER_FORMATS) }).strict();
+
+export const BUILDER_YEAR_SCENES = [
+  "year_in_numbers", "first_idea", "validation", "pivotal_learning", "mvp", "launch",
+  "first_customer", "community_impact", "league_highlights", "next_year",
+] as const;
+/** `PATCH /api/v1/builder-year/{year}` (signed-in session only). */
+export const BuilderYearHiddenScenesInputSchema = z.object({
+  hiddenScenes: z.array(z.enum(BUILDER_YEAR_SCENES)).max(20),
+}).strict();
+
+/** `POST /api/v1/builder-year/{year}/share` (signed-in session only). */
+export const BuilderShareLinkInputSchema = z.object({ locale: BuilderLocaleSchema.optional() }).strict();
+
+/** `PATCH /api/v1/builder-me` (signed-in session only): partial privacy opt-ins. */
+export const BuilderPrivacyUpdateInputSchema = z.object({
+  privacy: BuilderPrivacySchema.partial().strict(),
+}).strict();
+
+/** `POST /api/v1/builder-rewards/{id}/claim` (signed-in session only). */
+export const BuilderRewardClaimInputSchema = z.object({ note: z.string().max(500).nullish() }).strict();
+
+// ---------------------------------------------------------------------------
+// Admin request inputs (admin session only; API keys and agents are refused by the server)
+// ---------------------------------------------------------------------------
+
+/** Query of `GET /api/v1/builder-admin/queue`. */
+export const BuilderModerationQueueQuerySchema = z.object({
+  view: z.enum(["evidence", "appeals"]).optional(),
+  status: z.enum(BUILDER_EVIDENCE_STATUSES).optional(),
+  stage: stage.optional(),
+  eventType: z.string().min(1).max(64).optional(),
+  olderThanHours: z.number().int().min(0).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  cursor: cursor.optional(),
+}).strict();
+
+export const BUILDER_DECISIONS = ["approve", "reject", "needs_info"] as const;
+/** `POST /api/v1/builder-admin/evidence/{id}/decision`. */
+export const BuilderModerationDecisionInputSchema = z.object({
+  decision: z.enum(BUILDER_DECISIONS),
+  /** Required for reject and needs_info; `other` needs a note. */
+  reasonCodes: z.array(z.string().min(1).max(64)).max(20).optional(),
+  note: z.string().max(2000).optional(),
+}).strict();
+
+/** `POST /api/v1/builder-admin/evidence/{id}/appeal`. */
+export const BuilderAppealResolutionInputSchema = z.object({
+  outcome: z.enum(["uphold", "overturn"]),
+  resolution: z.string().min(5).max(2000),
+  appealId: z.string().min(1).max(300).optional(),
+}).strict();
+
+/** `POST /api/v1/builder-admin/backfill`: dry run unless `dryRun: false`. */
+export const BuilderBackfillInputSchema = z.object({
+  userIds: z.array(z.string().min(1).max(300)).max(500).optional(),
+  dryRun: z.boolean().optional(),
+}).strict();
+
+export type BuilderEvidenceListQuery = z.infer<typeof BuilderEvidenceListQuerySchema>;
+export type EditBuilderEvidence = z.infer<typeof EditBuilderEvidenceSchema>;
+export type BuilderAppealInput = z.infer<typeof BuilderAppealInputSchema>;
+export type CreateBuilderProject = z.infer<typeof CreateBuilderProjectSchema>;
+export type BuilderJourneyQuery = z.infer<typeof BuilderJourneyQuerySchema>;
+export type BuilderRankingsQuery = z.infer<typeof BuilderRankingsQuerySchema>;
+export type BuilderLocale = z.infer<typeof BuilderLocaleSchema>;
+export type BuilderSeasonEnrollmentInput = z.infer<typeof BuilderSeasonEnrollmentInputSchema>;
+export type BuilderTimeCapsuleInput = z.infer<typeof BuilderTimeCapsuleInputSchema>;
+export type BuilderRenderInput = z.infer<typeof BuilderRenderInputSchema>;
+export type BuilderYearHiddenScenesInput = z.infer<typeof BuilderYearHiddenScenesInputSchema>;
+export type BuilderShareLinkInput = z.infer<typeof BuilderShareLinkInputSchema>;
+export type BuilderPrivacyUpdateInput = z.infer<typeof BuilderPrivacyUpdateInputSchema>;
+export type BuilderRewardClaimInput = z.infer<typeof BuilderRewardClaimInputSchema>;
+export type BuilderModerationQueueQuery = z.infer<typeof BuilderModerationQueueQuerySchema>;
+export type BuilderModerationDecisionInput = z.infer<typeof BuilderModerationDecisionInputSchema>;
+export type BuilderAppealResolutionInput = z.infer<typeof BuilderAppealResolutionInputSchema>;
+export type BuilderBackfillInput = z.infer<typeof BuilderBackfillInputSchema>;
+
+// ---------------------------------------------------------------------------
+// Failures shared by the CLI and MCP surfaces
+// ---------------------------------------------------------------------------
+
+/** Shown when a Builder League route answers 404 because the league is hidden from this caller. */
+export const BUILDER_LEAGUE_NOT_ENABLED_MESSAGE =
+  "Builder League is not enabled on this environment (BUILDER_LEAGUE_ENABLED is off and this account is not an admin or pilot member)";
+
+export interface BuilderApiFailure {
+  status: number;
+  /** Machine code from the error envelope (`not_found`, `session_required`, `validation_failed`, ...). */
+  code?: string;
+  details?: unknown;
+  /** True when the failure most likely means the league is switched off for this caller. */
+  notEnabled: boolean;
+  message: string;
+}
+
+function formatIssues(details: unknown): string {
+  if (!Array.isArray(details) || details.length === 0) return "";
+  const issues = details.map((issue) => {
+    if (issue && typeof issue === "object" && "message" in issue) {
+      const { path, message } = issue as { path?: unknown; message?: unknown };
+      return path ? `${String(path)}: ${String(message)}` : String(message);
+    }
+    return JSON.stringify(issue);
+  });
+  return ` (${issues.join("; ")})`;
+}
+
+/**
+ * Converts a non-2xx Builder League response into a structured failure.
+ * `resource: true` marks a lookup of one item (evidence id, passport user id, share link), where a
+ * 404 can also mean the item does not exist; collection routes only answer 404 while the league is
+ * hidden from the caller.
+ */
+export function describeBuilderApiFailure(
+  status: number,
+  bodyText: string,
+  statusText = "",
+  options: { resource?: boolean } = {}
+): BuilderApiFailure {
+  let raw: unknown;
+  try {
+    raw = bodyText ? JSON.parse(bodyText) : undefined;
+  } catch {
+    raw = undefined;
+  }
+  const parsed = BuilderErrorSchema.safeParse(raw);
+  const code = parsed.success ? parsed.data.error.code : undefined;
+  const details = parsed.success ? parsed.data.error.details : undefined;
+  const serverMessage = parsed.success ? parsed.data.error.message : (bodyText.trim().slice(0, 500) || statusText || "Request failed");
+  const hidden = status === 404 && (code === undefined || code === "not_found");
+
+  let message: string;
+  if (hidden && !options.resource) {
+    message = `${BUILDER_LEAGUE_NOT_ENABLED_MESSAGE}.`;
+  } else if (hidden) {
+    message = `Not found, or ${BUILDER_LEAGUE_NOT_ENABLED_MESSAGE}.`;
+  } else if (status === 401) {
+    message = "Sign in required: send an NLB API key, an OAuth identity or a session cookie.";
+  } else if (status === 403 && code === "membership_required") {
+    message = "Builder League membership required (an active Premium or VIP membership).";
+  } else if (status === 403 && (code === "session_required" || code === "confirmation_requires_session")) {
+    message = `${serverMessage} This action needs a signed-in browser session; API keys and MCP agents are refused.`;
+  } else {
+    message = serverMessage;
+  }
+  return {
+    status,
+    code,
+    details,
+    notEnabled: hidden && !options.resource,
+    message: `HTTP ${status}${code ? ` ${code}` : ""}: ${message}${formatIssues(details)}`,
+  };
+}

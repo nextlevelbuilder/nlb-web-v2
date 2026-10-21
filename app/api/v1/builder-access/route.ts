@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   return withBuilderErrors(async () => {
     const db = getDb();
-    const caller = await resolveCaller(request.headers, db);
+    const caller = await resolveCaller(request.headers, db, {
+      scope: "mcp:read",
+      method: request.method,
+      path: new URL(request.url).pathname,
+    });
     const access = await getViewerAccess(db, caller?.user ? { id: caller.user.id, role: caller.user.role } : null);
     return ok({ showNav: access.flagEnabled || access.canUse });
   });

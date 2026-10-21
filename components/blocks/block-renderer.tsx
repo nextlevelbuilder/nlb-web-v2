@@ -1,5 +1,5 @@
 import React from "react";
-import type { Block } from "@/packages/contracts/src";
+import type { Block } from "@nextlevelbuilder/contracts";
 import { HeroBlockView } from "./hero-block";
 import { GridBlockView } from "./grid-block";
 import { PricingBlockView } from "./pricing-block";

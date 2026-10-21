@@ -2,7 +2,7 @@ import { getDb, type AppDb } from "@/lib/db";
 import { products, productRevisions, categories, tags, productCategories, productTags, orders } from "@/lib/db/schema";
 import { eq, and, asc, desc, sql, inArray } from "drizzle-orm";
 import { PRODUCT_IDS } from "@/lib/polar";
-import { ProductDocumentSchema, computeContentHash, type ProductDocument } from "@/packages/contracts/src";
+import { ProductDocumentSchema, computeContentHashSync, type ProductDocument } from "@nextlevelbuilder/contracts";
 import crypto from "crypto";
 import { projectProductTrust } from "./trust";
 import { productTrustScoreOrder } from "./product-trust-order";
@@ -82,7 +82,7 @@ export async function claimEarlyBirdSlot(productId: string, customDb?: AppDb): P
 export async function createProductRevision(params: CreateRevisionParams, customDb?: AppDb) {
   const db = customDb || getDb();
   const validatedDoc = ProductDocumentSchema.parse(params.document);
-  const hash = computeContentHash(validatedDoc);
+  const hash = computeContentHashSync(validatedDoc);
 
   // Compute next revision number
   const [latestRevision] = await db

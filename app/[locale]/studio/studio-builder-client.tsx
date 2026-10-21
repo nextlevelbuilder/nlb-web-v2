@@ -17,9 +17,9 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { LAYOUT_TEMPLATES } from '@/packages/contracts/src/templates';
-import type { Block } from '@/packages/contracts/src/blocks';
-import type { ProductDocument } from '@/packages/contracts/src/product-document';
+import { LAYOUT_TEMPLATES } from '@nextlevelbuilder/contracts';
+import type { Block } from '@nextlevelbuilder/contracts';
+import type { ProductDocument } from '@nextlevelbuilder/contracts';
 import { normalizeStudioSlug, saveStudioDraft, studioError } from '@/lib/webmcp/studio-draft';
 import StudioAgentConnect from '@/components/studio/studio-agent-connect';
 import BlockSelectorDropdown, { type BlockType } from '@/components/studio/block-selector-dropdown';

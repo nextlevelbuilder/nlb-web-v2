@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BarChart3 } from 'lucide-react';
-import { PublicTrafficSummarySchema, type AnalyticsBlock } from '@/packages/contracts/src';
+import { PublicTrafficSummarySchema, type AnalyticsBlock } from '@nextlevelbuilder/contracts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTrafficData } from '@/components/traffic/use-traffic-data';

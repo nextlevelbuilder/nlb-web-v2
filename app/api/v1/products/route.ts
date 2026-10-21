@@ -5,7 +5,7 @@ import { members } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getPublishedProducts, createProductDraft } from "@/lib/domain/catalog";
 import { z } from "zod";
-import { HttpUrlSchema } from "@/packages/contracts/src/http-url";
+import { HttpUrlSchema } from "@nextlevelbuilder/contracts";
 
 const CreateDraftSchema = z.object({
   orgId: z.string().min(1),

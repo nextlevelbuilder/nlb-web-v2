@@ -88,7 +88,9 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   MCP_OAUTH_ENABLED: z.enum(["true", "false"]).optional().default("false"),
-  MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://mcp.nextlevelbuilder.io/mcp"),
+  MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://nextlevelbuilder.io/mcp"),
+  // Comma-separated resources still accepted for tokens issued before MCP moved into this worker.
+  MCP_OAUTH_LEGACY_RESOURCES: z.string().optional(),
   MCP_DELEGATION_SECRET: z.string().min(32).optional(),
 
   // Builder League feature flag ("true" | "false"). Optional: a missing value means off.

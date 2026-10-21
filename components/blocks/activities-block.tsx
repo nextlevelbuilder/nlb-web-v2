@@ -1,5 +1,5 @@
 import React from "react";
-import type { ActivitiesBlock } from "@/packages/contracts/src";
+import type { ActivitiesBlock } from "@nextlevelbuilder/contracts";
 import { Card } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 

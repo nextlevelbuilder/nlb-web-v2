@@ -29,7 +29,7 @@ import {
   Send,
   Plus,
 } from 'lucide-react';
-import type { Block } from '@/packages/contracts/src';
+import type { Block } from '@nextlevelbuilder/contracts';
 import MediaUploadDropzone from './media-upload-dropzone';
 import ActivityPulseEditor from './activity-pulse-editor';
 

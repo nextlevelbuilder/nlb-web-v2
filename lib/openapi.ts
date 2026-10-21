@@ -1,5 +1,5 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { ProductDocumentSchema } from "@/packages/contracts/src/product";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { trafficPaths, trafficSchemas } from "@/lib/traffic/openapi";
 import { blogPaths, blogSchemas } from "@/lib/blog/blog-openapi";
 import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evidence";
@@ -45,6 +45,76 @@ export const openApiSpec = {
       ...progressionPaths,
       ...journeyPaths,
       ...privacyPaths,
+      "/api/v1/onboarding-status": {
+        get: {
+          operationId: "getOnboardingStatus",
+          summary: "Read my membership onboarding status",
+          description: "The caller's onboarding state: payment, membership (tier, plan, term, renewal), member profile and Discord/Telegram connection status with the next action for each. Read-only: it never verifies a Polar checkout (the onboarding page does). API keys, OAuth MCP delegation (`mcp:read`) and sessions are accepted. Returns 404 while membership onboarding is not enabled on the environment.",
+          tags: ["Membership"],
+          security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }],
+          responses: {
+            "200": {
+              description: "Onboarding status",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    required: ["data"],
+                    properties: {
+                      data: {
+                        type: "object",
+                        required: ["payment", "membership", "profile", "connections"],
+                        properties: {
+                          payment: { type: "string", enum: ["pending", "verifying", "verified", "failed", "not_owner", "none"] },
+                          membership: {
+                            type: "object",
+                            nullable: true,
+                            properties: {
+                              tier: { type: "string", enum: ["premium", "vip"] },
+                              plan: { type: "string" },
+                              term: { type: "string", enum: ["quarterly", "annual"], nullable: true },
+                              status: { type: "string" },
+                              renewsAt: { type: "string", format: "date-time", nullable: true },
+                              cancelAtPeriodEnd: { type: "boolean" },
+                            },
+                          },
+                          profile: {
+                            type: "object",
+                            properties: {
+                              goal: { type: "string" },
+                              profileLinks: { type: "array", items: { type: "string" } },
+                              skills: { type: "string" },
+                              phone: { type: "string" },
+                              commitmentAccepted: { type: "boolean" },
+                              completed: { type: "boolean" },
+                            },
+                          },
+                          connections: {
+                            type: "object",
+                            properties: Object.fromEntries(["discord", "telegram"].map((provider) => [provider, {
+                              type: "object",
+                              required: ["status", "nextAction"],
+                              properties: {
+                                status: { type: "string", enum: ["not_connected", "waiting_for_join", "processing", "active", "retrying", "action_required", "revoked"] },
+                                displayName: { type: "string" },
+                                nextAction: { type: "string", enum: ["connect", "join", "retry", "reconnect", "none"] },
+                                unlinking: { type: "boolean" },
+                                errorCode: { type: "string" },
+                              },
+                            }])),
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "401": { description: "Sign in or send an API key" },
+            "404": { description: "Membership onboarding is not enabled on this environment" },
+          },
+        },
+      },
       "/api/v1/products/{slug}/pulse": {
         get: {
           summary: "Read product website health history",

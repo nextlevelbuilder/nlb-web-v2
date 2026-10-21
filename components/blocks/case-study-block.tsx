@@ -1,5 +1,5 @@
 import React from "react";
-import type { CaseStudyBlock } from "@/packages/contracts/src";
+import type { CaseStudyBlock } from "@nextlevelbuilder/contracts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen } from "lucide-react";

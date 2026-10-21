@@ -1,8 +1,8 @@
 name: CI and Deploy
 
-# dev  -> staging worker  (nextlevelbuilder-web-staging)
-# main -> production worker (nextlevelbuilder-web)
-# Pull requests run checks only.
+# dev  -> staging worker    (nextlevelbuilder-web-staging), which also serves MCP at /mcp
+# main -> production worker (nextlevelbuilder-web), which also serves MCP at /mcp
+# Pull requests run checks only. The npm packages (contracts, cli, mcp) are published by release-packages.yml.
 on:
   push:
     branches: [dev, main]
@@ -23,9 +23,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The web worker imports the built MCP package, so packages build first.
+      - run: npm run build:packages
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
+      - name: Typecheck and test packages
+        run: |
+          npm run type-check:packages
+          npm run test:packages
 
   deploy:
     name: Migrate and deploy (${{ github.ref_name == 'main' && 'production' || 'staging' }})

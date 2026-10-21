@@ -2,7 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb, type AppDb } from "@/lib/db";
 import { productPulseMonitors, productPulseSamples } from "@/lib/db/schema";
 import { getPublishedProductBySlug } from "@/lib/domain/catalog";
-import { ProductDocumentSchema } from "@/packages/contracts/src";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { probeProductWebsite, type PulseProbeResult } from "@/lib/moderation/pulse-probe";
 
 export const PULSE_COOLDOWN_MS = 5 * 60 * 1000;

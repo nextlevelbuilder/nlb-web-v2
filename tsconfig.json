@@ -25,9 +25,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@nextlevelbuilder/contracts": [
-        "./packages/contracts/src/index.ts"
       ]
     }
   },
@@ -39,6 +36,9 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "packages/cli",
+    "packages/mcp",
+    "packages/*/dist"
   ]
 }

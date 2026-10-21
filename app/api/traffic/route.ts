@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { products } from "@/lib/db/schema";
-import { TrafficEventSchema } from "@/packages/contracts/src";
+import { TrafficEventSchema } from "@nextlevelbuilder/contracts";
 import { allowTrafficRequest, readTrafficBody } from "@/lib/traffic/collection";
 import { recordTraffic } from "@/lib/traffic/traffic";
 

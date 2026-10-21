@@ -1,5 +1,5 @@
 import React from "react";
-import type { RoadmapBlock } from "@/packages/contracts/src";
+import type { RoadmapBlock } from "@nextlevelbuilder/contracts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Compass, CheckCircle, Clock, Circle } from "lucide-react";

@@ -1,5 +1,5 @@
 import React from "react";
-import type { LiveDemoBlock } from "@/packages/contracts/src";
+import type { LiveDemoBlock } from "@nextlevelbuilder/contracts";
 
 export function LiveDemoBlockView({ block }: { block: LiveDemoBlock }) {
   const { embedUrl, sandboxTokens, height } = block.props;

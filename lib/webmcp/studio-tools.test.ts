@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { registerStudioTools, type StudioToolRegistry } from './studio-tools';
 import { connectStudioTools } from './studio-connection';
 import { saveStudioDraft, validateStudioDocument } from './studio-draft';
-import type { ProductDocument } from '@/packages/contracts/src/product-document';
+import type { ProductDocument } from '@nextlevelbuilder/contracts';
 
 const draft = (): ProductDocument => ({ schemaVersion: 1, title: 'Builder tool', tagline: 'Build software', description: 'A real developer productivity tool.', websiteUrl: 'https://example.com', categorySlugs: ['developer-tools'], tagSlugs: [], blocks: [] });
 

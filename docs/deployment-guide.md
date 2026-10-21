@@ -7,7 +7,7 @@ nextlevelbuilder.io runs as two Cloudflare Workers on the **hi@nextlevelbuilder.
 | production | `nextlevelbuilder-web` | `main` | https://nextlevelbuilder-web.hi-7ac.workers.dev | nextlevelbuilder.io, www |
 | staging | `nextlevelbuilder-web-staging` | `dev` | https://nextlevelbuilder-web-staging.hi-7ac.workers.dev | staging.nextlevelbuilder.io |
 
-Until the [cutover](./cutover-runbook.md), the final domains still serve the old site from the Digitop account.
+Each web Worker also serves the MCP server from [`packages/mcp`](../packages/mcp) at `/mcp`: https://nextlevelbuilder.io/mcp in production and https://staging.nextlevelbuilder.io/mcp on staging ([MCP server](#mcp-server)).
 
 Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Production is the top-level config, and staging is `env.staging`. What each binding is for: [system-architecture.md](./system-architecture.md#cloudflare-bindings).
 
@@ -32,8 +32,8 @@ wr secret list --env staging
 ## CI/CD
 
 [`.github/workflows/ci-deploy.yml`](../.github/workflows/ci-deploy.yml):
-- Every push and PR to `dev` or `main` runs type-check, lint and test.
-- A push to `dev` applies D1 migrations to staging, builds and deploys staging.
+- Every push and PR to `dev` or `main` runs type-check, lint and test for the web app, then builds, type-checks and tests the `packages/*` workspaces (`npm run build:packages`, `type-check:packages`, `test:packages`).
+- A push to `dev` applies D1 migrations to staging, builds the packages and the staging web Worker (which includes the MCP server) and deploys it.
 - A push to `main` does the same for production. The workflow file owns the env selection and the build-time `NEXT_PUBLIC_*` values.
 - PR runs get no secrets.
 
@@ -51,7 +51,7 @@ scripts/provision-cloudflare.sh secrets staging     # Worker secrets piped from 
 scripts/provision-cloudflare.sh secrets production
 ```
 
-- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets; the same value must be on the MCP worker ([cutover-runbook.md](./cutover-runbook.md)).
+- The script owns the list of secrets it copies (`SECRET_KEYS`). It also derives `BETTER_AUTH_URL` (the environment's final URL), `TURNSTILE_SECRET_KEY` (from the widget) and copies `MCP_DELEGATION_SECRET` from `.env` like the other secrets. The in-worker MCP server signs its delegation assertions with it and the API verifies them with the same binding.
 - Because `BETTER_AUTH_URL` is the final domain, OAuth sign-in works only there.
 - Course video secrets (`CF_STREAM_API_TOKEN`, signing key, customer subdomain) are set by hand once Stream is enabled: [courses.md](./courses.md#one-time-setup-cloudflare-stream).
 - Builder League: the `BUILDER_LEAGUE_ENABLED` var lives in `wrangler.jsonc` (`false` in production). The optional `BUILDER_INGEST_SECRET` (32+ characters, shared with the Discord bot) is set by hand with `wr secret put BUILDER_INGEST_SECRET --env <env>`; without it the bot uses an admin API key. The private evidence buckets `nlb-builder-evidence` and `nlb-builder-evidence-staging` are not in the provisioning script; create them once with `wr r2 bucket create <name>`. The render workflow ([`builder-league-render.yml`](../.github/workflows/builder-league-render.yml)) needs the repository secrets `NLB_API_BASE` and `NLB_RENDER_API_KEY` (an admin's API key). Operations: [builder-league-runbook.md](./builder-league-runbook.md).
@@ -87,6 +87,33 @@ Also export the other `NEXT_PUBLIC_*` values the workflow sets (Polar product id
 `npm run deploy:staging` (`--env=staging`) and `npm run deploy:production` (`--env=""`) build and deploy in one step with the environment pinned, but they do not apply the account pin, the token rule or the build-time values above.
 
 Roll back a bad deploy with `wr deployments list --env=<env>`, then `wr rollback <version-id> --env=<env>`.
+
+## MCP server
+
+[`worker.ts`](../worker.ts) hands `/mcp`, `/sse`, `/message` and `/.well-known/oauth-protected-resource[/mcp]` to [`lib/mcp-worker-mount.ts`](../lib/mcp-worker-mount.ts), which runs `@nextlevelbuilder/mcp/http` before Next.js. Its calls back to this site (JWKS, delegated `/api/v1` requests) go to the Next.js handler in-process, because a Worker cannot reliably fetch its own hostname. It ships with every web deploy; `npm run build:worker` builds the packages first.
+
+Configuration lives in the web Worker:
+- `MCP_OAUTH_RESOURCE` (var): the canonical endpoint, `<site>/mcp`.
+- `MCP_OAUTH_LEGACY_RESOURCES` (var, comma-separated): older resources that tokens are still issued and accepted for. Production lists `https://mcp.nextlevelbuilder.io/mcp`. A request on a legacy resource's host is served as that resource.
+- `MCP_DELEGATION_SECRET` (secret): signs and verifies the `x-nlb-mcp-assertion` the MCP server sends to `/api/v1`. To rotate it, pipe a new value without printing it: `openssl rand -base64 48 | tr -d '\n' | wr secret put MCP_DELEGATION_SECRET --env staging`.
+
+### Moving `mcp.nextlevelbuilder.io` onto the web Worker
+
+Until this is done, `mcp.nextlevelbuilder.io` is still served by the old standalone Worker `nlb-directory-mcp`, which keeps working for existing clients. After the in-worker MCP server is live in production:
+1. In the Cloudflare dashboard (hi@ account), remove the `mcp.nextlevelbuilder.io` custom domain from `nlb-directory-mcp`.
+2. Add it as a custom domain on `nextlevelbuilder-web`. Requests on that host are served as the legacy resource, so existing tokens and discovery keep working.
+3. Check `https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource/mcp` and one authorized tool call, then delete `nlb-directory-mcp`.
+
+The standalone entry ([`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc)) remains for self-hosting; CI no longer deploys it. Protocol and OAuth details: [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server).
+
+## npm packages
+
+`@nextlevelbuilder/contracts`, `@nextlevelbuilder/cli` and `@nextlevelbuilder/mcp` are published by [`release-packages.yml`](../.github/workflows/release-packages.yml):
+1. Bump `version` in all three `packages/*/package.json` to the same value and merge to `main`.
+2. Push a tag `packages-v<version>` on that `main` commit.
+3. The workflow builds, tests, packs and runs `npm publish --provenance` through npm trusted publishing (OIDC, no token).
+
+Each package's trusted publisher on npmjs.com must name repository `nextlevelbuilder/nlb-web-v2` and workflow `release-packages.yml`. `workflow_dispatch` builds and packs without publishing.
 
 ## Media
 
