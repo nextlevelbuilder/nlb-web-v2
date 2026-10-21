@@ -201,6 +201,16 @@ describe("MCP delegation assertion verification", () => {
     expect(put).not.toHaveBeenCalled();
   });
 
+  it("accepts assertions issued by a configured legacy resource only", async () => {
+    const { kv } = fakeKv();
+    const legacy = "https://mcp.nextlevelbuilder.io/mcp";
+    mocks.cloudflare.mockReturnValue({ env: {
+      MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN, MCP_DELEGATION_JTI: kv, MCP_OAUTH_LEGACY_RESOURCES: legacy,
+    } });
+    expect(await verifyMcpDelegation(await sign({ iss: legacy }), context)).toBe(account.id);
+    expect(await verifyMcpDelegation(await sign({ iss: "https://evil.example/mcp" }), context)).toBeNull();
+  });
+
   it("fails closed inside a Worker when the replay KV binding is missing", async () => {
     mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN } });
     expect(await verifyMcpDelegation(await sign(), context)).toBeNull();

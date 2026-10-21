@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { jwtVerify } from "jose";
-import { getMcpOAuthResource } from "@/lib/mcp-oauth-config";
+import { getMcpOAuthLegacyResources, getMcpOAuthResource } from "@/lib/mcp-oauth-config";
 import { consumeDelegationJti } from "@/lib/auth-mcp-delegation-replay";
 
 export const MCP_ASSERTION_HEADER = "x-nlb-mcp-assertion";
@@ -38,7 +38,8 @@ export async function verifyMcpDelegation(
     const { payload, protectedHeader } = await jwtVerify(assertion, key, {
       algorithms: ["HS256"],
       typ: "nlb-mcp-delegation+jwt",
-      issuer: getMcpOAuthResource(),
+      // The MCP worker still serving a legacy host signs with that host's resource.
+      issuer: [getMcpOAuthResource(), ...getMcpOAuthLegacyResources()],
       audience: `${base.origin}/api`,
       requiredClaims: ["sub", "jti", "iat", "exp", "scope", "method", "path"],
     });
