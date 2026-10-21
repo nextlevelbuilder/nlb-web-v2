@@ -9,6 +9,7 @@ import * as schema from "@/lib/db/schema";
 import { createAuthClient } from "better-auth/client";
 import { emailOTPClient } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { isInvalidOAuthSignatureError, isOAuthSignInQuery } from "@/lib/auth-oauth-sign-in-link";
 
 const origin = "http://localhost:3000";
 const issuer = `${origin}/api/auth`;
@@ -119,6 +120,31 @@ describe("MCP OAuth provider", () => {
     // No authorization code is issued until an explicit consent decision.
     expect(new URL(location.href, origin).searchParams.has("code")).toBe(false);
     expect(f.database.oauthConsent).toHaveLength(0);
+  });
+
+  it("reports an expired authorize link as invalid_signature on the OTP request", async () => {
+    const f = await fixture();
+    const first = await (await f.request(`/oauth2/authorize?${f.query}`)).json();
+    const params = new URL(first.url, origin).searchParams;
+    const exp = Number(params.get("exp")) * 1000;
+    vi.useFakeTimers({ toFake: ["Date"], now: exp + 1000 });
+    try {
+      vi.stubGlobal("window", { location: { search: `?${params}`, href: first.url } });
+      const client = createAuthClient({ baseURL: origin, plugins: [emailOTPClient(), oauthProviderClient()],
+        fetchOptions: { customFetchImpl: async (input, init) => f.auth.handler(new Request(input, init)) } });
+      const sent = await client.emailOtp.sendVerificationOtp({ email: "late@example.com", type: "sign-in" });
+      expect(sent.error?.status).toBe(400);
+      expect(isInvalidOAuthSignatureError(sent.error)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("only treats signed authorize queries as OAuth sign-in links", () => {
+    expect(isOAuthSignInQuery(new URLSearchParams("callbackUrl=/studio"))).toBe(false);
+    expect(isOAuthSignInQuery(new URLSearchParams("sig=x&ba_param=exp"))).toBe(true);
+    expect(isInvalidOAuthSignatureError({ status: 400, message: "Invalid OTP" })).toBe(false);
+    expect(isInvalidOAuthSignatureError(null)).toBe(false);
   });
 
   it("revokes refresh tokens when the owner disconnects and rejects cross-user or CSRF deletion", async () => {
