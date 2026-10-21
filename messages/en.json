@@ -486,7 +486,8 @@
     "invalidOtp": "Please enter all 6 digits of the OTP code.",
     "verifyFailed": "OTP code is invalid or has expired.",
     "loginSuccess": "Sign in successful! Redirecting...",
-    "oauthNotConfigured": "{provider} OAuth is not yet configured. Please sign in via Email OTP."
+    "oauthNotConfigured": "{provider} OAuth is not yet configured. Please sign in via Email OTP.",
+    "oauthLinkExpired": "This sign-in link from your app has expired. Go back to your app and connect again."
   },
   "profile": {
     "loginRequiredTitle": "Sign In Required",
