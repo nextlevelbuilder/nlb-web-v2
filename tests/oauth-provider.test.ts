@@ -9,7 +9,7 @@ import * as schema from "@/lib/db/schema";
 import { createAuthClient } from "better-auth/client";
 import { emailOTPClient } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
-import { isInvalidOAuthSignatureError, isOAuthSignInLinkExpired, isOAuthSignInQuery } from "@/lib/auth-oauth-sign-in-link";
+import { isInvalidOAuthSignatureError, isOAuthSignInQuery } from "@/lib/auth-oauth-sign-in-link";
 
 const origin = "http://localhost:3000";
 const issuer = `${origin}/api/auth`;
@@ -122,13 +122,11 @@ describe("MCP OAuth provider", () => {
     expect(f.database.oauthConsent).toHaveLength(0);
   });
 
-  it("flags an expired authorize link before and after the OTP request", async () => {
+  it("reports an expired authorize link as invalid_signature on the OTP request", async () => {
     const f = await fixture();
     const first = await (await f.request(`/oauth2/authorize?${f.query}`)).json();
     const params = new URL(first.url, origin).searchParams;
-    expect(isOAuthSignInLinkExpired(params)).toBe(false);
     const exp = Number(params.get("exp")) * 1000;
-    expect(isOAuthSignInLinkExpired(params, exp + 1)).toBe(true);
     vi.useFakeTimers({ toFake: ["Date"], now: exp + 1000 });
     try {
       vi.stubGlobal("window", { location: { search: `?${params}`, href: first.url } });
@@ -144,8 +142,7 @@ describe("MCP OAuth provider", () => {
 
   it("only treats signed authorize queries as OAuth sign-in links", () => {
     expect(isOAuthSignInQuery(new URLSearchParams("callbackUrl=/studio"))).toBe(false);
-    expect(isOAuthSignInLinkExpired(new URLSearchParams("exp=1"))).toBe(false);
-    expect(isOAuthSignInLinkExpired(new URLSearchParams("sig=x&ba_param=exp"))).toBe(true);
+    expect(isOAuthSignInQuery(new URLSearchParams("sig=x&ba_param=exp"))).toBe(true);
     expect(isInvalidOAuthSignatureError({ status: 400, message: "Invalid OTP" })).toBe(false);
     expect(isInvalidOAuthSignatureError(null)).toBe(false);
   });

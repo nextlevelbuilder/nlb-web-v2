@@ -17,11 +17,7 @@ import {
 import { authClient, signIn } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  isInvalidOAuthSignatureError,
-  isOAuthSignInLinkExpired,
-  isOAuthSignInQuery,
-} from '@/lib/auth-oauth-sign-in-link';
+import { isInvalidOAuthSignatureError, isOAuthSignInQuery } from '@/lib/auth-oauth-sign-in-link';
 
 /** Email OTP creates the account on first verification, so sign-in and sign-up share one form. */
 type AuthResult = { error?: { message?: string } | null; data?: { url?: unknown } | null } | null | undefined;
@@ -61,11 +57,6 @@ export default function AuthForm() {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       setError(t('invalidEmail'));
-      return;
-    }
-    if (isOAuthSignInLinkExpired(searchParams)) {
-      setSuccess(null);
-      setError(t('oauthLinkExpired'));
       return;
     }
 
