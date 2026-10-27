@@ -47,12 +47,12 @@ export const FOUNDERS: Founder[] = [
     avatar: "/img/founders/duy.webp",
     role: { en: "Co-founder · Product & engineering", vi: "Đồng sáng lập · Sản phẩm & kỹ thuật" },
     bio: {
-      en: "CTO and co-founder of T.O.P Group, creator of GoClaw and UI UX Pro Max, and founder of the Build in Public Vietnam community.",
-      vi: "CTO, đồng sáng lập T.O.P Group; cha đẻ GoClaw và UI UX Pro Max; người sáng lập cộng đồng Build in Public Việt Nam.",
+      en: "CTO and co-founder of T.O.P Group, creator of AgentKit and Dewee, and founder of the Build in Public Vietnam community.",
+      vi: "CTO, đồng sáng lập T.O.P Group; cha đẻ AgentKit và Dewee; người sáng lập cộng đồng Build in Public Việt Nam.",
     },
     facts: {
-      en: ["Built 14+ SaaS products", "Creator of GoClaw & UI UX Pro Max", "Build in Public VN: 65K+ members"],
-      vi: ["Xây hơn 14 sản phẩm SaaS", "Cha đẻ GoClaw & UI UX Pro Max", "Build in Public VN: 65K+ thành viên"],
+      en: ["Built 14+ SaaS products", "Creator of AgentKit & Dewee", "Build in Public VN: 65K+ members"],
+      vi: ["Xây hơn 14 sản phẩm SaaS", "Cha đẻ AgentKit & Dewee", "Build in Public VN: 65K+ thành viên"],
     },
     company: { name: "T.O.P Group", url: "https://wearetopgroup.com" },
     links: [
@@ -85,12 +85,12 @@ export const FOUNDERS: Founder[] = [
     avatar: "/img/founders/viet.webp",
     role: { en: "Co-founder · Architecture", vi: "Đồng sáng lập · Kiến trúc hệ thống" },
     bio: {
-      en: "Founder and solution architect of 200lab. 15+ years designing high-load systems, from flash sales to Black Friday peaks of ~400k concurrent users.",
-      vi: "Nhà sáng lập, kiến trúc sư giải pháp của 200lab. Hơn 15 năm thiết kế hệ thống tải cao, từ flash sale tới đỉnh Black Friday ~400 nghìn người dùng đồng thời.",
+      en: "Founder and solution architect of 200lab, creator of GoClaw and UI UX Pro Max. 15+ years designing high-load systems, from flash sales to Black Friday peaks of ~400k concurrent users.",
+      vi: "Nhà sáng lập, kiến trúc sư giải pháp của 200lab; cha đẻ GoClaw và UI UX Pro Max. Hơn 15 năm thiết kế hệ thống tải cao, từ flash sale tới đỉnh Black Friday ~400 nghìn người dùng đồng thời.",
     },
     facts: {
-      en: ["15+ years in software", "Peak ~400k concurrent users", "Mentored 3,000+ engineers"],
-      vi: ["Hơn 15 năm làm phần mềm", "Đỉnh ~400 nghìn người dùng đồng thời", "Đào tạo 3.000+ kỹ sư"],
+      en: ["Creator of GoClaw & UI UX Pro Max", "Peak ~400k concurrent users", "Mentored 3,000+ engineers"],
+      vi: ["Cha đẻ GoClaw & UI UX Pro Max", "Đỉnh ~400 nghìn người dùng đồng thời", "Đào tạo 3.000+ kỹ sư"],
     },
     company: { name: "200lab", url: "https://200lab.io" },
     links: [{ label: "200lab", href: "https://200lab.io" }, { label: "Facebook", href: "https://www.facebook.com/viettranx" }],
