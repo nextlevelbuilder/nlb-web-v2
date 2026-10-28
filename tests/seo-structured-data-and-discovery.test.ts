@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { breadcrumbJsonLd, courseJsonLd, founderByName, parseTierPrice, productJsonLd, siteGraphJsonLd } from "@/lib/structured-data";
 import { aiCatalog, apiCatalogLinkset, mcpServerCard, mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
@@ -134,11 +136,11 @@ describe("agent discovery documents", () => {
     expect(Object.keys(league.auth.automationScopes)).toEqual(["builder:render", "builder:ingest"]);
     expect(league.agentPolicy.mayNot.join(" ")).toMatch(/Approve, verify/);
     expect(league.agentPolicy.mayNot.join(" ")).toContain("another member's private history");
-    expect(league.tools).toEqual([
-      "get_builder_profile", "submit_builder_evidence", "list_builder_evidence", "get_builder_evidence",
-      "list_builder_projects", "create_builder_project", "get_builder_rankings", "get_builder_journey",
-      "list_builder_badges", "list_builder_missions", "list_builder_rewards", "get_builder_year_review",
-    ]);
+    // The advertised tools must be exactly the ones the in-repo MCP server defines.
+    const toolSource = readFileSync(resolve(process.cwd(), "packages/mcp/src/tools/builder-league.ts"), "utf8");
+    const definedTools = [...toolSource.matchAll(/define\("(builder_[a-z_]+)"/g)].map((match) => match[1]);
+    expect(definedTools.length).toBeGreaterThan(0);
+    expect([...league.tools].sort()).toEqual([...definedTools].sort());
 
     const entry = aiCatalog().entries.find((item) => item.identifier === "urn:air:example.test:openapi:v1:builder-league");
     expect(entry?.data).toMatchObject({ status: "pilot", routes: "/api/v1/builder-*" });

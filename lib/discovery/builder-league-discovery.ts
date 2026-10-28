@@ -15,22 +15,40 @@ export const BUILDER_LEAGUE_FLAG = "BUILDER_LEAGUE_ENABLED";
 export const BUILDER_LEAGUE_ROUTE_PREFIX = "/api/v1/builder-";
 
 /**
- * MCP tools the NLB toolkits MCP server (`@nextlevelbuilder/mcp`) exposes for the Builder League.
- * They call the `/api/v1/builder-*` routes as the connected member.
+ * Builder League tools the NLB MCP server (`packages/mcp/src/tools/builder-league.ts`, served by this
+ * Worker at `/mcp`) exposes. They call the `/api/v1/builder-*` routes as the connected member; the two
+ * `builder_admin_*` tools are read-only or dry-run and need a signed-in admin session.
+ * tests/discovery-surfaces.test.ts keeps this list equal to the tools the package defines.
  */
 export const BUILDER_LEAGUE_MCP_TOOLS = [
-  "get_builder_profile",
-  "submit_builder_evidence",
-  "list_builder_evidence",
-  "get_builder_evidence",
-  "list_builder_projects",
-  "create_builder_project",
-  "get_builder_rankings",
-  "get_builder_journey",
-  "list_builder_badges",
-  "list_builder_missions",
-  "list_builder_rewards",
-  "get_builder_year_review",
+  "builder_get_access",
+  "builder_get_me",
+  "builder_list_projects",
+  "builder_list_evidence",
+  "builder_get_evidence",
+  "builder_get_journey",
+  "builder_list_missions",
+  "builder_list_badges",
+  "builder_get_seasons",
+  "builder_get_rankings",
+  "builder_list_rewards",
+  "builder_get_time_capsule",
+  "builder_get_passport",
+  "builder_get_year",
+  "builder_list_share_links",
+  "builder_list_year_videos",
+  "builder_get_community_wrapped",
+  "builder_create_project",
+  "builder_submit_evidence",
+  "builder_update_evidence",
+  "builder_withdraw_evidence",
+  "builder_appeal_evidence",
+  "builder_join_season",
+  "builder_save_time_capsule",
+  "builder_request_year_video",
+  "builder_revoke_share_link",
+  "builder_admin_list_queue",
+  "builder_admin_backfill_preview",
 ] as const;
 
 export const BUILDER_LEAGUE_AVAILABILITY =
@@ -39,7 +57,8 @@ export const BUILDER_LEAGUE_AVAILABILITY =
 export const BUILDER_LEAGUE_AGENT_POLICY = {
   may: [
     "Read the connected member's own Builder League profile, journey, evidence, projects, missions, badges, rewards and Year in Review.",
-    "Submit the member's own evidence (always stored as self_reported and submitted for human review) and create the member's projects.",
+    "Submit, edit, withdraw or appeal the member's own evidence (always stored as self_reported and submitted for human review) and create the member's projects.",
+    "Join a season, save the member's Time Capsule, request a Year in Review video and revoke the member's own share links.",
     "Read Builder League rankings.",
   ],
   mayNot: [
