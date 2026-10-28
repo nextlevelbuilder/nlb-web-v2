@@ -111,11 +111,11 @@ async function seedAlice() {
     ]),
     db.insert(evidenceAppeals).values({ id: "ap-a", evidenceId: "ev-a", userId: "alice", reason: "Please" }),
     ...rows(builderEvents, [
-      event("e-a", "alice"),
+      event("e-a", "alice", { actorUserId: "mod-x" }),
       event("e-b", "bob", { stage: "contribute", eventType: "contribute_peer_help", actorUserId: "alice", payload: { counterpartyUserId: "alice", title: "Helped" } }),
     ]),
     ...rows(scoreLedger, [
-      { id: "l-a", userId: "alice", eventId: "evt-e-a", awardType: "activity", stage: "ship", rp: 30, rulesetVersion: "v2", dedupeKey: "l-a", occurredAt: day(30) },
+      { id: "l-a", userId: "alice", eventId: "evt-e-a", awardType: "activity", stage: "ship", rp: 30, rulesetVersion: "v2", dedupeKey: "l-a", reason: "awarded_by:admin:mod-x", occurredAt: day(30) },
       { id: "l-b", userId: "bob", eventId: "evt-e-b", awardType: "manual", stage: "contribute", rp: 5, rulesetVersion: "v2", dedupeKey: "l-b", reason: "awarded_by:member:alice", occurredAt: day(20) },
     ]),
     db.insert(scoreCapSlots).values({ slotKey: "alice|ship_public_post|p-alice|2026-W40|0", userId: "alice", entryId: "l-a" }),
@@ -216,6 +216,8 @@ describe("exportBuilderData", () => {
     expect(json).not.toContain("secret-token-hash");
     expect(json).not.toContain('"actorId"');
     for (const column of ['"decidedBy"', '"resolvedBy"', '"awardedBy"']) expect(json).not.toContain(column);
+    expect(json).not.toContain("mod-x");
+    expect(data.ledger).toEqual([expect.objectContaining({ reason: "awarded_by:admin" })]);
   });
 
   it("is a 404 for an unknown id and a 400 for malformed or tombstone ids", async () => {
@@ -283,7 +285,7 @@ describe("deleteBuilderData", () => {
     expect(bobEvent).toMatchObject({ subjectUserId: "bob", actorUserId: tomb, payload: { counterpartyUserId: tomb, title: "Helped" } });
     const ledgerRows = await env.db.select().from(scoreLedger).orderBy(scoreLedger.id);
     expect(ledgerRows.map((row) => [row.id, row.userId, row.rp, row.reason])).toEqual([
-      ["l-a", tomb, 30, null],
+      ["l-a", tomb, 30, "awarded_by:admin:mod-x"],
       ["l-b", "bob", 5, `awarded_by:member:${tomb}`],
     ]);
     const [snapshot] = await env.db.select().from(leagueSnapshots);
