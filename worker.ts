@@ -1,7 +1,8 @@
 /**
  * Custom Worker entry. OpenNext builds the Next.js app into `.open-next/worker.js`; this module
  * serves it through `fetch`, mounts the MCP server (packages/mcp) at `/mcp` ahead of Next.js, and adds
- * the cron handler for the onboarding job queue and the Builder League scheduled work. Crons are
+ * the cron handler for the onboarding job queue, the Builder League scheduled work and the NLB Live
+ * sweep (expired seat holds, provider registrant cancellation). Crons are
  * declared in wrangler.jsonc (`triggers.crons`).
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -11,6 +12,7 @@ import type { ExecutionContext, ScheduledController } from "@cloudflare/workers-
 import { createDb } from "./lib/db";
 import { runOnboardingCron } from "./lib/onboarding/runner";
 import { BUILDER_LEAGUE_CRON, runBuilderLeagueCron } from "./lib/builder-league/cron";
+import { LIVE_CRON, runLiveCron } from "./lib/live/live-cron";
 import type { RenderBucket } from "./lib/builder-league/render-jobs";
 import { serveMcp, type McpWorkerEnv } from "./lib/mcp-worker-mount";
 
@@ -18,6 +20,9 @@ interface ScheduledEnv {
   DB: D1Database;
   ONBOARDING_V2_ENABLED?: string;
   BUILDER_EVIDENCE?: RenderBucket;
+  ZOOM_ACCOUNT_ID?: string;
+  ZOOM_CLIENT_ID?: string;
+  ZOOM_CLIENT_SECRET?: string;
 }
 
 type NextFetch = (request: Request, env: McpWorkerEnv, ctx: ExecutionContext) => Promise<Response>;
@@ -46,6 +51,17 @@ const worker = {
         runBuilderLeagueCron(env, controller.cron).catch(() => {
           console.error(`builder league cron "${controller.cron}" failed`);
         })
+      );
+    }
+    // Live housekeeping rides on the every-minute onboarding trigger and runs whatever LIVE_ENABLED says.
+    if (controller.cron === LIVE_CRON) {
+      ctx.waitUntil(
+        runLiveCron(env).then(
+          (result) => {
+            if (result.errors.length > 0) console.error(`live cron "${controller.cron}" steps failed: ${result.errors.join(", ")}`);
+          },
+          () => console.error(`live cron "${controller.cron}" failed`)
+        )
       );
     }
   },
