@@ -297,3 +297,26 @@ These are the limits the code enforces, so you can check them before costs grow:
 | D1 rows | Events, ledger rows and cap slots grow with verified activity. Caps per event type bound the RP, and dedupe stops duplicate rows. Snapshots write only when a board changes. Provisional boards are recomputed at most every 10 minutes per period read (`PROVISIONAL_MAX_AGE_MS`). Year snapshots are built 100 members per cron run. | Cloudflare dashboard → D1 → rows read/written. The dashboard's activity and integrity sections explain growth. |
 | R2 storage (`nlb-builder-evidence`, `nlb-builder-evidence-staging`) | Evidence: at most 5 files of 10 MB per submission (`EVIDENCE_MAX_FILES`, `EVIDENCE_MAX_FILE_BYTES`), kept until the evidence or the member is deleted. Renders: video at most 80 MB plus a 5 MB poster per job, deleted after 30 days (`OUTPUT_RETENTION_DAYS`). | Cloudflare dashboard → R2 → bucket size. A climb that render expiry does not explain means evidence uploads; check the queue for spam. |
 | Actions render minutes | One run every 30 minutes, at most 30 minutes each and one at a time, with `max` jobs per run (default 5). Worst case is about 48 runs a day. The run exits immediately when nothing is queued or secrets are missing. | GitHub → Actions → Builder League render → usage. To cut cost, lower the schedule or `max`, or disable the workflow during quiet months. |
+
+## E2E
+
+The Playwright suite covers the Builder League pages in the AGENTS.md viewport matrix: 1440×900, 768×1024, 375×812 and a 320 px reflow check, in light and dark color schemes, in EN (`/`) and VI (`/vi`). Config: [`playwright.config.ts`](../playwright.config.ts). Specs: `tests/e2e/builder-league/*.spec.ts`.
+
+```bash
+npm run build:packages   # once per checkout, before type-check and tests
+npm run test:e2e         # starts or reuses the dev server, seeds fixtures, runs every project
+```
+
+How it works:
+
+- **Flag on.** The dev server runs with `NEXT_DEV_WRANGLER_ENV=staging`. That wrangler environment already sets `BUILDER_LEAGUE_ENABLED` to `"true"`, so committed config is untouched. The server reads the wrangler vars, not `process.env`, for this flag.
+- **Local data only.** `tests/e2e/fixtures/global-setup.ts` applies the migrations to the local staging D1 (`wrangler d1 migrations apply DB --local --env=staging`) and seeds `tests/e2e/fixtures/seed-local-data.ts`: one pilot member with a VIP subscription and a public passport, three approved evidence rows, and a throwaway member for the self-delete test. Nothing touches a remote database.
+- **Sign-in without email.** Email OTP sends real mail, so the seed inserts session rows and signs the cookie like Better Auth does, using `BETTER_AUTH_SECRET` from the local `.dev.vars`. The storage state files are written to `tests/e2e/.auth/` (gitignored). Tokens are random on every run.
+- **Reused server.** Port 3000 is reused when already up. The setup fails with a clear message if that server was started without `NEXT_DEV_WRANGLER_ENV=staging`. Stop a server you started yourself when you finish, and never leave duplicates on the port.
+- **Timeouts.** Dev mode compiles each route on first use, and a server action can take 30 s or more on a loaded machine. The config sets generous navigation (300 s), expect (120 s) and web server (600 s) timeouts. Keep the worker count at 2 or lower, because the workers share one dev server and one local D1.
+- **Output.** `test-results/` and `playwright-report/` are gitignored. Open the HTML report with `npx playwright show-report`.
+
+Known gaps, by design:
+
+- `/wrapped/2025` and its Hall of Fame answer 404, because `isReviewableYear` starts at 2026. The final Hall of Fame state therefore has no E2E test (a `test.fixme` marks it). The unit tests in `tests/builder-league/hall-of-fame.test.ts` cover it.
+- The flag-off 404 branch needs a server with the flag off. The suite runs one flag-on server, so that branch is covered by vitest.
