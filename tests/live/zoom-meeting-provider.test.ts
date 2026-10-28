@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { createZoomMeetingProvider } from "@/lib/live/meetings/zoom-meeting-provider";
+import { describe, expect, it, vi } from "vitest";
+import { createZoomMeetingProvider, ZOOM_REQUEST_TIMEOUT_MS } from "@/lib/live/meetings/zoom-meeting-provider";
 import { MeetingProviderError, MeetingProviderNotFoundError, MeetingProviderUnavailableError } from "@/lib/live/meetings/meeting-provider";
 
 interface Call {
   url: string;
   method: string;
+  signal: AbortSignal | null;
   headers: Record<string, string>;
   body: unknown;
 }
@@ -14,7 +15,7 @@ function zoomFixture(overrides: { registerStatus?: number } = {}) {
   const calls: Call[] = [];
   const fetch = async (url: string, init?: RequestInit): Promise<Response> => {
     const headers = Object.fromEntries(Object.entries((init?.headers as Record<string, string>) ?? {}));
-    calls.push({ url, method: init?.method ?? "GET", headers, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+    calls.push({ url, method: init?.method ?? "GET", signal: init?.signal ?? null, headers, body: init?.body ? JSON.parse(String(init.body)) : undefined });
     if (url.startsWith("https://zoom.us/oauth/token")) {
       return Response.json({ access_token: "tok-1", token_type: "bearer", expires_in: 3600 });
     }
@@ -98,6 +99,29 @@ describe("Zoom meeting provider", () => {
     expect((error as MeetingProviderError).status).toBe(404);
     expect((error as Error).message).not.toContain("csecret");
     expect((error as Error).message).not.toContain("tok-1");
+  });
+
+  it("bounds every Zoom call, the token request included, with a timeout signal", async () => {
+    const zoom = zoomFixture();
+    const provider = createZoomMeetingProvider({ credentials, fetch: zoom.fetch });
+    await provider.createMeeting(event);
+    await provider.cancelRegistrant("81234567890", "reg-abc");
+    expect(zoom.calls.length).toBeGreaterThanOrEqual(3);
+    for (const call of zoom.calls) expect(call.signal).toBeInstanceOf(AbortSignal);
+
+    // A hung Zoom call rejects instead of waiting forever.
+    vi.useFakeTimers();
+    try {
+      const hung = createZoomMeetingProvider({
+        credentials,
+        fetch: (_url, init) => new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal?.reason))),
+      });
+      const pending = hung.createMeeting(event).catch((e: unknown) => e);
+      await vi.advanceTimersByTimeAsync(ZOOM_REQUEST_TIMEOUT_MS + 1);
+      expect(await pending).toMatchObject({ name: "TimeoutError" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("tells a 404 (already gone) apart from other failures", async () => {

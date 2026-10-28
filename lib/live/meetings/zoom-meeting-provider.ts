@@ -33,6 +33,11 @@ export interface ZoomProviderOptions {
 }
 
 const TOKEN_EXPIRY_MARGIN_MS = 60_000;
+/**
+ * Every Zoom call, the OAuth token request included, gives up after this long, so a hung call cannot
+ * stall a join request or the cron.
+ */
+export const ZOOM_REQUEST_TIMEOUT_MS = 10_000;
 
 /** Zoom credentials from runtime bindings, or null when any is missing (provider unavailable). */
 export function zoomCredentialsFromEnv(): ZoomCredentials | null {
@@ -82,6 +87,7 @@ export function createZoomMeetingProvider(options: ZoomProviderOptions): Meeting
     const res = await doFetch(url, {
       method: "POST",
       headers: { Authorization: `Basic ${btoa(`${creds.clientId}:${creds.clientSecret}`)}` },
+      signal: AbortSignal.timeout(ZOOM_REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) throw await failure(res, "token request");
     const body = await readJson(res);
@@ -98,6 +104,7 @@ export function createZoomMeetingProvider(options: ZoomProviderOptions): Meeting
       method,
       headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(ZOOM_REQUEST_TIMEOUT_MS),
     });
     if (res.status === 401) token = null;
     if (res.status === 404) {
