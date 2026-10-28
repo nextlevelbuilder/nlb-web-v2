@@ -112,6 +112,19 @@ export interface BuilderDataExport {
   moderationHistory: unknown[];
 }
 
+/** Drops one column from every row: moderator and admin ids are other people's data. */
+function omitColumn<T extends object, K extends keyof T>(rows: T[], column: K): Omit<T, K>[] {
+  return rows.map((row) => {
+    const { [column]: _omitted, ...rest } = row;
+    return rest;
+  });
+}
+
+/** Ledger reasons read `awarded_by:{role}:{actorId}`; the export keeps the role and drops the id. */
+function withoutLedgerActor<T extends { reason: string | null }>(rows: T[]): T[] {
+  return rows.map((row) => ({ ...row, reason: row.reason?.replace(/^(awarded_by:[^:]+):.*$/, "$1") ?? null }));
+}
+
 /**
  * Everything the league stores about the member, as JSON. Moderators' ids are left out of the
  * decision history (they are other people's data); evidence files are listed by name and can be
@@ -210,16 +223,17 @@ export async function exportBuilderData(db: AppDb, userId: string, now = new Dat
     privacy: privacy[0] ?? null,
     pilot: pilot[0] ?? null,
     projects,
-    evidence,
-    appeals,
+    evidence: omitColumn(evidence, "decidedBy"),
+    appeals: omitColumn(appeals, "resolvedBy"),
     confirmationsGiven,
-    events,
-    ledger,
+    // The member's own actions keep their id; anyone else acting on them (moderators, the system) is dropped.
+    events: events.map((event) => ({ ...event, actorUserId: event.actorUserId === userId ? userId : null })),
+    ledger: withoutLedgerActor(ledger),
     badges,
-    ranks,
+    ranks: omitColumn(ranks, "awardedBy"),
     nominations,
     seasons,
-    rewardClaims: claims,
+    rewardClaims: omitColumn(claims, "decidedBy"),
     timeCapsule: capsule,
     yearlySnapshots: snapshots,
     shareLinks: links.map(serializeShareLink),

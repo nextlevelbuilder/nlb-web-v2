@@ -215,6 +215,7 @@ describe("exportBuilderData", () => {
     const json = JSON.stringify(data);
     expect(json).not.toContain("secret-token-hash");
     expect(json).not.toContain('"actorId"');
+    for (const column of ['"decidedBy"', '"resolvedBy"', '"awardedBy"']) expect(json).not.toContain(column);
   });
 
   it("is a 404 for an unknown id and a 400 for malformed or tombstone ids", async () => {

@@ -115,6 +115,8 @@ describe("GET /api/v1/builder-me/export", () => {
     expect(data.evidence.map((row: { id: string }) => row.id)).toEqual(["ev-a"]);
     expect(data.ledger.map((row: { id: string }) => row.id)).toEqual(["l-a"]);
     expect(JSON.stringify(data)).not.toContain("bob");
+    // The moderator who approved the evidence is not named in the member's own export.
+    expect(data.evidence[0]).not.toHaveProperty("decidedBy");
     const audits = await env.db.select().from(builderModerationActions).where(eq(builderModerationActions.action, "export"));
     expect(audits).toEqual([expect.objectContaining({ targetType: "privacy_request", targetId: "alice", actorId: "alice", actorRole: "member", reasonCodes: ["self_service"] })]);
   });
