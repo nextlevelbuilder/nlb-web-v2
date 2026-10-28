@@ -102,7 +102,7 @@ async function buildRoundView(
 
   let tallies: LivePollTally[] | null = null;
   if (status === "finalized" && round.resultSnapshot) tallies = round.resultSnapshot.tallies;
-  else if (status === "closed") tallies = await computeRoundTallies(db, round.id);
+  else if (status === "closed") tallies = await computeRoundTallies(db, round.id, now);
 
   const myVote = viewerUserId ? await getMyVote(db, round.id, viewerUserId) : null;
   return {

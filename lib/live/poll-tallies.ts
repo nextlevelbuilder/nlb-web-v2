@@ -1,6 +1,6 @@
 import { and, asc, eq, ne, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { livePollRounds, livePollRoundTopics, liveVotes, type LivePollResultSnapshot } from "@/lib/db/schema";
+import { livePollRounds, livePollRoundTopics, liveVotes, users, type LivePollResultSnapshot } from "@/lib/db/schema";
 import { LiveError, liveInvalid, liveNotFound } from "./live-errors";
 import { deriveRoundStatus, type LivePollRound } from "./polls";
 
@@ -21,8 +21,11 @@ export function rankTallies(tallies: readonly LivePollTally[]): LivePollTally[] 
   });
 }
 
-/** Live counts for every topic in the round (zero-vote topics included), ranked. */
-export async function computeRoundTallies(db: AppDb, roundId: string): Promise<LivePollTally[]> {
+/**
+ * Live counts for every topic in the round (zero-vote topics included), ranked. Votes of accounts that
+ * are banned at `now` (ban not expired) are not counted, so the frozen snapshot never includes them.
+ */
+export async function computeRoundTallies(db: AppDb, roundId: string, now: Date = new Date()): Promise<LivePollTally[]> {
   const topics = await db
     .select({ topicId: livePollRoundTopics.topicId })
     .from(livePollRoundTopics)
@@ -35,7 +38,15 @@ export async function computeRoundTallies(db: AppDb, roundId: string): Promise<L
       firstVoteAt: sql<number>`min(${liveVotes.updatedAt})`,
     })
     .from(liveVotes)
-    .where(eq(liveVotes.roundId, roundId))
+    .where(
+      and(
+        eq(liveVotes.roundId, roundId),
+        sql`not exists (
+          select 1 from ${users} where ${users.id} = ${liveVotes.userId} and ${users.banned} = 1
+            and (${users.banExpires} is null or ${users.banExpires} > ${now.getTime()})
+        )`
+      )
+    )
     .groupBy(liveVotes.topicId);
   const byTopic = new Map(counts.map((c) => [c.topicId, c]));
   return rankTallies(
@@ -73,7 +84,7 @@ export async function finalizeRound(roundId: string, db: AppDb, now: Date = new 
   if (deriveRoundStatus(round, now) !== "closed") {
     throw new LiveError(409, "round_not_closed", "A round can only be finalized after it closes");
   }
-  const tallies = await computeRoundTallies(db, roundId);
+  const tallies = await computeRoundTallies(db, roundId, now);
   const snapshot = buildSnapshot(tallies, now);
   const winnerTopicId = tallies[0] && tallies[0].votes > 0 ? tallies[0].topicId : null;
   const [written] = await db

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { liveVotes } from "@/lib/db/schema";
+import { liveVotes, users } from "@/lib/db/schema";
 import { castVote, createRound, deriveRoundStatus } from "@/lib/live/polls";
 import { finalizeRound, overrideRoundWinner, rankTallies } from "@/lib/live/poll-tallies";
 import { getPollRoundBySlug } from "@/lib/live/poll-read-models";
@@ -129,6 +129,24 @@ describe("tallies and finalization", () => {
 
     const view = await getPollRoundBySlug(getDb(), round.slug, rel(201), null);
     expect(view).toMatchObject({ status: "finalized", talliesVisible: true, winnerTopicId: topicIds[1], totalVotes: 3 });
+  });
+
+  it("leaves votes of accounts banned at finalize time out of the frozen tally", async () => {
+    const { round, topicIds, rel } = await seedRound();
+    const [kept, banned, expired] = [await seedUser("v"), await seedUser("banned"), await seedUser("expired-ban")];
+    const extra = await seedUser("v");
+    await vote(round.id, kept.id, topicIds[0], rel(1));
+    await vote(round.id, extra.id, topicIds[0], rel(1));
+    await vote(round.id, banned.id, topicIds[1], rel(2));
+    await vote(round.id, expired.id, topicIds[1], rel(3));
+    // Banned after voting; one ban is still running at finalize time, the other has already expired.
+    await getDb().update(users).set({ banned: true, banExpires: null }).where(eq(users.id, banned.id));
+    await getDb().update(users).set({ banned: true, banExpires: rel(100) }).where(eq(users.id, expired.id));
+
+    const { snapshot, winnerTopicId } = await finalizeRound(round.id, getDb(), rel(170));
+    expect(snapshot.totalVotes).toBe(3);
+    expect(snapshot.tallies.find((t) => t.topicId === topicIds[1])).toMatchObject({ votes: 1, firstVoteAt: rel(3).getTime() });
+    expect(winnerTopicId).toBe(topicIds[0]);
   });
 
   it("records an override beside the frozen snapshot", async () => {
