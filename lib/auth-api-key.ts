@@ -44,9 +44,10 @@ function isApiKeyScope(value: unknown): value is ApiKeyScope {
 
 /**
  * Reads the scopes stored in `api_keys.permissions`. Scoped keys store a JSON array of scope names.
- * `null`/empty and the object shape older Better Auth rows may carry mean a full key, which keeps
- * those keys working as before. Anything else (unparseable text, a non-string or unknown entry) fails
- * closed: the key is scoped to nothing and authenticates nowhere.
+ * A missing value, a blank string and the object shape older Better Auth rows may carry mean a full
+ * key, which keeps those keys working as before. Anything else fails closed and the key authenticates
+ * nowhere: unparseable text, a non-string or unknown entry, and an empty array `[]` (a key scoped to
+ * nothing, never a full key).
  */
 export function parseApiKeyScopes(permissions: string | null | undefined): ApiKeyScope[] | null {
   if (permissions == null || permissions.trim() === "") return null;

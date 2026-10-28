@@ -94,6 +94,7 @@ export default async function BuilderSettingsPage({ params, searchParams }: Sett
                 copy={copy.settings.data}
                 locale={locale}
                 isAdmin={viewer.access.isAdmin}
+                pilotLosesAccess={viewer.access.isPilot && !viewer.access.flagEnabled}
                 deleteAction={deleteMyLeagueData}
                 deleted={deleted === "1"}
                 error={isSelfDeleteError(deleteError) ? deleteError : null}

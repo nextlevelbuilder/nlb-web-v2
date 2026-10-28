@@ -9,6 +9,8 @@ interface LeagueDataControlsProps {
   copy: HomeCopy["settings"]["data"];
   locale: string;
   isAdmin: boolean;
+  /** True for a pilot member while the flag is off: deleting removes the pilot place and with it access. */
+  pilotLosesAccess: boolean;
   /** Server action that deletes the signed-in member's data from the posted form. */
   deleteAction: (formData: FormData) => Promise<void>;
   deleted: boolean;
@@ -20,7 +22,7 @@ interface LeagueDataControlsProps {
  * JavaScript: the export is a plain link to the JSON download, the delete is a plain form posting to a
  * server action, and the typed confirmation is checked on the server.
  */
-export function LeagueDataControls({ copy, locale, isAdmin, deleteAction, deleted, error }: LeagueDataControlsProps) {
+export function LeagueDataControls({ copy, locale, isAdmin, pilotLosesAccess, deleteAction, deleted, error }: LeagueDataControlsProps) {
   const errorId = "league-data-delete-error";
   return (
     <section id="league-data" aria-labelledby="league-data-title" className="space-y-6">
@@ -52,6 +54,12 @@ export function LeagueDataControls({ copy, locale, isAdmin, deleteAction, delete
             <h3 className="font-medium">{copy.deleteTitle}</h3>
             <p className="text-step-sm text-ink-2">{copy.deleteDesc}</p>
             <p className="text-step-sm text-ink-2">{copy.deleteKeeps}</p>
+            {pilotLosesAccess && !isAdmin && (
+              <p className="flex items-start gap-1.5 text-step-sm text-foreground">
+                <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                {copy.pilotNote}
+              </p>
+            )}
           </div>
           {isAdmin ? (
             <p className="text-step-sm text-ink-2">{copy.adminNote}</p>

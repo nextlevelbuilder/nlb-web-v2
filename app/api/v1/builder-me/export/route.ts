@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/v1/builder-me/export - everything the Builder League stores about the caller, as a JSON
- * download. Session or `builder:read` caller; always the caller's own data. Audited like the admin export.
+ * download. Session, full API key or MCP delegation with `mcp:read`; always the caller's own data, private
+ * evidence included. Audited like the admin export.
  */
 export async function GET(request: Request) {
   return withBuilderErrors(async () => {

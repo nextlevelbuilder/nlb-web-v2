@@ -60,18 +60,20 @@ export const BUILDER_LEAGUE_AGENT_POLICY = {
     "Submit, edit, withdraw or appeal the member's own evidence (always stored as self_reported and submitted for human review) and create the member's projects.",
     "Join a season, save the member's Time Capsule, request a Year in Review video and revoke the member's own share links.",
     "Read Builder League rankings.",
+    "Export the connected member's own league data (GET /api/v1/builder-me/export), which includes their private evidence and notes.",
   ],
   mayNot: [
     "Approve, verify, reject or moderate evidence.",
     "Award or claim RP, badges or rewards, or confirm peer help.",
     "Read another member's private history or change privacy settings.",
-    "Call /api/v1/builder-admin/* routes, which need a signed-in admin session (MCP delegation is refused).",
+    "Call /api/v1/builder-admin/* routes, which need a signed-in admin session (MCP delegation is refused); the only exceptions are the render and ingest routes for admin-minted automation keys listed under automationScopes.",
+    "Delete the member's league data: POST /api/v1/builder-me/delete needs a signed-in browser session.",
   ],
 } as const;
 
 export const BUILDER_LEAGUE_AUTH = {
   member: "Browser session, an API key (Authorization: Bearer nlb_live_… or x-api-key) or MCP delegation: mcp:read for reads, mcp:write for writes.",
-  admin: "/api/v1/builder-admin/* needs a signed-in admin session; API keys and agents are refused.",
+  admin: "/api/v1/builder-admin/* needs a signed-in admin session; agents are refused, and API keys are refused except the scoped automation keys below on their own routes.",
   automationScopes: {
     "builder:render": "Admin-minted API key for the Year in Review render worker; accepted only on /api/v1/builder-admin/render-jobs/**.",
     "builder:ingest": "Admin-minted API key for the Discord bot; accepted only on /api/v1/builder-admin/ingest/discord.",

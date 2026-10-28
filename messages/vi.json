@@ -543,6 +543,7 @@
     "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
     "loginRequiredDesc": "Vui lòng đăng nhập để truy cập Account Dashboard và quản lý các slot đăng ký sản phẩm của bạn.",
     "loginRequiredBtn": "Đăng Nhập Ngay",
+    "leagueDeleted": "Dữ liệu Builder League của bạn đã được xoá. Tài khoản và sản phẩm của bạn không thay đổi.",
     "title": "Quản Lý Slot Submissions & Hạn Mức",
     "description": "Mỗi slot cho phép bạn gửi một sản phẩm vào hàng đợi kiểm duyệt danh bạ Next Level Builders.",
     "availableSlots": "Slot Khả Dụng",

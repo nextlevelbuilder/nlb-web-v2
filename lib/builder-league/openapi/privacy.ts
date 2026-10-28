@@ -68,7 +68,7 @@ export const privacyPaths: Record<string, unknown> = {
     get: {
       summary: "Export my Builder League data",
       description:
-        "The caller's own league data, in the same format as the admin export, as one JSON download. Works with a session or an API key / MCP delegation with `builder:read`; it never returns another member's data. Each export is recorded in the moderation audit trail.",
+        "The caller's own league data, in the same format as the admin export, as one JSON download. Works with a session, a full (unscoped) API key or MCP delegation with `mcp:read`; it includes the caller's private evidence and never returns another member's data. Each export is recorded in the moderation audit trail.",
       tags: [TAG],
       security: MEMBER_READ,
       responses: {

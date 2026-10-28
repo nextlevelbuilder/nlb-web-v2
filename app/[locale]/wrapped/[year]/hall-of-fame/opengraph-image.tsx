@@ -14,16 +14,11 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   const year = /^\d{4}$/.test(yearParam) ? Number(yearParam) : new Date().getFullYear();
   const copy = getHallOfFameCopy(locale);
   const meta: string[] = [];
-  // Names appear on the card only once the league is public and the year is final; crawlers carry no session.
+  // The card carries status only, never member names: OG images are cached for days by crawlers and
+  // CDNs, so a name on it would outlive a member revoking their public-board consent.
   if (isBuilderLeagueEnabled()) {
     const hall = await getHallOfFame(getDb(), year).catch(() => null);
-    if (hall?.status === "final") {
-      meta.push(copy.status.final);
-      const overall = hall.boards.find((board) => board.board === "overall");
-      for (const entry of overall?.entries.slice(0, 3) ?? []) meta.push(`${entry.rank}. ${entry.name}`);
-    } else if (hall) {
-      meta.push(copy.status.notFinal);
-    }
+    if (hall) meta.push(hall.status === "final" ? copy.status.final : copy.status.notFinal);
   }
   return renderConstellationOgCard({ numeral: "V", kicker: copy.ogKicker(year), title: copy.title(year), subtitle: copy.lede, meta });
 }

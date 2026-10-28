@@ -99,6 +99,7 @@ describe("scoped keys elsewhere", () => {
     expect(parseApiKeyScopes('["builder:render","admin:all"]')).toEqual([]);
     expect(parseApiKeyScopes("not json")).toEqual([]);
     expect(parseApiKeyScopes("42")).toEqual([]);
+    expect(parseApiKeyScopes("[]")).toEqual([]);
   });
 });
 

@@ -57,6 +57,7 @@ export interface HomeCopy {
       confirmLabel: (word: string) => string;
       deleteCta: string;
       deleted: string;
+      pilotNote: string;
       adminNote: string;
       errors: Record<"confirm" | "admin" | "rate" | "storage" | "failed", string>;
     };
@@ -154,6 +155,7 @@ const en: HomeCopy = {
       confirmLabel: (word) => `Type ${word} to confirm`,
       deleteCta: "Delete my league data",
       deleted: "Your Builder League data has been deleted.",
+      pilotNote: "You are in the league through the pilot. Deleting your data also removes your pilot place, so you lose access to the Builder League until it opens to everyone.",
       adminNote: "Admins cannot delete their own league data here. Ask another admin to run the request.",
       errors: {
         confirm: "Type the confirmation word exactly as shown.",
@@ -255,6 +257,7 @@ const vi: HomeCopy = {
       confirmLabel: (word) => `Gõ ${word} để xác nhận`,
       deleteCta: "Xoá dữ liệu league",
       deleted: "Dữ liệu Builder League của bạn đã được xoá.",
+      pilotNote: "Bạn đang tham gia league qua chương trình pilot. Xoá dữ liệu cũng xoá suất pilot của bạn, nên bạn sẽ mất quyền vào Builder League cho đến khi league mở cho mọi người.",
       adminNote: "Admin không thể tự xoá dữ liệu league của mình tại đây. Hãy nhờ một admin khác thực hiện.",
       errors: {
         confirm: "Hãy gõ đúng từ xác nhận như hướng dẫn.",

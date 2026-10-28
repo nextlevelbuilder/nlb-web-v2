@@ -41,6 +41,6 @@ export async function deleteMyLeagueData(formData: FormData): Promise<void> {
     redirect({ href: `/builder-league/settings?deleteError=${outcome.error}#league-data`, locale });
   }
   const after = await getViewerAccess(db, user);
-  if (!after.canUse) redirect({ href: "/account", locale });
+  if (!after.canUse) redirect({ href: { pathname: "/account", query: { leagueDeleted: "1" } }, locale });
   redirect({ href: "/builder-league/settings?deleted=1#league-data", locale });
 }
