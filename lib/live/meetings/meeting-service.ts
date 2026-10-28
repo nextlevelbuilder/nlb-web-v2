@@ -28,7 +28,9 @@ function errorText(error: unknown): string {
 }
 
 /**
- * Return the provider meeting id for an event, creating the meeting once. If two calls race, the
+ * Return the provider meeting id for an event, creating the meeting once. Only the operator route
+ * (`POST /api/v1/live-admin/events/{id}/meeting`) calls this; the member join path only reads the
+ * meeting, so a burst of joins can never create provider meetings. If two operator calls race, the
  * primary key on `live_meetings.event_id` keeps the first id; the extra provider meeting is logged
  * for manual clean-up (the interface has no delete).
  */
@@ -65,12 +67,13 @@ function splitName(name: string): { firstName: string; lastName: string } {
   return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
 }
 
-export type RegisterResult = "registered" | "already_registered" | "no_ticket" | "provider_unavailable" | "failed";
+export type RegisterResult = "registered" | "already_registered" | "no_ticket" | "provider_unavailable" | "no_meeting" | "failed";
 
 /**
  * Register the holder of the active ticket for the event with the provider and store the sealed
- * join URL. Idempotent for the same ticket. A provider failure is recorded as `failed` with
- * `last_error` and reported, never thrown, so callers can show "not ready".
+ * join URL. Idempotent for the same ticket. Never creates the provider meeting: without one the
+ * answer is `no_meeting` (an operator has not created it yet). A provider failure is recorded as
+ * `failed` with `last_error` and reported, never thrown, so callers can show "not ready".
  */
 export async function registerTicketHolder(
   deps: MeetingServiceDeps,
@@ -94,6 +97,12 @@ export async function registerTicketHolder(
 
   const provider = requireProvider(deps.provider);
   if (!provider) return "provider_unavailable";
+  const [meeting] = await db
+    .select({ providerMeetingId: liveMeetings.providerMeetingId })
+    .from(liveMeetings)
+    .where(eq(liveMeetings.eventId, input.eventId))
+    .limit(1);
+  if (!meeting) return "no_meeting";
   const [user] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, input.userId)).limit(1);
   if (!user) return "no_ticket";
 
@@ -107,9 +116,7 @@ export async function registerTicketHolder(
       });
 
   try {
-    const meetingId = await ensureEventMeeting(deps, input.eventId);
-    if (!meetingId) return "provider_unavailable";
-    const registrant = await provider.registerAttendee(meetingId, { email: user.email, ...splitName(user.name) });
+    const registrant = await provider.registerAttendee(meeting.providerMeetingId, { email: user.email, ...splitName(user.name) });
     const joinUrlCiphertext = await encryptSecret(registrant.joinUrl, deps.encryptionKey);
     await record({ status: "registered", providerRegistrantId: registrant.registrantId, joinUrlCiphertext });
     return "registered";

@@ -13,7 +13,7 @@ const polarFake = vi.hoisted(() => ({
 vi.mock("@/lib/polar", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/polar")>()), polar: polarFake }));
 
 import { getDb } from "@/lib/db";
-import { customers, liveTicketReservations, subscriptions } from "@/lib/db/schema";
+import { customers, liveMeetings, liveTicketReservations, subscriptions } from "@/lib/db/schema";
 import { PRODUCT_IDS } from "@/lib/polar";
 import { createRound } from "@/lib/live/polls";
 import { createTopic, createTopicGroup } from "@/lib/live/topics";
@@ -295,16 +295,26 @@ describe("join access", () => {
 
   it("returns the personal join URL to the ticket holder inside the window, never cached", async () => {
     setZoomCredentials(true);
-    installZoomFetch();
+    const { calls } = installZoomFetch();
     const event = await seedOnSaleEvent({ startsInMs: 5 * MINUTE });
     const holder = await seedUser("join-holder");
     await seedTicketHolder(event, holder);
     setCaller(asCaller(holder, "session"));
-    const response = await join(getRequest(`/api/v1/live/events/${event.slug}/join`), params({ slug: event.slug }));
+    const joinNow = () => join(getRequest(`/api/v1/live/events/${event.slug}/join`), params({ slug: event.slug }));
+
+    // Until an operator creates the meeting, joins answer meeting_not_ready and never create one.
+    const early = await readJson(await joinNow());
+    expect(early.data).toMatchObject({ status: "meeting_not_ready" });
+    expect(early.data).not.toHaveProperty("joinUrl");
+    expect(calls.some((call) => call.url.endsWith("/users/me/meetings"))).toBe(false);
+
+    await getDb().insert(liveMeetings).values({ eventId: event.id, provider: "zoom", providerMeetingId: "987654321" });
+    const response = await joinNow();
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
     const body = await readJson(response);
     expect(body.data).toMatchObject({ status: "open", joinUrl: `https://zoom.us/w/987654321?tk=${encodeURIComponent(holder.email)}` });
+    expect(calls.some((call) => call.url.endsWith("/users/me/meetings"))).toBe(false);
   });
 
   it("answers not_ready without a configured provider and too_early before the window", async () => {

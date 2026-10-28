@@ -39,7 +39,7 @@ export const liveSchemas: Record<string, unknown> = {
     type: "object",
     required: ["status", "opensAt", "endsAt"],
     properties: {
-      status: { type: "string", enum: ["too_early", "open", "ended", "not_ready", "no_ticket"] },
+      status: { type: "string", enum: ["too_early", "open", "ended", "not_ready", "meeting_not_ready", "no_ticket"] },
       joinUrl: { type: "string", format: "uri", description: "Personal join URL; only when status is open" },
       opensAt: time,
       endsAt: time,

@@ -5,14 +5,14 @@ import { getLiveCopy } from "@/lib/live/live-copy";
 import { liveApi, parseApiDate, safeExternalUrl } from "./live-api-client";
 import { formatLiveTime } from "./live-ui-helpers";
 
-type JoinStatus = "too_early" | "open" | "ended" | "not_ready" | "no_ticket";
+type JoinStatus = "too_early" | "open" | "ended" | "not_ready" | "meeting_not_ready" | "no_ticket";
 
 type JoinState =
   | { kind: "checking" }
   | { kind: "error" }
   | { kind: JoinStatus; joinUrl: string | null; opensAt: Date | null; endsAt: Date | null };
 
-const STATUSES: ReadonlySet<string> = new Set<JoinStatus>(["too_early", "open", "ended", "not_ready", "no_ticket"]);
+const STATUSES: ReadonlySet<string> = new Set<JoinStatus>(["too_early", "open", "ended", "not_ready", "meeting_not_ready", "no_ticket"]);
 /** setTimeout cannot wait longer than ~24.8 days; only auto-recheck within a day. */
 const MAX_AUTO_RECHECK_MS = 24 * 60 * 60 * 1000;
 
@@ -98,7 +98,11 @@ export function LiveJoinPanel({ slug, locale, timeZone }: { slug: string; locale
       body = <p className="live-note">{copy.joinEnded}</p>;
       break;
     default: {
-      const message = state.kind === "not_ready" ? copy.joinNotReady : state.kind === "no_ticket" ? copy.joinNoTicket : copy.joinError;
+      const message =
+        state.kind === "not_ready" ? copy.joinNotReady
+          : state.kind === "meeting_not_ready" ? copy.joinMeetingNotReady
+            : state.kind === "no_ticket" ? copy.joinNoTicket
+              : copy.joinError;
       body = (
         <>
           <p className="live-note">{message}</p>

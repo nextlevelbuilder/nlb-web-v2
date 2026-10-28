@@ -65,6 +65,7 @@ State machine (`lib/live/event-lifecycle.ts`): `draft → scheduled → sales_op
 
 - `MeetingProvider` interface (`lib/live/meetings/`), Zoom first via Server-to-Server OAuth. Credentials stay server-side (`ZOOM_ACCOUNT_ID`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`). Missing credentials or provider errors fail closed: no join data, an explicit "not ready" state.
 - Each attendee is registered individually; the personal join URL is stored encrypted and returned only to the ticket holder from 15 minutes before start until the event ends. Host start URLs and host credentials are never stored or returned.
+- The provider meeting is created only by an operator (`POST /api/v1/live-admin/events/{id}/meeting`, idempotent); the member join path never creates one, so a burst of joins cannot create duplicate meetings. Until it exists, join answers `meeting_not_ready`. Runbook: create the meeting right after opening sales, and in any case before the join window opens (15 minutes before start).
 - Cancelling a ticket cancels the registrant. Google Meet is a later adapter.
 
 ### Feature flag

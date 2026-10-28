@@ -64,6 +64,8 @@ export interface LiveCopy {
   joinOpensAt: (time: string) => string;
   joinOpenUntil: (time: string) => string;
   joinNotReady: string;
+  /** The host has not opened the meeting room yet. */
+  joinMeetingNotReady: string;
   joinEnded: string;
   joinNoTicket: string;
   joinError: string;
@@ -192,6 +194,7 @@ const en: LiveCopy = {
   joinOpensAt: (time) => `The join button opens at ${time}, 15 minutes before the start.`,
   joinOpenUntil: (time) => `Open until ${time}.`,
   joinNotReady: "The meeting link is not ready yet. Check again in a few minutes.",
+  joinMeetingNotReady: "The host has not opened the meeting room yet. Check again in a few minutes.",
   joinEnded: "This session has ended. The replay will come to Courses.",
   joinNoTicket: "We could not find an active ticket for your account.",
   joinError: "We could not check your access. Please try again.",
@@ -315,6 +318,7 @@ const vi: LiveCopy = {
   joinOpensAt: (time) => `Nút tham gia sẽ mở lúc ${time}, 15 phút trước giờ bắt đầu.`,
   joinOpenUntil: (time) => `Mở đến ${time}.`,
   joinNotReady: "Đường dẫn phòng họp chưa sẵn sàng. Vui lòng kiểm tra lại sau vài phút.",
+  joinMeetingNotReady: "Người dẫn chưa mở phòng họp. Vui lòng kiểm tra lại sau vài phút.",
   joinEnded: "Buổi này đã kết thúc. Bản ghi sẽ có trong mục Khoá học.",
   joinNoTicket: "Không tìm thấy vé còn hiệu lực cho tài khoản của bạn.",
   joinError: "Không thể kiểm tra quyền tham gia. Vui lòng thử lại.",

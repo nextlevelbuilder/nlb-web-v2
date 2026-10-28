@@ -5,7 +5,11 @@ import { LIVE_JOIN_OPENS_BEFORE_MS, liveTicketFeatureKey } from "../types";
 import { liveNotFound } from "../live-errors";
 import { registerTicketHolder, type MeetingServiceDeps } from "./meeting-service";
 
-export type JoinAccessStatus = "too_early" | "open" | "ended" | "not_ready" | "no_ticket";
+/**
+ * `meeting_not_ready`: the operator has not created the provider meeting yet (the join path never
+ * creates it). `not_ready`: the provider is unavailable or registration failed.
+ */
+export type JoinAccessStatus = "too_early" | "open" | "ended" | "not_ready" | "meeting_not_ready" | "no_ticket";
 
 export interface JoinAccess {
   status: JoinAccessStatus;
@@ -19,8 +23,9 @@ export interface JoinAccess {
  * Join access for an already-authorized user. A join URL is returned only when the user has an
  * `active` ticket backed by an active `live:ticket:<eventId>` entitlement, `now` is inside
  * `[startsAt − LIVE_JOIN_OPENS_BEFORE_MS, endsAt]`, and a provider registration exists. A missing
- * registration is created lazily on the first in-window request; any provider or decryption failure
- * answers `not_ready` (fail closed). The first successful join records attendance once.
+ * registration is created lazily on the first in-window request, against the meeting an operator
+ * created beforehand; without that meeting the answer is `meeting_not_ready`. Any provider or
+ * decryption failure answers `not_ready` (fail closed). The first successful join records attendance once.
  */
 export async function getJoinAccess(
   input: { eventId: string; userId: string; now: Date },
@@ -59,6 +64,7 @@ export async function getJoinAccess(
   let registration = await loadRegistration(deps, eventId, userId);
   if (!(registration?.status === "registered" && registration.ticketId === ticket.id && registration.joinUrlCiphertext)) {
     const result = await registerTicketHolder(deps, { eventId, userId, now });
+    if (result === "no_meeting") return { status: "meeting_not_ready", ...base };
     if (result !== "registered" && result !== "already_registered") return { status: "not_ready", ...base };
     registration = await loadRegistration(deps, eventId, userId);
   }

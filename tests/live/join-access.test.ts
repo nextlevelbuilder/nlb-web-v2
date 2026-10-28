@@ -22,6 +22,11 @@ function fakeProvider(available = true) {
   return provider;
 }
 
+/** The provider meeting an operator creates through the operator route before joins open. */
+async function seedMeeting(event: LiveEventRow) {
+  await getDb().insert(liveMeetings).values({ eventId: event.id, provider: "zoom", providerMeetingId: "mtg-1" });
+}
+
 async function ticketHolder(event: LiveEventRow) {
   const buyer = await seedUser("attendee");
   const now = new Date(event.startsAt.getTime() - 48 * HOUR);
@@ -38,6 +43,7 @@ async function ticketHolder(event: LiveEventRow) {
 describe("join access", () => {
   it("answers too_early, open (registering lazily, once) and ended around the window", async () => {
     const event = await seedOnSaleEvent();
+    await seedMeeting(event);
     const { buyer } = await ticketHolder(event);
     const provider = fakeProvider();
     const deps = { db: getDb(), provider, encryptionKey: TEST_ENCRYPTION_KEY };
@@ -53,7 +59,7 @@ describe("join access", () => {
     expect(open.opensAt.getTime()).toBe(opensAt);
     const again = await getJoinAccess({ eventId: event.id, userId: buyer.id, now: event.endsAt }, deps);
     expect(again.status).toBe("open");
-    expect(provider.createMeeting).toHaveBeenCalledTimes(1);
+    expect(provider.createMeeting).not.toHaveBeenCalled();
     expect(provider.registerAttendee).toHaveBeenCalledTimes(1);
 
     const [reg] = await getDb().select().from(liveAttendeeRegistrations).where(eq(liveAttendeeRegistrations.userId, buyer.id));
@@ -69,6 +75,7 @@ describe("join access", () => {
 
   it("answers no_ticket for non-holders and after a refund, and cancels the registrant at the provider", async () => {
     const event = await seedOnSaleEvent();
+    await seedMeeting(event);
     const stranger = await seedUser("stranger");
     const { buyer, paid } = await ticketHolder(event);
     const provider = fakeProvider();
@@ -88,8 +95,28 @@ describe("join access", () => {
     expect(await cancelProviderRegistrants(deps, event.id)).toEqual({ cancelled: 0, failed: 0, unavailable: false });
   });
 
+  it("answers meeting_not_ready without creating a meeting until an operator has created one", async () => {
+    const event = await seedOnSaleEvent();
+    const holders = [await ticketHolder(event), await ticketHolder(event), await ticketHolder(event)];
+    const provider = fakeProvider();
+    const deps = { db: getDb(), provider, encryptionKey: TEST_ENCRYPTION_KEY };
+    const inWindow = new Date(event.startsAt.getTime());
+
+    const burst = await Promise.all(holders.map(({ buyer }) => getJoinAccess({ eventId: event.id, userId: buyer.id, now: inWindow }, deps)));
+    expect(burst.map((access) => access.status)).toEqual(["meeting_not_ready", "meeting_not_ready", "meeting_not_ready"]);
+    expect(burst.every((access) => access.joinUrl === undefined)).toBe(true);
+    expect(provider.createMeeting).not.toHaveBeenCalled();
+    expect(provider.registerAttendee).not.toHaveBeenCalled();
+    expect(await getDb().select().from(liveMeetings).where(eq(liveMeetings.eventId, event.id))).toHaveLength(0);
+
+    await seedMeeting(event);
+    expect(await getJoinAccess({ eventId: event.id, userId: holders[0].buyer.id, now: inWindow }, deps)).toMatchObject({ status: "open" });
+    expect(provider.createMeeting).not.toHaveBeenCalled();
+  });
+
   it("is not_ready when the provider is unavailable or failing", async () => {
     const event = await seedOnSaleEvent();
+    await seedMeeting(event);
     const { buyer } = await ticketHolder(event);
     const inWindow = new Date(event.startsAt.getTime());
     const offline = { db: getDb(), provider: fakeProvider(false), encryptionKey: TEST_ENCRYPTION_KEY };
