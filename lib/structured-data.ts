@@ -230,3 +230,40 @@ export function communityWrappedJsonLd(input: CommunityWrappedJsonLdInput): Json
     dateModified: input.modifiedAt.toISOString(),
   };
 }
+
+export interface HallOfFameJsonLdInput {
+  year: number;
+  locale: string;
+  /** Visible page title and description. */
+  name: string;
+  description: string;
+  /** Listed members of the overall board, in rank order, as shown on the page. */
+  members: { name: string; passportPath: string | null }[];
+  modifiedAt: Date;
+}
+
+/** The final annual Hall of Fame as an ItemList of the overall board's listed (opted-in) members. */
+export function hallOfFameJsonLd(input: HallOfFameJsonLdInput): JsonLd {
+  const url = `${siteUrl()}${localizedPath(`/wrapped/${input.year}/hall-of-fame`, input.locale)}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${url}#hall-of-fame`,
+    name: input.name,
+    description: input.description,
+    url,
+    inLanguage: input.locale,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    numberOfItems: input.members.length,
+    dateModified: input.modifiedAt.toISOString(),
+    itemListElement: input.members.map((member, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Person",
+        name: member.name,
+        ...(member.passportPath ? { url: `${siteUrl()}${localizedPath(member.passportPath, input.locale)}` } : {}),
+      },
+    })),
+  };
+}
