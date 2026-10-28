@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { changesOf, runRawBatch } from "./live-d1-batch";
-import { liveEvents } from "@/lib/db/schema";
+import { liveEvents, livePollRounds, liveTopics } from "@/lib/db/schema";
 import { LIVE_TIMEZONE } from "./types";
 import { LiveError, liveInvalid, liveNotFound } from "./live-errors";
 import { assertTransition } from "./event-lifecycle";
@@ -73,6 +73,18 @@ function validateFields(input: Partial<EventEditableFields>): EventSet {
   return set;
 }
 
+/** A `topicId` / `pollRoundId` that points at nothing is a 400, not a foreign-key failure (500). */
+async function assertReferencesExist(db: AppDb, fields: EventSet): Promise<void> {
+  if (fields.topicId) {
+    const [topic] = await db.select({ id: liveTopics.id }).from(liveTopics).where(eq(liveTopics.id, fields.topicId)).limit(1);
+    if (!topic) throw liveInvalid("topicId does not match a topic");
+  }
+  if (fields.pollRoundId) {
+    const [round] = await db.select({ id: livePollRounds.id }).from(livePollRounds).where(eq(livePollRounds.id, fields.pollRoundId)).limit(1);
+    if (!round) throw liveInvalid("pollRoundId does not match a voting round");
+  }
+}
+
 function assertTimes(startsAt: Date, endsAt: Date): void {
   if (endsAt.getTime() <= startsAt.getTime()) throw liveInvalid("endsAt must be after startsAt");
 }
@@ -83,6 +95,7 @@ export async function createEventDraft(input: CreateEventInput, db: AppDb): Prom
     throw liveInvalid("titleEn, titleVi, startsAt, endsAt, hostName, capacity and priceCents are required");
   }
   assertTimes(fields.startsAt, fields.endsAt);
+  await assertReferencesExist(db, fields);
   const values = {
     ...fields,
     titleEn: fields.titleEn,
@@ -128,6 +141,7 @@ export async function updateEvent(
     throw new LiveError(409, "capacity_shrink_refused", "Use setEventCapacity to add seats once sales are open");
   }
   assertTimes(set.startsAt ?? event.startsAt, set.endsAt ?? event.endsAt);
+  await assertReferencesExist(db, set);
   const [row] = await db
     .update(liveEvents)
     .set({ ...set, updatedAt: now })

@@ -8,7 +8,7 @@ import { openSales, setEventCapacity, updateEvent } from "@/lib/live/events";
 import { ensureLiveTicketPolarProduct } from "@/lib/live/live-polar-product";
 import { getPublicEventBySlug, listUpcomingEvents } from "@/lib/live/event-read-models";
 import { LiveError } from "@/lib/live/live-errors";
-import { fakePolarProducts, seedDraftEvent, seedOnSaleEvent } from "./live-fixtures";
+import { fakePolarProducts, seedDraftEvent, seedOnSaleEvent, seedTopics } from "./live-fixtures";
 
 const ALL: LiveEventStatus[] = ["draft", "scheduled", "sales_open", "live", "ended", "cancelled", "archived"];
 const ALLOWED = new Set([
@@ -70,6 +70,17 @@ describe("opening sales and capacity", () => {
     await expect(updateEvent(event.id, { priceCents: 999 }, getDb())).rejects.toMatchObject({ code: "price_locked" });
     await expect(updateEvent(event.id, { capacity: 4 }, getDb())).rejects.toMatchObject({ code: "capacity_shrink_refused" });
     await expect(updateEvent(event.id, { hostName: "New host" }, getDb())).resolves.toMatchObject({ hostName: "New host" });
+  });
+
+  it("refuses a topic or voting round that does not exist with a validation error", async () => {
+    await expect(seedDraftEvent({ topicId: "no-such-topic" })).rejects.toMatchObject({ status: 400, code: "invalid_input" });
+    await expect(seedDraftEvent({ pollRoundId: "no-such-round" })).rejects.toMatchObject({ status: 400, code: "invalid_input" });
+    const draft = await seedDraftEvent();
+    await expect(updateEvent(draft.id, { topicId: "no-such-topic" }, getDb())).rejects.toMatchObject({ status: 400, code: "invalid_input" });
+    await expect(updateEvent(draft.id, { pollRoundId: "no-such-round" }, getDb())).rejects.toMatchObject({ status: 400, code: "invalid_input" });
+    const [topicId] = await seedTopics(1);
+    await expect(updateEvent(draft.id, { topicId }, getDb())).resolves.toMatchObject({ topicId });
+    await expect(updateEvent(draft.id, { topicId: null }, getDb())).resolves.toMatchObject({ topicId: null });
   });
 
   it("refuses a price change once the product exists, even before sales open", async () => {
