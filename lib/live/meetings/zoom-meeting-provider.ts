@@ -80,11 +80,24 @@ export function createZoomMeetingProvider(options: ZoomProviderOptions): Meeting
     return credentials;
   }
 
+  /**
+   * fetch that reports a timeout or network failure as a provider error (no HTTP status), so callers
+   * answer 502 like any other Zoom failure. A timed-out create may still have succeeded at Zoom.
+   */
+  async function send(what: string, url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await doFetch(url, init);
+    } catch (error) {
+      const reason = error instanceof Error && error.name === "TimeoutError" ? "timed out" : "could not reach Zoom";
+      throw new MeetingProviderError("zoom", null, `Zoom ${what} ${reason}`);
+    }
+  }
+
   async function accessToken(): Promise<string> {
     const creds = requireCredentials();
     if (token && token.expiresAt > clock()) return token.value;
     const url = `${oauthBase}?grant_type=account_credentials&account_id=${encodeURIComponent(creds.accountId)}`;
-    const res = await doFetch(url, {
+    const res = await send("token request", url, {
       method: "POST",
       headers: { Authorization: `Basic ${btoa(`${creds.clientId}:${creds.clientSecret}`)}` },
       signal: AbortSignal.timeout(ZOOM_REQUEST_TIMEOUT_MS),
@@ -100,7 +113,7 @@ export function createZoomMeetingProvider(options: ZoomProviderOptions): Meeting
   }
 
   async function call(path: string, method: string, what: string, payload: unknown): Promise<Response> {
-    const res = await doFetch(`${apiBase}${path}`, {
+    const res = await send(what, `${apiBase}${path}`, {
       method,
       headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),

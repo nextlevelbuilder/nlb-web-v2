@@ -109,7 +109,7 @@ describe("Zoom meeting provider", () => {
     expect(zoom.calls.length).toBeGreaterThanOrEqual(3);
     for (const call of zoom.calls) expect(call.signal).toBeInstanceOf(AbortSignal);
 
-    // A hung Zoom call rejects instead of waiting forever.
+    // A hung Zoom call rejects with a provider error instead of waiting forever.
     vi.useFakeTimers();
     try {
       const hung = createZoomMeetingProvider({
@@ -118,7 +118,9 @@ describe("Zoom meeting provider", () => {
       });
       const pending = hung.createMeeting(event).catch((e: unknown) => e);
       await vi.advanceTimersByTimeAsync(ZOOM_REQUEST_TIMEOUT_MS + 1);
-      expect(await pending).toMatchObject({ name: "TimeoutError" });
+      const error = await pending;
+      expect(error).toBeInstanceOf(MeetingProviderError);
+      expect(error).toMatchObject({ status: null, message: "Zoom token request timed out" });
     } finally {
       vi.useRealTimers();
     }
