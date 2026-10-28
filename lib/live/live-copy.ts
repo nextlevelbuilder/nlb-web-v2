@@ -69,6 +69,9 @@ export interface LiveCopy {
   joinEnded: string;
   joinNoTicket: string;
   joinError: string;
+  /** Join check answered 401: the session is gone. */
+  joinSignIn: string;
+  joinSignInButton: string;
   checkAgain: string;
   newTab: string;
   /** Weekly vote */
@@ -198,6 +201,8 @@ const en: LiveCopy = {
   joinEnded: "This session has ended. The replay will come to Courses.",
   joinNoTicket: "We could not find an active ticket for your account.",
   joinError: "We could not check your access. Please try again.",
+  joinSignIn: "Sign in again to get your join link.",
+  joinSignInButton: "Sign in",
   checkAgain: "Check again",
   newTab: "(opens in a new tab)",
   voteLabel: "Weekly vote",
@@ -322,6 +327,8 @@ const vi: LiveCopy = {
   joinEnded: "Buổi này đã kết thúc. Bản ghi sẽ có trong mục Khoá học.",
   joinNoTicket: "Không tìm thấy vé còn hiệu lực cho tài khoản của bạn.",
   joinError: "Không thể kiểm tra quyền tham gia. Vui lòng thử lại.",
+  joinSignIn: "Hãy đăng nhập lại để lấy đường dẫn tham gia.",
+  joinSignInButton: "Đăng nhập",
   checkAgain: "Kiểm tra lại",
   newTab: "(mở trong thẻ mới)",
   voteLabel: "Bình chọn hằng tuần",

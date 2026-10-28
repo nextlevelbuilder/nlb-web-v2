@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { getLiveCopy } from "@/lib/live/live-copy";
 import { liveApi, parseApiDate, safeExternalUrl } from "./live-api-client";
@@ -10,6 +11,7 @@ type JoinStatus = "too_early" | "open" | "ended" | "not_ready" | "meeting_not_re
 type JoinState =
   | { kind: "checking" }
   | { kind: "error" }
+  | { kind: "sign_in" }
   | { kind: JoinStatus; joinUrl: string | null; opensAt: Date | null; endsAt: Date | null };
 
 const STATUSES: ReadonlySet<string> = new Set<JoinStatus>(["too_early", "open", "ended", "not_ready", "meeting_not_ready", "no_ticket"]);
@@ -21,7 +23,7 @@ const MAX_AUTO_RECHECK_MS = 24 * 60 * 60 * 1000;
  * authorized `GET /api/v1/live/events/{slug}/join` call, and the button is active only while that
  * endpoint answers `open`. Before the window opens the panel re-checks itself when it opens.
  */
-export function LiveJoinPanel({ slug, locale, timeZone }: { slug: string; locale: string; timeZone: string }) {
+export function LiveJoinPanel({ slug, locale, timeZone, signInHref }: { slug: string; locale: string; timeZone: string; signInHref: string }) {
   const copy = getLiveCopy(locale);
   const [state, setState] = useState<JoinState>({ kind: "checking" });
   const [attempt, setAttempt] = useState(0);
@@ -39,7 +41,9 @@ export function LiveJoinPanel({ slug, locale, timeZone }: { slug: string; locale
       .then((result) => {
         if (controller.signal.aborted) return;
         if (!result.ok) {
-          setState(result.status === 403 || result.status === 404 ? { kind: "no_ticket", joinUrl: null, opensAt: null, endsAt: null } : { kind: "error" });
+          // 401: the session is gone, so offer sign-in rather than a generic error.
+          if (result.status === 401) setState({ kind: "sign_in" });
+          else setState(result.status === 403 || result.status === 404 ? { kind: "no_ticket", joinUrl: null, opensAt: null, endsAt: null } : { kind: "error" });
           return;
         }
         const status = typeof result.data.status === "string" && STATUSES.has(result.data.status) ? (result.data.status as JoinStatus) : null;
@@ -96,6 +100,14 @@ export function LiveJoinPanel({ slug, locale, timeZone }: { slug: string; locale
       break;
     case "ended":
       body = <p className="live-note">{copy.joinEnded}</p>;
+      break;
+    case "sign_in":
+      body = (
+        <>
+          <p className="live-note">{copy.joinSignIn}</p>
+          <Link className="btn btn-primary live-cta-btn" href={signInHref}>{copy.joinSignInButton}</Link>
+        </>
+      );
       break;
     default: {
       const message =

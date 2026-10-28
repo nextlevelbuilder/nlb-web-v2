@@ -125,7 +125,7 @@ function HeroCta({ cta, copy, event, locale, price, title, signInHref }: {
       return (
         <>
           <p className="badge live-ticket-badge">{copy.youHaveTicket}</p>
-          <LiveJoinPanel slug={event.slug} locale={locale} timeZone={event.timezone} />
+          <LiveJoinPanel slug={event.slug} locale={locale} timeZone={event.timezone} signInHref={signInHref} />
         </>
       );
     case "verify_email":
