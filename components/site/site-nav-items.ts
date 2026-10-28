@@ -2,7 +2,7 @@
  * Primary navigation shared by the desktop header and the full-screen menu.
  * Pure data + helpers (no React) so the routing rules are unit-testable.
  */
-export type NavKey = 'courses' | 'directory' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs' | 'builderLeague';
+export type NavKey = 'courses' | 'live' | 'directory' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs' | 'builderLeague';
 
 export interface NavItem {
   key: NavKey;
@@ -30,9 +30,22 @@ export const NAV: readonly NavItem[] = [
  */
 export const BUILDER_LEAGUE_NAV: NavItem = { key: 'builderLeague', route: '/builder-league', numeral: 'X' };
 
-/** The menu for a viewer: the public items, plus the Builder League entry when it is reachable. */
-export function navItemsFor(showBuilderLeague: boolean): readonly NavItem[] {
-  return showBuilderLeague ? [...NAV, BUILDER_LEAGUE_NAV] : NAV;
+/**
+ * NLB Live entry, inserted after Courses only while the Live flag is on (the pages 404 otherwise).
+ * Kept out of `NAV` for the same reason as the Builder League entry.
+ */
+export const LIVE_NAV: NavItem = { key: 'live', route: '/live', numeral: 'XI' };
+
+/** The menu for a viewer: the public items, plus Live (flag on) and Builder League (reachable) entries. */
+export function navItemsFor(showBuilderLeague: boolean, showLive = false): readonly NavItem[] {
+  if (!showBuilderLeague && !showLive) return NAV;
+  const items: NavItem[] = [];
+  for (const item of NAV) {
+    items.push(item);
+    if (showLive && item.key === 'courses') items.push(LIVE_NAV);
+  }
+  if (showBuilderLeague) items.push(BUILDER_LEAGUE_NAV);
+  return items;
 }
 
 /** `aria-current="page"` rule: the exact route, or a nested path that no more specific nav item owns. */

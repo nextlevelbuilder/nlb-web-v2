@@ -37,8 +37,10 @@ function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
 /**
  * Site header on every page (Constellation design): brand, primary nav, language, theme + sound controls,
  * sign-in or the signed-in builder, the Join CTA and the full-screen mobile menu. Owns the skip link.
+ * `showLive` comes from the server layout (the `LIVE_ENABLED` flag) so the Live entry never shows while
+ * its pages are hidden.
  */
-export default function SiteHeader() {
+export default function SiteHeader({ showLive = false }: { showLive?: boolean }) {
   const t = useTranslations('shell');
   const tHome = useTranslations('home.cta');
   const pathname = usePathname();
@@ -97,7 +99,7 @@ export default function SiteHeader() {
   };
 
   const user = session?.user;
-  const nav = navItemsFor(useBuilderLeagueNav(user));
+  const nav = navItemsFor(useBuilderLeagueNav(user), showLive);
   const who = user ? user.name || user.email || '' : '';
   const joinHref = onHome ? '#pricing' : undefined;
 
