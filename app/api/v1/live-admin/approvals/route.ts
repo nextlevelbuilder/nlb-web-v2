@@ -1,13 +1,41 @@
-import { ok } from "@/lib/builder-league/http";
+import { ok, parseCursor, parseLimit } from "@/lib/builder-league/http";
+import type { OperatorApprovalStatus } from "@/lib/access/types";
+import { APPROVAL_STATUSES, listApprovalPage } from "@/lib/operators/operator-approval-reads";
 import { hashOperatorArgs, recordOperatorAudit } from "@/lib/operators/operator-audit";
 import { requestApproval } from "@/lib/operators/operator-approvals";
 import { OperatorAccessError } from "@/lib/operators/operator-errors";
-import { runOperatorRoute } from "@/lib/live/http/live-operator-route";
+import { LIVE_OPERATOR_RESOURCE, runOperatorRoute } from "@/lib/live/http/live-operator-route";
+import { liveInvalid } from "@/lib/live/live-errors";
 import { readJsonObject } from "@/lib/live/http/live-request-context";
 import { approvalRequestSchema } from "@/lib/live/http/live-operator-schemas";
 import { resolveSensitiveTarget } from "@/lib/live/http/live-sensitive-targets";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Approvals for the deciding operator, newest first: action, resource, the canonical arguments behind
+ * the hash, reason, requester and the effective status. `?status=` defaults to `pending` (not expired);
+ * `?cursor=`, `?limit=` max 100.
+ */
+export async function GET(request: Request) {
+  return runOperatorRoute({
+    request,
+    action: "live.approval.list",
+    prepare: async () => {
+      const query = new URL(request.url).searchParams;
+      const raw = query.get("status")?.trim() || "pending";
+      if (!(APPROVAL_STATUSES as readonly string[]).includes(raw)) throw liveInvalid(`status must be one of ${APPROVAL_STATUSES.join(", ")}`);
+      const status = raw as OperatorApprovalStatus;
+      const cursor = parseCursor(query.get("cursor"));
+      const limit = parseLimit(query.get("limit"), 50, 100);
+      return { resource: LIVE_OPERATOR_RESOURCE, args: { status, limit }, filter: { status, cursor, limit } };
+    },
+    run: async ({ db, now }, { filter }) => {
+      const page = await listApprovalPage(db, { ...filter, now });
+      return ok(page.items, page.pagination);
+    },
+  });
+}
 
 /**
  * Request a two-person approval for a sensitive Live action. The approval is bound to the action's
@@ -32,7 +60,7 @@ export async function POST(request: Request) {
           subject,
           action: input.action,
           resource: target.resource,
-          argsHash,
+          args: target.args,
           reason: input.reason,
           ttlMs: input.ttlMinutes ? input.ttlMinutes * 60_000 : undefined,
           now,

@@ -156,6 +156,20 @@ export const liveOperatorPaths: Record<string, unknown> = {
     ),
   },
   "/api/v1/live-admin/approvals": {
+    get: {
+      ...op(
+        "List approvals",
+        "Newest first, with the canonical `args` behind `argsHash` so the deciding operator sees exactly what they approve. `?status=` pending (default, not expired), approved, rejected, consumed or expired; cursor paginated.",
+        {
+          params: [
+            { name: "status", in: "query", schema: { type: "string", enum: ["pending", "approved", "rejected", "consumed", "expired"], default: "pending" } },
+            { name: "cursor", in: "query", schema: str },
+            { name: "limit", in: "query", schema: int },
+          ],
+        }
+      ),
+      responses: { "200": { description: "Approvals", content: pagedEnvelope({ type: "array", items: ref("LiveApprovalDetail") }) }, ...errors(400, 401, 403) },
+    },
     post: op(
       "Request an approval",
       "For `live.ticket.refund` (`target: { ticketId }`), `live.event.cancel` (`{ eventId }`) or `live.poll.override` (`{ roundId, topicId }`). A different operator must approve it; it expires after `ttlMinutes` (default 30) and is consumed once by the requester.",
@@ -173,6 +187,12 @@ export const liveOperatorPaths: Record<string, unknown> = {
         data: ref("LiveApproval"),
       }
     ),
+  },
+  "/api/v1/live-admin/approvals/{id}": {
+    get: op("Get an approval", "Action, resource, canonical `args`, reason, requester and effective status; check it before deciding.", {
+      params: [idParam],
+      data: ref("LiveApprovalDetail"),
+    }),
   },
   "/api/v1/live-admin/approvals/{id}/decision": {
     post: op("Decide an approval", "Approve or reject; never one's own request.", {

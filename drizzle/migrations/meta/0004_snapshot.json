@@ -8942,6 +8942,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "args": {
+          "name": "args",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "reason": {
           "name": "reason",
           "type": "text",

@@ -56,6 +56,11 @@ export const operatorApprovals = sqliteTable(
     resource: text("resource").notNull(),
     /** sha256 of the canonical JSON arguments the approval covers. */
     argsHash: text("args_hash").notNull(),
+    /**
+     * The canonical JSON arguments behind `args_hash` (non-personal ids), so the deciding operator can
+     * see exactly what they approve and re-hash it. Null only for rows written before it existed.
+     */
+    args: text("args"),
     reason: text("reason").notNull(),
     requestedBy: text("requested_by").notNull(),
     decidedBy: text("decided_by"),

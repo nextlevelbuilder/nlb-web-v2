@@ -88,6 +88,16 @@ export const liveSchemas: Record<string, unknown> = {
     type: "object",
     properties: { id: str, status: { type: "string", const: "pending" }, action: str, resource: str, argsHash: str, expiresAt: time },
   },
+  LiveApprovalDetail: {
+    type: "object",
+    properties: {
+      id: str, action: str, resource: str,
+      args: { type: ["object", "null"], additionalProperties: true, description: "Canonical JSON arguments; sha256 of their canonical JSON is `argsHash`" },
+      argsHash: str, reason: str, requestedBy: str,
+      status: { type: "string", enum: ["pending", "approved", "rejected", "consumed", "expired"] },
+      expiresAt: time, decidedBy: nullableStr, decidedAt: nullableTime, consumedAt: nullableTime,
+    },
+  },
   LiveAuditRow: {
     type: "object",
     properties: {

@@ -19,7 +19,8 @@ import { POST as cancelEvent } from "@/app/api/v1/live-admin/events/[id]/cancel/
 import { GET as eventTickets } from "@/app/api/v1/live-admin/events/[id]/tickets/route";
 import { POST as createTopicGroup } from "@/app/api/v1/live-admin/topic-groups/route";
 import { POST as refundTicket } from "@/app/api/v1/live-admin/tickets/[id]/refund/route";
-import { POST as requestApproval } from "@/app/api/v1/live-admin/approvals/route";
+import { GET as listApprovals, POST as requestApproval } from "@/app/api/v1/live-admin/approvals/route";
+import { GET as getApproval } from "@/app/api/v1/live-admin/approvals/[id]/route";
 import { POST as decideApproval } from "@/app/api/v1/live-admin/approvals/[id]/decision/route";
 import { GET as auditLog } from "@/app/api/v1/live-admin/audit/route";
 import {
@@ -169,6 +170,46 @@ describe("sensitive actions", () => {
     const decided = await decideApproval(jsonRequest(`/api/v1/live-admin/approvals/${id}/decision`, "POST", { decision: "approve" }), params({ id }));
     expect(decided.status).toBe(409);
     expect((await readJson(decided)).error?.code).toBe("approval_self_decision");
+  });
+
+  it("shows the approver what an approval covers, and only to operators", async () => {
+    const requester = await seedOperator();
+    const approver = await seedOperator();
+    const member = await seedUser("approval-peek");
+    const event = await seedOnSaleEvent();
+    const buyer = await seedUser("approval-buyer");
+    await seedTicketHolder(event, buyer);
+    const ticketId = await ticketIdOf(event.id, buyer.id);
+    setCaller(asCaller(requester, "session"));
+    const requested = await requestApproval(jsonRequest("/api/v1/live-admin/approvals", "POST", { action: "live.ticket.refund", target: { ticketId }, reason: "Double charge" }));
+    const { id, argsHash } = (await readJson(requested)).data as { id: string; argsHash: string };
+
+    setCaller(asCaller(approver, "session"));
+    const expected = {
+      id, action: "live.ticket.refund", resource: `live:ticket:${event.id}`, args: { ticketId }, argsHash,
+      reason: "Double charge", requestedBy: requester.id, status: "pending", decidedBy: null, decidedAt: null, consumedAt: null,
+    };
+    const detail = await getApproval(getRequest(`/api/v1/live-admin/approvals/${id}`), params({ id }));
+    expect(detail.status).toBe(200);
+    expect((await readJson(detail)).data).toMatchObject(expected);
+    const pending = await readJson(await listApprovals(getRequest("/api/v1/live-admin/approvals?limit=100")));
+    expect(pending.data).toEqual(expect.arrayContaining([expect.objectContaining(expected)]));
+    expect(pending).toHaveProperty("pagination");
+    expect(await actorRows(approver.id, "live.approval.read")).toMatchObject([{ decision: "allow", resource: `approval:${id}` }]);
+    expect(await actorRows(approver.id, "live.approval.list")).toMatchObject([{ decision: "allow" }]);
+
+    await decideApproval(jsonRequest(`/api/v1/live-admin/approvals/${id}/decision`, "POST", { decision: "reject" }), params({ id }));
+    const stillPending = await readJson(await listApprovals(getRequest("/api/v1/live-admin/approvals?limit=100")));
+    expect((stillPending.data as { id: string }[]).some((row) => row.id === id)).toBe(false);
+    const rejected = await readJson(await listApprovals(getRequest("/api/v1/live-admin/approvals?status=rejected&limit=100")));
+    expect(rejected.data).toEqual(expect.arrayContaining([expect.objectContaining({ id, status: "rejected", decidedBy: approver.id })]));
+    expect((await listApprovals(getRequest("/api/v1/live-admin/approvals?status=bogus"))).status).toBe(400);
+    expect((await getApproval(getRequest("/api/v1/live-admin/approvals/missing"), params({ id: "missing" }))).status).toBe(404);
+
+    setCaller(asCaller(member, "session"));
+    const refused = await getApproval(getRequest(`/api/v1/live-admin/approvals/${id}`), params({ id }));
+    expect(refused.status).toBe(403);
+    expect(JSON.stringify(await readJson(refused))).not.toContain(ticketId);
   });
 
   it("refunds through Polar with a second operator's approval, leaves the ticket to the webhook and refuses a replay", async () => {

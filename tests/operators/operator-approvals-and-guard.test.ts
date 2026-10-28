@@ -30,7 +30,7 @@ afterAll(async () => {
 
 async function approved(args: unknown = ARGS, ttlMs?: number, now?: Date): Promise<string> {
   const { id } = await requestApproval(local.db, {
-    subject: session("alice"), action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(args), reason: "customer asked", ttlMs, now,
+    subject: session("alice"), action: REFUND, resource: RESOURCE, args, reason: "customer asked", ttlMs, now,
   });
   await decideApproval(local.db, { approvalId: id, subject: session("bob"), decision: "approve", now });
   return id;
@@ -48,7 +48,7 @@ const auditRows = (approvalId: string) =>
 describe("approvals", () => {
   it("refuses self-approval and approvers without the action's capability", async () => {
     const { id } = await requestApproval(local.db, {
-      subject: session("alice"), action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(ARGS), reason: "r",
+      subject: session("alice"), action: REFUND, resource: RESOURCE, args: ARGS, reason: "r",
     });
     await expectCode(decideApproval(local.db, { approvalId: id, subject: session("alice"), decision: "approve" }), 409, "approval_self_decision");
     await expectCode(decideApproval(local.db, { approvalId: id, subject: session("carol"), decision: "approve" }), 403, "missing_capability");
@@ -56,12 +56,15 @@ describe("approvals", () => {
     await expectCode(decideApproval(local.db, { approvalId: id, subject: session("banned-op"), decision: "approve" }), 403, "banned");
     const [row] = await local.db.select().from(operatorApprovals).where(eq(operatorApprovals.id, id));
     expect(row.status).toBe("pending");
+    // The canonical arguments are stored beside their hash, so the approver can see and re-hash them.
+    expect(row.args).toBe('{"reason":"duplicate","ticketId":"t1"}');
+    expect(row.argsHash).toBe(hashOperatorArgs(JSON.parse(row.args as string)));
     expect((await auditRows(id)).filter((r) => r.decision === "deny")).toHaveLength(4);
   });
 
   it("refuses requests from non-operators", async () => {
     await expectCode(
-      requestApproval(local.db, { subject: session("member"), action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(ARGS), reason: "r" }),
+      requestApproval(local.db, { subject: session("member"), action: REFUND, resource: RESOURCE, args: ARGS, reason: "r" }),
       403,
       "not_operator"
     );
@@ -70,7 +73,7 @@ describe("approvals", () => {
   it("refuses to decide an expired request and marks it expired", async () => {
     const past = new Date(Date.now() - 60 * 60 * 1000);
     const { id } = await requestApproval(local.db, {
-      subject: session("alice"), action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(ARGS), reason: "r", now: past,
+      subject: session("alice"), action: REFUND, resource: RESOURCE, args: ARGS, reason: "r", now: past,
     });
     await expectCode(decideApproval(local.db, { approvalId: id, subject: session("bob"), decision: "approve" }), 409, "approval_expired");
     const [row] = await local.db.select().from(operatorApprovals).where(eq(operatorApprovals.id, id));
@@ -98,7 +101,7 @@ describe("approvals", () => {
 
   it("refuses rejected and pending approvals", async () => {
     const { id } = await requestApproval(local.db, {
-      subject: session("alice"), action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(ARGS), reason: "r",
+      subject: session("alice"), action: REFUND, resource: RESOURCE, args: ARGS, reason: "r",
     });
     const base = { approvalId: id, action: REFUND, resource: RESOURCE, argsHash: hashOperatorArgs(ARGS), actorUserId: "alice" };
     await expectCode(consumeApproval(local.db, base), 409, "approval_not_approved");

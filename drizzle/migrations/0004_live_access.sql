@@ -189,6 +189,7 @@ CREATE TABLE `operator_approvals` (
 	`action` text NOT NULL,
 	`resource` text NOT NULL,
 	`args_hash` text NOT NULL,
+	`args` text,
 	`reason` text NOT NULL,
 	`requested_by` text NOT NULL,
 	`decided_by` text,

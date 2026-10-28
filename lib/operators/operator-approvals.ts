@@ -4,7 +4,7 @@ import { operatorApprovals } from "@/lib/db/schema";
 import { authorize } from "@/lib/access/authorize";
 import type { AccessSubject, SensitiveOperatorAction } from "@/lib/access/types";
 import { isSensitiveOperatorAction, sensitiveActionDomain } from "./operator-actions";
-import { recordOperatorAudit } from "./operator-audit";
+import { canonicalJson, hashOperatorArgs, recordOperatorAudit } from "./operator-audit";
 import { approvalError, denyError, OperatorAccessError } from "./operator-errors";
 
 /**
@@ -17,7 +17,6 @@ import { approvalError, denyError, OperatorAccessError } from "./operator-errors
 
 export const DEFAULT_APPROVAL_TTL_MS = 30 * 60 * 1000;
 const MAX_APPROVAL_TTL_MS = 24 * 60 * 60 * 1000;
-const ARGS_HASH = /^[0-9a-f]{64}$/;
 
 type ApprovalRow = typeof operatorApprovals.$inferSelect;
 
@@ -54,19 +53,28 @@ export interface RequestApprovalInput {
   action: SensitiveOperatorAction;
   /** Canonical resource string the action targets, e.g. `live:ticket:<eventId>`. */
   resource: string;
-  argsHash: string;
+  /**
+   * JSON arguments the action will run with (non-personal ids). Stored as canonical JSON next to their
+   * hash, so the approver sees exactly what they approve.
+   */
+  args: unknown;
   reason: string;
   ttlMs?: number;
   now?: Date;
 }
 
 /** Creates a pending approval. The requester must hold the action's capability. */
-export async function requestApproval(db: AppDb, input: RequestApprovalInput): Promise<{ id: string; expiresAt: Date }> {
+export async function requestApproval(
+  db: AppDb,
+  input: RequestApprovalInput
+): Promise<{ id: string; expiresAt: Date; argsHash: string }> {
   const now = input.now ?? new Date();
   const ttlMs = input.ttlMs ?? DEFAULT_APPROVAL_TTL_MS;
   if (!isSensitiveOperatorAction(input.action)) throw new TypeError("Approvals exist only for sensitive operator actions");
   if (!input.resource?.trim()) throw new TypeError("resource is required");
-  if (!ARGS_HASH.test(input.argsHash)) throw new TypeError("argsHash must be a sha256 hex digest");
+  // Same canonicalization as the hash, so `sha256(args) === args_hash` can be checked by anyone.
+  const args = canonicalJson(input.args ?? {});
+  const argsHash = hashOperatorArgs(input.args);
   const reason = input.reason?.trim();
   if (!reason || reason.length > 500) throw new TypeError("reason must be 1-500 characters");
   if (!Number.isInteger(ttlMs) || ttlMs <= 0 || ttlMs > MAX_APPROVAL_TTL_MS) throw new TypeError("ttlMs is out of range");
@@ -76,15 +84,15 @@ export async function requestApproval(db: AppDb, input: RequestApprovalInput): P
   const id = crypto.randomUUID();
   const expiresAt = new Date(now.getTime() + ttlMs);
   await db.insert(operatorApprovals).values({
-    id, action: input.action, resource: input.resource, argsHash: input.argsHash, reason, requestedBy,
+    id, action: input.action, resource: input.resource, argsHash, args, reason, requestedBy,
     status: "pending", expiresAt, createdAt: now,
   });
   await recordOperatorAudit(db, {
     actorUserId: requestedBy, actorAuthType: input.subject.authType, clientId: input.subject.clientId,
     action: "operator.approval.request", resource: input.resource, decision: "allow",
-    argsHash: input.argsHash, approvalId: id, details: { requestedAction: input.action }, now,
+    argsHash, approvalId: id, details: { requestedAction: input.action }, now,
   });
-  return { id, expiresAt };
+  return { id, expiresAt, argsHash };
 }
 
 export interface DecideApprovalInput {
