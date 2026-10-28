@@ -9,6 +9,14 @@ import { journeyPaths, journeySchemas } from "@/lib/builder-league/openapi/journ
 import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/privacy";
 import { livePaths, liveSchemas } from "@/lib/live/openapi";
 
+/**
+ * Whether the NLB Live member and operator API is part of this public document. Off until Live
+ * launches: the document is an additive-only public contract, so adding the paths at launch is safe,
+ * while publishing them now (with `LIVE_ENABLED` off) would leak the feature and freeze the paths.
+ * The Live module in lib/live/openapi stays complete and tested; flip this one switch at launch.
+ */
+const PUBLISH_LIVE_OPENAPI = false;
+
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
 
@@ -46,7 +54,7 @@ export const openApiSpec = {
       ...progressionPaths,
       ...journeyPaths,
       ...privacyPaths,
-      ...livePaths,
+      ...(PUBLISH_LIVE_OPENAPI ? livePaths : {}),
       "/api/v1/onboarding-status": {
         get: {
           operationId: "getOnboardingStatus",
@@ -432,7 +440,7 @@ export const openApiSpec = {
         ...progressionSchemas,
         ...journeySchemas,
         ...privacySchemas,
-        ...liveSchemas,
+        ...(PUBLISH_LIVE_OPENAPI ? liveSchemas : {}),
         PulseSummary: {
           type: "object",
           properties: {

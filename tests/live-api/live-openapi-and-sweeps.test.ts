@@ -12,8 +12,8 @@ import { seedOnSaleEvent, seedUser } from "./live-api-fixtures";
 type Operation = { operationId?: string; security?: unknown; tags?: string[] };
 type Spec = { paths: Record<string, Record<string, Operation>>; components: { schemas: Record<string, unknown> } };
 
-describe("Live OpenAPI registration", () => {
-  it("adds the member and operator paths without replacing any existing path or schema", async () => {
+describe("Live OpenAPI module", () => {
+  it("documents the member and operator paths, ready to merge without replacing any existing path or schema", async () => {
     const spec = (await (await getSpec()).json()) as Spec;
     const liveKeys = Object.keys(livePaths);
     expect(liveKeys).toEqual(
@@ -26,6 +26,7 @@ describe("Live OpenAPI registration", () => {
         "/api/v1/live/polls/current",
         "/api/v1/live/polls/{roundId}/vote",
         "/api/v1/live-admin/approvals",
+        "/api/v1/live-admin/approvals/{id}",
         "/api/v1/live-admin/approvals/{id}/decision",
         "/api/v1/live-admin/tickets/{id}/refund",
         "/api/v1/live-admin/events/{id}/cancel",
@@ -33,18 +34,28 @@ describe("Live OpenAPI registration", () => {
         "/api/v1/live-admin/audit",
       ])
     );
-    // Live paths live under their own prefixes, so the spread can never shadow an existing path...
-    for (const key of liveKeys) expect(key).toMatch(/^\/api\/v1\/live(-admin)?\//);
-    // ...and every one reaches the served document unchanged (nothing later overrides it).
-    for (const key of liveKeys) expect(spec.paths[key]).toEqual(JSON.parse(JSON.stringify(livePaths[key])));
+    // Live paths live under their own prefixes and schemas under their own names, so merging the
+    // module at launch can never shadow an existing path or schema...
+    for (const key of liveKeys) {
+      expect(key).toMatch(/^\/api\/v1\/live(-admin)?\//);
+      expect(spec.paths[key]).toBeUndefined();
+    }
     for (const key of Object.keys(liveSchemas)) {
       expect(key).toMatch(/^Live/);
-      expect(spec.components.schemas[key]).toEqual(JSON.parse(JSON.stringify(liveSchemas[key as keyof typeof liveSchemas])));
+      expect(spec.components.schemas[key]).toBeUndefined();
     }
-
-    // Operation ids stay unique across the whole document.
-    const ids = Object.values(spec.paths).flatMap((methods) => Object.values(methods).map((op) => op.operationId).filter(Boolean));
+    // ...and operation ids stay unique across the merged document.
+    const merged = { ...spec.paths, ...(JSON.parse(JSON.stringify(livePaths)) as Spec["paths"]) };
+    const ids = Object.values(merged).flatMap((methods) => Object.values(methods).map((op) => op.operationId).filter(Boolean));
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("keeps Live out of the public document until launch", async () => {
+    const spec = (await (await getSpec()).json()) as Spec;
+    expect(Object.keys(spec.paths).filter((key) => key.startsWith("/api/v1/live"))).toEqual([]);
+    expect(Object.keys(spec.components.schemas).filter((key) => key.startsWith("Live"))).toEqual([]);
+    const tags = Object.values(spec.paths).flatMap((methods) => Object.values(methods).flatMap((op) => op.tags ?? []));
+    expect(tags.some((tag) => tag.startsWith("NLB Live"))).toBe(false);
 
     // Existing contract spot checks.
     expect(spec.paths["/api/v1/votes"].post.security).toEqual([{ SessionAuth: [] }]);
