@@ -188,6 +188,10 @@ Members control their own visibility:
 | Hide scenes from a shared year | `PATCH /api/v1/builder-year/{year}` with `hiddenScenes` |
 | Revoke a share link | `DELETE /api/v1/builder-year/{year}/share/{id}`. The link stops resolving immediately. There is no admin route for one link; for a full removal, use delete below. |
 
+### Member self-service
+
+Members export and delete their own data from the settings page (`/builder-league/settings`, works without JavaScript) or the API. `GET /api/v1/builder-me/export` returns the same JSON as the admin export, for the caller only; a session or a `builder:read` API key / MCP delegation may call it. `POST /api/v1/builder-me/delete` with `{ "confirm": "DELETE" }` runs the admin delete routine below on the caller's own data. It accepts a signed-in session only, so API keys and agents can never erase a member's history, and it refuses admins, who must ask another admin. Both are rate limited and audited (`privacy_request` / `export` or `delete`, reason `self_service`); the delete audit row names the tombstone as both target and actor, so it does not re-identify the member. A pilot member loses league access with the deletion while the flag is off (the pilot entry is part of the deleted data) and lands on `/account`; re-add them to the pilot if they want to rejoin.
+
 Admin requests, in [`lib/builder-league/privacy-requests.ts`](../lib/builder-league/privacy-requests.ts):
 
 ### Export
