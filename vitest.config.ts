@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
@@ -10,6 +10,8 @@ export default defineConfig({
     hookTimeout: 120_000,
     testTimeout: 60_000,
     include: ["tests/**/*.test.ts", "lib/**/*.test.ts", "app/**/*.test.ts"],
+    // Playwright specs run under `npm run test:e2e`, never under vitest.
+    exclude: [...configDefaults.exclude, "tests/e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
