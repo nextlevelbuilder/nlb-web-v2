@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import sitemap from "@/app/sitemap";
 import { GET as llms } from "@/app/llms.txt/route";
 import { GET as llmsFull } from "@/app/llms-full.txt/route";
+import { GET as liveNav } from "@/app/api/v1/live/nav/route";
 import { NAV, navItemsFor } from "@/components/site/site-nav-items";
 import { getAllPublishedProducts } from "@/lib/domain/catalog";
 import { listPastEvents, listUpcomingEvents, type LivePublicEvent } from "@/lib/live/event-read-models";
@@ -66,6 +67,13 @@ describe("Live discovery with the flag off", () => {
     expect(navItemsFor(false, false)).toBe(NAV);
     expect(navItemsFor(false).some((item) => item.key === "live")).toBe(false);
   });
+
+  it("tells the header probe to hide the Live entry, with a 200 and no caching", async () => {
+    const response = await liveNav();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(await response.json()).toEqual({ data: { showNav: false } });
+  });
 });
 
 describe("Live discovery with the flag on", () => {
@@ -94,6 +102,10 @@ describe("Live discovery with the flag on", () => {
     expect(markdownSourcePath("/live.md")).toEqual({ path: "/live", pathname: "/live", locale: "en" });
     expect(markdownSourcePath("/vi/live/agent-loops-live.md")).toEqual({ path: "/live/agent-loops-live", pathname: "/vi/live/agent-loops-live", locale: "vi" });
     for (const path of ["/live/Bad.md", "/live/a/b.md", "/live/a--b.md", "/lives.md"]) expect(markdownSourcePath(path), path).toBeNull();
+  });
+
+  it("tells the header probe to show the Live entry from the runtime flag", async () => {
+    expect(await (await liveNav()).json()).toEqual({ data: { showNav: true } });
   });
 
   it("adds the Live nav entry right after Courses", () => {

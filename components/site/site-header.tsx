@@ -11,6 +11,7 @@ import SoundToggle from './sound-toggle';
 import ThemeSeg from './theme-seg';
 import { isCurrentNavItem, navItemsFor, type NavItem } from './site-nav-items';
 import { useBuilderLeagueNav } from './use-builder-league-nav';
+import { useLiveNav } from './use-live-nav';
 
 const DESKTOP = '(min-width: 1140px)';
 
@@ -37,10 +38,11 @@ function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
 /**
  * Site header on every page (Constellation design): brand, primary nav, language, theme + sound controls,
  * sign-in or the signed-in builder, the Join CTA and the full-screen mobile menu. Owns the skip link.
- * `showLive` comes from the server layout (the `LIVE_ENABLED` flag) so the Live entry never shows while
- * its pages are hidden.
+ * The Live entry follows the deployed `LIVE_ENABLED` flag, probed at runtime (`useLiveNav`) because
+ * a prerendered page would otherwise freeze the build-time value; it never shows while its pages are
+ * hidden.
  */
-export default function SiteHeader({ showLive = false }: { showLive?: boolean }) {
+export default function SiteHeader() {
   const t = useTranslations('shell');
   const tHome = useTranslations('home.cta');
   const pathname = usePathname();
@@ -99,7 +101,7 @@ export default function SiteHeader({ showLive = false }: { showLive?: boolean })
   };
 
   const user = session?.user;
-  const nav = navItemsFor(useBuilderLeagueNav(user), showLive);
+  const nav = navItemsFor(useBuilderLeagueNav(user), useLiveNav());
   const who = user ? user.name || user.email || '' : '';
   const joinHref = onHome ? '#pricing' : undefined;
 

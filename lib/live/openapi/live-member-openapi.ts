@@ -5,6 +5,15 @@
 import { CALLER_AUTH, LIVE_MEMBER_TAG, PUBLIC_AUTH, envelope, errors, json, ref, slugParam } from "./live-openapi-shared";
 
 export const liveMemberPaths: Record<string, unknown> = {
+  "/api/v1/live/nav": {
+    get: {
+      summary: "Whether the site menu shows Live",
+      description: "`showNav` is the deployed `LIVE_ENABLED` flag. Always 200, also while Live is off. Public.",
+      tags: [LIVE_MEMBER_TAG],
+      security: PUBLIC_AUTH,
+      responses: { "200": { description: "Menu flag", content: envelope({ type: "object", properties: { showNav: { type: "boolean" } } }) } },
+    },
+  },
   "/api/v1/live/events": {
     get: {
       summary: "List published Live events",

@@ -31,7 +31,8 @@ export const NAV: readonly NavItem[] = [
 export const BUILDER_LEAGUE_NAV: NavItem = { key: 'builderLeague', route: '/builder-league', numeral: 'X' };
 
 /**
- * NLB Live entry, inserted after Courses only while the Live flag is on (the pages 404 otherwise).
+ * NLB Live entry, inserted after Courses only while the Live flag is on (the pages 404 otherwise);
+ * see `useLiveNav`.
  * Kept out of `NAV` for the same reason as the Builder League entry.
  */
 export const LIVE_NAV: NavItem = { key: 'live', route: '/live', numeral: 'XI' };

@@ -8,7 +8,6 @@ import SiteSoundEffects from '@/components/site/site-sound-effects';
 import StaticSky from '@/components/site/static-sky';
 import { SiteTrafficTracker } from '@/components/traffic/site-traffic-tracker';
 import { isLocale, locales } from '@/i18n/routing';
-import { isLiveEnabled } from '@/lib/live/live-flag';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -32,7 +31,7 @@ export default async function LocaleLayout({ children, params }: {
       <SiteTrafficTracker />
       <StaticSky />
       <SiteCursor />
-      <SiteHeader showLive={isLiveEnabled()} />
+      <SiteHeader />
       <SiteSoundEffects />
       {children}
       <SiteFooter />
