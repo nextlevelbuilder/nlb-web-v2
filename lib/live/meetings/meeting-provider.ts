@@ -59,3 +59,14 @@ export class MeetingProviderError extends Error {
     this.name = "MeetingProviderError";
   }
 }
+
+/**
+ * The provider answered 404: the meeting or registrant no longer exists there. Cancelling a registrant
+ * that is already gone is done, so the registrant sweep treats this as success.
+ */
+export class MeetingProviderNotFoundError extends MeetingProviderError {
+  constructor(provider: LiveMeetingProviderName, message: string) {
+    super(provider, 404, message);
+    this.name = "MeetingProviderNotFoundError";
+  }
+}

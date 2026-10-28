@@ -1,9 +1,9 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { liveAttendeeRegistrations, liveEvents, liveMeetings, liveTickets, users } from "@/lib/db/schema";
 import { encryptSecret } from "@/lib/crypto/secret-box";
 import { liveNotFound } from "../live-errors";
-import type { MeetingProvider } from "./meeting-provider";
+import { MeetingProviderNotFoundError, type MeetingProvider } from "./meeting-provider";
 
 /**
  * Meeting orchestration over a `MeetingProvider`: one provider meeting per event, one registrant per
@@ -112,7 +112,10 @@ export async function registerTicketHolder(
       .values({ eventId: input.eventId, userId: input.userId, ticketId: ticket.id, status: "pending", ...values, updatedAt: now })
       .onConflictDoUpdate({
         target: [liveAttendeeRegistrations.eventId, liveAttendeeRegistrations.userId],
-        set: { ticketId: ticket.id, status: "pending", providerRegistrantId: null, joinUrlCiphertext: null, lastError: null, ...values, updatedAt: now },
+        set: {
+          ticketId: ticket.id, status: "pending", providerRegistrantId: null, joinUrlCiphertext: null, lastError: null,
+          cancelAttempts: 0, nextCancelAttemptAt: null, ...values, updatedAt: now,
+        },
       });
 
   try {
@@ -129,52 +132,106 @@ export async function registerTicketHolder(
 
 export interface CancelRegistrantsResult {
   cancelled: number;
+  /** Failed this run and scheduled for a retry with backoff. */
   failed: number;
+  /** Failed after the event ended: marked `cancel_abandoned` and no longer retried. */
+  abandoned: number;
   /** True when no provider is configured; nothing was attempted and the queue is kept. */
   unavailable: boolean;
+}
+
+/** Most registrants handled per run, oldest retry first. */
+const CANCEL_BATCH = 200;
+const MAX_CANCEL_BACKOFF_MS = 60 * 60_000;
+
+/** Delay before retry `attempts + 1`: 1, 2, 4 … minutes, capped at 60. */
+export function cancelRetryDelayMs(attempts: number): number {
+  return Math.min(60_000 * 2 ** Math.max(attempts - 1, 0), MAX_CANCEL_BACKOFF_MS);
 }
 
 /**
  * Cancel provider registrants for registrations already marked `cancelled` (ticket refunded or
  * event cancelled). A kept `provider_registrant_id` marks the provider call as pending; it is
- * cleared after the provider confirms, so the sweep is safe to re-run (optionally for one event).
+ * cleared after the provider confirms, or answers 404 (already gone), so the sweep is safe to re-run
+ * (optionally for one event). Only due rows are picked, oldest retry first. A failure is retried with
+ * exponential backoff (`cancelRetryDelayMs`) until the event ends; a failure after that marks the row
+ * `cancel_abandoned` (terminal, logged once), so permanently failing rows never block the queue.
  */
-export async function cancelProviderRegistrants(deps: MeetingServiceDeps, eventId?: string): Promise<CancelRegistrantsResult> {
+export async function cancelProviderRegistrants(
+  deps: MeetingServiceDeps,
+  eventId?: string,
+  now: Date = new Date()
+): Promise<CancelRegistrantsResult> {
   const provider = requireProvider(deps.provider);
   const pending = await deps.db
     .select({
       eventId: liveAttendeeRegistrations.eventId,
       userId: liveAttendeeRegistrations.userId,
       registrantId: liveAttendeeRegistrations.providerRegistrantId,
+      cancelAttempts: liveAttendeeRegistrations.cancelAttempts,
       meetingId: liveMeetings.providerMeetingId,
+      endsAt: liveEvents.endsAt,
     })
     .from(liveAttendeeRegistrations)
     .innerJoin(liveMeetings, eq(liveMeetings.eventId, liveAttendeeRegistrations.eventId))
+    .innerJoin(liveEvents, eq(liveEvents.id, liveAttendeeRegistrations.eventId))
     .where(
       and(
         eq(liveAttendeeRegistrations.status, "cancelled"),
         isNotNull(liveAttendeeRegistrations.providerRegistrantId),
+        or(isNull(liveAttendeeRegistrations.nextCancelAttemptAt), lte(liveAttendeeRegistrations.nextCancelAttemptAt, now)),
         eventId ? eq(liveAttendeeRegistrations.eventId, eventId) : sql`1 = 1`
       )
     )
-    .limit(200);
-  if (!provider) return { cancelled: 0, failed: pending.length, unavailable: true };
+    // SQLite sorts NULL first in ascending order, so never-tried rows go before scheduled retries.
+    .orderBy(asc(liveAttendeeRegistrations.nextCancelAttemptAt))
+    .limit(CANCEL_BATCH);
+  if (!provider) return { cancelled: 0, failed: pending.length, abandoned: 0, unavailable: true };
 
   let cancelled = 0;
   let failed = 0;
+  let abandoned = 0;
   for (const row of pending) {
-    const where = and(eq(liveAttendeeRegistrations.eventId, row.eventId), eq(liveAttendeeRegistrations.userId, row.userId));
+    const where = and(
+      eq(liveAttendeeRegistrations.eventId, row.eventId),
+      eq(liveAttendeeRegistrations.userId, row.userId),
+      eq(liveAttendeeRegistrations.status, "cancelled")
+    );
     try {
-      await provider.cancelRegistrant(row.meetingId, row.registrantId as string);
+      try {
+        await provider.cancelRegistrant(row.meetingId, row.registrantId as string);
+      } catch (error) {
+        // Already gone at the provider: nothing is left to cancel.
+        if (!(error instanceof MeetingProviderNotFoundError)) throw error;
+      }
       await deps.db
         .update(liveAttendeeRegistrations)
-        .set({ providerRegistrantId: null, joinUrlCiphertext: null, lastError: null, updatedAt: new Date() })
-        .where(and(where, eq(liveAttendeeRegistrations.status, "cancelled")));
+        .set({ providerRegistrantId: null, joinUrlCiphertext: null, lastError: null, nextCancelAttemptAt: null, updatedAt: now })
+        .where(where);
       cancelled++;
     } catch (error) {
-      failed++;
-      await deps.db.update(liveAttendeeRegistrations).set({ lastError: errorText(error), updatedAt: new Date() }).where(where);
+      const attempts = row.cancelAttempts + 1;
+      const lastError = errorText(error);
+      if (now.getTime() >= row.endsAt.getTime()) {
+        abandoned++;
+        const gaveUp = await deps.db
+          .update(liveAttendeeRegistrations)
+          .set({ status: "cancel_abandoned", cancelAttempts: attempts, nextCancelAttemptAt: null, lastError, updatedAt: now })
+          .where(where)
+          .returning({ userId: liveAttendeeRegistrations.userId });
+        if (gaveUp.length > 0) {
+          console.warn("Live registrant cancellation abandoned after the event ended; cancel it in the provider:", {
+            eventId: row.eventId, attempts, error: lastError,
+          });
+        }
+      } else {
+        failed++;
+        await deps.db
+          .update(liveAttendeeRegistrations)
+          .set({ cancelAttempts: attempts, nextCancelAttemptAt: new Date(now.getTime() + cancelRetryDelayMs(attempts)), lastError, updatedAt: now })
+          .where(where);
+      }
     }
   }
-  return { cancelled, failed, unavailable: false };
+  return { cancelled, failed, abandoned, unavailable: false };
 }

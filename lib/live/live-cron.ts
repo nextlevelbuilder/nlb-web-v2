@@ -5,7 +5,8 @@
  * - return expired seat holds to the pool (holds are also reclaimed lazily at checkout, so this keeps
  *   reservation statuses and seat counts tidy);
  * - cancel provider registrants whose ticket was refunded or whose event was cancelled, so a revoked
- *   attendee's personal join link stops working at the provider too.
+ *   attendee's personal join link stops working at the provider too. Failures back off exponentially
+ *   and are abandoned once the event has ended, so failing rows never jam the queue.
  *
  * Both steps are idempotent and bounded, and one failing step never blocks the other. The sweep runs
  * whatever `LIVE_ENABLED` says: operators prepare events with the flag off, and revocations must reach
@@ -39,7 +40,7 @@ export async function runLiveSweeps(db: AppDb, now: Date, provider: MeetingProvi
     result.errors.push("release_expired_holds");
   }
   try {
-    result.registrants = await cancelProviderRegistrants({ db, provider });
+    result.registrants = await cancelProviderRegistrants({ db, provider }, undefined, now);
   } catch (error) {
     console.error("live sweep: cancelling provider registrants failed", error instanceof Error ? error.message : error);
     result.errors.push("cancel_provider_registrants");

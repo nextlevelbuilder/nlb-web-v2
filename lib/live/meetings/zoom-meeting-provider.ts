@@ -1,6 +1,7 @@
 import { getLiveBinding } from "../live-env";
 import {
   MeetingProviderError,
+  MeetingProviderNotFoundError,
   MeetingProviderUnavailableError,
   type CreatedMeeting,
   type FetchLike,
@@ -99,6 +100,11 @@ export function createZoomMeetingProvider(options: ZoomProviderOptions): Meeting
       body: JSON.stringify(payload),
     });
     if (res.status === 401) token = null;
+    if (res.status === 404) {
+      // The meeting or registrant is gone at Zoom; distinct so callers can treat a cancel as done.
+      const error = await failure(res, what);
+      throw new MeetingProviderNotFoundError("zoom", error.message);
+    }
     if (!res.ok) throw await failure(res, what);
     return res;
   }

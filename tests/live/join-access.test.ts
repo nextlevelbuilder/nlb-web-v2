@@ -6,8 +6,8 @@ import { LIVE_JOIN_OPENS_BEFORE_MS } from "@/lib/live/types";
 import { holdSeat } from "@/lib/live/seats";
 import { syncLiveTicketFromOrder } from "@/lib/live/live-webhook-tickets";
 import { getJoinAccess } from "@/lib/live/meetings/join-access";
-import { cancelProviderRegistrants } from "@/lib/live/meetings/meeting-service";
-import type { MeetingProvider } from "@/lib/live/meetings/meeting-provider";
+import { cancelProviderRegistrants, cancelRetryDelayMs } from "@/lib/live/meetings/meeting-service";
+import { MeetingProviderError, MeetingProviderNotFoundError, type MeetingProvider } from "@/lib/live/meetings/meeting-provider";
 import type { LiveEventRow } from "@/lib/live/events";
 import { HOUR, TEST_ENCRYPTION_KEY, nextSeq, seedOnSaleEvent, seedUser } from "./live-fixtures";
 
@@ -90,9 +90,9 @@ describe("join access", () => {
     expect(after).toMatchObject({ status: "no_ticket" });
     expect(after.joinUrl).toBeUndefined();
 
-    expect(await cancelProviderRegistrants(deps, event.id)).toEqual({ cancelled: 1, failed: 0, unavailable: false });
+    expect(await cancelProviderRegistrants(deps, event.id)).toEqual({ cancelled: 1, failed: 0, abandoned: 0, unavailable: false });
     expect(provider.cancelRegistrant).toHaveBeenCalledWith("mtg-1", `reg-${buyer.email}`);
-    expect(await cancelProviderRegistrants(deps, event.id)).toEqual({ cancelled: 0, failed: 0, unavailable: false });
+    expect(await cancelProviderRegistrants(deps, event.id)).toEqual({ cancelled: 0, failed: 0, abandoned: 0, unavailable: false });
   });
 
   it("answers meeting_not_ready without creating a meeting until an operator has created one", async () => {
@@ -135,5 +135,67 @@ describe("join access", () => {
     expect(reg).toMatchObject({ status: "failed", lastError: "Zoom registration failed with HTTP 500" });
     const meetings = await getDb().select().from(liveMeetings).where(eq(liveMeetings.eventId, event.id));
     expect(meetings).toHaveLength(1);
+  });
+});
+
+describe("registrant cancellation sweep", () => {
+  /** A ticket holder registered at the provider, then refunded, so the provider cancel is pending. */
+  async function revokedRegistrant(event: LiveEventRow) {
+    const { buyer, paid } = await ticketHolder(event);
+    const inWindow = new Date(event.startsAt.getTime());
+    const deps = { db: getDb(), provider: fakeProvider(), encryptionKey: TEST_ENCRYPTION_KEY };
+    expect((await getJoinAccess({ eventId: event.id, userId: buyer.id, now: inWindow }, deps)).status).toBe("open");
+    await syncLiveTicketFromOrder({ ...paid, type: "order.refunded", data: { ...paid.data, status: "refunded" } }, getDb(), inWindow);
+    return buyer;
+  }
+  const registration = async (eventId: string, userId: string) =>
+    (await getDb().select().from(liveAttendeeRegistrations).where(and(eq(liveAttendeeRegistrations.eventId, eventId), eq(liveAttendeeRegistrations.userId, userId))))[0];
+
+  it("backs off 1, 2, 4 … minutes, capped at an hour", () => {
+    expect([1, 2, 3, 4, 6, 7, 20].map((n) => cancelRetryDelayMs(n) / 60_000)).toEqual([1, 2, 4, 8, 32, 60, 60]);
+  });
+
+  it("treats a provider 404 as already cancelled", async () => {
+    const event = await seedOnSaleEvent();
+    await seedMeeting(event);
+    const buyer = await revokedRegistrant(event);
+    const provider = fakeProvider();
+    provider.cancelRegistrant = vi.fn(async () => {
+      throw new MeetingProviderNotFoundError("zoom", "Zoom registrant cancellation failed with HTTP 404");
+    });
+    const result = await cancelProviderRegistrants({ db: getDb(), provider }, event.id, event.startsAt);
+    expect(result).toEqual({ cancelled: 1, failed: 0, abandoned: 0, unavailable: false });
+    expect(await registration(event.id, buyer.id)).toMatchObject({ status: "cancelled", providerRegistrantId: null, lastError: null });
+  });
+
+  it("retries a failing cancel only when due, then abandons it once the event has ended", async () => {
+    const event = await seedOnSaleEvent();
+    await seedMeeting(event);
+    const buyer = await revokedRegistrant(event);
+    const provider = fakeProvider();
+    provider.cancelRegistrant = vi.fn(async () => {
+      throw new MeetingProviderError("zoom", 500, "Zoom registrant cancellation failed with HTTP 500");
+    });
+    const deps = { db: getDb(), provider };
+    const t0 = event.startsAt.getTime();
+    const sweep = (at: number) => cancelProviderRegistrants(deps, event.id, new Date(at));
+
+    expect(await sweep(t0)).toMatchObject({ cancelled: 0, failed: 1, abandoned: 0 });
+    expect(await registration(event.id, buyer.id)).toMatchObject({ cancelAttempts: 1, nextCancelAttemptAt: new Date(t0 + 60_000) });
+    // Not due yet: the row is skipped and the provider is not called again.
+    expect(await sweep(t0 + 30_000)).toMatchObject({ cancelled: 0, failed: 0, abandoned: 0 });
+    expect(provider.cancelRegistrant).toHaveBeenCalledTimes(1);
+    expect(await sweep(t0 + 60_000)).toMatchObject({ failed: 1 });
+    expect(await registration(event.id, buyer.id)).toMatchObject({ cancelAttempts: 2, nextCancelAttemptAt: new Date(t0 + 60_000 + 120_000) });
+
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const ended = event.endsAt.getTime() + 1;
+    expect(await sweep(ended)).toMatchObject({ cancelled: 0, failed: 0, abandoned: 1 });
+    expect(await registration(event.id, buyer.id)).toMatchObject({ status: "cancel_abandoned", cancelAttempts: 3, nextCancelAttemptAt: null });
+    expect(warn).toHaveBeenCalledTimes(1);
+    // Terminal: later sweeps never pick it up again.
+    expect(await sweep(ended + 2 * HOUR)).toEqual({ cancelled: 0, failed: 0, abandoned: 0, unavailable: false });
+    expect(provider.cancelRegistrant).toHaveBeenCalledTimes(3);
+    warn.mockRestore();
   });
 });

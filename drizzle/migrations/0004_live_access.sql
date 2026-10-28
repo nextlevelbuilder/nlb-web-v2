@@ -14,6 +14,8 @@ CREATE TABLE `live_attendee_registrations` (
 	`join_url_ciphertext` text,
 	`status` text NOT NULL,
 	`last_error` text,
+	`cancel_attempts` integer DEFAULT 0 NOT NULL,
+	`next_cancel_attempt_at` integer,
 	`created_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL,
 	PRIMARY KEY(`event_id`, `user_id`),

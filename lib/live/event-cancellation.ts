@@ -61,6 +61,6 @@ export async function cancelEvent(
   ]);
   if (changesOf(cancelled) !== 1) throw new LiveError(409, "conflict", "The event changed while cancelling; retry");
 
-  const registrants = options.provider ? await cancelProviderRegistrants({ db, provider: options.provider }, eventId) : null;
+  const registrants = options.provider ? await cancelProviderRegistrants({ db, provider: options.provider }, eventId, now) : null;
   return { ticketsRevoked: changesOf(revoked), registrants };
 }

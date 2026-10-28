@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createZoomMeetingProvider } from "@/lib/live/meetings/zoom-meeting-provider";
-import { MeetingProviderError, MeetingProviderUnavailableError } from "@/lib/live/meetings/meeting-provider";
+import { MeetingProviderError, MeetingProviderNotFoundError, MeetingProviderUnavailableError } from "@/lib/live/meetings/meeting-provider";
 
 interface Call {
   url: string;
@@ -98,5 +98,15 @@ describe("Zoom meeting provider", () => {
     expect((error as MeetingProviderError).status).toBe(404);
     expect((error as Error).message).not.toContain("csecret");
     expect((error as Error).message).not.toContain("tok-1");
+  });
+
+  it("tells a 404 (already gone) apart from other failures", async () => {
+    const gone = createZoomMeetingProvider({ credentials, fetch: zoomFixture({ registerStatus: 404 }).fetch });
+    const notFound = await gone.registerAttendee("1", { email: "a@example.com", firstName: "A", lastName: "" }).catch((e: unknown) => e);
+    expect(notFound).toBeInstanceOf(MeetingProviderNotFoundError);
+    const broken = createZoomMeetingProvider({ credentials, fetch: zoomFixture({ registerStatus: 500 }).fetch });
+    const failure = await broken.registerAttendee("1", { email: "a@example.com", firstName: "A", lastName: "" }).catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(MeetingProviderError);
+    expect(failure).not.toBeInstanceOf(MeetingProviderNotFoundError);
   });
 });

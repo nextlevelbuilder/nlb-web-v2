@@ -30,7 +30,12 @@ export type LiveTicketStatus = "active" | "refunded" | "cancelled" | "exception"
 
 export type LiveMeetingProviderName = "zoom";
 
-export type LiveAttendeeRegistrationStatus = "pending" | "registered" | "failed" | "cancelled";
+/**
+ * `cancelled`: access revoked; a kept provider registrant id means the provider cancellation is still
+ * pending. `cancel_abandoned`: that cancellation kept failing until the event ended, so the sweep gave
+ * up (terminal; the registrant id is kept for manual clean-up).
+ */
+export type LiveAttendeeRegistrationStatus = "pending" | "registered" | "failed" | "cancelled" | "cancel_abandoned";
 
 /** Entitlement feature key for attending one event. Never implied by Premium/VIP membership. */
 export function liveTicketFeatureKey(eventId: string): string {

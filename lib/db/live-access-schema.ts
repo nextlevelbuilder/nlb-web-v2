@@ -308,6 +308,10 @@ export const liveAttendeeRegistrations = sqliteTable(
     joinUrlCiphertext: text("join_url_ciphertext"),
     status: text("status").$type<LiveAttendeeRegistrationStatus>().notNull(),
     lastError: text("last_error"),
+    /** Failed provider cancellations of this registrant; drives the sweep's exponential backoff. */
+    cancelAttempts: integer("cancel_attempts").notNull().default(0),
+    /** Earliest time the sweep retries the provider cancellation; null means due now. */
+    nextCancelAttemptAt: integer("next_cancel_attempt_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
