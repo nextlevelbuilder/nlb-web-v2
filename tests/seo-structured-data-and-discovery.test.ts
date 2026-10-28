@@ -122,9 +122,34 @@ describe("agent discovery documents", () => {
 
   it("lists the card and OpenAPI in the AI catalog and the RFC 9727 linkset", () => {
     const catalog = aiCatalog();
-    expect(catalog.entries.map((entry) => entry.type)).toEqual(["application/mcp-server-card+json", "application/vnd.oai.openapi+json", "text/plain", "text/plain"]);
+    expect(catalog.entries.map((entry) => entry.type)).toEqual(["application/mcp-server-card+json", "application/vnd.oai.openapi+json", "application/vnd.oai.openapi+json", "text/plain", "text/plain"]);
     expect(catalog.entries[0].identifier).toBe("urn:air:example.test:mcp:directory");
     expect(apiCatalogLinkset().linkset[0]["service-desc"][0].href).toBe("https://example.test/api/openapi.json");
+  });
+
+  it("describes the pilot-only Builder League, its scopes and agent limits in every discovery document", () => {
+    const league = mcpServerCard()._meta["io.nextlevelbuilder/discovery"].builderLeague;
+    expect(league).toMatchObject({ status: "pilot", flag: "BUILDER_LEAGUE_ENABLED", routes: "/api/v1/builder-*", openapi: "https://example.test/api/openapi.json" });
+    expect(league.availability).toContain("404 except for admins and pilot members");
+    expect(Object.keys(league.auth.automationScopes)).toEqual(["builder:render", "builder:ingest"]);
+    expect(league.agentPolicy.mayNot.join(" ")).toMatch(/Approve, verify/);
+    expect(league.agentPolicy.mayNot.join(" ")).toContain("another member's private history");
+    expect(league.tools).toEqual([
+      "get_builder_profile", "submit_builder_evidence", "list_builder_evidence", "get_builder_evidence",
+      "list_builder_projects", "create_builder_project", "get_builder_rankings", "get_builder_journey",
+      "list_builder_badges", "list_builder_missions", "list_builder_rewards", "get_builder_year_review",
+    ]);
+
+    const entry = aiCatalog().entries.find((item) => item.identifier === "urn:air:example.test:openapi:v1:builder-league");
+    expect(entry?.data).toMatchObject({ status: "pilot", routes: "/api/v1/builder-*" });
+    // MCP tool names live on the server card only; the REST entry does not repeat them.
+    expect(entry?.data).not.toHaveProperty("tools");
+
+    const linkset = apiCatalogLinkset().linkset;
+    expect(linkset[0].anchor).toBe("https://example.test/api/v1");
+    const builder = linkset.find((item) => item.anchor === "https://example.test/api/v1/builder-me");
+    expect(builder?.["service-desc"][0]).toMatchObject({ href: "https://example.test/api/openapi.json" });
+    expect(builder?.["service-meta"][0]).toMatchObject({ title: expect.stringContaining("BUILDER_LEAGUE_ENABLED") });
   });
 
   it("advertises discovery links in one header value", () => {

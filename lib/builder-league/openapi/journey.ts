@@ -7,6 +7,12 @@
 const TAG = "Builder League: Journey & Year";
 const AUTH = [{ BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }];
 const SESSION_ONLY = [{ SessionAuth: [] }];
+/** Renderer routes: an admin session, or an admin API key minted with the `builder:render` scope. */
+const RENDER_SCOPE = "builder:render";
+const RENDER_AUTH_NOTE =
+  "Auth: an admin browser session, or an admin's API key minted with the `builder:render` scope (`POST /api/v1/api-keys` with `scopes: [\"builder:render\"]`). Full API keys and MCP delegation get 403; a key with another scope gets 401.";
+const renderAuth = { security: AUTH, "x-nlb-api-key-scope": RENDER_SCOPE };
+const renderDenied = { "401": { description: "No admin session or `builder:render` API key (a key scoped to anything else counts as no credential)" }, "403": { description: "Not an admin, MCP delegation, or a full API key" } };
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 const json = (schema: unknown) => ({ "application/json": { schema } });
@@ -140,40 +146,42 @@ export const journeyPaths: Record<string, unknown> = {
   "/api/v1/builder-admin/render-jobs": {
     get: {
       summary: "List render jobs (admin)",
+      description: RENDER_AUTH_NOTE,
       tags: [TAG],
-      security: AUTH,
+      ...renderAuth,
       parameters: [{ name: "status", in: "query", schema: { type: "string", enum: ["queued", "claimed", "done", "failed", "expired"] } }],
-      responses: { "200": { description: "Jobs", content: envelope({ type: "object", properties: { jobs: { type: "array", items: ref("BuilderRenderJobAdmin") } } }) }, "403": { description: "Admin required (delegation refused)" } },
+      responses: { "200": { description: "Jobs", content: envelope({ type: "object", properties: { jobs: { type: "array", items: ref("BuilderRenderJobAdmin") } } }) }, ...renderDenied },
     },
   },
   "/api/v1/builder-admin/render-jobs/claim": {
     post: {
       summary: "Lease the next render job (renderer)",
-      description: "Leases the oldest due job for 15 minutes and returns the public-safe scenes. `lease` must be sent back on complete or fail; a renderer whose lease expired is fenced out.",
+      description: `Leases the oldest due job for 15 minutes and returns the public-safe scenes. \`lease\` must be sent back on complete or fail; a renderer whose lease expired is fenced out. ${RENDER_AUTH_NOTE}`,
       tags: [TAG],
-      security: AUTH,
-      responses: { "200": { description: "A leased job, or job: null", content: envelope({ type: "object", properties: { job: { oneOf: [ref("BuilderRenderJobAdmin"), { type: "null" }] }, lease: { type: "integer" }, displayName: { type: "string" }, review: ref("BuilderSharedYearReview"), labels: { type: "object", description: "Plain-string card and caption labels per locale (en, vi), so renderers never duplicate site copy. `titleTemplate` has `{name}` and `{year}` slots.", additionalProperties: { type: "object", additionalProperties: true } }, site: { type: "string", format: "uri", description: "Site origin shown on the outro card" } } }) }, "403": { description: "Admin required" } },
+      ...renderAuth,
+      responses: { "200": { description: "A leased job, or job: null", content: envelope({ type: "object", properties: { job: { oneOf: [ref("BuilderRenderJobAdmin"), { type: "null" }] }, lease: { type: "integer" }, displayName: { type: "string" }, review: ref("BuilderSharedYearReview"), labels: { type: "object", description: "Plain-string card and caption labels per locale (en, vi), so renderers never duplicate site copy. `titleTemplate` has `{name}` and `{year}` slots.", additionalProperties: { type: "object", additionalProperties: true } }, site: { type: "string", format: "uri", description: "Site origin shown on the outro card" } } }) }, ...renderDenied },
     },
   },
   "/api/v1/builder-admin/render-jobs/{id}/complete": {
     post: {
       summary: "Upload a finished render (renderer)",
+      description: RENDER_AUTH_NOTE,
       tags: [TAG],
-      security: AUTH,
+      ...renderAuth,
       parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
       requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", required: ["lease", "video"], properties: { lease: { type: "integer" }, video: { type: "string", format: "binary", description: "video/mp4, at most 80 MB" }, poster: { type: "string", format: "binary", description: "image/png, at most 5 MB" } } } } } },
-      responses: { "200": { description: "Done", content: envelope({ type: "object", properties: { job: ref("BuilderRenderJobAdmin") } }) }, "409": { description: "Lease lost" }, "413": { description: "File too large or empty" }, "503": { description: "Storage unavailable" } },
+      responses: { "200": { description: "Done", content: envelope({ type: "object", properties: { job: ref("BuilderRenderJobAdmin") } }) }, ...renderDenied, "409": { description: "Lease lost" }, "413": { description: "File too large or empty" }, "503": { description: "Storage unavailable" } },
     },
   },
   "/api/v1/builder-admin/render-jobs/{id}/fail": {
     post: {
       summary: "Report a failed render (renderer)",
-      description: "Re-queues with exponential backoff, or fails permanently after 5 attempts or when `permanent` is true.",
+      description: `Re-queues with exponential backoff, or fails permanently after 5 attempts or when \`permanent\` is true. ${RENDER_AUTH_NOTE}`,
       tags: [TAG],
-      security: AUTH,
+      ...renderAuth,
       parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
       requestBody: { required: true, content: json({ type: "object", required: ["lease", "error"], properties: { lease: { type: "integer" }, error: { type: "string", maxLength: 2000 }, permanent: { type: "boolean" } } }) },
-      responses: { "200": { description: "Recorded", content: envelope({ type: "object", properties: { job: ref("BuilderRenderJobAdmin") } }) }, "409": { description: "Lease lost" } },
+      responses: { "200": { description: "Recorded", content: envelope({ type: "object", properties: { job: ref("BuilderRenderJobAdmin") } }) }, ...renderDenied, "409": { description: "Lease lost" } },
     },
   },
 };

@@ -152,11 +152,11 @@ export const openApiSpec = {
         },
       },
       "/api/v1/api-keys": {
-        get: { summary: "List your API keys", description: "Returns key metadata only, never the raw secret.", tags: ["API Keys"], security: [{ SessionAuth: [] }], responses: { "200": { description: "Key metadata" }, "401": { description: "Sign in required" } } },
+        get: { summary: "List your API keys", description: "Returns key metadata only, never the raw secret. `scopes` lists a key's narrow scopes, or is null for a full key.", tags: ["API Keys"], security: [{ SessionAuth: [] }], responses: { "200": { description: "Key metadata" }, "401": { description: "Sign in required" } } },
         post: {
-          summary: "Create an API key", description: "Requires a browser session. The raw key is returned only once; store it securely.", tags: ["API Keys"], security: [{ SessionAuth: [] }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name"], properties: { name: { type: "string", minLength: 1, maxLength: 64 }, organizationId: { type: "string" }, expiresDays: { type: "integer", minimum: 1, maximum: 365 } } } } } },
-          responses: { "200": { description: "New key and secret" }, "400": { description: "Invalid parameters" }, "401": { description: "Sign in required" }, "403": { description: "Organization membership required" } },
+          summary: "Create an API key", description: "Requires a browser session. The raw key is returned only once; store it securely. Admins may bind a key to narrow automation `scopes` (`builder:render` for the Year in Review render worker, `builder:ingest` for the Discord bot); a scoped key authenticates only on the routes that accept its scope and nowhere else. Without `scopes` the key is a full key, as before.", tags: ["API Keys"], security: [{ SessionAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name"], properties: { name: { type: "string", minLength: 1, maxLength: 64 }, organizationId: { type: "string" }, expiresDays: { type: "integer", minimum: 1, maximum: 365 }, scopes: { type: "array", minItems: 1, maxItems: 2, uniqueItems: true, items: { type: "string", enum: ["builder:render", "builder:ingest"] }, description: "Admin only. Narrow scopes the key is limited to." } } } } } },
+          responses: { "200": { description: "New key and secret (`data.scopes` is null for a full key)" }, "400": { description: "Invalid parameters" }, "401": { description: "Sign in required" }, "403": { description: "Organization membership required, or scoped keys requested by a non-admin or outside a browser session" } },
         },
       },
       "/api/v1/api-keys/{id}": {

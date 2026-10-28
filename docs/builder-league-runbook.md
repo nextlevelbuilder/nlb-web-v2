@@ -2,7 +2,7 @@
 
 How to operate the Builder League day to day. The scoring design and its reasons are in [builder-league-adr.md](./builder-league-adr.md); this page covers what an admin does and in what order. Code wins when the two disagree: each section names the file that owns the behaviour.
 
-All admin routes live under `/api/v1/builder-admin/` and need a signed-in admin **session**. API keys and MCP agents are refused, except on the renderer and Discord ingest routes, which accept an admin's API key ([`lib/builder-league/admin-key-auth.ts`](../lib/builder-league/admin-key-auth.ts)). While `BUILDER_LEAGUE_ENABLED` is `"false"`, non-admins get 404 everywhere. The contract is in `/api/openapi.json`.
+All admin routes live under `/api/v1/builder-admin/` and need a signed-in admin **session**. API keys and MCP agents are refused, except on the renderer and Discord ingest routes, which accept an admin's API key minted with that route's narrow scope (`builder:render` or `builder:ingest`; see [Minting a scoped key](#minting-a-scoped-key)). Full API keys are refused there too ([`lib/builder-league/admin-key-auth.ts`](../lib/builder-league/admin-key-auth.ts)). While `BUILDER_LEAGUE_ENABLED` is `"false"`, non-admins get 404 everywhere. The contract is in `/api/openapi.json`.
 
 Admin pages, in each locale (`/vi/...` for Vietnamese):
 
@@ -161,7 +161,7 @@ Year in Review videos are rendered outside the Worker by [`.github/workflows/bui
 | Schedule | Every 30 minutes, plus a manual `workflow_dispatch` with `max` (jobs per run) and `locale` |
 | Timeout | 30 minutes per run |
 | Concurrency | One run at a time |
-| Secrets (by name) | `NLB_API_BASE` (site origin) and `NLB_RENDER_API_KEY` (an API key of an **admin** account). With either missing, the run exits without doing anything. |
+| Secrets (by name) | `NLB_API_BASE` (site origin) and `NLB_RENDER_API_KEY` (an **admin** account's API key with the `builder:render` scope; a full key gets 403). With either missing, the run exits without doing anything. |
 
 The flow, owned by [`lib/builder-league/render-jobs.ts`](../lib/builder-league/render-jobs.ts):
 
@@ -176,7 +176,38 @@ Operating it:
 - **Stuck jobs:** `GET /api/v1/builder-admin/render-jobs?status=claimed`. An expired lease returns the job to the queue by itself.
 - **Failed jobs:** `?status=failed` shows the error. Fix the cause, then the member requests again.
 - **Pausing rendering:** disable the workflow in GitHub Actions. Queued jobs wait and expire after 14 days.
-- **Rotating the key:** create a new admin API key, update `NLB_RENDER_API_KEY` with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), then revoke the old key.
+- **Setting or rotating the key:** mint a `builder:render` key (below), store it with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), run the workflow once by hand to confirm it claims jobs, then revoke the old key in `/profile`.
+
+### Minting a scoped key
+
+Scoped keys are minted through `POST /api/v1/api-keys` with a `scopes` array ([`app/api/v1/api-keys/route.ts`](../app/api/v1/api-keys/route.ts), scopes in [`lib/auth-api-key.ts`](../lib/auth-api-key.ts)). Only an admin in a signed-in browser session can do this: non-admins and MCP agents get 403, and the profile UI does not offer scopes. Sign in as an admin, open the browser console on the site origin and run:
+
+```js
+await fetch("/api/v1/api-keys", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ name: "Builder League render worker", scopes: ["builder:render"], expiresDays: 90 }),
+}).then((r) => r.json());
+```
+
+Use `scopes: ["builder:ingest"]` and a matching name for the Discord bot. `data.key` in the response is shown only once; copy it straight into the secret store and do not paste it anywhere else. A scoped key:
+
+- works only on the routes for its scope (`builder:render`: `/api/v1/builder-admin/render-jobs/**`; `builder:ingest`: `/api/v1/builder-admin/ingest/discord`) and counts as no credential everywhere else, so it cannot read member data, moderate or award;
+- still needs its owner to be an admin; if the owner loses the role the key stops working;
+- shows its scopes in `GET /api/v1/api-keys` and is revoked like any other key, in `/profile` or with `DELETE /api/v1/api-keys/{id}`.
+
+Full API keys minted before this change keep working on member routes but no longer drive the renderer or Discord ingest; replace any such key with a scoped one.
+
+## Discord ingest
+
+The Discord bot turns qualifying events into `submitted` evidence with `POST /api/v1/builder-admin/ingest/discord` ([`route.ts`](../app/api/v1/builder-admin/ingest/discord/route.ts), [`lib/builder-league/discord-ingest.ts`](../lib/builder-league/discord-ingest.ts)). It never approves or awards; moderators review the evidence like any other.
+
+The bot authenticates with one of:
+
+- the shared `x-nlb-builder-ingest-secret` header, matching the `BUILDER_INGEST_SECRET` Worker secret (see [deployment-guide.md](./deployment-guide.md));
+- an admin's API key with the `builder:ingest` scope, sent as `Authorization: Bearer nlb_live_…` ([minting](#minting-a-scoped-key)). A full admin key gets 403.
+
+Rotating: mint a new `builder:ingest` key (or a new secret), update the bot's configuration, confirm a test event answers 201, 200 or 202, then revoke the old key.
 
 ## Privacy requests
 
