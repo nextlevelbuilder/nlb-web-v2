@@ -8,16 +8,25 @@ import { consumeApproval } from "./operator-approvals";
 import { hashOperatorArgs, recordOperatorAudit } from "./operator-audit";
 import { approvalError, denyError, OperatorAccessError } from "./operator-errors";
 
-/** Window in which repeated capability denies of one user for one action share a single audit row. */
+/** Window in which repeated denies of one user for one action and reason share a single audit row. */
 export const DENY_AUDIT_WINDOW_MS = 60_000;
-/** Capability denies of a signed-in user; these are throttled, every other deny is always written. */
-const THROTTLED_DENIES: ReadonlySet<DenyReason> = new Set(["not_operator", "missing_capability"]);
+/** Access denies of a signed-in user; these are throttled, approval failures are always written. */
+const THROTTLED_DENIES: ReadonlySet<DenyReason> = new Set([
+  "banned",
+  "email_unverified",
+  "insufficient_scope",
+  "credential_not_allowed",
+  "no_entitlement",
+  "not_operator",
+  "missing_capability",
+  "not_available",
+]);
 
 /**
  * Whether a deny should get an audit row. Anonymous traffic never writes one (anyone can loop an
- * operator URL, and an actor-less row carries no signal). A signed-in non-operator writes at most one
- * row per action per window, so probing cannot flood the append-only table. Approval failures and
- * every other deny reason are always written.
+ * operator URL, and an actor-less row carries no signal). A signed-in caller denied access writes at most
+ * one row per action and reason per window, so probing cannot flood the append-only table. Approval failures are always
+ * written.
  */
 async function shouldAuditDeny(db: AppDb, actorUserId: string | null, action: string, code: string, now: Date): Promise<boolean> {
   if (code === "unauthenticated" || !actorUserId) return false;
@@ -30,7 +39,8 @@ async function shouldAuditDeny(db: AppDb, actorUserId: string | null, action: st
         eq(operatorAuditLogs.actorUserId, actorUserId),
         gt(operatorAuditLogs.createdAt, new Date(now.getTime() - DENY_AUDIT_WINDOW_MS)),
         eq(operatorAuditLogs.action, action),
-        eq(operatorAuditLogs.decision, "deny")
+        eq(operatorAuditLogs.decision, "deny"),
+        eq(operatorAuditLogs.reason, code)
       )
     )
     .limit(1);
