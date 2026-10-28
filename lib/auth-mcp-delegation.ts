@@ -6,7 +6,7 @@ import { consumeDelegationJti } from "@/lib/auth-mcp-delegation-replay";
 export const MCP_ASSERTION_HEADER = "x-nlb-mcp-assertion";
 
 export interface McpDelegationContext {
-  scope: "mcp:read" | "mcp:write" | "mcp:keys";
+  scope: "mcp:read" | "mcp:write" | "mcp:keys" | "mcp:operator";
   method: string;
   path: string;
 }
