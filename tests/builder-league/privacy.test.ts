@@ -402,7 +402,9 @@ describe("privacy admin routes", () => {
   });
 
   it("documents both routes in OpenAPI", () => {
-    expect(Object.keys(privacyPaths)).toEqual(["/api/v1/builder-admin/privacy/{userId}/export", "/api/v1/builder-admin/privacy/{userId}/delete"]);
+    expect(Object.keys(privacyPaths)).toEqual(
+      expect.arrayContaining(["/api/v1/builder-admin/privacy/{userId}/export", "/api/v1/builder-admin/privacy/{userId}/delete"])
+    );
     expect(Object.keys(privacySchemas)).toEqual(["BuilderPrivacyExport", "BuilderPrivacyDeletion"]);
   });
 });

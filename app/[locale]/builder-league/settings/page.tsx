@@ -6,8 +6,10 @@ import { getPrivacy } from "@/lib/builder-league/privacy";
 import { getHomeCopy, type PrivacySwitch } from "@/content/builder-league/home-copy";
 import { requireBuilderPageViewer } from "@/components/builder-league/home/page-access";
 import { BuilderAccessPanel } from "@/components/builder-league/home/access-panel";
+import { LeagueDataControls } from "@/components/builder-league/settings/league-data-controls";
+import { isSelfDeleteError } from "@/components/builder-league/settings/self-delete-form-handler";
 import { pageMetadata } from "@/lib/seo";
-import { savePrivacySettings } from "./actions";
+import { deleteMyLeagueData, savePrivacySettings } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: SettingsPageProps) {
 
 export default async function BuilderSettingsPage({ params, searchParams }: SettingsPageProps) {
   const { locale } = await params;
-  const { saved } = await searchParams;
+  const { saved, deleted, deleteError } = await searchParams;
   const viewer = await requireBuilderPageViewer();
   const copy = getHomeCopy(locale);
   const privacy = viewer.user && viewer.access.canUse ? await getPrivacy(getDb(), viewer.user.id) : null;
@@ -49,44 +51,54 @@ export default async function BuilderSettingsPage({ params, searchParams }: Sett
           </header>
 
           {privacy ? (
-            <form action={savePrivacySettings} className="space-y-6">
-              <input type="hidden" name="locale" value={locale} />
-              <fieldset className="surface-panel divide-y divide-line">
-                <legend className="sr-only">{copy.settings.title}</legend>
-                {SWITCHES.map((key) => {
-                  const id = `privacy-${key}`;
-                  return (
-                    <div key={key} className="flex items-start gap-4 p-5">
-                      <input
-                        id={id}
-                        name={key}
-                        type="checkbox"
-                        defaultChecked={privacy[key]}
-                        aria-describedby={`${id}-desc`}
-                        className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]"
-                      />
-                      <div className="min-w-0 space-y-1">
-                        <label htmlFor={id} className="block cursor-pointer font-medium">
-                          {copy.settings.switches[key].label}
-                        </label>
-                        <p id={`${id}-desc`} className="text-step-sm text-ink-2">
-                          {copy.settings.switches[key].desc}
-                        </p>
+            <>
+              <form action={savePrivacySettings} className="space-y-6">
+                <input type="hidden" name="locale" value={locale} />
+                <fieldset className="surface-panel divide-y divide-line">
+                  <legend className="sr-only">{copy.settings.title}</legend>
+                  {SWITCHES.map((key) => {
+                    const id = `privacy-${key}`;
+                    return (
+                      <div key={key} className="flex items-start gap-4 p-5">
+                        <input
+                          id={id}
+                          name={key}
+                          type="checkbox"
+                          defaultChecked={privacy[key]}
+                          aria-describedby={`${id}-desc`}
+                          className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]"
+                        />
+                        <div className="min-w-0 space-y-1">
+                          <label htmlFor={id} className="block cursor-pointer font-medium">
+                            {copy.settings.switches[key].label}
+                          </label>
+                          <p id={`${id}-desc`} className="text-step-sm text-ink-2">
+                            {copy.settings.switches[key].desc}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </fieldset>
-              <div className="flex flex-wrap items-center gap-4">
-                <Button type="submit">{copy.settings.save}</Button>
-                {saved === "1" && (
-                  <p role="status" className="flex items-center gap-1.5 text-step-sm text-ink-2">
-                    <Check aria-hidden className="h-4 w-4 text-success" />
-                    {copy.settings.saved}
-                  </p>
-                )}
-              </div>
-            </form>
+                    );
+                  })}
+                </fieldset>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button type="submit">{copy.settings.save}</Button>
+                  {saved === "1" && (
+                    <p role="status" className="flex items-center gap-1.5 text-step-sm text-ink-2">
+                      <Check aria-hidden className="h-4 w-4 text-success" />
+                      {copy.settings.saved}
+                    </p>
+                  )}
+                </div>
+              </form>
+              <LeagueDataControls
+                copy={copy.settings.data}
+                locale={locale}
+                isAdmin={viewer.access.isAdmin}
+                deleteAction={deleteMyLeagueData}
+                deleted={deleted === "1"}
+                error={isSelfDeleteError(deleteError) ? deleteError : null}
+              />
+            </>
           ) : (
             <BuilderAccessPanel viewer={viewer} locale={locale} path="/builder-league/settings" />
           )}
