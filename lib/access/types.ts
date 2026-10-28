@@ -44,6 +44,24 @@ export type AccessAction =
 
 export type OperatorDomain = "live" | "courses" | "assets" | "directory" | "users" | "membership" | "commerce" | "builder_league" | "community" | "system";
 
+/** Runtime list of every operator domain, used to validate capability strings from storage or input. */
+export const OPERATOR_DOMAINS = [
+  "live",
+  "courses",
+  "assets",
+  "directory",
+  "users",
+  "membership",
+  "commerce",
+  "builder_league",
+  "community",
+  "system",
+] as const satisfies readonly OperatorDomain[];
+
+// Compile-time guard: fails if OPERATOR_DOMAINS ever misses a member of OperatorDomain.
+const operatorDomainsAreExhaustive: Exclude<OperatorDomain, (typeof OPERATOR_DOMAINS)[number]> extends never ? true : never = true;
+void operatorDomainsAreExhaustive;
+
 /** Exact capability strings. There is deliberately no `operator:*` wildcard. */
 export type OperatorCapability = `${OperatorDomain}:manage`;
 
@@ -74,6 +92,11 @@ export type AccessBasis =
   | "video_entitlement"
   | "video_paid_order"
   | "course_plan_subscription"
+  /**
+   * `canWatchVideo` allowed the video. It answers yes/no without saying which of its three paths
+   * (entitlement, paid order, plan) matched, so `authorize()` reports this combined basis.
+   */
+  | "course_video_access"
   | "live_ticket"
   | "live_replay_entitlement"
   | "verified_account"
