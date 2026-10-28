@@ -48,6 +48,9 @@ describe("social metadata", () => {
     expect(html).toContain('<meta property="og:image" content="');
     expect(html).toContain('<meta property="og:image:alt" content="');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+    expect(html).toContain("Builder League (<code>/api/v1/builder-*</code>)");
+    expect(html).toContain("<code>builder:render</code>");
+    expect(html).toContain("Pilot only: while BUILDER_LEAGUE_ENABLED is off");
     const jsonLd = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/)?.[1];
     expect(JSON.parse(jsonLd ?? "null")).toMatchObject({ "@type": "TechArticle", url: `${siteUrl()}/api-docs` });
   });

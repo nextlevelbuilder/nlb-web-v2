@@ -1,5 +1,6 @@
 import { openApiSpec } from "@/lib/openapi";
 import { defaultOgImage, serializeJsonLd, siteUrl } from "@/lib/seo";
+import { BUILDER_LEAGUE_AVAILABILITY } from "@/lib/discovery/builder-league-discovery";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
@@ -46,6 +47,7 @@ export function renderApiReference() {
 <h1>Next Level Builders API</h1>
 <p>Explore request schemas, generate code snippets and send real requests with the interactive reference below.</p>
 <p>Create an API key in <a href="/profile">your profile</a>. Builder endpoints accept <code>Authorization: Bearer nlb_live_…</code> or <code>x-api-key: nlb_live_…</code>. Organization membership is required. Voting and key management require a signed-in browser session.</p>
+<p>Builder League (<code>/api/v1/builder-*</code>): members and their agents can read their own data and submit their own evidence and projects with a session, an API key or MCP delegation (<code>mcp:read</code> / <code>mcp:write</code>). Agents cannot approve, verify or award, and cannot read another member's private history. Admin routes need a signed-in admin session, except the render worker and Discord ingest, which take an admin API key minted with the <code>builder:render</code> or <code>builder:ingest</code> scope. ${escapeHtml(BUILDER_LEAGUE_AVAILABILITY)}</p>
 <p>Use the current website origin for session requests. Requests sent with “Test Request” run against the server you select and can save drafts or submit for review. Credentials are not persisted by this reference.</p>
 <p>HTTP MCP: <a href="https://nextlevelbuilder.io/mcp">https://nextlevelbuilder.io/mcp</a>. To design a draft in your browser, enable WebMCP in Studio and connect your client.</p>
 </header>

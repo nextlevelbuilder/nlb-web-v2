@@ -6,11 +6,15 @@
  * - `/.well-known/ai-catalog.json`: the domain AI Catalog listing that card plus the REST API.
  * - `/.well-known/api-catalog`: an RFC 9727 linkset pointing at the OpenAPI document and its docs.
  *
+ * Builder League (pilot-only behind `BUILDER_LEAGUE_ENABLED`) is described in all three from
+ * ./builder-league-discovery.ts; its MCP tool names appear only on the server card.
+ *
  * The MCP facts mirror packages/mcp (server name, version, protocol versions served by MCP SDK v2)
  * and the `<site>/.well-known/oauth-protected-resource/mcp` document.
  */
 import { siteUrl } from "@/lib/seo";
 import { DISCOVERY_PATHS } from "./discovery-link-header";
+import { BUILDER_LEAGUE_AVAILABILITY, BUILDER_LEAGUE_MCP_TOOLS, BUILDER_LEAGUE_ROUTE_PREFIX, builderLeagueDiscovery } from "./builder-league-discovery";
 
 export { DISCOVERY_PATHS };
 
@@ -68,6 +72,7 @@ export function mcpServerCard() {
         apiDocs: `${site}${DISCOVERY_PATHS.apiDocs}`,
         llms: `${site}${DISCOVERY_PATHS.llms}`,
         llmsFull: `${site}${DISCOVERY_PATHS.llmsFull}`,
+        builderLeague: { ...builderLeagueDiscovery(`${site}${DISCOVERY_PATHS.openApi}`), tools: [...BUILDER_LEAGUE_MCP_TOOLS] },
       },
     },
   };
@@ -83,6 +88,12 @@ export function aiCatalog() {
     entries: [
       { identifier: `urn:air:${host}:mcp:directory`, type: "application/mcp-server-card+json", url: `${site}${DISCOVERY_PATHS.serverCard}`, data: mcpServerCard() },
       { identifier: `urn:air:${host}:openapi:v1`, type: "application/vnd.oai.openapi+json", url: `${site}${DISCOVERY_PATHS.openApi}` },
+      {
+        identifier: `urn:air:${host}:openapi:v1:builder-league`,
+        type: "application/vnd.oai.openapi+json",
+        url: `${site}${DISCOVERY_PATHS.openApi}`,
+        data: builderLeagueDiscovery(`${site}${DISCOVERY_PATHS.openApi}`),
+      },
       { identifier: `urn:air:${host}:llms:index`, type: "text/plain", url: `${site}${DISCOVERY_PATHS.llms}` },
       { identifier: `urn:air:${host}:llms:full`, type: "text/plain", url: `${site}${DISCOVERY_PATHS.llmsFull}` },
     ],
@@ -99,6 +110,13 @@ export function apiCatalogLinkset() {
         "service-desc": [{ href: `${site}${DISCOVERY_PATHS.openApi}`, type: "application/vnd.oai.openapi+json" }],
         "service-doc": [{ href: `${site}${DISCOVERY_PATHS.apiDocs}`, type: "text/html" }],
         "service-meta": [{ href: `${site}${DISCOVERY_PATHS.serverCard}`, type: "application/json" }],
+      },
+      {
+        // Builder League has no single base path, so its entry point (the member's own profile) anchors it.
+        anchor: `${site}${BUILDER_LEAGUE_ROUTE_PREFIX}me`,
+        "service-desc": [{ href: `${site}${DISCOVERY_PATHS.openApi}`, type: "application/vnd.oai.openapi+json", title: `NLB Builder League: ${BUILDER_LEAGUE_ROUTE_PREFIX}* routes in the OpenAPI document` }],
+        "service-doc": [{ href: `${site}${DISCOVERY_PATHS.apiDocs}`, type: "text/html", title: "NLB Builder League API reference" }],
+        "service-meta": [{ href: `${site}${DISCOVERY_PATHS.serverCard}`, type: "application/json", title: `Auth scopes, agent limits and MCP tools. ${BUILDER_LEAGUE_AVAILABILITY}` }],
       },
     ],
   };

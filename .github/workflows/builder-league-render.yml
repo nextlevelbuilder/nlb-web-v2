@@ -6,8 +6,11 @@
 #
 # Repository secrets (create them in Settings → Secrets and variables → Actions):
 #   NLB_API_BASE        Site origin, for example https://nextlevelbuilder.io
-#   NLB_RENDER_API_KEY  An NLB API key (nlb_live_…) created by an admin account. The renderer
-#                       endpoints accept only admins, so a non-admin key gets 403.
+#   NLB_RENDER_API_KEY  An NLB API key (nlb_live_…) minted by an admin account with the narrow
+#                       `builder:render` scope (POST /api/v1/api-keys with scopes ["builder:render"];
+#                       see docs/builder-league-runbook.md, "Render worker"). The renderer endpoints
+#                       refuse full API keys, keys with another scope and non-admin keys (403). A
+#                       `builder:render` key authenticates nowhere else on the site.
 # While either secret is missing the job exits without doing anything.
 name: Builder League render
 
