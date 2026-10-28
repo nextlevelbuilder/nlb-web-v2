@@ -138,10 +138,31 @@ describe("requireOperator", () => {
     const rows = await local.db.select().from(operatorAuditLogs).where(eq(operatorAuditLogs.resource, "live:event:deny"));
     expect(rows.map((r) => [r.decision, r.reason])).toEqual(
       expect.arrayContaining([
-        ["deny", "credential_not_allowed"], ["deny", "insufficient_scope"], ["deny", "not_operator"], ["deny", "unauthenticated"], ["allow", null],
+        ["deny", "credential_not_allowed"], ["deny", "insufficient_scope"], ["deny", "not_operator"], ["allow", null],
       ])
     );
+    // Anonymous traffic is refused without writing an audit row.
+    expect(rows.some((r) => r.reason === "unauthenticated")).toBe(false);
     expect(rows.find((r) => r.decision === "allow")?.clientId).toBe("client_test");
+  });
+
+  it("writes at most one capability deny per user and action per minute", async () => {
+    const t0 = new Date("2031-06-01T00:00:00Z");
+    const attempt = (userId: string, action: string, now: Date) =>
+      requireOperator({ db: local.db, subject: session(userId), domain: "live", action, resource: "live:event:flood", args: {}, now });
+    for (const offset of [0, 1_000, 59_000]) await expectCode(attempt("member", "live.event.flood", new Date(t0.getTime() + offset)), 403, "not_operator");
+    await expectCode(attempt("member", "live.event.flood-other", new Date(t0.getTime() + 2_000)), 403, "not_operator");
+    await expectCode(attempt("carol", "live.event.flood", new Date(t0.getTime() + 3_000)), 403, "missing_capability");
+    await expectCode(attempt("member", "live.event.flood", new Date(t0.getTime() + 61_000)), 403, "not_operator");
+    const rows = await local.db.select().from(operatorAuditLogs).where(eq(operatorAuditLogs.resource, "live:event:flood"));
+    expect(rows.map((r) => [r.actorUserId, r.action, r.createdAt.getTime() - t0.getTime()]).sort()).toEqual(
+      [
+        ["carol", "live.event.flood", 3_000],
+        ["member", "live.event.flood", 0],
+        ["member", "live.event.flood", 61_000],
+        ["member", "live.event.flood-other", 2_000],
+      ].sort()
+    );
   });
 
   it("requires and consumes an approval for sensitive actions", async () => {

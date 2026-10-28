@@ -81,7 +81,7 @@ beforeEach(() => {
 });
 
 describe("operator access", () => {
-  it("refuses anonymous, members, API keys, other-domain operators and non-operator delegations, auditing each deny", async () => {
+  it("refuses anonymous, members, API keys, other-domain operators and non-operator delegations, auditing signed-in denies", async () => {
     const member = await seedUser("member");
     const keyOperator = await seedOperator(["live:manage"]);
     const coursesOperator = await seedOperator(["courses:manage"]);
@@ -107,9 +107,8 @@ describe("operator access", () => {
     // A delegation not signed for mcp:operator never resolves to a caller.
     setCaller(asCaller(agentOperator, "delegation"), "mcp:write");
     expect((await attempt()).status).toBe(401);
-    const anonymousDenies = await actorRows(null, "live.event.create");
-    expect(anonymousDenies.length).toBeGreaterThanOrEqual(2);
-    expect(anonymousDenies.every((row) => row.decision === "deny" && row.reason === "unauthenticated")).toBe(true);
+    // Anonymous denies are refused without an audit row, so looping the URL cannot flood the trail.
+    expect(await actorRows(null, "live.event.create")).toEqual([]);
 
     // Signed for mcp:operator, the same operator gets through.
     setCaller(asCaller(agentOperator, "delegation"), "mcp:operator");

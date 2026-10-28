@@ -4,8 +4,8 @@
  *
  * 1. Resolve the caller; MCP delegations are accepted only when signed for `mcp:operator`.
  * 2. Preflight `operator:live` manage through `authorize()`. A deny goes through `requireOperator`,
- *    which writes the audited deny row and throws, so non-operators never learn whether a record
- *    exists and never reach input validation.
+ *    which writes the audited deny row (none for anonymous callers, throttled for non-operators) and
+ *    throws, so non-operators never learn whether a record exists and never reach input validation.
  * 3. `prepare` validates input and loads what the action targets (400/404 for operators only). It
  *    returns the canonical resource and the exact arguments the approval is bound to.
  * 4. `requireOperator` re-checks the capability, consumes the approval for sensitive actions and

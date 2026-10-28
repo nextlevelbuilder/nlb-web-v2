@@ -1,10 +1,41 @@
+import { and, eq, gt } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
+import { operatorAuditLogs } from "@/lib/db/schema";
 import { authorize } from "@/lib/access/authorize";
-import type { AccessSubject, OperatorDomain } from "@/lib/access/types";
+import type { AccessSubject, DenyReason, OperatorDomain } from "@/lib/access/types";
 import { isSensitiveOperatorAction, sensitiveActionDomain } from "./operator-actions";
 import { consumeApproval } from "./operator-approvals";
 import { hashOperatorArgs, recordOperatorAudit } from "./operator-audit";
 import { approvalError, denyError, OperatorAccessError } from "./operator-errors";
+
+/** Window in which repeated capability denies of one user for one action share a single audit row. */
+export const DENY_AUDIT_WINDOW_MS = 60_000;
+/** Capability denies of a signed-in user; these are throttled, every other deny is always written. */
+const THROTTLED_DENIES: ReadonlySet<DenyReason> = new Set(["not_operator", "missing_capability"]);
+
+/**
+ * Whether a deny should get an audit row. Anonymous traffic never writes one (anyone can loop an
+ * operator URL, and an actor-less row carries no signal). A signed-in non-operator writes at most one
+ * row per action per window, so probing cannot flood the append-only table. Approval failures and
+ * every other deny reason are always written.
+ */
+async function shouldAuditDeny(db: AppDb, actorUserId: string | null, action: string, code: string, now: Date): Promise<boolean> {
+  if (code === "unauthenticated" || !actorUserId) return false;
+  if (!THROTTLED_DENIES.has(code as DenyReason)) return true;
+  const [recent] = await db
+    .select({ id: operatorAuditLogs.id })
+    .from(operatorAuditLogs)
+    .where(
+      and(
+        eq(operatorAuditLogs.actorUserId, actorUserId),
+        gt(operatorAuditLogs.createdAt, new Date(now.getTime() - DENY_AUDIT_WINDOW_MS)),
+        eq(operatorAuditLogs.action, action),
+        eq(operatorAuditLogs.decision, "deny")
+      )
+    )
+    .limit(1);
+  return !recent;
+}
 
 export interface RequireOperatorInput {
   db: AppDb;
@@ -32,8 +63,9 @@ export interface OperatorGrant {
 /**
  * Gate for every operator write, shared by REST and MCP. Checks `operator:<domain>` manage through
  * `authorize()`, consumes the approval for sensitive actions, and writes an audit row for the allow or
- * the deny. Throws `OperatorAccessError` (401/403/409) on refusal. An audit write failure on the allow
- * path aborts the action (fail closed).
+ * the deny (anonymous denies are not written and repeated capability denies are throttled, see
+ * `shouldAuditDeny`). Throws `OperatorAccessError` (401/403/409) on refusal. An audit write failure on
+ * the allow path aborts the action (fail closed).
  */
 export async function requireOperator(input: RequireOperatorInput): Promise<OperatorGrant> {
   const { db, subject, domain, action, resource } = input;
@@ -56,7 +88,9 @@ export async function requireOperator(input: RequireOperatorInput): Promise<Oper
   };
   const refuse = async (error: OperatorAccessError): Promise<never> => {
     try {
-      await recordOperatorAudit(db, { ...base, decision: "deny", reason: error.code });
+      if (await shouldAuditDeny(db, subject.userId, action, error.code, now)) {
+        await recordOperatorAudit(db, { ...base, decision: "deny", reason: error.code });
+      }
     } catch (auditError) {
       console.error("operator audit failed", auditError instanceof Error ? auditError.message : auditError);
     }

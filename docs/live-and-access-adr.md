@@ -37,7 +37,7 @@ Fail closed: a missing user, banned user (ban not expired), revoked operator, un
 
 - `platform_operators` grants exact capabilities (`live:manage`, …) independent of `users.role`. There is no wildcard. Existing session-only Builder League admin routes keep their current checks; nothing is loosened.
 - Sensitive actions (`live.ticket.refund`, `live.event.cancel`, `live.poll.override`, `operator.grant`, `operator.revoke`) need an `operator_approvals` row: requested by one operator, approved by a **different** operator, bound to `sha256(canonical JSON arguments)`, valid for a short TTL, consumed once by a conditional UPDATE. A replayed, expired, mismatched or self-approved approval changes no rows and the action is refused. The row also stores the canonical JSON arguments (non-personal ids) behind the hash, and `GET /api/v1/live-admin/approvals[/{id}]` shows the approver the action, resource, arguments, reason and requester before they decide.
-- Every operator decision, allowed or denied, writes an append-only `operator_audit_logs` row with action, resource, argument hash, approval id and a non-personal summary.
+- Every operator decision, allowed or denied, writes an append-only `operator_audit_logs` row with action, resource, argument hash, approval id and a non-personal summary. Two exceptions keep probing from flooding the table: anonymous denies are not written, and a signed-in non-operator (`not_operator`, `missing_capability`) writes at most one deny row per action per minute. Allows, approval events and every other deny are always written.
 - Operator writes call domain services, never arbitrary SQL. Polar stays the source of truth for payments: a manual grant is never recorded as a Polar order.
 
 ### Live voting
