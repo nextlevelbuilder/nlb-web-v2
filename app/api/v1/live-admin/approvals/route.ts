@@ -4,7 +4,7 @@ import { APPROVAL_STATUSES, listApprovalPage } from "@/lib/operators/operator-ap
 import { hashOperatorArgs, recordOperatorAudit } from "@/lib/operators/operator-audit";
 import { requestApproval } from "@/lib/operators/operator-approvals";
 import { OperatorAccessError } from "@/lib/operators/operator-errors";
-import { LIVE_OPERATOR_RESOURCE, runOperatorRoute } from "@/lib/live/http/live-operator-route";
+import { LIVE_APPROVAL_ACTIONS, LIVE_OPERATOR_RESOURCE, runOperatorRoute } from "@/lib/live/http/live-operator-route";
 import { liveInvalid } from "@/lib/live/live-errors";
 import { readJsonObject } from "@/lib/live/http/live-request-context";
 import { approvalRequestSchema } from "@/lib/live/http/live-operator-schemas";
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       return { resource: LIVE_OPERATOR_RESOURCE, args: { status, limit }, filter: { status, cursor, limit } };
     },
     run: async ({ db, now }, { filter }) => {
-      const page = await listApprovalPage(db, { ...filter, now });
+      const page = await listApprovalPage(db, { ...filter, actions: LIVE_APPROVAL_ACTIONS, now });
       return ok(page.items, page.pagination);
     },
   });

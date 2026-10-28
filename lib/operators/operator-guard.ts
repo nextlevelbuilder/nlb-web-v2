@@ -73,7 +73,7 @@ export interface OperatorGrant {
 /**
  * Gate for every operator write, shared by REST and MCP. Checks `operator:<domain>` manage through
  * `authorize()`, consumes the approval for sensitive actions, and writes an audit row for the allow or
- * the deny (anonymous denies are not written and repeated capability denies are throttled, see
+ * the deny (anonymous denies are not written and repeated signed-in denies are throttled, see
  * `shouldAuditDeny`). Throws `OperatorAccessError` (401/403/409) on refusal. An audit write failure on
  * the allow path aborts the action (fail closed).
  */

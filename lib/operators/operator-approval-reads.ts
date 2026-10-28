@@ -82,19 +82,32 @@ function statusFilter(status: OperatorApprovalStatus, now: Date): SQL | undefine
   }
 }
 
-/** One approval by id, or null. */
-export async function getApprovalView(db: AppDb, approvalId: string, now: Date): Promise<OperatorApprovalView | null> {
-  const [row] = await db.select().from(operatorApprovals).where(eq(operatorApprovals.id, approvalId)).limit(1);
+/**
+ * One approval by id, or null. `actions` limits the read to the caller's domain: an approval for an
+ * action outside it reads as missing, so a Live operator never sees system-domain grants.
+ */
+export async function getApprovalView(
+  db: AppDb,
+  approvalId: string,
+  now: Date,
+  actions: readonly string[]
+): Promise<OperatorApprovalView | null> {
+  const [row] = await db
+    .select()
+    .from(operatorApprovals)
+    .where(and(eq(operatorApprovals.id, approvalId), inArray(operatorApprovals.action, [...actions])))
+    .limit(1);
   return row ? toView(row, now) : null;
 }
 
-/** One page of approvals with the given effective status, newest request first. */
+/** One page of approvals with the given effective status for the given actions, newest request first. */
 export async function listApprovalPage(
   db: AppDb,
-  input: { status: OperatorApprovalStatus; cursor: Cursor | null; limit: number; now: Date }
+  input: { status: OperatorApprovalStatus; actions: readonly string[]; cursor: Cursor | null; limit: number; now: Date }
 ): Promise<{ items: OperatorApprovalView[]; pagination: Pagination }> {
   const conditions = [
     statusFilter(input.status, input.now),
+    inArray(operatorApprovals.action, [...input.actions]),
     input.cursor
       ? or(
           lt(operatorApprovals.createdAt, new Date(input.cursor.at)),

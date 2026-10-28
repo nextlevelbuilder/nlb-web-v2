@@ -13,7 +13,7 @@ const polarFake = vi.hoisted(() => ({
 vi.mock("@/lib/polar", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/polar")>()), polar: polarFake }));
 
 import { getDb } from "@/lib/db";
-import { liveTickets, operatorAuditLogs } from "@/lib/db/schema";
+import { liveTickets, operatorApprovals, operatorAuditLogs } from "@/lib/db/schema";
 import { POST as createEvent } from "@/app/api/v1/live-admin/events/route";
 import { POST as cancelEvent } from "@/app/api/v1/live-admin/events/[id]/cancel/route";
 import { GET as eventTickets } from "@/app/api/v1/live-admin/events/[id]/tickets/route";
@@ -204,6 +204,16 @@ describe("sensitive actions", () => {
     expect(rejected.data).toEqual(expect.arrayContaining([expect.objectContaining({ id, status: "rejected", decidedBy: approver.id })]));
     expect((await listApprovals(getRequest("/api/v1/live-admin/approvals?status=bogus"))).status).toBe(400);
     expect((await getApproval(getRequest("/api/v1/live-admin/approvals/missing"), params({ id: "missing" }))).status).toBe(404);
+
+    // A system-domain approval is invisible to a Live operator, in the list and by id.
+    const systemId = `sys-${id}`;
+    await getDb().insert(operatorApprovals).values({
+      id: systemId, action: "operator.grant", resource: "operator:system", argsHash: "h", args: "{}",
+      reason: "Grant", requestedBy: requester.id, expiresAt: new Date(Date.now() + 600_000),
+    });
+    const livePending = await readJson(await listApprovals(getRequest("/api/v1/live-admin/approvals?limit=100")));
+    expect((livePending.data as { id: string }[]).some((row) => row.id === systemId)).toBe(false);
+    expect((await getApproval(getRequest(`/api/v1/live-admin/approvals/${systemId}`), params({ id: systemId }))).status).toBe(404);
 
     setCaller(asCaller(member, "session"));
     const refused = await getApproval(getRequest(`/api/v1/live-admin/approvals/${id}`), params({ id }));

@@ -13,7 +13,7 @@
  */
 import { getDb, type AppDb } from "@/lib/db";
 import { authorize } from "@/lib/access/authorize";
-import type { AccessSubject } from "@/lib/access/types";
+import { SENSITIVE_OPERATOR_ACTIONS, type AccessSubject } from "@/lib/access/types";
 import { requireOperator, type OperatorGrant } from "@/lib/operators/operator-guard";
 import { denyError } from "@/lib/operators/operator-errors";
 import type { ResolvedCaller } from "@/lib/auth-api-key";
@@ -23,6 +23,9 @@ import { withLiveErrors } from "./live-http-errors";
 export const LIVE_OPERATOR_DOMAIN = "live" as const;
 /** Resource recorded on audit rows written before the target is known. */
 export const LIVE_OPERATOR_RESOURCE = "operator:live";
+
+/** Sensitive actions of the Live domain; Live approval reads never show approvals outside this list. */
+export const LIVE_APPROVAL_ACTIONS = SENSITIVE_OPERATOR_ACTIONS.filter((action) => action.startsWith("live."));
 
 export interface OperatorActionPlan {
   /** Canonical resource string, e.g. `live:event:<id>`. */
