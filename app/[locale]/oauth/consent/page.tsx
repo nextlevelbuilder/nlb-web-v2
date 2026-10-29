@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import { getOAuthAuth } from '@/lib/auth';
-import { getMcpOAuthResource, MCP_OAUTH_SCOPES, isMcpOAuthEnabled } from '@/lib/mcp-oauth-config';
+import { getMcpOAuthResource, MCP_OAUTH_SCOPES, MCP_OPERATOR_SCOPE, isMcpOAuthEnabled } from '@/lib/mcp-oauth-config';
+import { getDb } from '@/lib/db';
+import { getOperatorCapabilities } from '@/lib/operators/operator-grants';
 import { notFound } from 'next/navigation';
 import OAuthConsentForm from '@/components/auth/oauth-consent-form';
 
@@ -16,7 +18,7 @@ export default async function OAuthConsentPage({ searchParams }: {
   }
   const oauthQuery = params.toString();
   const clientId = params.get('client_id') || '';
-  const scopes = [...new Set((params.get('scope') || '').split(' ').filter(Boolean))];
+  let scopes = [...new Set((params.get('scope') || '').split(' ').filter(Boolean))];
   const resource = getMcpOAuthResource();
   const auth = getOAuthAuth();
   const requestHeaders = await headers();
@@ -32,6 +34,10 @@ export default async function OAuthConsentPage({ searchParams }: {
       headers: requestHeaders,
       body: { client_id: clientId, oauth_query: oauthQuery },
     });
+    // Only platform operators are offered mcp:operator; the consent endpoint drops it for everyone else too.
+    if (scopes.includes(MCP_OPERATOR_SCOPE) && !(await getOperatorCapabilities(getDb(), session.user.id)).length) {
+      scopes = scopes.filter(scope => scope !== MCP_OPERATOR_SCOPE);
+    }
     details = { clientName: client.client_name || clientId, accountEmail: session.user.email };
   } catch {
     return <main id="main" className="sky-backdrop flex min-h-screen items-center justify-center bg-background px-5 py-24 text-foreground"><div className="surface-panel w-full max-w-xl p-6 sm:p-8"><p className="eyebrow mb-4">MCP · OAuth</p><h1 className="font-display text-step-2xl font-light">Authorization request expired or invalid</h1><p className="mt-4 text-step-base text-ink-2">Restart the connection from your MCP client to sign in and review access.</p></div></main>;

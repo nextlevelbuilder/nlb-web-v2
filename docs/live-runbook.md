@@ -40,6 +40,10 @@ npx tsx scripts/grant-platform-operator.ts --user <userId> --capability live:man
 
 Check: `SELECT user_id, capabilities, revoked_at FROM platform_operators` shows both users with `live:manage` and no `revoked_at`.
 
+### Operator tools
+
+Steps 3 to 5 call the operator API under `/api/v1/live-admin/`. An operator can run them from an MCP client connected to `https://nextlevelbuilder.io/mcp`: the `live_admin_*` tools wrap these routes ([MCP toolkit](./toolkits/mcp.md#20-nlb-live-operator-tools)). The connection must be authorized after the grant in step 2, because only operators receive the `mcp:operator` scope. A client connected before the operator tools shipped keeps its old scope list: remove the server from the client and add it again. Refunds, cancellations and winner overrides still need a second operator's approval (`live_admin_request_approval`, then `live_admin_decide_approval`).
+
 ### 3. Open a voting round
 
 Use the operator API under `/api/v1/live-admin/`: topic groups, topics, then a round (`rounds`) with its voting window. Members vote on `/live` while the round is open.

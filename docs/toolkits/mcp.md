@@ -88,6 +88,7 @@ The authorization server is the web's Better Auth provider at `<site>/api/auth`,
 | `mcp:read` | Read directory data, authorized product traffic, blog drafts and revisions (admins), Builder League and onboarding status |
 | `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions |
 | `mcp:keys` | List, create and revoke the user's API keys; newly created keys can outlive this OAuth grant |
+| `mcp:operator` | NLB Live operator tools (`live_admin_*`). Only platform operators get it: for anyone else the consent screen hides it and the server drops it from the grant |
 
 Public reads need no token. A protected call without a valid token returns `401` with a `WWW-Authenticate` challenge (`resource_metadata`, `scope`); a token missing the tool's scope returns `403 insufficient_scope`.
 
@@ -250,3 +251,37 @@ Agents can only submit `self_reported` evidence and can never approve, award or 
 ### 19. `onboarding_get_status`
 
 Returns the signed-in member's onboarding status from `GET /api/v1/onboarding-status` (`mcp:read`): membership tier and the Discord and Telegram access steps. Returns 404 when onboarding is disabled on the environment.
+
+### 20. NLB Live operator tools
+
+For platform operators who hold the `live:manage` grant. Every tool needs `mcp:operator` and calls `/api/v1/live-admin/*` as the signed-in operator. These routes stay out of the public OpenAPI document while `PUBLISH_LIVE_OPENAPI` is `false` ([`lib/openapi.ts`](../../lib/openapi.ts)).
+
+- **Who gets the scope**: clients ask for every advertised scope, but the authorization server grants `mcp:operator` only to a user with an unrevoked `platform_operators` row ([`lib/mcp-oauth-config.ts`](../../lib/mcp-oauth-config.ts)). Members get a token without it and a `403 insufficient_scope` on these tools. An operator who is granted later must reconnect the client. A client registered before the scope existed keeps its old scope list, so the operator removes the server from the client and adds it again to register afresh. A code issued after a grant is revoked lacks the scope; refresh tokens keep their scope until they expire (30 days).
+- **Checks on every call**: the web still checks the operator grant, so a revoked operator is refused even with an older token. API keys are refused. Every call, allowed or denied, is written to the operator audit trail.
+- **Two-person rule**: `live_admin_refund_ticket`, `live_admin_cancel_event` and `live_admin_override_round_winner` need `approvalId`. Call `live_admin_request_approval` first, then a different operator calls `live_admin_decide_approval`. Without an approval the API answers `409 approval_required`.
+- **Without OAuth** (stdio or Worker token): pass the operator's Better Auth `session_cookie` (or set `NLB_SESSION_COOKIE`).
+
+| Tool | Route |
+| --- | --- |
+| `live_admin_list_events` · `live_admin_create_event` | `GET` · `POST /api/v1/live-admin/events` |
+| `live_admin_get_event` · `live_admin_update_event` | `GET` · `PATCH /api/v1/live-admin/events/{id}` |
+| `live_admin_set_event_capacity` | `POST …/events/{id}/capacity` |
+| `live_admin_transition_event` | `POST …/events/{id}/transition` |
+| `live_admin_create_event_product` | `POST …/events/{id}/polar-product` |
+| `live_admin_open_event_sales` | `POST …/events/{id}/open-sales` |
+| `live_admin_create_event_meeting` | `POST …/events/{id}/meeting` |
+| `live_admin_cancel_event` | `POST …/events/{id}/cancel` (approval) |
+| `live_admin_list_event_tickets` | `GET …/events/{id}/tickets` |
+| `live_admin_refund_ticket` | `POST /api/v1/live-admin/tickets/{id}/refund` (approval) |
+| `live_admin_list_topic_groups` · `live_admin_create_topic_group` | `GET` · `POST /api/v1/live-admin/topic-groups` |
+| `live_admin_update_topic_group` · `live_admin_archive_topic_group` | `PATCH …/topic-groups/{id}` · `POST …/topic-groups/{id}/archive` |
+| `live_admin_list_topics` · `live_admin_create_topic` | `GET` · `POST /api/v1/live-admin/topics` |
+| `live_admin_update_topic` · `live_admin_archive_topic` | `PATCH …/topics/{id}` · `POST …/topics/{id}/archive` |
+| `live_admin_list_rounds` · `live_admin_create_round` | `GET` · `POST /api/v1/live-admin/rounds` |
+| `live_admin_finalize_round` | `POST …/rounds/{id}/finalize` |
+| `live_admin_override_round_winner` | `POST …/rounds/{id}/override` (approval) |
+| `live_admin_list_approvals` · `live_admin_request_approval` | `GET` · `POST /api/v1/live-admin/approvals` |
+| `live_admin_get_approval` · `live_admin_decide_approval` | `GET …/approvals/{id}` · `POST …/approvals/{id}/decision` |
+| `live_admin_list_audit` | `GET /api/v1/live-admin/audit` |
+| `live_admin_get_metrics` | `GET /api/v1/live-admin/metrics` |
+| `live_admin_run_sweeps` | `POST /api/v1/live-admin/sweeps` |
