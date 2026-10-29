@@ -71,7 +71,7 @@ export default function StudioPreviewModal({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button type="button" size="sm" onClick={onPublishOrSubmit} disabled={isSubmitting} className="gap-2">
+          <Button type="button" size="sm" onClick={onPublishOrSubmit} loading={isSubmitting} className="gap-2">
             <Send aria-hidden className="h-3.5 w-3.5" />
             {isSubmitting ? 'Submitting...' : 'Submit for Review'}
           </Button>

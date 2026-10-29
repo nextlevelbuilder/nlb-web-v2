@@ -193,6 +193,32 @@ html.has-cursor, html.has-cursor * { cursor: none !important; }
 .btn:hover .arrow { transform: translateX(3px); }
 .btn .play { width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; }
 .btn .play svg { width: 8px; height: 8px; margin-left: 1px; }
+
+/* ---------- busy buttons: a spinner over the kept label, so the width never changes ---------- */
+.btn[aria-busy="true"], .is-busy[aria-busy="true"] { -webkit-text-fill-color: transparent; cursor: progress; }
+.btn[aria-busy="true"] svg, .btn[aria-busy="true"] img, .is-busy[aria-busy="true"] svg, .is-busy[aria-busy="true"] img { visibility: hidden; }
+.btn[aria-busy="true"]::after, .is-busy[aria-busy="true"]::after {
+  content: ""; position: absolute; inset: 0; width: 1.125em; height: 1.125em; margin: auto; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent; animation: busy-spin .7s linear infinite;
+}
+.btn[aria-busy="true"]:disabled, .is-busy[aria-busy="true"]:disabled { opacity: 1; }
+@keyframes busy-spin { to { transform: rotate(1turn); } }
+
+/* ---------- route loading skeleton (components/site/route-loading-skeleton.tsx) ---------- */
+.route-skeleton { animation: route-skeleton-in var(--d-2) var(--ease-quart) 150ms backwards; }
+.route-skeleton-bar { border-radius: var(--r-1); background: color-mix(in oklab, var(--ink) 9%, transparent); animation: route-skeleton-pulse 1.6s ease-in-out infinite; }
+@keyframes route-skeleton-in { from { opacity: 0; } }
+@keyframes route-skeleton-pulse { 50% { opacity: .45; } }
+
+/* ---------- navigation progress: a hairline of accent light under the top edge ---------- */
+.nav-progress { position: fixed; inset: 0 0 auto; z-index: 250; height: 2px; pointer-events: none; opacity: 0; transition: opacity var(--d-3) var(--ease-quart) var(--d-2); }
+.nav-progress[data-phase="loading"] { opacity: 1; transition: opacity var(--d-1) var(--ease-quart); }
+.nav-progress-bar {
+  height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent), 0 0 2px var(--accent); transform-origin: 0 50%;
+  transition: transform var(--d-3) var(--ease-expo); will-change: transform;
+}
+.nav-progress[data-phase="finishing"] .nav-progress-bar { transition-duration: var(--d-2); }
+.nav-progress[data-phase="idle"] .nav-progress-bar { transition: none; }
 :where(.link-arrow) { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; color: var(--ink); border-bottom: 1px solid var(--line-2); transition: border-color var(--d-2), gap var(--d-3) var(--ease-expo); }
 :where(.link-arrow):hover { border-color: var(--accent); gap: var(--s-3); }
 
@@ -234,4 +260,6 @@ html[lang="vi"] .h2 { line-height: 1.12; }
 /* ---------- reduced motion: static, fully visible ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0s !important; }
+  /* the progress bar shows as one static line instead of growing */
+  .nav-progress-bar { transform: none !important; }
 }

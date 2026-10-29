@@ -35,7 +35,7 @@ export default function OAuthConnections({ connections }: {
       <h2 className="font-display text-step-xl font-normal">{item.name}</h2>
       <p className="break-all font-mono text-step-xs text-ink-3">Client ID: {item.clientId}</p>
       <p className="text-step-sm text-ink-2">Permissions: {item.scopes.join(', ')}</p>
-      <Button variant="outline" disabled={!!pending} onClick={() => disconnect(item.id)}>{pending === item.id ? 'Disconnecting…' : 'Disconnect'}</Button>
+      <Button variant="outline" disabled={!!pending} loading={pending === item.id} onClick={() => disconnect(item.id)}>{pending === item.id ? 'Disconnecting…' : 'Disconnect'}</Button>
     </article>)}
   </section>;
 }
