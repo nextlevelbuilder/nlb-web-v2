@@ -19,9 +19,12 @@ const callback = "http://127.0.0.1:9876/callback";
 const verifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
 const challenge = createHash("sha256").update(verifier).digest("base64url");
 
-async function fixture() {
-  const plugins = getMcpOAuthPlugins();
+async function fixture(operators: string[] = []) {
+  // Operator grants are checked by email here: the in-memory users get ids only when they sign in.
   const database: Record<string, Record<string, unknown>[]> = {};
+  const plugins = getMcpOAuthPlugins({
+    isOperator: async (userId) => operators.includes(String(database.user.find(user => user.id === userId)?.email)),
+  });
   for (const model of ["user", "session", "account", "verification", ...plugins.flatMap(p => Object.keys(p.schema || {}))]) database[model] = [];
   let otp = "";
   const auth = betterAuth({
@@ -273,6 +276,84 @@ describe("MCP OAuth provider", () => {
     const body = await denied.json();
     expect(new URL(body.url).searchParams.get("error")).toBe("access_denied");
     expect(f.database.oauthConsent).toHaveLength(0);
+  });
+
+  it("drops mcp:operator from the grant of a user without an operator grant", async () => {
+    const f = await fixture();
+    expect(f.query.get("scope")).toContain("mcp:operator");
+    const approved = await f.approve();
+    expect(f.database.oauthConsent[0].scopes).not.toContain("mcp:operator");
+    const issued = await (await f.request("/oauth2/token", f.tokenBody(approved.code), undefined, true)).json();
+    expect(issued.scope.split(" ")).toEqual(expect.arrayContaining(["mcp:read", "mcp:write", "mcp:keys"]));
+    expect(issued.scope).not.toContain("mcp:operator");
+    // A signed-in member authorizing again is not sent back to consent for a scope they cannot hold.
+    const again = await (await f.request(`/oauth2/authorize?${f.query}`, undefined, approved.cookie)).json();
+    expect(new URL(again.url).searchParams.get("code")).toBeTruthy();
+  });
+
+  it("grants mcp:operator to a platform operator", async () => {
+    const f = await fixture(["builder@example.com"]);
+    const approved = await f.approve();
+    expect(f.database.oauthConsent[0].scopes).toContain("mcp:operator");
+    const issued = await (await f.request("/oauth2/token", f.tokenBody(approved.code), undefined, true)).json();
+    expect(issued.scope).toContain("mcp:operator");
+  });
+
+  it("lets a client registered before mcp:operator existed authorize with every advertised scope", async () => {
+    const f = await fixture(["builder@example.com"]);
+    f.database.oauthClient[0].scopes = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"];
+    const approved = await f.approve();
+    const issued = await (await f.request("/oauth2/token", f.tokenBody(approved.code), undefined, true)).json();
+    expect(issued.scope).toBe("mcp:read mcp:write mcp:keys offline_access");
+  });
+
+  it("sends a member who signs in again straight back to the client without a second consent", async () => {
+    const f = await fixture();
+    await f.approve();
+    f.database.session.length = 0;
+    const next = await (await f.request(`/oauth2/authorize?${f.query}`)).json();
+    const oauthQuery = new URL(next.url, origin).search.slice(1);
+    await f.request("/email-otp/send-verification-otp", { email: "builder@example.com", type: "sign-in" });
+    const resumed = await (await f.request("/sign-in/email-otp", { email: "builder@example.com", otp: f.getOtp(), oauth_query: oauthQuery })).json();
+    expect(new URL(resumed.url).searchParams.get("code")).toBeTruthy();
+  });
+
+  it("drops mcp:operator from codes issued after the operator grant is revoked", async () => {
+    const operators = ["builder@example.com"];
+    const f = await fixture(operators);
+    const approved = await f.approve();
+    expect(f.database.oauthConsent[0].scopes).toContain("mcp:operator");
+    operators.length = 0;
+    const omitted = new URLSearchParams(f.query);
+    omitted.delete("scope");
+    for (const query of [f.query, omitted]) {
+      const again = await (await f.request(`/oauth2/authorize?${query}`, undefined, approved.cookie)).json();
+      const code = new URL(again.url).searchParams.get("code")!;
+      const issued = await (await f.request("/oauth2/token", f.tokenBody(code), undefined, true)).json();
+      expect(issued.scope).toBe("mcp:read mcp:write mcp:keys offline_access");
+    }
+    // Resuming after sign-in skips consent because the old consent covers the request.
+    f.database.session.length = 0;
+    const next = await (await f.request(`/oauth2/authorize?${f.query}`)).json();
+    await f.request("/email-otp/send-verification-otp", { email: "builder@example.com", type: "sign-in" });
+    const resumed = await (await f.request("/sign-in/email-otp", {
+      email: "builder@example.com", otp: f.getOtp(), oauth_query: new URL(next.url, origin).search.slice(1),
+    })).json();
+    const code = new URL(resumed.url).searchParams.get("code")!;
+    const issued = await (await f.request("/oauth2/token", f.tokenBody(code), undefined, true)).json();
+    expect(issued.scope).not.toContain("mcp:operator");
+  });
+
+  it("refuses a consent that would only grant mcp:operator to a non-operator", async () => {
+    const f = await fixture();
+    f.query.set("scope", "mcp:operator");
+    const login = await f.login();
+    const consent = await f.request("/oauth2/consent", { accept: true, oauth_query: login.oauthQuery }, login.cookie);
+    expect(consent.status).toBe(403);
+    expect(f.database.oauthConsent).toHaveLength(0);
+    // Asking for the scope explicitly does not get around the gate either.
+    const explicit = await f.request("/oauth2/consent", { accept: true, scope: "mcp:operator", oauth_query: login.oauthQuery }, login.cookie);
+    expect(explicit.status).toBe(403);
   });
 
   it.each(["missing-pkce", "plain-pkce", "unknown-scope", "wrong-resource", "wrong-redirect"])("rejects authorization with %s", async (kind) => {

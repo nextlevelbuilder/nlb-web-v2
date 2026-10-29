@@ -1,6 +1,7 @@
 import type { ToolContext } from "../tool-context.js";
 import { createBlogTools } from "./blog.js";
 import { createBuilderLeagueTools } from "./builder-league.js";
+import { createLiveOperatorTools } from "./live-operator.js";
 import { createOnboardingTools } from "./onboarding.js";
 import {
   toServerDocumentSafe,
@@ -1062,5 +1063,6 @@ export const TOOLS: McpToolDefinition[] = [
   // Blog management (/api/v1/blog/*)
   ...createBlogTools(resolveToolEnv),
   ...createBuilderLeagueTools(resolveToolEnv),
-  ...createOnboardingTools(resolveToolEnv)
+  ...createOnboardingTools(resolveToolEnv),
+  ...createLiveOperatorTools(resolveToolEnv)
 ];

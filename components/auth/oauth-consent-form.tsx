@@ -8,10 +8,11 @@ const scopeDescriptions: Record<string, string> = {
   'mcp:read': 'Read directory information and account data available to you.',
   'mcp:write': 'Act on your behalf: submit and update products, upload media, vote, and start checkout.',
   'mcp:keys': 'Create, list, and revoke API keys. Created keys can provide long-lived account access after this connection ends.',
+  'mcp:operator': 'Run NLB Live operator tools with your operator grant: events, voting rounds, tickets, approvals and the audit trail. Refunds, cancellations and winner overrides still need a second operator.',
   offline_access: 'Keep this connection active using a renewable token when you are away.',
 };
 const scopeLabels: Record<string, string> = {
-  'mcp:read': 'Read information', 'mcp:write': 'Make changes', 'mcp:keys': 'Manage API keys', offline_access: 'Stay connected',
+  'mcp:read': 'Read information', 'mcp:write': 'Make changes', 'mcp:keys': 'Manage API keys', 'mcp:operator': 'Operate NLB Live', offline_access: 'Stay connected',
 };
 
 export default function OAuthConsentForm({ clientName, clientId, accountEmail, scopes, oauthQuery, resource }: {
@@ -24,7 +25,7 @@ export default function OAuthConsentForm({ clientName, clientId, accountEmail, s
     setPending(true);
     setError('');
     try {
-      const result = await authClient.oauth2.consent({ accept, oauth_query: oauthQuery });
+      const result = await authClient.oauth2.consent({ accept, oauth_query: oauthQuery, ...(accept ? { scope: scopes.join(' ') } : {}) });
       if (result.error) throw new Error(result.error.message || 'Authorization failed.');
       if (!result.data?.url) throw new Error('Missing authorization continuation.');
       // Only the provider chooses this registered client redirect after validating consent.

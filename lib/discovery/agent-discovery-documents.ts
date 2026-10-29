@@ -7,7 +7,8 @@
  * - `/.well-known/api-catalog`: an RFC 9727 linkset pointing at the OpenAPI document and its docs.
  *
  * Builder League (pilot-only behind `BUILDER_LEAGUE_ENABLED`) is described in all three from
- * ./builder-league-discovery.ts; its MCP tool names appear only on the server card.
+ * ./builder-league-discovery.ts; its MCP tool names appear only on the server card. The NLB Live operator
+ * tools (./live-operator-discovery.ts) are on the server card only, as their routes are not in OpenAPI.
  *
  * The MCP facts mirror packages/mcp (server name, version, protocol versions served by MCP SDK v2)
  * and the `<site>/.well-known/oauth-protected-resource/mcp` document.
@@ -15,6 +16,7 @@
 import { siteUrl } from "@/lib/seo";
 import { DISCOVERY_PATHS } from "./discovery-link-header";
 import { BUILDER_LEAGUE_AVAILABILITY, BUILDER_LEAGUE_MCP_TOOLS, BUILDER_LEAGUE_ROUTE_PREFIX, builderLeagueDiscovery } from "./builder-league-discovery";
+import { liveOperatorDiscovery } from "./live-operator-discovery";
 
 export { DISCOVERY_PATHS };
 
@@ -22,7 +24,7 @@ export const MCP_ENDPOINT = "https://nextlevelbuilder.io/mcp";
 export const MCP_SERVER_VERSION = "0.2.1";
 /** 2026-07-28 is the stateless revision; the older ones are served through the SDK's legacy path. */
 export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"] as const;
-export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"] as const;
+export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "mcp:operator", "offline_access"] as const;
 const TOOLKITS_REPOSITORY = "https://github.com/nextlevelbuilder/nlb-web-v2";
 
 /** The MCP endpoint this site serves. */
@@ -50,7 +52,7 @@ export function mcpServerCard() {
     name: "io.nextlevelbuilder/directory",
     version: MCP_SERVER_VERSION,
     title: "Next Level Builders Directory",
-    description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding.",
+    description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding; platform operators also run NLB Live.",
     websiteUrl: `${site}/build-with-us/instructions`,
     repository: { url: TOOLKITS_REPOSITORY, source: "github", subfolder: "packages/mcp" },
     icons: [
@@ -73,6 +75,7 @@ export function mcpServerCard() {
         llms: `${site}${DISCOVERY_PATHS.llms}`,
         llmsFull: `${site}${DISCOVERY_PATHS.llmsFull}`,
         builderLeague: { ...builderLeagueDiscovery(`${site}${DISCOVERY_PATHS.openApi}`), tools: [...BUILDER_LEAGUE_MCP_TOOLS] },
+        liveOperator: liveOperatorDiscovery(),
       },
     },
   };

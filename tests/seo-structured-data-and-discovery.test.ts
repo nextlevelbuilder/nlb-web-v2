@@ -154,6 +154,16 @@ describe("agent discovery documents", () => {
     expect(builder?.["service-meta"][0]).toMatchObject({ title: expect.stringContaining("BUILDER_LEAGUE_ENABLED") });
   });
 
+  it("lists the operator-only Live tools and the mcp:operator scope on the server card", () => {
+    const meta = mcpServerCard()._meta["io.nextlevelbuilder/discovery"];
+    expect(meta.authorization.scopesSupported).toContain("mcp:operator");
+    expect(meta.liveOperator).toMatchObject({ scope: "mcp:operator" });
+    const toolSource = readFileSync(resolve(process.cwd(), "packages/mcp/src/tools/live-operator.ts"), "utf8");
+    const definedTools = [...toolSource.matchAll(/define\("(live_admin_[a-z_]+)"/g)].map((match) => match[1]);
+    expect(definedTools.length).toBeGreaterThan(0);
+    expect([...meta.liveOperator.tools].sort()).toEqual([...definedTools].sort());
+  });
+
   it("advertises discovery links in one header value", () => {
     const header = discoveryLinkHeader();
     for (const fragment of ['</llms.txt>; rel="alternate"', '</api/openapi.json>; rel="service-desc"', '</.well-known/api-catalog>; rel="api-catalog"', '</.well-known/mcp.json>; rel="describedby"']) {
