@@ -104,7 +104,7 @@ describe("MCP OAuth resource server", () => {
       const res = await handleWorkerFetch(new Request(new URL(path, resource)), env);
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
-        resource, authorization_servers: [issuer], scopes_supported: ["mcp:read", "mcp:write", "mcp:keys"],
+        resource, authorization_servers: [issuer], scopes_supported: ["mcp:read", "mcp:write", "mcp:keys", "mcp:operator"],
         bearer_methods_supported: ["header"], resource_name: "Next Level Builders MCP"
       });
     }
@@ -159,6 +159,24 @@ describe("MCP OAuth resource server", () => {
     expect(verified.payload).toMatchObject({ sub: "user-1", scope: "mcp:keys", method: "GET", path: "/api/v1/api-keys" });
     expect(verified.payload.exp! - verified.payload.iat!).toBeLessThanOrEqual(60);
     expect(verified.payload.jti).toBeTruthy();
+  });
+
+  it("signs Live operator calls for mcp:operator and challenges tokens without it", async () => {
+    upstreamRequests = [];
+    const denied = await call("live_admin_list_events", await token());
+    expect(denied.status).toBe(403);
+    expect(denied.response.headers.get("WWW-Authenticate")).toContain('scope="mcp:operator"');
+    expect(upstreamRequests).toHaveLength(0);
+
+    const res = await call("live_admin_open_event_sales", await token({ scope: "mcp:read mcp:operator" }), { event_id: "evt 1" });
+    expect(res.status).toBe(200);
+    expect(res.isError).toBe(false);
+    expect(upstreamRequests).toHaveLength(1);
+    const sent = upstreamRequests[0];
+    expect(sent.authorization).toBeUndefined();
+    expect(sent.cookie).toBeUndefined();
+    const verified = await verifyAssertion(sent.assertion!);
+    expect(verified.payload).toMatchObject({ sub: "user-1", scope: "mcp:operator", method: "POST", path: "/api/v1/live-admin/events/evt%201/open-sales" });
   });
 
   it("answers 403 insufficient_scope without leaking identity into a later anonymous request", async () => {

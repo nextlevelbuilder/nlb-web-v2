@@ -1,4 +1,4 @@
-export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys"] as const;
+export const MCP_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "mcp:operator"] as const;
 export type McpScope = typeof MCP_SCOPES[number];
 
 /** Blog tools that mutate posts; they need mcp:write and an authorized caller. */
@@ -50,13 +50,56 @@ export const BUILDER_READ_TOOLS = [
   "builder_admin_list_queue"
 ] as const;
 
+/**
+ * NLB Live operator reads (mcp:operator). The web grants the scope only to platform operators at consent
+ * and still checks the live:manage grant on every call.
+ */
+export const LIVE_OPERATOR_READ_TOOLS = [
+  "live_admin_list_events",
+  "live_admin_get_event",
+  "live_admin_list_event_tickets",
+  "live_admin_list_topic_groups",
+  "live_admin_list_topics",
+  "live_admin_list_rounds",
+  "live_admin_list_approvals",
+  "live_admin_get_approval",
+  "live_admin_list_audit",
+  "live_admin_get_metrics"
+] as const;
+
+/** NLB Live operator writes (mcp:operator). Refunds, cancellations and winner overrides also need a second operator's approval. */
+export const LIVE_OPERATOR_WRITE_TOOLS = [
+  "live_admin_create_topic_group",
+  "live_admin_update_topic_group",
+  "live_admin_archive_topic_group",
+  "live_admin_create_topic",
+  "live_admin_update_topic",
+  "live_admin_archive_topic",
+  "live_admin_create_round",
+  "live_admin_finalize_round",
+  "live_admin_override_round_winner",
+  "live_admin_create_event",
+  "live_admin_update_event",
+  "live_admin_set_event_capacity",
+  "live_admin_transition_event",
+  "live_admin_create_event_product",
+  "live_admin_open_event_sales",
+  "live_admin_create_event_meeting",
+  "live_admin_cancel_event",
+  "live_admin_refund_ticket",
+  "live_admin_request_approval",
+  "live_admin_decide_approval",
+  "live_admin_run_sweeps"
+] as const;
+
 /** Reads that always need an identity (no anonymous fallback). */
 export const PRIVATE_READ_TOOLS = [
   "get_product_traffic",
   "blog_list_revisions",
   "blog_get_revision",
   "onboarding_get_status",
-  ...BUILDER_READ_TOOLS
+  ...BUILDER_READ_TOOLS,
+  ...LIVE_OPERATOR_READ_TOOLS
 ] as const;
 
 /** Reads that are public anonymously but forward the caller's identity when present (e.g. admin draft access). */
@@ -64,6 +107,7 @@ export const IDENTITY_AWARE_READ_TOOLS = ["blog_list_posts", "blog_get_post"] as
 
 export function requiredToolScope(name: string): McpScope {
   if (["list_api_keys", "create_api_key", "revoke_api_key"].includes(name)) return "mcp:keys";
+  if (isLiveOperatorTool(name)) return "mcp:operator";
   if (["submit_product", "cast_vote", "upload_media", "create_checkout", ...BLOG_WRITE_TOOLS, ...BUILDER_WRITE_TOOLS].includes(name)) return "mcp:write";
   return "mcp:read";
 }
@@ -75,7 +119,12 @@ export function requiredToolScope(name: string): McpScope {
 export function isMutatingTool(name: string): boolean {
   return ["submit_product", "cast_vote", "upload_media", "create_checkout", "create_api_key", "revoke_api_key"].includes(name) ||
     (BLOG_WRITE_TOOLS as readonly string[]).includes(name) ||
-    (BUILDER_WRITE_TOOLS as readonly string[]).includes(name);
+    (BUILDER_WRITE_TOOLS as readonly string[]).includes(name) ||
+    (LIVE_OPERATOR_WRITE_TOOLS as readonly string[]).includes(name);
+}
+
+export function isLiveOperatorTool(name: string): boolean {
+  return (LIVE_OPERATOR_READ_TOOLS as readonly string[]).includes(name) || (LIVE_OPERATOR_WRITE_TOOLS as readonly string[]).includes(name);
 }
 
 export function isPrivateReadTool(name: string): boolean {

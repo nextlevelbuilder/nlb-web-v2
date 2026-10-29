@@ -70,7 +70,7 @@ The web Worker serves MCP at `https://nextlevelbuilder.io/mcp` (staging: `https:
 - **Protocol**: MCP 2026-07-28 over stateless Streamable HTTP, through the official SDK v2 (`@modelcontextprotocol/server`). Clients on 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05 are served through the SDK's legacy path, and the deprecated HTTP+SSE transport is bridged at `/sse` + `/message`.
 - **OAuth 2.1, resource server**: `/.well-known/oauth-protected-resource/mcp` (RFC 9728) names the authorization server `<site>/api/auth`. Calls without a valid token get `401` with a `WWW-Authenticate` challenge carrying `resource_metadata` and `scope`; a token without the tool's scope gets `403 insufficient_scope`. Tokens must carry this resource as audience (RFC 8707) and are never passed through to the API.
 - **OAuth 2.1, authorization server** ([`lib/mcp-oauth-config.ts`](../lib/mcp-oauth-config.ts)): PKCE S256 only, `iss` on every authorization response (RFC 9207), Client ID Metadata Documents ([`lib/mcp-oauth-cimd.ts`](../lib/mcp-oauth-cimd.ts)), Dynamic Client Registration kept for older clients, rotating refresh tokens.
-- **Scopes**: `mcp:read` for reads, `mcp:write` for writes, `mcp:keys` for API key management.
+- **Scopes**: `mcp:read` for reads, `mcp:write` for writes, `mcp:keys` for API key management, and `mcp:operator` for NLB Live operator tools (platform operators only).
 - **Coverage**: directory products, rankings, traffic, votes, uploads and checkout; API keys; blog management (the table above); Builder League (28 tools, below); membership onboarding status (`onboarding_get_status`, backed by `GET /api/v1/onboarding-status`).
 
 ### Builder League over MCP and CLI

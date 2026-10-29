@@ -544,7 +544,7 @@
     "copySnippet": "Sao chép",
     "copySnippetFor": "Sao chép cấu hình cho {client}",
     "mcpRemoteAuth": "Đọc dữ liệu công khai của danh bạ không cần đăng nhập. Access token chỉ có hiệu lực trong 5 phút và được client tự động làm mới, nên bạn chỉ phải đăng nhập lại sau một thời gian dài không dùng hoặc khi ngắt kết nối ứng dụng.",
-    "mcpRemoteScopes": "Quyền được cấp theo từng scope: mcp:read, mcp:write và mcp:keys.",
+    "mcpRemoteScopes": "Quyền được cấp theo từng scope: mcp:read, mcp:write và mcp:keys; operator của nền tảng có thêm mcp:operator.",
     "mcpRemoteConnections": "Quản lý ứng dụng đã kết nối",
     "mcpRemoteClaudeApp": "Claude Desktop và claude.ai: mở Settings → Connectors → Add custom connector rồi dán URL endpoint.",
     "apiKeyAlternativeTitle": "Cách khác: CLI và MCP chạy local bằng API key",

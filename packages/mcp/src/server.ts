@@ -10,6 +10,7 @@ import {
 import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/server/validators/cf-worker";
 import { TOOLS, type McpToolDefinition } from "./tools/index.js";
 import {
+  LIVE_OPERATOR_READ_TOOLS,
   ToolError,
   isMutatingTool,
   isPrivateReadTool,
@@ -25,7 +26,13 @@ export const SERVER_VERSION = "0.2.1";
 export const MUTATING_TOOLS: ReadonlySet<string> = new Set(TOOLS.map((tool) => tool.name).filter(isMutatingTool));
 
 /** Tools whose effect cannot be undone by another call (advertised as destructive). */
-const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set(["revoke_api_key", "blog_archive_post"]);
+const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set([
+  "revoke_api_key",
+  "blog_archive_post",
+  "live_admin_cancel_event",
+  "live_admin_refund_ticket",
+  "live_admin_override_round_winner"
+]);
 
 /** Whether an HTTP caller must prove an identity (OAuth or the Worker token) before running the tool. */
 export function toolRequiresIdentity(name: string): boolean {
@@ -84,7 +91,8 @@ export function toolContextFor(caller: McpCaller, toolName: string, args: Record
 
 function annotationsFor(tool: McpToolDefinition): ToolAnnotations {
   const readOnly = !MUTATING_TOOLS.has(tool.name) &&
-    (requiredToolScope(tool.name) === "mcp:read" || /^(list|get)_/.test(tool.name));
+    (requiredToolScope(tool.name) === "mcp:read" || /^(list|get)_/.test(tool.name) ||
+      (LIVE_OPERATOR_READ_TOOLS as readonly string[]).includes(tool.name));
   const defaults: ToolAnnotations = readOnly
     ? { readOnlyHint: true }
     : { readOnlyHint: false, destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name) };
