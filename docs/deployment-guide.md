@@ -97,12 +97,11 @@ Configuration lives in the web Worker:
 - `MCP_OAUTH_LEGACY_RESOURCES` (var, comma-separated): older resources that tokens are still issued and accepted for. Production lists `https://mcp.nextlevelbuilder.io/mcp`. A request on a legacy resource's host is served as that resource.
 - `MCP_DELEGATION_SECRET` (secret): signs and verifies the `x-nlb-mcp-assertion` the MCP server sends to `/api/v1`. To rotate it, pipe a new value without printing it: `openssl rand -base64 48 | tr -d '\n' | wr secret put MCP_DELEGATION_SECRET --env staging`.
 
-### Moving `mcp.nextlevelbuilder.io` onto the web Worker
+### `mcp.nextlevelbuilder.io` on the web Worker
 
-Until this is done, `mcp.nextlevelbuilder.io` is still served by the old standalone Worker `nlb-directory-mcp`, which keeps working for existing clients. After the in-worker MCP server is live in production:
-1. In the Cloudflare dashboard (hi@ account), remove the `mcp.nextlevelbuilder.io` custom domain from `nlb-directory-mcp`.
-2. Add it as a custom domain on `nextlevelbuilder-web`. Requests on that host are served as the legacy resource, so existing tokens and discovery keep working.
-3. Check `https://mcp.nextlevelbuilder.io/.well-known/oauth-protected-resource/mcp` and one authorized tool call, then delete `nlb-directory-mcp`.
+Since 2026-10-29 the `mcp.nextlevelbuilder.io` custom domain is attached to `nextlevelbuilder-web`. Requests on that host are served as the legacy resource (`MCP_OAUTH_LEGACY_RESOURCES`), so existing tokens and discovery keep working. The domain was moved in one step with the Workers custom-domain API (`PUT /accounts/{account}/workers/domains` with `override_existing_origin: true`), which reassigns the hostname without a gap. To move it back, run the same call with `"service": "nlb-directory-mcp"`.
+
+The old standalone Worker `nlb-directory-mcp` still exists with no domain attached, as a fallback. Delete it once authorized clients have been seen working on the new Worker.
 
 The standalone entry ([`packages/mcp/wrangler.jsonc`](../packages/mcp/wrangler.jsonc)) remains for self-hosting; CI no longer deploys it. Protocol and OAuth details: [blog-and-agent-management.md](./blog-and-agent-management.md#mcp-server).
 
