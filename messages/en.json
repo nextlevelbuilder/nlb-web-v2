@@ -537,8 +537,18 @@
     "revoking": "Revoking...",
     "revokedSuccess": "API key revoked successfully.",
     "integrationGuideTitle": "Developer Integration Quick Start",
-    "cliGuide": "CLI Command",
-    "mcpGuide": "Cursor / Claude Desktop MCP Server"
+    "integrationGuideIntro": "Connect Claude, Cursor or any MCP client to NLB over HTTP. When a tool needs your account, the client opens your browser so you sign in with NLB and approve access. No API key to copy or store.",
+    "mcpRemoteTitle": "MCP endpoint · Streamable HTTP + OAuth 2.1",
+    "recommended": "Recommended",
+    "copyMcpUrl": "Copy MCP endpoint URL",
+    "copySnippet": "Copy",
+    "copySnippetFor": "Copy the {client} snippet",
+    "mcpRemoteAuth": "Public directory reads need no sign-in. Access tokens last five minutes and the client renews them, so you sign in again only after a long break or after you disconnect the app.",
+    "mcpRemoteScopes": "Access is granted per scope: mcp:read, mcp:write and mcp:keys.",
+    "mcpRemoteConnections": "Manage connected apps",
+    "mcpRemoteClaudeApp": "Claude Desktop and claude.ai: open Settings → Connectors → Add custom connector and paste the endpoint URL.",
+    "apiKeyAlternativeTitle": "Alternative: CLI and local MCP with an API key",
+    "apiKeyAlternativeDesc": "For scripts, CI or clients without OAuth. Create a key in API Keys below and keep it in an environment variable, never in code. Submitting also needs your organization id (NLB_ORG_ID or --org)."
   },
   "account": {
     "loginRequiredTitle": "Sign In Required",

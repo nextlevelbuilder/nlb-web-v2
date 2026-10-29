@@ -537,8 +537,18 @@
     "revoking": "Đang thu hồi...",
     "revokedSuccess": "Đã thu hồi API key thành công.",
     "integrationGuideTitle": "Hướng Dẫn Tích Hợp Cho Lập Trình Viên",
-    "cliGuide": "Lệnh CLI",
-    "mcpGuide": "Cấu Hình MCP Server (Cursor / Claude Desktop)"
+    "integrationGuideIntro": "Kết nối Claude, Cursor hoặc bất kỳ MCP client nào tới NLB qua HTTP. Khi một công cụ cần tài khoản của bạn, client sẽ mở trình duyệt để bạn đăng nhập NLB và cấp quyền, không cần sao chép hay cất giữ API key.",
+    "mcpRemoteTitle": "MCP endpoint · Streamable HTTP + OAuth 2.1",
+    "recommended": "Khuyên dùng",
+    "copyMcpUrl": "Sao chép URL MCP endpoint",
+    "copySnippet": "Sao chép",
+    "copySnippetFor": "Sao chép cấu hình cho {client}",
+    "mcpRemoteAuth": "Đọc dữ liệu công khai của danh bạ không cần đăng nhập. Access token chỉ có hiệu lực trong 5 phút và được client tự động làm mới, nên bạn chỉ phải đăng nhập lại sau một thời gian dài không dùng hoặc khi ngắt kết nối ứng dụng.",
+    "mcpRemoteScopes": "Quyền được cấp theo từng scope: mcp:read, mcp:write và mcp:keys.",
+    "mcpRemoteConnections": "Quản lý ứng dụng đã kết nối",
+    "mcpRemoteClaudeApp": "Claude Desktop và claude.ai: mở Settings → Connectors → Add custom connector rồi dán URL endpoint.",
+    "apiKeyAlternativeTitle": "Cách khác: CLI và MCP chạy local bằng API key",
+    "apiKeyAlternativeDesc": "Dành cho script, CI hoặc client chưa hỗ trợ OAuth. Tạo key ở mục API Keys bên dưới và để trong biến môi trường, không ghi vào code. Lệnh submit cần thêm ID tổ chức (NLB_ORG_ID hoặc --org)."
   },
   "account": {
     "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
