@@ -11,8 +11,6 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Terminal,
-  Cpu,
   X,
   ShieldCheck,
   CheckCircle2,
@@ -325,45 +323,6 @@ export default function ApiKeysManager() {
         )}
       </div>
 
-      {/* Developer Integration Quick Start Snippets */}
-      <div className="space-y-4 rounded-sm border border-line bg-canvas-deep p-6">
-        <h3 className="flex items-center gap-2 text-step-base font-medium text-foreground">
-          <Terminal aria-hidden className="w-4 h-4 text-primary" />
-          {t('integrationGuideTitle')}
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* CLI Guide */}
-          <div className="p-4 rounded-sm bg-surface border border-line space-y-2">
-            <div className="flex items-center gap-2 font-mono text-step-xs text-primary">
-              <Terminal aria-hidden className="w-3.5 h-3.5" />
-              <span>@nextlevelbuilder/cli</span>
-            </div>
-            <p className="text-step-xs text-ink-2">Authenticate local CLI commands:</p>
-            <pre className="overflow-x-auto rounded-sm border border-line bg-canvas-deep p-2.5 font-mono text-step-xs text-foreground">
-              nlb submit product.json --api-key nlb_live_...
-              <br />
-              # Or via environment variable:
-              <br />
-              export NLB_API_KEY=&quot;nlb_live_...&quot;
-              <br />
-              nlb submit product.json
-            </pre>
-          </div>
-
-          {/* MCP Server Guide */}
-          <div className="p-4 rounded-sm bg-surface border border-line space-y-2">
-            <div className="flex items-center gap-2 font-mono text-step-xs text-primary">
-              <Cpu aria-hidden className="w-3.5 h-3.5" />
-              <span>Cursor / Claude Desktop MCP</span>
-            </div>
-            <p className="text-step-xs text-ink-2">Configure in your MCP settings file:</p>
-            <pre className="overflow-x-auto rounded-sm border border-line bg-canvas-deep p-2.5 font-mono text-step-xs text-foreground">
-              npx -y @nextlevelbuilder/mcp
-            </pre>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
