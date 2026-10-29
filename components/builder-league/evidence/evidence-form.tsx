@@ -348,7 +348,7 @@ export default function EvidenceForm({ locale, mode, action, returnTo, events, p
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-line pt-6">
-        <Button type="submit" size="lg" disabled={pending} aria-disabled={pending}>
+        <Button type="submit" size="lg" loading={pending}>
           {pending ? copy.form.submitting : mode === "create" ? copy.form.submit : copy.form.save}
         </Button>
       </div>

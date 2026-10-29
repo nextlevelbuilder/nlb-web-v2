@@ -38,6 +38,7 @@ export default function AuthForm() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialProvider, setSocialProvider] = useState<'github' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -142,6 +143,7 @@ export default function AuthForm() {
   // Social OAuth Handler
   const handleSocialSignIn = async (provider: 'github' | 'google') => {
     setLoading(true);
+    setSocialProvider(provider);
     setError(null);
     try {
       const res = await signIn.social({
@@ -157,6 +159,7 @@ export default function AuthForm() {
         t('oauthNotConfigured', { provider: provider.toUpperCase() })
       );
       setLoading(false);
+      setSocialProvider(null);
     }
   };
 
@@ -214,7 +217,7 @@ export default function AuthForm() {
             </div>
           </div>
 
-          <Button type="submit" size="lg" disabled={loading} className="w-full">
+          <Button type="submit" size="lg" loading={loading} className="w-full">
             {loading ? t('sendingOtp') : t('sendOtpBtn')}
             <ArrowRight aria-hidden />
           </Button>
@@ -243,7 +246,7 @@ export default function AuthForm() {
             />
           </div>
 
-          <Button type="submit" size="lg" disabled={loading || otp.length < 6} className="w-full">
+          <Button type="submit" size="lg" loading={loading} disabled={otp.length < 6} className="w-full">
             {loading ? t('verifying') : t('verifyOtpBtn')}
             <CheckCircle2 aria-hidden />
           </Button>
@@ -284,11 +287,11 @@ export default function AuthForm() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-            <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialSignIn('github')}>
+            <Button type="button" variant="outline" disabled={loading} loading={socialProvider === 'github'} onClick={() => handleSocialSignIn('github')}>
               <Github aria-hidden />
               GitHub
             </Button>
-            <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialSignIn('google')}>
+            <Button type="button" variant="outline" disabled={loading} loading={socialProvider === 'google'} onClick={() => handleSocialSignIn('google')}>
               <Globe aria-hidden />
               Google
             </Button>

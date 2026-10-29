@@ -30,6 +30,7 @@ This file is the entry point for UI work. Token values, themes, i18n and content
 
 - Primitives in `components/ui/` (shadcn on Radix). Dialogs take a localized `closeLabel`.
 - Site shell on every page (`components/site/`): header with language and theme segments, full-screen menu, custom cursor with magnetic `.magnetic` CTAs (fine pointers only), footer.
+- Loading feedback: a 2 px accent bar under the top edge for every App Router navigation (`components/site/navigation-progress.tsx`, started from `instrumentation-client.ts`, shown after 120 ms, announced to screen readers after 700 ms). Busy buttons take `Button loading` (or `aria-busy` on `.btn`): a spinner over the kept label, so the width never changes. Slow, never-404 routes get a decorative `loading.tsx` (`components/site/route-loading-skeleton.tsx`); a route that can `notFound()` or `redirect()` gets none, since streaming would turn those into a 200.
 - Checkout: hero, sticky, header and finale CTAs scroll to `#pricing`; each plan card's Join button opens `CheckoutConfirmDialog` (plan, price, Terms checkbox, "Continue to Polar checkout").
 - Seat meter: "N of M left" only when at least half the seats are taken, otherwise "Limited to M members" (`lib/home/seat-meter.ts`).
 

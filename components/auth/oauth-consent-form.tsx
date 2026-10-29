@@ -55,7 +55,7 @@ export default function OAuthConsentForm({ clientName, clientId, accountEmail, s
       {error && <p role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 p-3 text-step-sm text-destructive">{error}</p>}
       <div className="flex flex-wrap gap-3">
         <Button variant="outline" disabled={pending} onClick={() => decide(false)}>Deny</Button>
-        <Button disabled={pending} onClick={() => decide(true)}>{pending ? 'Continuing…' : 'Allow access'}</Button>
+        <Button loading={pending} onClick={() => decide(true)}>{pending ? 'Continuing…' : 'Allow access'}</Button>
       </div>
     </section>
   );
