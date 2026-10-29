@@ -70,7 +70,7 @@ State machine (`lib/live/event-lifecycle.ts`): `draft → scheduled → sales_op
 
 ### Feature flag
 
-`LIVE_ENABLED` is `"false"` in production and `"true"` on staging. With the flag off, Live pages and member APIs answer 404; operators with `live:manage` can still use operator APIs to prepare events.
+`LIVE_ENABLED` is `"true"` in production (since 2026-10-29) and on staging. With the flag off, Live pages and member APIs answer 404; operators with `live:manage` can still use operator APIs to prepare events.
 
 The Live member and operator paths stay out of the public OpenAPI document (`/api/openapi.json`) until launch, behind one switch in [`lib/openapi.ts`](../lib/openapi.ts); the document is an additive-only contract, so publishing at launch is safe while publishing early would not be reversible.
 
