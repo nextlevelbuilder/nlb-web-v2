@@ -11,6 +11,7 @@ import { formatLocalDate } from "@/components/builder-league/journey/journey-for
 import { Link } from "@/i18n/navigation";
 import { pageMetadata, serializeJsonLd } from "@/lib/seo";
 import { communityWrappedJsonLd } from "@/lib/structured-data";
+import { hallOfFamePath } from "@/lib/builder-league/hall-of-fame";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,9 @@ export default async function CommunityWrappedPage({ params }: CommunityWrappedP
           <p className="text-step-sm text-ink-2">{copy.statusNote[data.status]}</p>
         </header>
         <CommunityMetrics data={data} copy={copy} locale={locale} />
+        <p>
+          <Link className="btn btn-ghost" href={hallOfFamePath(year)}>{copy.hallOfFame}</Link>
+        </p>
         {!access.canUse && (
           <p>
             <Link className="btn btn-primary" href="/#pricing">{copy.cta}</Link>

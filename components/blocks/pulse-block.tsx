@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
-import type { PulseBlock } from "@/packages/contracts/src";
+import type { PulseBlock } from "@nextlevelbuilder/contracts";
 import type { PulseSummary } from "@/lib/domain/product-pulse";
 import { Card } from "@/components/ui/card";
 

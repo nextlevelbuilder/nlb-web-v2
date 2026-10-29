@@ -2,12 +2,13 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { mcp } from "@better-auth/mcp";
 import { jwt } from "better-auth/plugins";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import { getCurrentAdapter, type Verification } from "better-auth";
+import { getCurrentAdapter, type BetterAuthPlugin, type HookEndpointContext, type Verification } from "better-auth";
 import { getCurrentAuthEndpointContext } from "@better-auth/core/context";
 import { z } from "zod";
+import { mcpClientIdMetadataDiscovery } from "@/lib/mcp-oauth-cimd";
 
 export const MCP_OAUTH_SCOPES = ["mcp:read", "mcp:write", "mcp:keys", "offline_access"];
-export const MCP_OAUTH_DEFAULT_RESOURCE = "https://mcp.nextlevelbuilder.io/mcp";
+export const MCP_OAUTH_DEFAULT_RESOURCE = "https://nextlevelbuilder.io/mcp";
 
 const authorizationCodeGrantSchema = z.object({
   type: z.literal("authorization_code"),
@@ -76,25 +77,41 @@ export function isMcpOAuthEnabled(): boolean {
 }
 
 export function getMcpOAuthResource(): string {
-  const configured = getBinding("MCP_OAUTH_RESOURCE");
-  const resource = configured || MCP_OAUTH_DEFAULT_RESOURCE;
-  const url = new URL(resource);
+  return normalizeResource(getBinding("MCP_OAUTH_RESOURCE") || MCP_OAUTH_DEFAULT_RESOURCE, "MCP_OAUTH_RESOURCE");
+}
+
+function normalizeResource(value: string, name: string): string {
+  const url = new URL(value);
   const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   if ((url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) ||
-      url.username || url.password || resource.includes("?") || resource.includes("#")) {
-    throw new Error("MCP_OAUTH_RESOURCE must be HTTPS (or an explicit local loopback HTTP URL), without credentials, query, or fragment.");
+      url.username || url.password || value.includes("?") || value.includes("#")) {
+    throw new Error(`${name} must be HTTPS (or an explicit local loopback HTTP URL), without credentials, query, or fragment.`);
   }
   return url.href.replace(/\/$/, "");
 }
 
+/**
+ * Resources that tokens issued before MCP moved into this worker are bound to (for example
+ * https://mcp.nextlevelbuilder.io/mcp). The authorization server keeps issuing and refreshing tokens for
+ * them so existing clients on the old host keep working.
+ */
+export function getMcpOAuthLegacyResources(): string[] {
+  return (getBinding("MCP_OAUTH_LEGACY_RESOURCES") ?? "").split(",").map(value => value.trim()).filter(Boolean)
+    .map(value => normalizeResource(value, "MCP_OAUTH_LEGACY_RESOURCES"));
+}
+
 export function getMcpOAuthPlugins() {
   const resource = getMcpOAuthResource();
+  const legacyResources = getMcpOAuthLegacyResources().filter(value => value !== resource);
   const provider = mcp({
     loginPage: "/sign-in",
     consentPage: "/oauth/consent",
     resource,
+    ...(legacyResources.length ? { resources: legacyResources } : {}),
     scopes: MCP_OAUTH_SCOPES,
     grantTypes: ["authorization_code", "refresh_token"],
+    // Client ID Metadata Documents are the MCP 2026-07-28 default; Dynamic Client Registration stays for older clients.
+    extensions: [{ clientDiscovery: mcpClientIdMetadataDiscovery }],
     allowDynamicClientRegistration: true,
     allowUnauthenticatedClientRegistration: true,
     allowPublicClientPrelogin: true,
@@ -103,8 +120,11 @@ export function getMcpOAuthPlugins() {
     accessTokenExpiresIn: 300,
     refreshTokenExpiresIn: 60 * 60 * 24 * 30,
     refreshTokenReuseInterval: 0,
-    enforcePerClientResources: true,
-    identifierValidator: (identifier) => identifier === resource,
+    // Every client may target every MCP resource this server issues for. Per-client links would strand
+    // clients registered before the resource moved to the web origin, and they add nothing while the
+    // configured resources are all the same MCP server.
+    enforcePerClientResources: false,
+    identifierValidator: (identifier) => identifier === resource || legacyResources.includes(identifier),
     resourcePrivileges: () => false,
     clientPrivileges: () => false,
     async customTokenResponseFields({ grantType, verificationValue }) {
@@ -144,5 +164,57 @@ export function getMcpOAuthPlugins() {
     // Better Auth composes plugin database hooks with its other plugins and application hooks.
     init: () => ({ options: { databaseHooks: { verification: { create: { before: bindAuthorizationCodeToConsent } } } } }),
   };
-  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding];
+  // RFC 8707: without a resource the provider issues an audience-less opaque token. This server protects a
+  // single MCP resource, so an authorization request that omits it is bound to that resource; any other
+  // value is still validated (and rejected) by the provider.
+  const defaultResource = {
+    id: "mcp-default-resource",
+    schema: {},
+    hooks: {
+      before: [{
+        matcher: (ctx: HookEndpointContext) => ctx.path === "/oauth2/authorize",
+        handler: createAuthMiddleware(async (ctx) => {
+          const source = ctx.method === "POST" ? "body" : "query";
+          const params: unknown = ctx[source];
+          const values = params && typeof params === "object" ? params as Record<string, unknown> : {};
+          if (values.resource !== undefined) return;
+          return { context: { [source]: { ...values, resource } } };
+        }),
+      }],
+    },
+  } satisfies BetterAuthPlugin;
+  // Registration defaults application_type to "web", which forbids loopback redirects. Desktop and CLI MCP
+  // clients register http://localhost or 127.0.0.1 callbacks (RFC 8252) without sending application_type,
+  // so a registration whose redirects are all loopback or private-use schemes is treated as native.
+  const nativeRegistrationDefault = {
+    id: "mcp-native-registration-default",
+    schema: {},
+    hooks: {
+      before: [{
+        matcher: (ctx: HookEndpointContext) => ctx.path === "/oauth2/register",
+        handler: createAuthMiddleware(async (ctx) => {
+          const body: unknown = ctx.body;
+          if (!body || typeof body !== "object") return;
+          const values = body as Record<string, unknown>;
+          if (values.application_type !== undefined || !Array.isArray(values.redirect_uris)) return;
+          if (values.redirect_uris.length === 0 || !values.redirect_uris.every(isNativeRedirectUri)) return;
+          return { context: { body: { ...values, application_type: "native" } } };
+        }),
+      }],
+    },
+  } satisfies BetterAuthPlugin;
+  return [jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }), provider, consentBinding, defaultResource, nativeRegistrationDefault];
+}
+
+function isNativeRedirectUri(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  if (url.protocol === "https:") return false;
+  if (url.protocol === "http:") return ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  return true;
 }

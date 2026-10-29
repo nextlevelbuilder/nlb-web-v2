@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPublishedProductBySlug } from "@/lib/domain/catalog";
-import { AnalyticsBlockSchema } from "@/packages/contracts/src";
+import { AnalyticsBlockSchema } from "@nextlevelbuilder/contracts";
 import { publicTrafficRange, queryTraffic, publicTraffic } from "@/lib/traffic/traffic";
 
 export async function GET(request: Request, {params}: {params: Promise<{slug: string}>}) {

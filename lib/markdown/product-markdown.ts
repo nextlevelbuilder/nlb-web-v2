@@ -1,4 +1,4 @@
-import type { ProductDocument } from "@/packages/contracts/src";
+import type { ProductDocument } from "@nextlevelbuilder/contracts";
 
 export function markdownText(value: string) {
   return value.replace(/[\\`*_{}\[\]<>#|]/g, "\\$&");

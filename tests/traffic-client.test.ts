@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RealtimeTrafficSchema } from '@/packages/contracts/src';
+import { RealtimeTrafficSchema } from '@nextlevelbuilder/contracts';
 import { captureOutboundClick, capturePageView, getTrafficVisitorId, isProductOutboundLink, subscribeToTraffic, trafficPageContext } from '@/lib/traffic-client';
 
 const visitorId = 'e24e18a5-dd11-4f2c-9f4b-9fc3376bc911';

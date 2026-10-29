@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { pageMetadata } from "@/lib/seo";
-import { BlockSchema } from "@/packages/contracts/src/blocks";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -66,7 +66,7 @@ export default function BuildWithUsInstructionsPage() {
       description: "Connect our official MCP server to your AI IDE or agent runtime so AI tools can draft, format, and submit products autonomously.",
       icon: Bot,
       steps: [
-        "Add an HTTP MCP server with URL https://mcp.nextlevelbuilder.io/mcp",
+        "Add an HTTP MCP server with URL https://nextlevelbuilder.io/mcp",
         "Tools include list_templates, validate_listing, submit_product, get_product, get_product_markdown and get_product_traffic",
         "Prompt your AI: 'Draft a full 5-block product document for my repo and submit it to Next Level Builders directory'",
         "Remote mutations require the MCP operator-provided authorization token; REST API keys are separate. Keep secrets in your client configuration.",
@@ -200,8 +200,8 @@ export default function BuildWithUsInstructionsPage() {
           <section className="space-y-5" aria-labelledby="agent-resources">
             <h2 id="agent-resources" className="h-section">Agent connections and readable content</h2>
             <Card className="space-y-4 p-6 text-step-sm text-ink-2">
-              <p>HTTP MCP endpoint: <a className="text-primary underline underline-offset-4 break-all" href="https://mcp.nextlevelbuilder.io/mcp">https://mcp.nextlevelbuilder.io/mcp</a></p>
-              <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { "nextlevelbuilder": { url: "https://mcp.nextlevelbuilder.io/mcp" } } }, null, 2)}</code></pre>
+              <p>HTTP MCP endpoint: <a className="text-primary underline underline-offset-4 break-all" href="https://nextlevelbuilder.io/mcp">https://nextlevelbuilder.io/mcp</a></p>
+              <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { "nextlevelbuilder": { url: "https://nextlevelbuilder.io/mcp" } } }, null, 2)}</code></pre>
               <p className="text-step-sm text-ink-2">Client configuration formats differ. Select HTTP transport and use the endpoint above. Read tools are public; remote writes require the operator-provided MCP token in the Authorization header. Your nlb_live_ API key authenticates REST requests and does not replace that token.</p>
               <p>WebMCP connection setup:</p>
               <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { webmcp: { command: "npx", args: ["-y", "@jason.today/webmcp@0.1.13", "--mcp"] } } }, null, 2)}</code></pre>

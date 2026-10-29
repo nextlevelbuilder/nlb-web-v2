@@ -88,11 +88,20 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   MCP_OAUTH_ENABLED: z.enum(["true", "false"]).optional().default("false"),
-  MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://mcp.nextlevelbuilder.io/mcp"),
+  MCP_OAUTH_RESOURCE: z.string().url().optional().default("https://nextlevelbuilder.io/mcp"),
+  // Comma-separated resources still accepted for tokens issued before MCP moved into this worker.
+  MCP_OAUTH_LEGACY_RESOURCES: z.string().optional(),
   MCP_DELEGATION_SECRET: z.string().min(32).optional(),
 
   // Builder League feature flag ("true" | "false"). Optional: a missing value means off.
   BUILDER_LEAGUE_ENABLED: z.enum(["true", "false"]).optional(),
+
+  // NLB Live feature flag ("true" | "false"). Optional: a missing value means off.
+  LIVE_ENABLED: z.enum(["true", "false"]).optional(),
+  // Zoom Server-to-Server OAuth app for Live meetings. Missing values keep join access closed.
+  ZOOM_ACCOUNT_ID: z.string().optional(),
+  ZOOM_CLIENT_ID: z.string().optional(),
+  ZOOM_CLIENT_SECRET: z.string().optional(),
   // Shared secret of the Discord bot for POST /api/v1/builder-admin/ingest/discord (32+ chars). Optional:
   // without it the bot authenticates with an admin API key.
   BUILDER_INGEST_SECRET: z.string().min(32).optional(),

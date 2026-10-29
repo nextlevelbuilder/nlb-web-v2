@@ -1,5 +1,5 @@
 import React from "react";
-import type { PricingBlock } from "@/packages/contracts/src";
+import type { PricingBlock } from "@nextlevelbuilder/contracts";
 import { ArrowUpRight } from "lucide-react";
 import { BlockSection } from "./block-section";
 import { DEFAULT_BLOCK_LABELS, type BlockLabels } from "./block-labels";

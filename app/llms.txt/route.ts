@@ -5,8 +5,11 @@ import { listPostSummaries } from "@/lib/blog/blog-queries";
 import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
-import { DISCOVERY_PATHS, MCP_ENDPOINT } from "@/lib/discovery/agent-discovery-documents";
+import { DISCOVERY_PATHS, mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
+import { isLiveEnabled } from "@/lib/live/live-flag";
+import { listUpcomingEvents } from "@/lib/live/event-read-models";
+import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
 /** Latest published blog posts in both locales; the blog is optional here, so failures only drop the section. */
 async function blogLines(baseUrl: string): Promise<string[]> {
@@ -32,12 +35,25 @@ async function courseLines(baseUrl: string): Promise<string[]> {
   }
 }
 
+/** Upcoming NLB Live sessions, only while the Live flag is on; optional like the blog. */
+async function liveLines(baseUrl: string): Promise<string[]> {
+  if (!isLiveEnabled()) return [];
+  try {
+    const events = await listUpcomingEvents(getDb(), new Date(), 20);
+    if (!events.length) return [];
+    return ["## NLB Live sessions", ...events.map((event) => `- [${markdownText(event.titleEn)}](${baseUrl}/live/${event.slug}.md): ${event.startsAt.toISOString()}, hosted by ${markdownText(event.hostName)}`)];
+  } catch (error) {
+    console.error("llms.txt: live sessions unavailable", error instanceof Error ? error.message : error);
+    return [];
+  }
+}
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const baseUrl = siteUrl();
-    const [products, blog, courses] = await Promise.all([getAllPublishedProducts(), blogLines(baseUrl), courseLines(baseUrl)]);
+    const [products, blog, courses, live] = await Promise.all([getAllPublishedProducts(), blogLines(baseUrl), courseLines(baseUrl), liveLines(baseUrl)]);
     const body = [
       "# Next Level Builders",
       "> A builder community and directory of human-reviewed software. Listings and rankings use published content and organic votes.",
@@ -49,11 +65,13 @@ export async function GET() {
       `- [Leaderboards](${baseUrl}/leaderboards.md): Daily, weekly and monthly rankings from organic votes.`,
       `- [Policies](${baseUrl}/policies.md): Community and publication rules.`,
       ...publicWrappedPaths().map((path) => `- [Community Wrapped ${path.slice(-4)}](${baseUrl}${path}.md): What the community validated, built and shipped that year, from verified activity only.`),
+      ...publicHallOfFamePaths().map((path) => `- [Builder League Hall of Fame ${path.slice(9, 13)}](${baseUrl}${path}.md): Official final results of that year's boards; only builders who opted in to public boards are named.`),
       `- [Blog](${baseUrl}/blog.md): Build logs, product lessons and engineering notes.`,
       `- [Courses](${baseUrl}/courses.md): Recorded build sessions, sold per video or included with VIP.`,
+      ...(isLiveEnabled() ? [`- [NLB Live](${baseUrl}/live.md): Weekly live build sessions, the members' topic vote and paid seats.`] : []),
       `- [Full content](${baseUrl}/llms-full.txt): Full public pages and approved product documents, including every block.`,
       "## Agent interfaces",
-      `- MCP server (streamable HTTP, OAuth or API key): ${MCP_ENDPOINT}`,
+      `- MCP server (streamable HTTP, MCP 2026-07-28 with 2025 fallback, OAuth 2.1 or API key): ${mcpEndpoint()}`,
       `- [MCP server card](${baseUrl}${DISCOVERY_PATHS.serverCard}): Server identity, transports, auth and links.`,
       `- [AI catalog](${baseUrl}${DISCOVERY_PATHS.aiCatalog}): Every AI-facing interface of this domain.`,
       `- [OpenAPI](${baseUrl}${DISCOVERY_PATHS.openApi}): REST API description; [API catalog](${baseUrl}${DISCOVERY_PATHS.apiCatalog}) (RFC 9727).`,
@@ -63,6 +81,7 @@ export async function GET() {
       "## Published products",
       ...products.map((product) => `- [${markdownText(product.title)}](${baseUrl}/products/${product.slug}.md): ${markdownText(product.tagline)} (Trust Score: ${product.trustScore}/100)`),
       ...courses,
+      ...live,
       ...blog,
     ].join("\n\n");
     return new Response(body + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600, s-maxage=600", "X-Robots-Tag": "noindex" } });

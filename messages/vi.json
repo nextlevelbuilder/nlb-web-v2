@@ -486,7 +486,8 @@
     "invalidOtp": "Vui lòng nhập đầy đủ mã OTP 6 chữ số.",
     "verifyFailed": "Mã OTP không hợp lệ hoặc đã hết hạn.",
     "loginSuccess": "Đăng nhập thành công! Đang chuyển hướng...",
-    "oauthNotConfigured": "{provider} OAuth chưa được cấu hình. Vui lòng đăng nhập bằng mã Email OTP."
+    "oauthNotConfigured": "{provider} OAuth chưa được cấu hình. Vui lòng đăng nhập bằng mã Email OTP.",
+    "oauthLinkExpired": "Liên kết đăng nhập từ ứng dụng của bạn đã hết hạn. Hãy quay lại ứng dụng và kết nối lại."
   },
   "profile": {
     "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
@@ -542,6 +543,7 @@
     "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
     "loginRequiredDesc": "Vui lòng đăng nhập để truy cập Account Dashboard và quản lý các slot đăng ký sản phẩm của bạn.",
     "loginRequiredBtn": "Đăng Nhập Ngay",
+    "leagueDeleted": "Dữ liệu Builder League của bạn đã được xoá. Tài khoản và sản phẩm của bạn không thay đổi.",
     "title": "Quản Lý Slot Submissions & Hạn Mức",
     "description": "Mỗi slot cho phép bạn gửi một sản phẩm vào hàng đợi kiểm duyệt danh bạ Next Level Builders.",
     "availableSlots": "Slot Khả Dụng",
@@ -683,6 +685,7 @@
     "navMobile": "Điều hướng di động",
     "nav": {
       "courses": "Courses",
+      "live": "Live",
       "directory": "Directory",
       "leaderboard": "Bảng xếp hạng",
       "blog": "Blog",

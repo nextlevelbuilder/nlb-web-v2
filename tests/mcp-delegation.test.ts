@@ -39,7 +39,7 @@ vi.mock("@/lib/polar", () => ({
 }));
 
 const SECRET = "test-mcp-delegation-secret-with-at-least-32-bytes";
-const ISSUER = "https://mcp.nextlevelbuilder.io/mcp";
+const ISSUER = "https://nextlevelbuilder.io/mcp";
 const ORIGIN = "https://nextlevelbuilder.io";
 const context = { scope: "mcp:write" as const, method: "POST", path: "/api/v1/products" };
 const account = {
@@ -201,6 +201,16 @@ describe("MCP delegation assertion verification", () => {
     expect(put).not.toHaveBeenCalled();
   });
 
+  it("accepts assertions issued by a configured legacy resource only", async () => {
+    const { kv } = fakeKv();
+    const legacy = "https://mcp.nextlevelbuilder.io/mcp";
+    mocks.cloudflare.mockReturnValue({ env: {
+      MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN, MCP_DELEGATION_JTI: kv, MCP_OAUTH_LEGACY_RESOURCES: legacy,
+    } });
+    expect(await verifyMcpDelegation(await sign({ iss: legacy }), context)).toBe(account.id);
+    expect(await verifyMcpDelegation(await sign({ iss: "https://evil.example/mcp" }), context)).toBeNull();
+  });
+
   it("fails closed inside a Worker when the replay KV binding is missing", async () => {
     mocks.cloudflare.mockReturnValue({ env: { MCP_DELEGATION_SECRET: SECRET, BETTER_AUTH_URL: ORIGIN } });
     expect(await verifyMcpDelegation(await sign(), context)).toBeNull();
@@ -230,7 +240,7 @@ describe("MCP delegation assertion verification", () => {
 
   it.each([
     ["unknown", null], ["permanently banned", { ...account, banned: true }],
-    ["temporarily banned", { ...account, banned: true, banExpires: new Date(Date.now() + 60000) }],
+    ["temporarily banned", { ...account, banned: true, banExpires: new Date(Date.now() + 3_600_000) }],
   ])("denies a %s user", async (_label, user) => {
     expect(await resolveCaller(new Headers({ [MCP_ASSERTION_HEADER]: await sign() }), database(user), context)).toBeNull();
   });
@@ -390,6 +400,10 @@ describe("delegated API permissions", () => {
     expect((await createKey(await request("/api/v1/api-keys", { name: "MCP key" }, "mcp:keys"))).status).toBe(200);
     expect(db.lastInsert()).toMatchObject({ userId: account.id, name: "MCP key" });
     expect(db.lastInsert().key).toMatch(/^[a-f0-9]{64}$/);
+    // Scoped automation keys are minted only from an admin's browser session, never through an agent.
+    mocks.db.mockReturnValue(database({ ...account, role: "admin" }));
+    expect((await createKey(await request("/api/v1/api-keys", { name: "Render worker", scopes: ["builder:render"] }, "mcp:keys"))).status).toBe(403);
+    mocks.db.mockReturnValue(db);
     db.rows.set(apiKeys, [{ id: "key-1", userId: "other-user" }]);
     const keyParams = { params: Promise.resolve({ id: "key-1" }) };
     expect((await deleteKey(await request("/api/v1/api-keys/key-1", undefined, "mcp:keys", "DELETE"), keyParams)).status).toBe(404);

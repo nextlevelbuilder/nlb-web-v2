@@ -30,3 +30,8 @@ public/uploads/
 
 # Full-size visual parity screenshots (only the downscaled contact sheet is committed)
 plans/reports/visual-parity-*/*.png
+
+# Playwright E2E artefacts and signed-in storage state (session cookies)
+/test-results/
+/playwright-report/
+/tests/e2e/.auth/

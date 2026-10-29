@@ -844,3 +844,4 @@ export const onboardingNonces = sqliteTable(
 );
 
 export * from "./builder-league-schema";
+export * from "./live-access-schema";

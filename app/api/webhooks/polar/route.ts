@@ -23,6 +23,7 @@ import { runDueJobs } from "@/lib/onboarding/runner";
 import { linkCustomerFromPurchase, type PurchaseRefs } from "@/lib/membership/member-access";
 import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membership/subscription-sync";
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
+import { hasLiveTicketProduct, syncLiveTicketFromOrder } from "@/lib/live/live-webhook-tickets";
 import { recordPaidShareConversion } from "@/lib/builder-league/attribution";
 import { WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { verifyPolarWebhook } from "@/lib/polar-webhook-signature";
@@ -99,10 +100,12 @@ export async function POST(request: Request) {
     const event = JSON.parse(body) as PolarWebhookPayload;
     const eventId = webhookId || event.id || crypto.randomUUID();
     const productIds = extractProductIdsFromEvent(event);
-    // Course video products are created at publish time, so they are matched in D1, not the allowlist.
+    // Course video and Live ticket products are created at runtime, so they are matched in D1, not the allowlist.
     const hasOurProducts =
       productIds.length > 0 &&
-      (productIds.some(isOurProduct) || (await hasCourseVideoProduct(productIds, db)));
+      (productIds.some(isOurProduct) ||
+        (await hasCourseVideoProduct(productIds, db)) ||
+        (await hasLiveTicketProduct(productIds, db)));
 
     if (!hasOurProducts) {
       console.log(
@@ -145,10 +148,12 @@ export async function POST(request: Request) {
         case "order.updated":
           await handleOrderCreated(event, eventId, db, effects);
           await syncCourseVideoEntitlementFromOrder(event, db);
+          await syncLiveTicketFromOrder(event, db);
           break;
         case "order.refunded":
           await handleOrderRefunded(event, db, effects);
           await syncCourseVideoEntitlementFromOrder(event, db);
+          await syncLiveTicketFromOrder(event, db);
           break;
         default:
           console.log(`Unhandled event type: ${event.type}`);

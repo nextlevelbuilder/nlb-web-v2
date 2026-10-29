@@ -6,7 +6,7 @@ import { DEFAULT_BLOCK_LABELS, numberedLabel } from "@/components/blocks/block-l
 import { blockDomId } from "@/components/blocks/block-section";
 import { bareXHandle } from "@/components/blocks/founder-block";
 import { groupTechnologies } from "@/components/blocks/tech-stack-block";
-import type { Block } from "@/packages/contracts/src";
+import type { Block } from "@nextlevelbuilder/contracts";
 
 const blocks = [
   { id: "hero-1", type: "hero", props: { headline: "Ship faster", subheadline: "Sub", primaryCtaText: "Try", primaryCtaUrl: "https://tool.test" } },

@@ -17,7 +17,7 @@ import { and, desc, eq, inArray, isNull, lt, or, sql, type SQL } from "drizzle-o
 import { z } from "zod";
 import type { AppDb } from "@/lib/db";
 import { activityEvidence, builderModerationActions, builderProjects, evidenceAppeals, users } from "@/lib/db/schema";
-import { HttpUrlSchema } from "@/packages/contracts/src/http-url";
+import { HttpUrlSchema } from "@nextlevelbuilder/contracts";
 import { BuilderApiError, encodeCursor, type Cursor } from "./http";
 import { getEffectiveRuleset, type EventDefinition, type Ruleset } from "./ruleset";
 import {

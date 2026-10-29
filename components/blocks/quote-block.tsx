@@ -1,5 +1,5 @@
 import React from "react";
-import type { Block } from "@/packages/contracts/src";
+import type { Block } from "@nextlevelbuilder/contracts";
 import { Quote } from "lucide-react";
 
 export function QuoteBlockView({ block }: { block: Extract<Block, { type: "quote" }> }) {

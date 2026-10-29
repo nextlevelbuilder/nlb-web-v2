@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { BlockRenderer } from '@/components/blocks/block-renderer';
 import { RealtimeTrafficCard } from '@/components/traffic/realtime-traffic-card';
-import { AnalyticsBlockSchema } from '@/packages/contracts/src';
+import { AnalyticsBlockSchema } from '@nextlevelbuilder/contracts';
 
 describe('traffic rendering', () => {
   const block = AnalyticsBlockSchema.parse({ id: 'traffic-summary', type: 'analytics', props: {} });

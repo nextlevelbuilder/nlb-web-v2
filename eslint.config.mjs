@@ -14,6 +14,8 @@ const config = [
       "next-env.d.ts",
       "plans/**",
       "public/**",
+      "packages/*/dist/**",
+      "packages/*/bin/**",
       "scripts/migrate/dump/**",
     ],
   },

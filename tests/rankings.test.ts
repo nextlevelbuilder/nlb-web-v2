@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeRankingSnapshot } from "@/lib/domain/rankings";
-import { LAYOUT_TEMPLATES } from "@/packages/contracts/src/templates";
+import { LAYOUT_TEMPLATES } from "@nextlevelbuilder/contracts";
 
 describe("Multi-Window Rankings & Date Range Logic", () => {
   it("should support daily, weekly, and monthly window types in ranking computation", async () => {

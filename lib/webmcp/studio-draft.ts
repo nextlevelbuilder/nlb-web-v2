@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ProductDocumentSchema, type ProductDocument } from '@/packages/contracts/src/product-document';
+import { ProductDocumentSchema, type ProductDocument } from '@nextlevelbuilder/contracts';
 
 export function normalizeStudioSlug(slug: string): string {
   return slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

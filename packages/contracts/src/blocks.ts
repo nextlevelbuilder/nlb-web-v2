@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { HttpUrlSchema } from "./http-url";
+import { HttpUrlSchema } from "./http-url.js";
+export { SafeHttpUrlSchema } from "./http-url.js";
 
 // Base Block Envelope
-const BaseBlockSchema = z.object({
+export const BaseBlockSchema = z.object({
   id: z.string().min(1),
 });
 
@@ -313,3 +314,7 @@ export type MilestonesBlock = z.infer<typeof MilestonesBlockSchema>;
 export type CaseStudyBlock = z.infer<typeof CaseStudyBlockSchema>;
 export type ActivitiesBlock = z.infer<typeof ActivitiesBlockSchema>;
 export type PulseBlock = z.infer<typeof PulseBlockSchema>;
+export type CarouselBlock = z.infer<typeof CarouselBlockSchema>;
+export type MediaGalleryBlock = z.infer<typeof MediaGalleryBlockSchema>;
+export type QuoteBlock = z.infer<typeof QuoteBlockSchema>;
+export type FaqBlock = z.infer<typeof FaqBlockSchema>;

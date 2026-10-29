@@ -3,7 +3,7 @@ import { markdownSourcePath, pagePath } from "@/lib/markdown/page-paths";
 import { htmlToMarkdown } from "@/lib/markdown/html-to-markdown";
 import { fetchPageMarkdown } from "@/lib/markdown/page-markdown";
 import { productMarkdown } from "@/lib/markdown/product-markdown";
-import type { ProductDocument } from "@/packages/contracts/src";
+import type { ProductDocument } from "@nextlevelbuilder/contracts";
 
 describe("Markdown page representations", () => {
   it("supports index aliases for both languages", () => {

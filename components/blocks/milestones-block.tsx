@@ -1,5 +1,5 @@
 import React from "react";
-import type { MilestonesBlock } from "@/packages/contracts/src";
+import type { MilestonesBlock } from "@nextlevelbuilder/contracts";
 import { Flag } from "lucide-react";
 
 export function MilestonesBlockView({ block }: { block: MilestonesBlock }) {

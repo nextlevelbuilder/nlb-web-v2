@@ -8,6 +8,9 @@ import { POLICY_SLUGS } from "@/lib/constants/policy-slugs";
 import { getPolicy } from "@/content/policies";
 import { localizedPath, siteUrl } from "@/lib/seo";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
+import { isLiveEnabled } from "@/lib/live/live-flag";
+import { listPastEvents, listUpcomingEvents } from "@/lib/live/event-read-models";
+import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +35,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await getAllPublishedProducts();
   const posts = await safely(() => listPostSummaries({ status: "published", limit: 500, offset: 0 }));
   const videos = await safely(() => listPublishedVideos(getDb()));
+  // NLB Live pages exist only while the flag is on (production keeps it off).
+  const liveOn = isLiveEnabled();
+  const liveEvents = liveOn
+    ? await safely(async () => {
+        const now = new Date();
+        const [upcoming, past] = await Promise.all([listUpcomingEvents(getDb(), now, 100), listPastEvents(getDb(), now, 100)]);
+        return [...upcoming, ...past];
+      })
+    : [];
   // Listing pages take the newest change of the content they list; policies carry their own review date.
   // The instructions page has no content timestamp, so it is listed without lastmod.
   const productsChanged = latest(products.map((product) => product.updatedAt));
@@ -60,9 +72,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const [path, lastModified] of staticPages) add(path, lastModified);
   // Community Wrapped, only while the Builder League is public (flag on).
   for (const path of publicWrappedPaths()) add(path);
+  // Annual Hall of Fame of completed years, under the same flag.
+  for (const path of publicHallOfFamePaths()) add(path);
   entries.push({ url: `${baseUrl}/api-docs` });
   for (const product of products) add(`/products/${product.slug}`, product.updatedAt);
   for (const video of videos) add(`/courses/${video.slug}`, video.updatedAt);
+  if (liveOn) add("/live");
+  for (const event of liveEvents) add(`/live/${event.slug}`);
   // Blog posts are single-locale documents; translations are linked through hreflang on the page.
   for (const post of posts) entries.push({ url: `${baseUrl}${blogPostPath(post.locale, post.slug)}`, lastModified: new Date(post.updatedAt) });
   return entries;

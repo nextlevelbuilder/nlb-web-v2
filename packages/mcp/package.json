@@ -1,0 +1,59 @@
+{
+  "name": "@nextlevelbuilder/mcp",
+  "version": "0.2.1",
+  "description": "Model Context Protocol (MCP) server for Next Level Builders Directory — stdio and Cloudflare Workers transports",
+  "type": "module",
+  "bin": {
+    "nlb-mcp": "./bin/mcp-server.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js",
+      "default": "./dist/http.js"
+    },
+    "./worker": {
+      "types": "./dist/transports/worker.d.ts",
+      "import": "./dist/transports/worker.js",
+      "default": "./dist/transports/worker.js"
+    }
+  },
+  "scripts": {
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/dry-run",
+    "build": "tsc -p tsconfig.build.json && node -e \"try { fs.chmodSync('bin/mcp-server.js', 0o755); } catch {}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "node -e \"try { fs.rmSync('dist', { recursive: true, force: true }); } catch {}\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.3.1",
+    "@nextlevelbuilder/contracts": "0.2.1",
+    "jose": "6.2.10",
+    "zod": "^3.23.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextlevelbuilder/nlb-web-v2.git",
+    "directory": "packages/mcp"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

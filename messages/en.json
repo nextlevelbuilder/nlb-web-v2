@@ -486,7 +486,8 @@
     "invalidOtp": "Please enter all 6 digits of the OTP code.",
     "verifyFailed": "OTP code is invalid or has expired.",
     "loginSuccess": "Sign in successful! Redirecting...",
-    "oauthNotConfigured": "{provider} OAuth is not yet configured. Please sign in via Email OTP."
+    "oauthNotConfigured": "{provider} OAuth is not yet configured. Please sign in via Email OTP.",
+    "oauthLinkExpired": "This sign-in link from your app has expired. Go back to your app and connect again."
   },
   "profile": {
     "loginRequiredTitle": "Sign In Required",
@@ -542,6 +543,7 @@
     "loginRequiredTitle": "Sign In Required",
     "loginRequiredDesc": "Please sign in to access your Account Dashboard and manage your product submission slots.",
     "loginRequiredBtn": "Sign In Now",
+    "leagueDeleted": "Your Builder League data has been deleted. Your account and products are unchanged.",
     "title": "Submission Slots & Quota Management",
     "description": "Each slot allows you to submit one product to the Next Level Builders directory review queue.",
     "availableSlots": "Available Slots",
@@ -683,6 +685,7 @@
     "navMobile": "Mobile",
     "nav": {
       "courses": "Courses",
+      "live": "Live",
       "directory": "Directory",
       "leaderboard": "Leaderboard",
       "blog": "Blog",

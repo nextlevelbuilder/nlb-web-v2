@@ -1,7 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it, expect } from "vitest";
-import { ActivitiesBlockSchema, PulseBlockSchema, ProductDocumentSchema } from "@/packages/contracts/src";
+import { ActivitiesBlockSchema, PulseBlockSchema, ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { ActivitiesBlockView } from "@/components/blocks/activities-block";
 import { PulseBlockView } from "@/components/blocks/pulse-block";
 

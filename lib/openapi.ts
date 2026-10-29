@@ -1,5 +1,5 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { ProductDocumentSchema } from "@/packages/contracts/src/product";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { trafficPaths, trafficSchemas } from "@/lib/traffic/openapi";
 import { blogPaths, blogSchemas } from "@/lib/blog/blog-openapi";
 import { evidencePaths, evidenceSchemas } from "@/lib/builder-league/openapi/evidence";
@@ -7,6 +7,15 @@ import { rankingsPaths, rankingsSchemas } from "@/lib/builder-league/openapi/ran
 import { progressionPaths, progressionSchemas } from "@/lib/builder-league/openapi/progression";
 import { journeyPaths, journeySchemas } from "@/lib/builder-league/openapi/journey";
 import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/privacy";
+import { livePaths, liveSchemas } from "@/lib/live/openapi";
+
+/**
+ * Whether the NLB Live member and operator API is part of this public document. Off until Live
+ * launches: the document is an additive-only public contract, so adding the paths at launch is safe,
+ * while publishing them now (with `LIVE_ENABLED` off) would leak the feature and freeze the paths.
+ * The Live module in lib/live/openapi stays complete and tested; flip this one switch at launch.
+ */
+const PUBLISH_LIVE_OPENAPI = false;
 
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
@@ -45,6 +54,77 @@ export const openApiSpec = {
       ...progressionPaths,
       ...journeyPaths,
       ...privacyPaths,
+      ...(PUBLISH_LIVE_OPENAPI ? livePaths : {}),
+      "/api/v1/onboarding-status": {
+        get: {
+          operationId: "getOnboardingStatus",
+          summary: "Read my membership onboarding status",
+          description: "The caller's onboarding state: payment, membership (tier, plan, term, renewal), member profile and Discord/Telegram connection status with the next action for each. Read-only: it never verifies a Polar checkout (the onboarding page does). API keys, OAuth MCP delegation (`mcp:read`) and sessions are accepted. Returns 404 while membership onboarding is not enabled on the environment.",
+          tags: ["Membership"],
+          security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }],
+          responses: {
+            "200": {
+              description: "Onboarding status",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    required: ["data"],
+                    properties: {
+                      data: {
+                        type: "object",
+                        required: ["payment", "membership", "profile", "connections"],
+                        properties: {
+                          payment: { type: "string", enum: ["pending", "verifying", "verified", "failed", "not_owner", "none"] },
+                          membership: {
+                            type: "object",
+                            nullable: true,
+                            properties: {
+                              tier: { type: "string", enum: ["premium", "vip"] },
+                              plan: { type: "string" },
+                              term: { type: "string", enum: ["quarterly", "annual"], nullable: true },
+                              status: { type: "string" },
+                              renewsAt: { type: "string", format: "date-time", nullable: true },
+                              cancelAtPeriodEnd: { type: "boolean" },
+                            },
+                          },
+                          profile: {
+                            type: "object",
+                            properties: {
+                              goal: { type: "string" },
+                              profileLinks: { type: "array", items: { type: "string" } },
+                              skills: { type: "string" },
+                              phone: { type: "string" },
+                              commitmentAccepted: { type: "boolean" },
+                              completed: { type: "boolean" },
+                            },
+                          },
+                          connections: {
+                            type: "object",
+                            properties: Object.fromEntries(["discord", "telegram"].map((provider) => [provider, {
+                              type: "object",
+                              required: ["status", "nextAction"],
+                              properties: {
+                                status: { type: "string", enum: ["not_connected", "waiting_for_join", "processing", "active", "retrying", "action_required", "revoked"] },
+                                displayName: { type: "string" },
+                                nextAction: { type: "string", enum: ["connect", "join", "retry", "reconnect", "none"] },
+                                unlinking: { type: "boolean" },
+                                errorCode: { type: "string" },
+                              },
+                            }])),
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "401": { description: "Sign in or send an API key" },
+            "404": { description: "Membership onboarding is not enabled on this environment" },
+          },
+        },
+      },
       "/api/v1/products/{slug}/pulse": {
         get: {
           summary: "Read product website health history",
@@ -82,11 +162,11 @@ export const openApiSpec = {
         },
       },
       "/api/v1/api-keys": {
-        get: { summary: "List your API keys", description: "Returns key metadata only, never the raw secret.", tags: ["API Keys"], security: [{ SessionAuth: [] }], responses: { "200": { description: "Key metadata" }, "401": { description: "Sign in required" } } },
+        get: { summary: "List your API keys", description: "Returns key metadata only, never the raw secret. `scopes` lists a key's narrow scopes, or is null for a full key.", tags: ["API Keys"], security: [{ SessionAuth: [] }], responses: { "200": { description: "Key metadata" }, "401": { description: "Sign in required" } } },
         post: {
-          summary: "Create an API key", description: "Requires a browser session. The raw key is returned only once; store it securely.", tags: ["API Keys"], security: [{ SessionAuth: [] }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name"], properties: { name: { type: "string", minLength: 1, maxLength: 64 }, organizationId: { type: "string" }, expiresDays: { type: "integer", minimum: 1, maximum: 365 } } } } } },
-          responses: { "200": { description: "New key and secret" }, "400": { description: "Invalid parameters" }, "401": { description: "Sign in required" }, "403": { description: "Organization membership required" } },
+          summary: "Create an API key", description: "Requires a browser session. The raw key is returned only once; store it securely. Admins may bind a key to narrow automation `scopes` (`builder:render` for the Year in Review render worker, `builder:ingest` for the Discord bot); a scoped key authenticates only on the routes that accept its scope and nowhere else. Without `scopes` the key is a full key, as before.", tags: ["API Keys"], security: [{ SessionAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name"], properties: { name: { type: "string", minLength: 1, maxLength: 64 }, organizationId: { type: "string" }, expiresDays: { type: "integer", minimum: 1, maximum: 365 }, scopes: { type: "array", minItems: 1, maxItems: 2, uniqueItems: true, items: { type: "string", enum: ["builder:render", "builder:ingest"] }, description: "Admin only. Narrow scopes the key is limited to." } } } } } },
+          responses: { "200": { description: "New key and secret (`data.scopes` is null for a full key)" }, "400": { description: "Invalid parameters" }, "401": { description: "Sign in required" }, "403": { description: "Organization membership required, or scoped keys requested by a non-admin or outside a browser session" } },
         },
       },
       "/api/v1/api-keys/{id}": {
@@ -360,6 +440,7 @@ export const openApiSpec = {
         ...progressionSchemas,
         ...journeySchemas,
         ...privacySchemas,
+        ...(PUBLISH_LIVE_OPENAPI ? liveSchemas : {}),
         PulseSummary: {
           type: "object",
           properties: {

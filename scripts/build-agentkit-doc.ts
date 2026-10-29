@@ -10,7 +10,7 @@
  * $99/$99/$149 pricing) and the 7 supplied screenshots. No payment-coupled signals.
  */
 import { writeFileSync } from "fs";
-import { ProductDocumentSchema, computeContentHash } from "../packages/contracts/src";
+import { ProductDocumentSchema, computeContentHashSync } from "../packages/contracts/src";
 
 const ASSETS = "https://nextlevelbuilder.io/screenshots/agentkit";
 
@@ -164,7 +164,7 @@ const documentInput = {
 };
 
 const document = ProductDocumentSchema.parse(documentInput);
-const contentHash = computeContentHash(document);
+const contentHash = computeContentHashSync(document);
 
 const snapshot = {
   title: document.title,

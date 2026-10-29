@@ -1,6 +1,6 @@
 'use client';
 
-import type { Block } from '@/packages/contracts/src/blocks';
+import type { Block } from '@nextlevelbuilder/contracts';
 import { Button } from '@/components/ui/button';
 
 type EditableBlock = Extract<Block, { type: 'activities' | 'pulse' }>;

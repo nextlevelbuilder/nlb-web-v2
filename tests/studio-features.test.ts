@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { POST as uploadMediaPost } from "@/app/api/v1/media/upload/route";
 import { AVAILABLE_BLOCKS } from "@/components/studio/block-selector-dropdown";
-import { BlockSchema } from "@/packages/contracts/src";
+import { BlockSchema } from "@nextlevelbuilder/contracts";
 
 describe("Studio Features & Cloudflare R2 Uploads", () => {
   it("registers every supported block type exactly once in the selector", () => {

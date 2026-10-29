@@ -26,7 +26,7 @@ import {
   ChevronDown,
   X,
 } from 'lucide-react';
-import type { Block } from '@/packages/contracts/src';
+import type { Block } from '@nextlevelbuilder/contracts';
 
 export type BlockType = Block['type'];
 

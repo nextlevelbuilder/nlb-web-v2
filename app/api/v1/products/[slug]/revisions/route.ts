@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { products, members } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createProductRevision } from "@/lib/domain/catalog";
-import { ProductDocumentSchema } from "@/packages/contracts/src";
+import { ProductDocumentSchema } from "@nextlevelbuilder/contracts";
 import { z } from "zod";
 
 interface RouteParams {

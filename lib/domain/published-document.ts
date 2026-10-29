@@ -1,5 +1,5 @@
 import type { productRevisions } from "@/lib/db/schema";
-import type { ProductDocument } from "@/packages/contracts/src";
+import type { ProductDocument } from "@nextlevelbuilder/contracts";
 
 function readSnapshot(value: unknown): string[] {
   const parsed = typeof value === "string" ? JSON.parse(value) : value;

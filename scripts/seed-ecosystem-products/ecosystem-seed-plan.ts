@@ -3,7 +3,7 @@
  * and validated product documents. Kept free of wrangler and D1 so it can be unit tested.
  */
 import crypto from "crypto";
-import { ProductDocumentSchema, computeContentHash, type ProductDocument } from "@/packages/contracts/src";
+import { ProductDocumentSchema, computeContentHashSync, type ProductDocument } from "@/packages/contracts/src";
 import { publicMediaUrl } from "@/lib/media/public-media-url";
 import { galleryBlock, type EcosystemProductSeed } from "./ecosystem-products-data";
 
@@ -101,5 +101,5 @@ export function planProduct(seed: EcosystemProductSeed, readAsset: (file: string
       gallery: galleryBlock(seed.media, media.map((item) => publicMediaUrl(item.key, mediaOrigin))),
     }),
   );
-  return { seed, uploads: [logo, ...media], document, contentHash: computeContentHash(document) };
+  return { seed, uploads: [logo, ...media], document, contentHash: computeContentHashSync(document) };
 }
