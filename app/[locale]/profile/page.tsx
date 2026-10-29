@@ -21,6 +21,8 @@ import { Link, getPathname } from "@/i18n/navigation";
 import ProfileSignOutButton from "./profile-sign-out-button";
 import AccountIdentityHeader from "@/components/profile/account-identity-header";
 import ApiKeysManager from "@/components/profile/api-keys-manager";
+import DeveloperIntegrationGuide from "@/components/profile/developer-integration-guide";
+import { mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
 import AccountMembershipSection from "@/components/onboarding/account-membership-section";
 import { getTranslations } from "next-intl/server";
 import { BlockSchema } from "@nextlevelbuilder/contracts";
@@ -178,6 +180,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               </ul>
             )}
           </section>
+
+          <DeveloperIntegrationGuide mcpUrl={mcpEndpoint()} />
 
           <ApiKeysManager />
 
