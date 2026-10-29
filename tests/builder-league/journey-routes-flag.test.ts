@@ -111,7 +111,10 @@ describe("journey, year and wrapped routes with the flag off", () => {
     expect((await adminJobsGet(req("/api/v1/builder-admin/render-jobs"))).status).toBe(403);
     resolveCallerMock.mockResolvedValue(caller("admin", "admin", "delegation"));
     expect((await adminJobsGet(req("/api/v1/builder-admin/render-jobs"))).status).toBe(403);
-    resolveCallerMock.mockResolvedValue(caller("admin", "admin", "api_key"));
+    // A full admin API key is refused; only a key bound to the builder:render scope drives the renderer.
+    resolveCallerMock.mockResolvedValue({ ...caller("admin", "admin", "api_key"), apiKeyScopes: null });
+    expect((await adminJobsGet(req("/api/v1/builder-admin/render-jobs"))).status).toBe(403);
+    resolveCallerMock.mockResolvedValue({ ...caller("admin", "admin", "api_key"), apiKeyScopes: ["builder:render"] });
     expect((await adminJobsGet(req("/api/v1/builder-admin/render-jobs"))).status).toBe(200);
   });
 });

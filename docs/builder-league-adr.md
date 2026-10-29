@@ -47,7 +47,8 @@ All windows use fixed UTC+7 (`Asia/Ho_Chi_Minh`, no DST): ISO weeks starting Mon
 
 ### Versioned rulesets
 
-- Rulesets live in code ([`lib/builder-league/ruleset/`](../lib/builder-league/ruleset/)). `v1` is the legacy table, used to score pre-v2 backfill; `v2` is the current contract, effective from the production deploy date.
+- Rulesets live in code ([`lib/builder-league/ruleset/`](../lib/builder-league/ruleset/)). `v1` is the legacy table, used to score pre-v2 backfill; `v2` is the current contract.
+- `v2` is effective from `2026-10-17T00:00:00+07:00` (`V2_EFFECTIVE_FROM` in [`ruleset/v2.ts`](../lib/builder-league/ruleset/v2.ts)), the merge date of PR #17. The owner fixed this date on purpose, and it does not follow later deploys: moving it would change which ruleset scores events already in the ledger, which means rescoring history. `tests/builder-league/ruleset.test.ts` pins the value and the v1/v2 boundary.
 - A published ruleset is never edited; a change ships as `v3`. The migration seeds `score_rulesets` with each version's checksum (sha256 of the canonical definition, excluding `effectiveFrom`), and tests fail if code and seed disagree.
 - Policy copy (RP table, rank conditions, effective-date notice) is generated from the ruleset by [`ruleset/policy-text.ts`](../lib/builder-league/ruleset/policy-text.ts). RP earned before the effective date is kept; history is never rewritten.
 

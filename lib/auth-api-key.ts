@@ -17,7 +17,49 @@ export interface ResolvedCaller {
   authType: "session" | "api_key" | "delegation";
   apiKeyId?: string;
   apiKeyOrganizationId?: string | null;
+  /** Scopes bound to the API key; `null` for a full key (the default). Only set when `authType` is `api_key`. */
+  apiKeyScopes?: ApiKeyScope[] | null;
   session?: any;
+}
+
+/**
+ * Narrow scopes an admin can bind an API key to, for machine callers that must not hold a full key:
+ * - `builder:render`: the Year in Review render worker (`/api/v1/builder-admin/render-jobs/**`).
+ * - `builder:ingest`: the Discord bot (`/api/v1/builder-admin/ingest/discord`).
+ *
+ * A scoped key authenticates only on a route that asks for one of its scopes; everywhere else it is
+ * treated as no credential at all. Keys minted without scopes keep working as full keys.
+ */
+export const API_KEY_SCOPES = ["builder:render", "builder:ingest"] as const;
+export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
+
+export interface ResolveCallerOptions {
+  /** The narrow scope this route accepts. Without it, scoped keys never authenticate. */
+  apiKeyScope?: ApiKeyScope;
+}
+
+function isApiKeyScope(value: unknown): value is ApiKeyScope {
+  return typeof value === "string" && (API_KEY_SCOPES as readonly string[]).includes(value);
+}
+
+/**
+ * Reads the scopes stored in `api_keys.permissions`. Scoped keys store a JSON array of scope names.
+ * A missing value, a blank string and the object shape older Better Auth rows may carry mean a full
+ * key, which keeps those keys working as before. Anything else fails closed and the key authenticates
+ * nowhere: unparseable text, a non-string or unknown entry, and an empty array `[]` (a key scoped to
+ * nothing, never a full key).
+ */
+export function parseApiKeyScopes(permissions: string | null | undefined): ApiKeyScope[] | null {
+  if (permissions == null || permissions.trim() === "") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(permissions);
+  } catch {
+    return [];
+  }
+  if (Array.isArray(parsed)) return parsed.every(isApiKeyScope) ? parsed : [];
+  if (parsed && typeof parsed === "object") return null;
+  return [];
 }
 
 /**
@@ -36,11 +78,14 @@ export async function createApiKeyForUser(
     name,
     organizationId,
     expiresDays,
+    scopes,
   }: {
     userId: string;
     name: string;
     organizationId?: string;
     expiresDays?: number;
+    /** Binds the key to these narrow scopes. Omit for a full key. Callers must check the user is an admin. */
+    scopes?: readonly ApiKeyScope[];
   },
   customDb?: AppDb
 ) {
@@ -58,6 +103,8 @@ export async function createApiKeyForUser(
     : null;
 
   const id = crypto.randomUUID();
+  const scopeList = scopes?.length ? [...new Set(scopes)] : null;
+  if (scopeList && !scopeList.every(isApiKeyScope)) throw new Error("Unknown API key scope");
 
   const [record] = await db
     .insert(apiKeys)
@@ -69,6 +116,7 @@ export async function createApiKeyForUser(
       key: hashedKey,
       userId,
       organizationId: organizationId || null,
+      permissions: scopeList ? JSON.stringify(scopeList) : null,
       enabled: true,
       expiresAt,
       createdAt: new Date(),
@@ -84,6 +132,7 @@ export async function createApiKeyForUser(
     start: record.start,
     expiresAt: record.expiresAt,
     createdAt: record.createdAt,
+    scopes: scopeList,
   };
 }
 
@@ -156,11 +205,15 @@ export async function verifyApiKey(rawKey: string, customDb?: AppDb) {
 /**
  * Resolve a Better Auth session, API key, or explicitly opted-in MCP delegation.
  * Compatible with REST API routes, @nextlevelbuilder/cli, and @nextlevelbuilder/mcp.
+ *
+ * A scoped API key resolves only when `options.apiKeyScope` is one of its scopes; full keys always
+ * resolve, so a route that needs a scope must still check `apiKeyScopes` itself.
  */
 export async function resolveCaller(
   headers: Headers,
   customDb?: AppDb,
   delegation?: McpDelegationContext,
+  options: ResolveCallerOptions = {},
 ): Promise<ResolvedCaller | null> {
   if (headers.has(MCP_ASSERTION_HEADER)) {
     if (!delegation) return null;
@@ -233,10 +286,13 @@ export async function resolveCaller(
     try {
       const verified = await verifyApiKey(tokenCandidate, customDb);
       if (verified && verified.user) {
+        const scopes = parseApiKeyScopes(verified.apiKey.permissions);
+        if (scopes && !(options.apiKeyScope && scopes.includes(options.apiKeyScope))) return null;
         return {
           user: verified.user,
           apiKeyId: verified.apiKey.id,
           apiKeyOrganizationId: verified.apiKey.organizationId,
+          apiKeyScopes: scopes,
           authType: "api_key",
         };
       }

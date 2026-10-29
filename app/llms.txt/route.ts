@@ -9,6 +9,7 @@ import { DISCOVERY_PATHS, mcpEndpoint } from "@/lib/discovery/agent-discovery-do
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 import { isLiveEnabled } from "@/lib/live/live-flag";
 import { listUpcomingEvents } from "@/lib/live/event-read-models";
+import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
 /** Latest published blog posts in both locales; the blog is optional here, so failures only drop the section. */
 async function blogLines(baseUrl: string): Promise<string[]> {
@@ -64,6 +65,7 @@ export async function GET() {
       `- [Leaderboards](${baseUrl}/leaderboards.md): Daily, weekly and monthly rankings from organic votes.`,
       `- [Policies](${baseUrl}/policies.md): Community and publication rules.`,
       ...publicWrappedPaths().map((path) => `- [Community Wrapped ${path.slice(-4)}](${baseUrl}${path}.md): What the community validated, built and shipped that year, from verified activity only.`),
+      ...publicHallOfFamePaths().map((path) => `- [Builder League Hall of Fame ${path.slice(9, 13)}](${baseUrl}${path}.md): Official final results of that year's boards; only builders who opted in to public boards are named.`),
       `- [Blog](${baseUrl}/blog.md): Build logs, product lessons and engineering notes.`,
       `- [Courses](${baseUrl}/courses.md): Recorded build sessions, sold per video or included with VIP.`,
       ...(isLiveEnabled() ? [`- [NLB Live](${baseUrl}/live.md): Weekly live build sessions, the members' topic vote and paid seats.`] : []),

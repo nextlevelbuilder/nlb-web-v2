@@ -46,6 +46,21 @@ export interface HomeCopy {
     save: string;
     saved: string;
     back: string;
+    data: {
+      title: string;
+      lede: string;
+      exportLabel: string;
+      exportDesc: string;
+      deleteTitle: string;
+      deleteDesc: string;
+      deleteKeeps: string;
+      confirmLabel: (word: string) => string;
+      deleteCta: string;
+      deleted: string;
+      pilotNote: string;
+      adminNote: string;
+      errors: Record<"confirm" | "admin" | "rate" | "storage" | "failed", string>;
+    };
   };
   ogTitle: string;
   ogSubtitle: string;
@@ -129,6 +144,27 @@ const en: HomeCopy = {
     save: "Save privacy settings",
     saved: "Saved.",
     back: "Back to the Builder League",
+    data: {
+      title: "Take your data with you, or erase it.",
+      lede: "Download everything the league stores about you, or delete it yourself. Your account stays.",
+      exportLabel: "Export my data",
+      exportDesc: "One JSON file with your evidence, points history, badges, ranks, seasons, rewards and settings.",
+      deleteTitle: "Delete my Builder League data",
+      deleteDesc: "Removes your evidence files, projects, badges, ranks, season entries, reward claims, Time Capsule notes and yearly recaps. This cannot be undone.",
+      deleteKeeps: "Final boards keep their totals under an anonymous id that no longer links to you. Export first if you want a copy.",
+      confirmLabel: (word) => `Type ${word} to confirm`,
+      deleteCta: "Delete my league data",
+      deleted: "Your Builder League data has been deleted.",
+      pilotNote: "You are in the league through the pilot. Deleting your data also removes your pilot place, so you lose access to the Builder League until it opens to everyone.",
+      adminNote: "Admins cannot delete their own league data here. Ask another admin to run the request.",
+      errors: {
+        confirm: "Type the confirmation word exactly as shown.",
+        admin: "Admins cannot delete their own league data. Ask another admin.",
+        rate: "Too many requests. Wait a minute and try again.",
+        storage: "Your files could not be deleted, so nothing was changed. Try again.",
+        failed: "Something went wrong. Try again; repeating the request is safe.",
+      },
+    },
   },
   ogTitle: "Builder League",
   ogSubtitle: "Verified progress, levels and ranks for Next Level Builders members.",
@@ -210,6 +246,27 @@ const vi: HomeCopy = {
     save: "Lưu cài đặt quyền riêng tư",
     saved: "Đã lưu.",
     back: "Quay lại Builder League",
+    data: {
+      title: "Mang dữ liệu đi, hoặc xoá hẳn.",
+      lede: "Tải về mọi thứ league lưu về bạn, hoặc tự xoá. Tài khoản của bạn vẫn được giữ.",
+      exportLabel: "Xuất dữ liệu của tôi",
+      exportDesc: "Một tệp JSON gồm bằng chứng, lịch sử điểm, huy hiệu, hạng, mùa giải, phần thưởng và cài đặt của bạn.",
+      deleteTitle: "Xoá dữ liệu Builder League của tôi",
+      deleteDesc: "Xoá tệp bằng chứng, dự án, huy hiệu, hạng, đăng ký mùa, yêu cầu phần thưởng, ghi chú Time Capsule và tổng kết năm. Không thể hoàn tác.",
+      deleteKeeps: "Bảng xếp hạng đã chốt vẫn giữ tổng điểm dưới một mã ẩn danh, không còn liên kết với bạn. Hãy xuất dữ liệu trước nếu muốn giữ bản sao.",
+      confirmLabel: (word) => `Gõ ${word} để xác nhận`,
+      deleteCta: "Xoá dữ liệu league",
+      deleted: "Dữ liệu Builder League của bạn đã được xoá.",
+      pilotNote: "Bạn đang tham gia league qua chương trình pilot. Xoá dữ liệu cũng xoá suất pilot của bạn, nên bạn sẽ mất quyền vào Builder League cho đến khi league mở cho mọi người.",
+      adminNote: "Admin không thể tự xoá dữ liệu league của mình tại đây. Hãy nhờ một admin khác thực hiện.",
+      errors: {
+        confirm: "Hãy gõ đúng từ xác nhận như hướng dẫn.",
+        admin: "Admin không thể tự xoá dữ liệu league của mình. Hãy nhờ một admin khác.",
+        rate: "Quá nhiều yêu cầu. Chờ một phút rồi thử lại.",
+        storage: "Chưa xoá được tệp của bạn nên chưa có gì thay đổi. Hãy thử lại.",
+        failed: "Đã có lỗi. Hãy thử lại; gửi lại yêu cầu là an toàn.",
+      },
+    },
   },
   ogTitle: "Builder League",
   ogSubtitle: "Tiến độ, cấp độ và hạng đã xác minh của thành viên Next Level Builders.",

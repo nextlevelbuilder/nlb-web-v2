@@ -45,6 +45,15 @@ describe("ruleset invariants", () => {
     expect(() => getRuleset("v9")).toThrow();
   });
 
+  it("keeps the v2 effective date fixed, because moving it would rescore history", () => {
+    expect(V2_EFFECTIVE_FROM).toBe("2026-10-17T00:00:00+07:00");
+    expect(Date.parse(V2_EFFECTIVE_FROM)).toBe(Date.UTC(2026, 9, 16, 17, 0, 0));
+    expect(getEffectiveRuleset(new Date("2026-10-16T23:59:59.999+07:00")).version).toBe("v1");
+    expect(getEffectiveRuleset(new Date("2026-01-01T00:00:00+07:00")).version).toBe("v1");
+    expect(getEffectiveRuleset(new Date("2026-10-17T00:00:00+07:00")).version).toBe("v2");
+    expect(getEffectiveRuleset(new Date("2026-10-28T12:00:00+07:00")).version).toBe("v2");
+  });
+
   it("v2 defines every scoring event with a consistent definition", () => {
     expect(Object.keys(v2.events).sort()).toEqual([...EVENT_TYPE_KEYS].sort());
     for (const [key, event] of Object.entries(v2.events)) {

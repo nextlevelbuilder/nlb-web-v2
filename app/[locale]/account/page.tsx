@@ -30,10 +30,13 @@ import { getTranslations } from "next-intl/server";
 
 interface AccountPageProps {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function AccountDashboardPage({ params }: AccountPageProps) {
+export default async function AccountDashboardPage({ params, searchParams }: AccountPageProps) {
   const { locale } = await params;
+  // Set by the Builder League self-delete when the member lost league access along with their data.
+  const leagueDeleted = (await searchParams).leagueDeleted === "1";
   const t = await getTranslations({ locale, namespace: "account" });
   const auth = getAuth();
   const reqHeaders = await headers();
@@ -158,6 +161,12 @@ export default async function AccountDashboardPage({ params }: AccountPageProps)
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <main id="main" className="sky-backdrop flex-1">
         <div className="wrap max-w-5xl space-y-12 pb-section-sm pt-[calc(var(--header-h)+3rem)] md:pt-[calc(var(--header-h)+4.5rem)]">
+          {leagueDeleted && (
+            <p role="status" className="surface-panel flex items-center gap-2 p-4 text-step-sm text-ink-2">
+              <CheckCircle2 aria-hidden className="h-4 w-4 shrink-0 text-success" />
+              {t("leagueDeleted")}
+            </p>
+          )}
           <AccountIdentityHeader
             name={user.name}
             email={user.email}

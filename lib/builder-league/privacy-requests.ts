@@ -1,7 +1,8 @@
 /**
  * Member privacy requests for the Builder League: export everything the league holds about one member,
- * or delete it. Both are admin operations (`/api/v1/builder-admin/privacy/{userId}/…`); the account row
- * in `users` is left alone, as account deletion is a separate process.
+ * or delete it. Admins run both for any member (`/api/v1/builder-admin/privacy/{userId}/…`); members run
+ * them for themselves (`/api/v1/builder-me/export`, `/api/v1/builder-me/delete` and the settings page).
+ * The account row in `users` is left alone, as account deletion is a separate process.
  *
  * Delete removes the member's personal league data: private evidence files in R2 (`evidence/{userId}/`
  * and rendered videos under `renders/{userId}/`), evidence and appeals, privacy switches, the pilot
@@ -111,6 +112,19 @@ export interface BuilderDataExport {
   moderationHistory: unknown[];
 }
 
+/** Drops one column from every row: moderator and admin ids are other people's data. */
+function omitColumn<T extends object, K extends keyof T>(rows: T[], column: K): Omit<T, K>[] {
+  return rows.map((row) => {
+    const { [column]: _omitted, ...rest } = row;
+    return rest;
+  });
+}
+
+/** Ledger reasons read `awarded_by:{role}:{actorId}`; the export keeps the role and drops the id. */
+function withoutLedgerActor<T extends { reason: string | null }>(rows: T[]): T[] {
+  return rows.map((row) => ({ ...row, reason: row.reason?.replace(/^(awarded_by:[^:]+):.*$/, "$1") ?? null }));
+}
+
 /**
  * Everything the league stores about the member, as JSON. Moderators' ids are left out of the
  * decision history (they are other people's data); evidence files are listed by name and can be
@@ -209,16 +223,17 @@ export async function exportBuilderData(db: AppDb, userId: string, now = new Dat
     privacy: privacy[0] ?? null,
     pilot: pilot[0] ?? null,
     projects,
-    evidence,
-    appeals,
+    evidence: omitColumn(evidence, "decidedBy"),
+    appeals: omitColumn(appeals, "resolvedBy"),
     confirmationsGiven,
-    events,
-    ledger,
+    // The member's own actions keep their id; anyone else acting on them (moderators, the system) is dropped.
+    events: events.map((event) => ({ ...event, actorUserId: event.actorUserId === userId ? userId : null })),
+    ledger: withoutLedgerActor(ledger),
     badges,
-    ranks,
+    ranks: omitColumn(ranks, "awardedBy"),
     nominations,
     seasons,
-    rewardClaims: claims,
+    rewardClaims: omitColumn(claims, "decidedBy"),
     timeCapsule: capsule,
     yearlySnapshots: snapshots,
     shareLinks: links.map(serializeShareLink),
@@ -425,17 +440,50 @@ export async function deleteBuilderData(db: AppDb, userId: string, options: Dele
   const nothingToDo = keys.size === 0 && [...Object.values(deleted), ...Object.values(pseudonymised)].every((count) => count === 0);
 
   if (!nothingToDo) {
-    // The audit row names the tombstone only, so it cannot be used to re-identify the history.
+    // The audit row names the tombstone only, so it cannot be used to re-identify the history. When the
+    // member deletes their own data the actor is the member too, so the tombstone stands in for both.
+    const selfService = options.actorId === userId;
     await recordModerationAction(db, {
       targetType: "privacy_request",
       targetId: tombstoneId,
       action: "delete",
-      actorId: options.actorId,
+      actorId: selfService ? tombstoneId : options.actorId,
       actorRole: options.actorRole ?? "admin",
-      reasonCodes: ["privacy_delete"],
+      reasonCodes: selfService ? ["privacy_delete", "self_service"] : ["privacy_delete"],
       notes: JSON.stringify({ objectsDeleted: keys.size, deleted, pseudonymised }),
     });
   }
 
   return { tombstoneId, objectsDeleted: keys.size, deleted, pseudonymised, nothingToDo };
+}
+
+// ---------------------------------------------------------------------------
+// Member self-service
+// ---------------------------------------------------------------------------
+
+/** The word a member types (or sends as `confirm`) to delete their own league data. */
+export const SELF_DELETE_CONFIRMATION = "DELETE";
+
+export interface SelfDeleteRequest {
+  userId: string;
+  /** Admins are refused, as on the admin route, so their moderation decisions keep a known actor. */
+  isAdmin: boolean;
+  confirm: unknown;
+  bucket?: PrivacyBucket;
+  now?: Date;
+}
+
+/**
+ * A member deletes their own league data. The caller must already have checked that the request comes
+ * from the member's signed-in session (API keys and agents must never erase a member's history). This
+ * checks the typed confirmation and the admin rule, then runs the admin routine with the member as actor.
+ */
+export async function deleteOwnBuilderData(db: AppDb, request: SelfDeleteRequest): Promise<BuilderDataDeletion> {
+  if (request.confirm !== SELF_DELETE_CONFIRMATION) {
+    throw new BuilderApiError(400, "confirmation_mismatch", `Type ${SELF_DELETE_CONFIRMATION} to confirm the deletion.`);
+  }
+  if (request.isAdmin) {
+    throw new BuilderApiError(403, "admin_self_delete", "Admins cannot delete their own league data; ask another admin.");
+  }
+  return deleteBuilderData(db, request.userId, { actorId: request.userId, actorRole: "member", bucket: request.bucket, now: request.now });
 }
