@@ -88,6 +88,17 @@ export async function createApiKeyForUser(
 }
 
 /**
+ * Whether a user's ban is in force: banned with no expiry, or an expiry still in the future. Every
+ * credential type (session, API key, MCP delegation) refuses a banned user, whichever way the ban was
+ * written.
+ */
+export function isBanActive(user: { banned?: boolean | null; banExpires?: Date | string | null }, now = new Date()): boolean {
+  if (!user.banned) return false;
+  if (!user.banExpires) return true;
+  return new Date(user.banExpires).getTime() > now.getTime();
+}
+
+/**
  * Verify a raw API key against stored hashed keys in database.
  */
 export async function verifyApiKey(rawKey: string, customDb?: AppDb) {
@@ -124,17 +135,20 @@ export async function verifyApiKey(rawKey: string, customDb?: AppDb) {
       role: users.role,
       image: users.image,
       emailVerified: users.emailVerified,
+      banned: users.banned,
+      banExpires: users.banExpires,
     })
     .from(users)
     .where(eq(users.id, keyRecord.userId))
     .limit(1);
 
-  if (!user) {
+  if (!user || isBanActive(user)) {
     return null;
   }
 
+  const { banned: _banned, banExpires: _banExpires, ...publicUser } = user;
   return {
-    user,
+    user: publicUser,
     apiKey: keyRecord,
   };
 }
@@ -164,7 +178,7 @@ export async function resolveCaller(
         banned: users.banned,
         banExpires: users.banExpires,
       }).from(users).where(eq(users.id, userId)).limit(1);
-      if (!user || (user.banned && (!user.banExpires || user.banExpires > new Date()))) {
+      if (!user || isBanActive(user)) {
         return null;
       }
       return {
@@ -181,6 +195,8 @@ export async function resolveCaller(
     const auth = getAuth();
     const session = await auth.api.getSession({ headers });
     if (session && session.user) {
+      // A banned user's surviving session (ban written outside Better Auth's banUser) is refused too.
+      if (isBanActive(session.user as { banned?: boolean | null; banExpires?: Date | string | null })) return null;
       return {
         user: {
           id: session.user.id,

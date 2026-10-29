@@ -240,7 +240,7 @@ describe("MCP delegation assertion verification", () => {
 
   it.each([
     ["unknown", null], ["permanently banned", { ...account, banned: true }],
-    ["temporarily banned", { ...account, banned: true, banExpires: new Date(Date.now() + 60000) }],
+    ["temporarily banned", { ...account, banned: true, banExpires: new Date(Date.now() + 3_600_000) }],
   ])("denies a %s user", async (_label, user) => {
     expect(await resolveCaller(new Headers({ [MCP_ASSERTION_HEADER]: await sign() }), database(user), context)).toBeNull();
   });
