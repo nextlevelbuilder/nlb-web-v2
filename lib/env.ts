@@ -95,6 +95,13 @@ const envSchema = z.object({
 
   // Builder League feature flag ("true" | "false"). Optional: a missing value means off.
   BUILDER_LEAGUE_ENABLED: z.enum(["true", "false"]).optional(),
+
+  // NLB Live feature flag ("true" | "false"). Optional: a missing value means off.
+  LIVE_ENABLED: z.enum(["true", "false"]).optional(),
+  // Zoom Server-to-Server OAuth app for Live meetings. Missing values keep join access closed.
+  ZOOM_ACCOUNT_ID: z.string().optional(),
+  ZOOM_CLIENT_ID: z.string().optional(),
+  ZOOM_CLIENT_SECRET: z.string().optional(),
   // Shared secret of the Discord bot for POST /api/v1/builder-admin/ingest/discord (32+ chars). Optional:
   // without it the bot authenticates with an admin API key.
   BUILDER_INGEST_SECRET: z.string().min(32).optional(),

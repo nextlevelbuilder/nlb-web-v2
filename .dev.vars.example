@@ -132,6 +132,14 @@ BUILDER_LEAGUE_ENABLED=
 # Shared secret (32+ chars) the Discord bot sends as x-nlb-builder-ingest-secret; optional (an admin API key also works).
 BUILDER_INGEST_SECRET=
 
+# --- NLB Live ---
+# "true" opens /live and the member Live APIs; anything else answers 404 (operators can still prepare events).
+LIVE_ENABLED=
+# Zoom Server-to-Server OAuth app (meeting:write, user:read). Empty values keep join access closed.
+ZOOM_ACCOUNT_ID=
+ZOOM_CLIENT_ID=
+ZOOM_CLIENT_SECRET=
+
 # --- Courses (Cloudflare Stream) ---
 # Comma-separated plans that unlock every course video (default "vip").
 COURSES_ACCESS_PLANS=

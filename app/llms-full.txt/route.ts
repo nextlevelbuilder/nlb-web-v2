@@ -8,6 +8,7 @@ import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
+import { isLiveEnabled } from "@/lib/live/live-flag";
 import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
 /** Optional sources (blog, courses) drop out on failure instead of failing the whole document. */
@@ -39,6 +40,8 @@ export async function GET() {
     const optionalPages = new Set(posts.map((post) => blogPostPath(post.locale, post.slug)));
     // Community Wrapped and Hall of Fame pages (flag on only) are optional too: a failing year never fails the document.
     for (const path of [...publicWrappedPaths(), ...publicHallOfFamePaths()]) for (const locale of ["vi", "en"]) optionalPages.add(localizedPath(path, locale));
+    // NLB Live (flag on only) is optional as well.
+    if (isLiveEnabled()) for (const locale of ["vi", "en"]) optionalPages.add(localizedPath("/live", locale));
     localized.push(...optionalPages);
     const sections = ["# Next Level Builders — Full published content"];
     // Keep subrequest concurrency bounded for the Worker runtime.

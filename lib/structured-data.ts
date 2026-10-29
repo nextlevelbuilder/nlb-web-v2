@@ -231,6 +231,61 @@ export function communityWrappedJsonLd(input: CommunityWrappedJsonLdInput): Json
   };
 }
 
+export interface LiveEventJsonLdInput {
+  slug: string;
+  locale: string;
+  /** Visible, localized title and description. */
+  name: string;
+  description: string;
+  status: "draft" | "scheduled" | "sales_open" | "live" | "ended" | "archived" | "cancelled";
+  startsAt: Date;
+  endsAt: Date;
+  hostName: string;
+  priceCents: number;
+  currency: string;
+  /** Seats left while on sale; null otherwise. */
+  seatsLeft: number | null;
+}
+
+function liveOfferAvailability(input: LiveEventJsonLdInput): string {
+  if (input.status === "sales_open") return (input.seatsLeft ?? 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut";
+  if (input.status === "scheduled") return "https://schema.org/PreOrder";
+  return "https://schema.org/Discontinued";
+}
+
+/**
+ * An NLB Live session as a schema.org online Event with its seat Offer. The location is the public
+ * event page (a VirtualLocation): personal join URLs are per attendee and never appear here.
+ */
+export function liveEventJsonLd(input: LiveEventJsonLdInput): JsonLd {
+  const url = `${siteUrl()}${localizedPath(`/live/${input.slug}`, input.locale)}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `${url}#event`,
+    name: input.name,
+    description: input.description || input.name,
+    url,
+    inLanguage: input.locale,
+    startDate: input.startsAt.toISOString(),
+    endDate: input.endsAt.toISOString(),
+    eventStatus: input.status === "cancelled" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    location: { "@type": "VirtualLocation", url },
+    organizer: { "@id": organizationId(), "@type": "Organization", name: "Next Level Builders", url: siteUrl() },
+    performer: { "@type": "Person", name: input.hostName },
+    isAccessibleForFree: input.priceCents === 0,
+    offers: {
+      "@type": "Offer",
+      url,
+      price: input.priceCents / 100,
+      priceCurrency: input.currency.toUpperCase(),
+      availability: liveOfferAvailability(input),
+      category: input.priceCents === 0 ? "Free" : "Paid",
+    },
+  };
+}
+
 export interface HallOfFameJsonLdInput {
   year: number;
   locale: string;
