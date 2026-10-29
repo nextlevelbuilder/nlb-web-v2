@@ -28,8 +28,7 @@ export default function ProfileSignOutButton() {
       variant="outline"
       size="sm"
       onClick={handleSignOut}
-      disabled={loading}
-      aria-busy={loading}
+      loading={loading}
       className="gap-1.5 hover:border-destructive/50 hover:text-destructive"
     >
       <LogOut aria-hidden className="w-3.5 h-3.5" />

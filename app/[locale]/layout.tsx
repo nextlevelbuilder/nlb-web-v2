@@ -1,6 +1,8 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import NavigationProgress from '@/components/site/navigation-progress';
 import SiteCursor from '@/components/site/site-cursor';
 import SiteFooter from '@/components/site/site-footer';
 import SiteHeader from '@/components/site/site-header';
@@ -14,7 +16,7 @@ export function generateStaticParams() {
 }
 
 /**
- * Locale shell shared by every page: static sky + graticule, custom cursor, the Constellation header
+ * Locale shell shared by every page: navigation progress bar, static sky + graticule, custom cursor, the Constellation header
  * (with the skip link to #main) and footer. Each page renders its own <main id="main">; the home page
  * adds the live WebGL sky on top of the static one.
  */
@@ -29,6 +31,9 @@ export default async function LocaleLayout({ children, params }: {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SiteTrafficTracker />
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
       <StaticSky />
       <SiteCursor />
       <SiteHeader />
