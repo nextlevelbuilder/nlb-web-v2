@@ -21,6 +21,7 @@ export interface WrappedCopy {
     timeframe: (start: string, end: string, tz: string) => string;
     backfill: (n: number) => string;
     versionMeta: (version: number, created: string) => string;
+    hallOfFame: string;
     cta: string;
   };
   shared: {
@@ -64,6 +65,7 @@ const en: WrappedCopy = {
     timeframe: (start, end, tz) => `${start} to ${end} (${tz})`,
     backfill: (n) => `${n} imported historical ${n === 1 ? "event is" : "events are"} included and labelled.`,
     versionMeta: (version, created) => `Version ${version} · ${created}`,
+    hallOfFame: "See the Hall of Fame",
     cta: "Join the builders",
   },
   shared: {
@@ -107,6 +109,7 @@ const vi: WrappedCopy = {
     timeframe: (start, end, tz) => `${start} đến ${end} (${tz})`,
     backfill: (n) => `Có ${n} sự kiện lịch sử được nhập lại, đã ghi chú rõ.`,
     versionMeta: (version, created) => `Phiên bản ${version} · ${created}`,
+    hallOfFame: "Xem Hall of Fame",
     cta: "Tham gia cùng các builder",
   },
   shared: {

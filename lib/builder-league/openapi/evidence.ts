@@ -562,12 +562,13 @@ export const evidencePaths: Record<string, unknown> = {
       operationId: "ingestBuilderDiscordEvent",
       summary: "Ingest a Discord bot event as evidence",
       description:
-        `For the community Discord bot. Authenticate with the shared \`${INGEST_SECRET_HEADER}\` header or an admin API key (admin sessions also work; MCP delegation does not). ` +
+        `For the community Discord bot. Authenticate with the shared \`${INGEST_SECRET_HEADER}\` header or an admin's API key minted with the \`builder:ingest\` scope (\`POST /api/v1/api-keys\` with \`scopes: ["builder:ingest"]\`). Admin sessions also work; full API keys and MCP delegation get 403, and a key with another scope gets 401. ` +
         `Only these kinds count, never message volume: ${DISCORD_INGEST_KINDS.map((kind) => `\`${kind}\` → \`${DISCORD_KIND_EVENT[kind]}\``).join(", ")}. ` +
         "The member is resolved from the Discord account linked during onboarding. The evidence is stored as `submitted` with source `discord` and waits for a moderator; this route never approves or awards. " +
         "Idempotent per member and `messageId` (client key `discord:{messageId}`): a retry answers 200 with the stored evidence. `help_confirmation` needs `counterpartDiscordUserId` (the helped member), who still confirms from their own account. SHIP evidence needs a project, which the member attaches before review.",
       tags: adminTags,
       security: [{ BuilderIngestSecret: [] }, { BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }],
+      "x-nlb-api-key-scope": "builder:ingest",
       requestBody: {
         required: true,
         content: json({
@@ -601,8 +602,8 @@ export const evidencePaths: Record<string, unknown> = {
           "Accepted but ignored: nothing was stored"
         ),
         "400": error("Validation failed; `error.details` lists the failing fields"),
-        "401": error("Missing or invalid secret or credentials"),
-        "403": error("Not an admin, or MCP delegation"),
+        "401": error("Missing or invalid secret or credentials (a key with another scope counts as none)"),
+        "403": error("Not an admin, MCP delegation, or a full API key without the `builder:ingest` scope"),
       },
     },
   },

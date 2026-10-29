@@ -1,5 +1,6 @@
 /**
- * OpenAPI paths and schemas for Builder League privacy requests (admin export and delete), merged
+ * OpenAPI paths and schemas for Builder League privacy requests (admin and member self-service export
+ * and delete), merged
  * additively into lib/openapi.ts.
  */
 const TAG = "Builder League: Privacy";
@@ -17,6 +18,8 @@ const userIdParam = {
 };
 const adminOnly = { description: "Admin session required (API keys and agents are refused); 404 while the Builder League is off" };
 const counts = { type: "object", additionalProperties: { type: "integer" } };
+const MEMBER_READ = [{ BearerAuth: [] }, { ApiKeyAuth: [] }, { SessionAuth: [] }];
+const memberOnly = { description: "Builder League member required; 404 while the Builder League is off" };
 
 export const privacyPaths: Record<string, unknown> = {
   "/api/v1/builder-admin/privacy/{userId}/export": {
@@ -54,6 +57,45 @@ export const privacyPaths: Record<string, unknown> = {
         "400": { description: "Invalid id, confirmation mismatch, or own account" },
         "401": adminOnly,
         "403": adminOnly,
+        "404": { description: "Hidden while the Builder League is off" },
+        "415": { description: "Body must be application/json" },
+        "429": { description: "Rate limited" },
+        "502": { description: "Private files could not be deleted; nothing in D1 was changed. Retry." },
+      },
+    },
+  },
+  "/api/v1/builder-me/export": {
+    get: {
+      summary: "Export my Builder League data",
+      description:
+        "The caller's own league data, in the same format as the admin export, as one JSON download. Works with a session, a full (unscoped) API key or MCP delegation with `mcp:read`; it includes the caller's private evidence and never returns another member's data. Each export is recorded in the moderation audit trail.",
+      tags: [TAG],
+      security: MEMBER_READ,
+      responses: {
+        "200": { description: "Export (served as an attachment, no-store)", content: envelope(ref("BuilderPrivacyExport")) },
+        "401": { description: "Sign in required; 404 while the Builder League is off" },
+        "403": memberOnly,
+        "404": { description: "Hidden while the Builder League is off" },
+        "429": { description: "Rate limited" },
+      },
+    },
+  },
+  "/api/v1/builder-me/delete": {
+    post: {
+      summary: "Delete my Builder League data",
+      description:
+        "Irreversible. Runs the admin delete routine on the caller's own data only: private files and personal rows are deleted, history is pseudonymised with a fresh tombstone id, and the account itself is kept. Signed-in session only: API keys and MCP agents are refused, so an agent can never erase a member's history. The body must be JSON and confirm with the word `DELETE`. Admins are refused and must ask another admin. Idempotent: a repeat reports `nothingToDo`. The audit row names only the tombstone.",
+      tags: [TAG],
+      security: SESSION_ONLY,
+      requestBody: {
+        required: true,
+        content: json({ type: "object", required: ["confirm"], additionalProperties: false, properties: { confirm: { type: "string", enum: ["DELETE"], description: "Must be exactly `DELETE`." } } }),
+      },
+      responses: {
+        "200": { description: "Deleted", content: envelope(ref("BuilderPrivacyDeletion")) },
+        "400": { description: "Missing or wrong confirmation, or invalid JSON" },
+        "401": { description: "Sign in required; 404 while the Builder League is off" },
+        "403": { description: "Not a member, not a session (API key or agent), cross-site request, or an admin deleting their own data" },
         "404": { description: "Hidden while the Builder League is off" },
         "415": { description: "Body must be application/json" },
         "429": { description: "Rate limited" },

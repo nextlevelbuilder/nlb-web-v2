@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const STATUSES = new Set<RenderJob["status"]>(["queued", "claimed", "done", "failed", "expired"]);
 
-/** GET /api/v1/builder-admin/render-jobs[?status=] — the latest 100 render jobs (admin session or admin API key). */
+/** GET /api/v1/builder-admin/render-jobs[?status=] — the latest 100 render jobs (admin session or `builder:render` API key). */
 export async function GET(request: Request) {
   return withBuilderErrors(async () => {
     const db = getDb();

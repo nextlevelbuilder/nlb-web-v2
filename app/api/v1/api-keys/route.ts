@@ -4,7 +4,7 @@ import { MCP_ASSERTION_HEADER } from "@/lib/auth-mcp-delegation";
 import { getDb } from "@/lib/db";
 import { apiKeys, members } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { createApiKeyForUser, resolveCaller } from "@/lib/auth-api-key";
+import { API_KEY_SCOPES, createApiKeyForUser, parseApiKeyScopes, resolveCaller } from "@/lib/auth-api-key";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +13,8 @@ const CreateApiKeySchema = z.object({
   name: z.string().min(1).max(64),
   organizationId: z.string().optional(),
   expiresDays: z.number().int().min(1).max(365).optional(),
+  /** Narrow automation scopes (admins only, browser session only). Omit for a full key. */
+  scopes: z.array(z.enum(API_KEY_SCOPES)).min(1).max(API_KEY_SCOPES.length).optional(),
 });
 
 // GET /api/v1/api-keys - List current user's API keys
@@ -39,6 +41,7 @@ export async function GET(request: Request) {
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
         organizationId: apiKeys.organizationId,
+        permissions: apiKeys.permissions,
       })
       .from(apiKeys)
       .where(eq(apiKeys.userId, session.user.id))
@@ -46,7 +49,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: keys,
+      data: keys.map(({ permissions, ...key }) => ({ ...key, scopes: parseApiKeyScopes(permissions) })),
     });
   } catch (err: any) {
     console.error("List API keys error:", err);
@@ -69,6 +72,15 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const validated = CreateApiKeySchema.parse(body);
+    if (validated.scopes) {
+      // Scoped keys drive admin automation, so only an admin in a real browser session may mint one.
+      if (request.headers.has(MCP_ASSERTION_HEADER) || (session.user as { role?: string }).role !== "admin") {
+        return NextResponse.json(
+          { error: "Forbidden: Scoped API keys can only be created by an admin in a signed-in browser session" },
+          { status: 403 }
+        );
+      }
+    }
     if (validated.organizationId) {
       const db = getDb();
       const [membership] = await db
@@ -94,6 +106,7 @@ export async function POST(request: Request) {
       name: validated.name.trim(),
       organizationId: validated.organizationId,
       expiresDays: validated.expiresDays,
+      scopes: validated.scopes,
     });
 
     return NextResponse.json({
@@ -106,6 +119,7 @@ export async function POST(request: Request) {
         key: created.rawKey, // Returned ONLY on creation
         expiresAt: created.expiresAt,
         createdAt: created.createdAt,
+        scopes: created.scopes,
       },
     });
   } catch (err: any) {

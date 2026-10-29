@@ -2,7 +2,7 @@
 
 How to operate the Builder League day to day. The scoring design and its reasons are in [builder-league-adr.md](./builder-league-adr.md); this page covers what an admin does and in what order. Code wins when the two disagree: each section names the file that owns the behaviour.
 
-All admin routes live under `/api/v1/builder-admin/` and need a signed-in admin **session**. API keys and MCP agents are refused, except on the renderer and Discord ingest routes, which accept an admin's API key ([`lib/builder-league/admin-key-auth.ts`](../lib/builder-league/admin-key-auth.ts)). While `BUILDER_LEAGUE_ENABLED` is `"false"`, non-admins get 404 everywhere. The contract is in `/api/openapi.json`.
+All admin routes live under `/api/v1/builder-admin/` and need a signed-in admin **session**. API keys and MCP agents are refused, except on the renderer and Discord ingest routes, which accept an admin's API key minted with that route's narrow scope (`builder:render` or `builder:ingest`; see [Minting a scoped key](#minting-a-scoped-key)). Full API keys are refused there too ([`lib/builder-league/admin-key-auth.ts`](../lib/builder-league/admin-key-auth.ts)). While `BUILDER_LEAGUE_ENABLED` is `"false"`, non-admins get 404 everywhere. The contract is in `/api/openapi.json`.
 
 Admin pages, in each locale (`/vi/...` for Vietnamese):
 
@@ -161,7 +161,7 @@ Year in Review videos are rendered outside the Worker by [`.github/workflows/bui
 | Schedule | Every 30 minutes, plus a manual `workflow_dispatch` with `max` (jobs per run) and `locale` |
 | Timeout | 30 minutes per run |
 | Concurrency | One run at a time |
-| Secrets (by name) | `NLB_API_BASE` (site origin) and `NLB_RENDER_API_KEY` (an API key of an **admin** account). With either missing, the run exits without doing anything. |
+| Secrets (by name) | `NLB_API_BASE` (site origin) and `NLB_RENDER_API_KEY` (an **admin** account's API key with the `builder:render` scope; a full key gets 403). With either missing, the run exits without doing anything. |
 
 The flow, owned by [`lib/builder-league/render-jobs.ts`](../lib/builder-league/render-jobs.ts):
 
@@ -176,7 +176,38 @@ Operating it:
 - **Stuck jobs:** `GET /api/v1/builder-admin/render-jobs?status=claimed`. An expired lease returns the job to the queue by itself.
 - **Failed jobs:** `?status=failed` shows the error. Fix the cause, then the member requests again.
 - **Pausing rendering:** disable the workflow in GitHub Actions. Queued jobs wait and expire after 14 days.
-- **Rotating the key:** create a new admin API key, update `NLB_RENDER_API_KEY` with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), then revoke the old key.
+- **Setting or rotating the key:** mint a `builder:render` key (below), store it with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), run the workflow once by hand to confirm it claims jobs, then revoke the old key in `/profile`.
+
+### Minting a scoped key
+
+Scoped keys are minted through `POST /api/v1/api-keys` with a `scopes` array ([`app/api/v1/api-keys/route.ts`](../app/api/v1/api-keys/route.ts), scopes in [`lib/auth-api-key.ts`](../lib/auth-api-key.ts)). Only an admin in a signed-in browser session can do this: non-admins and MCP agents get 403, and the profile UI does not offer scopes. Sign in as an admin, open the browser console on the site origin and run:
+
+```js
+await fetch("/api/v1/api-keys", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ name: "Builder League render worker", scopes: ["builder:render"], expiresDays: 90 }),
+}).then((r) => r.json());
+```
+
+Use `scopes: ["builder:ingest"]` and a matching name for the Discord bot. `data.key` in the response is shown only once; copy it straight into the secret store and do not paste it anywhere else. A scoped key:
+
+- works only on the routes for its scope (`builder:render`: `/api/v1/builder-admin/render-jobs/**`; `builder:ingest`: `/api/v1/builder-admin/ingest/discord`) and counts as no credential everywhere else, so it cannot read member data, moderate or award;
+- still needs its owner to be an admin; if the owner loses the role the key stops working;
+- shows its scopes in `GET /api/v1/api-keys` and is revoked like any other key, in `/profile` or with `DELETE /api/v1/api-keys/{id}`.
+
+Full API keys minted before this change keep working on member routes but no longer drive the renderer or Discord ingest; replace any such key with a scoped one.
+
+## Discord ingest
+
+The Discord bot turns qualifying events into `submitted` evidence with `POST /api/v1/builder-admin/ingest/discord` ([`route.ts`](../app/api/v1/builder-admin/ingest/discord/route.ts), [`lib/builder-league/discord-ingest.ts`](../lib/builder-league/discord-ingest.ts)). It never approves or awards; moderators review the evidence like any other.
+
+The bot authenticates with one of:
+
+- the shared `x-nlb-builder-ingest-secret` header, matching the `BUILDER_INGEST_SECRET` Worker secret (see [deployment-guide.md](./deployment-guide.md));
+- an admin's API key with the `builder:ingest` scope, sent as `Authorization: Bearer nlb_live_…` ([minting](#minting-a-scoped-key)). A full admin key gets 403.
+
+Rotating: mint a new `builder:ingest` key (or a new secret), update the bot's configuration, confirm a test event answers 201, 200 or 202, then revoke the old key.
 
 ## Privacy requests
 
@@ -187,6 +218,10 @@ Members control their own visibility:
 | Public surfaces (leaderboard, passport, Wrapped), peer mentions, backfill opt-in, redacted financials | The privacy settings page, or `PATCH /api/v1/builder-me` |
 | Hide scenes from a shared year | `PATCH /api/v1/builder-year/{year}` with `hiddenScenes` |
 | Revoke a share link | `DELETE /api/v1/builder-year/{year}/share/{id}`. The link stops resolving immediately. There is no admin route for one link; for a full removal, use delete below. |
+
+### Member self-service
+
+Members export and delete their own data from the settings page (`/builder-league/settings`, works without JavaScript) or the API. `GET /api/v1/builder-me/export` returns the same JSON as the admin export, for the caller only; a session or a `builder:read` API key / MCP delegation may call it. `POST /api/v1/builder-me/delete` with `{ "confirm": "DELETE" }` runs the admin delete routine below on the caller's own data. It accepts a signed-in session only, so API keys and agents can never erase a member's history, and it refuses admins, who must ask another admin. Both are rate limited and audited (`privacy_request` / `export` or `delete`, reason `self_service`); the delete audit row names the tombstone as both target and actor, so it does not re-identify the member. A pilot member loses league access with the deletion while the flag is off (the pilot entry is part of the deleted data) and lands on `/account`; re-add them to the pilot if they want to rejoin.
 
 Admin requests, in [`lib/builder-league/privacy-requests.ts`](../lib/builder-league/privacy-requests.ts):
 
@@ -293,3 +328,26 @@ These are the limits the code enforces, so you can check them before costs grow:
 | D1 rows | Events, ledger rows and cap slots grow with verified activity. Caps per event type bound the RP, and dedupe stops duplicate rows. Snapshots write only when a board changes. Provisional boards are recomputed at most every 10 minutes per period read (`PROVISIONAL_MAX_AGE_MS`). Year snapshots are built 100 members per cron run. | Cloudflare dashboard → D1 → rows read/written. The dashboard's activity and integrity sections explain growth. |
 | R2 storage (`nlb-builder-evidence`, `nlb-builder-evidence-staging`) | Evidence: at most 5 files of 10 MB per submission (`EVIDENCE_MAX_FILES`, `EVIDENCE_MAX_FILE_BYTES`), kept until the evidence or the member is deleted. Renders: video at most 80 MB plus a 5 MB poster per job, deleted after 30 days (`OUTPUT_RETENTION_DAYS`). | Cloudflare dashboard → R2 → bucket size. A climb that render expiry does not explain means evidence uploads; check the queue for spam. |
 | Actions render minutes | One run every 30 minutes, at most 30 minutes each and one at a time, with `max` jobs per run (default 5). Worst case is about 48 runs a day. The run exits immediately when nothing is queued or secrets are missing. | GitHub → Actions → Builder League render → usage. To cut cost, lower the schedule or `max`, or disable the workflow during quiet months. |
+
+## E2E
+
+The Playwright suite covers the Builder League pages in the AGENTS.md viewport matrix: 1440×900, 768×1024, 375×812 and a 320 px reflow check, in light and dark color schemes, in EN (`/`) and VI (`/vi`). Config: [`playwright.config.ts`](../playwright.config.ts). Specs: `tests/e2e/builder-league/*.spec.ts`.
+
+```bash
+npm run build:packages   # once per checkout, before type-check and tests
+npm run test:e2e         # starts or reuses the dev server, seeds fixtures, runs every project
+```
+
+How it works:
+
+- **Flag on.** The dev server runs with `NEXT_DEV_WRANGLER_ENV=staging`. That wrangler environment already sets `BUILDER_LEAGUE_ENABLED` to `"true"`, so committed config is untouched. The server reads the wrangler vars, not `process.env`, for this flag.
+- **Local data only.** `tests/e2e/fixtures/global-setup.ts` applies the migrations to the local staging D1 (`wrangler d1 migrations apply DB --local --env=staging`) and seeds `tests/e2e/fixtures/seed-local-data.ts`: one pilot member with a VIP subscription and a public passport, three approved evidence rows, and a throwaway member for the self-delete test. Nothing touches a remote database.
+- **Sign-in without email.** Email OTP sends real mail, so the seed inserts session rows and signs the cookie like Better Auth does, using `BETTER_AUTH_SECRET` from the local `.dev.vars`. The storage state files are written to `tests/e2e/.auth/` (gitignored). Tokens are random on every run.
+- **Reused server.** Port 3000 is reused when already up. The setup fails with a clear message if that server was started without `NEXT_DEV_WRANGLER_ENV=staging`. Stop a server you started yourself when you finish, and never leave duplicates on the port.
+- **Timeouts.** Dev mode compiles each route on first use, and a server action can take 30 s or more on a loaded machine. The config sets generous navigation (300 s), expect (120 s) and web server (600 s) timeouts. Keep the worker count at 2 or lower, because the workers share one dev server and one local D1.
+- **Output.** `test-results/` and `playwright-report/` are gitignored. Open the HTML report with `npx playwright show-report`.
+
+Known gaps, by design:
+
+- `/wrapped/2025` and its Hall of Fame answer 404, because `isReviewableYear` starts at 2026. The final Hall of Fame state therefore has no E2E test (a `test.fixme` marks it). The unit tests in `tests/builder-league/hall-of-fame.test.ts` cover it.
+- The flag-off 404 branch needs a server with the flag off. The suite runs one flag-on server, so that branch is covered by vitest.

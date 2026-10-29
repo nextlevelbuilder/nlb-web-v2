@@ -400,6 +400,10 @@ describe("delegated API permissions", () => {
     expect((await createKey(await request("/api/v1/api-keys", { name: "MCP key" }, "mcp:keys"))).status).toBe(200);
     expect(db.lastInsert()).toMatchObject({ userId: account.id, name: "MCP key" });
     expect(db.lastInsert().key).toMatch(/^[a-f0-9]{64}$/);
+    // Scoped automation keys are minted only from an admin's browser session, never through an agent.
+    mocks.db.mockReturnValue(database({ ...account, role: "admin" }));
+    expect((await createKey(await request("/api/v1/api-keys", { name: "Render worker", scopes: ["builder:render"] }, "mcp:keys"))).status).toBe(403);
+    mocks.db.mockReturnValue(db);
     db.rows.set(apiKeys, [{ id: "key-1", userId: "other-user" }]);
     const keyParams = { params: Promise.resolve({ id: "key-1" }) };
     expect((await deleteKey(await request("/api/v1/api-keys/key-1", undefined, "mcp:keys", "DELETE"), keyParams)).status).toBe(404);
