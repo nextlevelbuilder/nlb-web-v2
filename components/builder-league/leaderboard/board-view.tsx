@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Hash, Lock, TrendingUp, Users } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getLeaderboardCopy } from "@/content/builder-league/leaderboard-copy";
-import type { BuilderRankings } from "@/lib/builder-league/snapshots";
+import type { BuilderRankingsPage } from "@/lib/builder-league/snapshots";
 import { BOARD_KEYS, PERIOD_TYPES, type BoardKey, type PeriodType } from "@/lib/builder-league/types";
 import { formatDate, formatScore } from "@/components/builder-league/home/page-access";
 
@@ -43,7 +43,7 @@ function Segments<T extends string>({ label, items, current, labelFor, hrefFor }
 }
 
 /** A Builder League board: board and period switches (plain links), snapshot meta, entries and the viewer's own row. */
-export function BoardView({ rankings, locale }: { rankings: BuilderRankings; locale: string }) {
+export function BoardView({ rankings, locale }: { rankings: BuilderRankingsPage; locale: string }) {
   const copy = getLeaderboardCopy(locale);
   const { board, periodType, periodKey, snapshot, entries, viewer } = rankings;
   const showPrevious = board === "rising";
@@ -142,9 +142,13 @@ export function BoardView({ rankings, locale }: { rankings: BuilderRankings; loc
                   {entry.image ? <img src={entry.image} alt="" width={40} height={40} className="h-full w-full object-cover" /> : <span aria-hidden>{entry.name.charAt(0).toUpperCase()}</span>}
                 </span>
                 <div className="min-w-0">
-                  <Link href={`/builders/${entry.userId}`} className="block truncate font-medium hover:text-primary hover:underline hover:underline-offset-4">
-                    {entry.name}
-                  </Link>
+                  {entry.passportPublic ? (
+                    <Link href={`/builders/${entry.userId}`} className="block truncate font-medium hover:text-primary hover:underline hover:underline-offset-4">
+                      {entry.name}
+                    </Link>
+                  ) : (
+                    <span className="block truncate font-medium">{entry.name}</span>
+                  )}
                   <p className="truncate font-mono text-step-xs text-ink-3">{copy.events(entry.verifiedEventCount)}</p>
                 </div>
               </div>

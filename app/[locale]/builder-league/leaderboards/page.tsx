@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { getDb } from "@/lib/db";
-import { getBuilderRankings, type BuilderRankings } from "@/lib/builder-league/snapshots";
+import { getBuilderRankingsForPage, type BuilderRankingsPage } from "@/lib/builder-league/snapshots";
 import { BuilderApiError } from "@/lib/builder-league/http";
 import { getLeaderboardCopy } from "@/content/builder-league/leaderboard-copy";
 import { requireBuilderPageViewer } from "@/components/builder-league/home/page-access";
@@ -31,10 +31,10 @@ export default async function BuilderBoardsPage({ params, searchParams }: Builde
   const viewer = await requireBuilderPageViewer();
   const copy = getLeaderboardCopy(locale);
 
-  let rankings: BuilderRankings | null = null;
+  let rankings: BuilderRankingsPage | null = null;
   if (viewer.user && viewer.access.canUse) {
     try {
-      rankings = await getBuilderRankings(getDb(), {
+      rankings = await getBuilderRankingsForPage(getDb(), {
         board: single(query.board),
         period: single(query.period),
         key: single(query.key),
