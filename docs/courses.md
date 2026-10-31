@@ -65,7 +65,7 @@ Stream is not reachable with the current API token or OAuth scopes. The account 
 For NLB Weekly recordings, `npm run courses:publish -- <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <summary>` runs steps 1–3 with the house conventions (`nlb courses publish-recording`, see [toolkits/cli.md](./toolkits/cli.md)); `npm run courses:transcribe -- <file>` prepares 10-minute transcript chunks to write the summary from. The internal agent skill [`skills/nlb-course-video-publish`](../skills/nlb-course-video-publish/SKILL.md) covers the whole routine, and the MCP `course_*` tools expose the same steps.
 
 1. Upload the video to Stream (`POST /api/courses/uploads`, then send the file to the returned tus URL). Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
-2. As an admin, `POST /api/courses/videos` with the slug, title, price and `streamUid`. The video is created as a draft.
+2. As an admin, `POST /api/courses/videos` with the slug, title, price and `streamUid`. The video is created as a draft. The title becomes the Polar product name, so it must be 3–64 characters after trimming; create and update reject longer titles with `400 validation_failed` naming `title`, and publishing an older draft whose title is too long returns `400 title_too_long` without calling Polar.
 3. `POST /api/courses/videos/<slug>/publish`. This creates the Polar product and makes the video visible.
 4. Verify on staging:
    - an unpaid account gets 403 from the token endpoint;

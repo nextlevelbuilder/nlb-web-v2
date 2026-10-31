@@ -12,6 +12,22 @@ export class CoursesApiError extends Error {
   }
 }
 
+/** The title becomes the Polar product name, which Polar limits to 64 characters; the API rejects longer titles. */
+export const COURSE_VIDEO_TITLE_MAX = 64;
+
+/** Renders zod issues from a `validation_failed` body as ` (title: …; slug: …)` so the failing field is visible. */
+function formatIssues(details: unknown): string {
+  if (!Array.isArray(details)) return "";
+  const parts = details
+    .map((issue: { path?: unknown; message?: unknown }) => {
+      if (typeof issue?.message !== "string") return null;
+      const path = Array.isArray(issue.path) ? issue.path.join(".") : "";
+      return path ? `${path}: ${issue.message}` : issue.message;
+    })
+    .filter((part): part is string => part !== null);
+  return parts.length ? ` (${parts.join("; ")})` : "";
+}
+
 export interface CourseVideo {
   id: string;
   slug: string;
@@ -173,14 +189,14 @@ export class NlbCoursesClient {
     }
     if (!response.ok) {
       // Course routes answer `{ error, code, details? }`.
-      const err = json as { error?: unknown; code?: unknown } | undefined;
+      const err = json as { error?: unknown; code?: unknown; details?: unknown } | undefined;
       const code = typeof err?.code === "string" ? err.code : undefined;
       const message =
         response.status === 401
           ? "Sign-in required: the API key is missing, invalid or revoked."
           : response.status === 403
             ? "Course management requires an admin account API key."
-            : typeof err?.error === "string" ? err.error : response.statusText || "request failed";
+            : (typeof err?.error === "string" ? err.error : response.statusText || "request failed") + formatIssues(err?.details);
       throw new CoursesApiError(response.status, `API Error (HTTP ${response.status}${code ? ` ${code}` : ""}: ${message})`, code);
     }
     const data = (json as { data?: unknown } | undefined)?.data;

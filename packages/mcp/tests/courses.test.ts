@@ -50,7 +50,7 @@ describe("MCP course tools", () => {
     await callTool("course_create_upload", { name: "41 - 2026-10-17 - Cường Võ", size_bytes: 1024 });
     await callTool("course_get_upload", { stream_uid: UID });
     await callTool("course_create_video", { video: { slug: "nlb-weekly-41-x", title: "NLB Weekly #41: X", priceCents: 900, streamUid: UID } });
-    await callTool("course_update_video", { slug: "nlb-weekly-41-x", changes: { title: "Y" } });
+    await callTool("course_update_video", { slug: "nlb-weekly-41-x", changes: { title: "NLB Weekly #41: Y" } });
     await callTool("course_publish_video", { slug: "nlb-weekly-41-x" });
     const calls = [0, 1, 2, 3, 4].map((i) => call(fetchFn, i));
     expect(calls.map((c) => `${c.init.method} ${c.url.pathname}`)).toEqual([
@@ -62,7 +62,7 @@ describe("MCP course tools", () => {
     ]);
     expect(calls[0].body).toEqual({ name: "41 - 2026-10-17 - Cường Võ", sizeBytes: 1024 });
     expect(calls[2].body).toMatchObject({ slug: "nlb-weekly-41-x", priceCents: 900 });
-    expect(calls[3].body).toEqual({ title: "Y" });
+    expect(calls[3].body).toEqual({ title: "NLB Weekly #41: Y" });
     for (const c of calls) expect(c.headers.Authorization).toBe("Bearer nlb_live_server");
   });
 
@@ -72,9 +72,31 @@ describe("MCP course tools", () => {
     expect((await callTool("course_get_upload", { stream_uid: "../keys" })).isError).toBe(true);
     expect((await callTool("course_publish_video", { slug: "Bad Slug" })).isError).toBe(true);
     expect(fetchFn).not.toHaveBeenCalled();
-    const { isError, payload } = await callTool("course_create_video", { video: { slug: "taken", title: "T", priceCents: 900 } });
+    const { isError, payload } = await callTool("course_create_video", { video: { slug: "taken", title: "Taken", priceCents: 900 } });
     expect(isError).toBe(true);
     expect(JSON.stringify(payload)).toContain("slug_taken");
+  });
+
+  it("advertises the 64-character title limit and names the failing field", async () => {
+    const { body } = await rpc(modernRequest("tools/list"));
+    const create = (body.result!.tools as Array<{ name: string; inputSchema: { properties: { video: { properties: Record<string, { maxLength?: number }> } } } }>)
+      .find((t) => t.name === "course_create_video")!;
+    expect(create.inputSchema.properties.video.properties.title.maxLength).toBe(64);
+
+    const fetchFn = mockFetch(
+      { error: "Invalid request data", code: "validation_failed", details: [{ path: ["title"], message: "Title must be at most 64 characters (the Polar product name limit)" }] },
+      400
+    );
+    vi.stubGlobal("fetch", fetchFn);
+    const tooLong = await callTool("course_update_video", { slug: "nlb-weekly-41-x", changes: { title: "x".repeat(65) } });
+    expect(tooLong.isError).toBe(true);
+    expect(JSON.stringify(tooLong.payload)).toContain("title: String is too long (65 > 64)");
+    expect(fetchFn).not.toHaveBeenCalled();
+
+    // The web's zod issues are named in the message too (e.g. a stale client that skips the schema).
+    const rejected = await callTool("course_update_video", { slug: "nlb-weekly-41-x", changes: { title: "NLB Weekly #41: Y" } });
+    expect(rejected.isError).toBe(true);
+    expect(JSON.stringify(rejected.payload)).toContain("title: Title must be at most 64 characters");
   });
 
   it("reads a transcript page or search as a member read and writes it as an admin", async () => {
