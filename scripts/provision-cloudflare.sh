@@ -177,6 +177,9 @@ SECRET_KEYS=(
   POSTHOG_API_KEY POSTHOG_HOST POSTHOG_PROJECT_ID
   # Shared with the MCP worker; the same value must be set there (docs/cutover-runbook.md).
   MCP_DELEGATION_SECRET
+  # Website chat (docs/website-chat.md). Unset keys are skipped and the widget stays hidden.
+  DEWEE_CCP_CHAT_URL DEWEE_WEBCHAT_INTEGRATION_ID DEWEE_WEBCHAT_INTEGRATION_SECRET DEWEE_WEBCHAT_SECRET
+  DEWEE_IDENTITY_APP_ID DEWEE_IDENTITY_ISSUER DEWEE_IDENTITY_ASSERTION_SECRET DISCORD_LEADS_WEBHOOK_URL
 )
 
 cmd_secrets() {

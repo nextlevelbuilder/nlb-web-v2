@@ -39,6 +39,7 @@
     "better-auth": "1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dewee-webchat": "0.4.1",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^11.11.17",
     "gsap": "~3.12.5",

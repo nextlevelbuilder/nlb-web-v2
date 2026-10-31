@@ -57,6 +57,7 @@ scripts/provision-cloudflare.sh secrets production
 - Builder League: the `BUILDER_LEAGUE_ENABLED` var lives in `wrangler.jsonc` (`false` in production). The optional `BUILDER_INGEST_SECRET` (32+ characters, shared with the Discord bot) is set by hand with `wr secret put BUILDER_INGEST_SECRET --env <env>`; without it the bot uses an admin API key minted with the `builder:ingest` scope. The private evidence buckets `nlb-builder-evidence` and `nlb-builder-evidence-staging` are not in the provisioning script; create them once with `wr r2 bucket create <name>`. The render workflow ([`builder-league-render.yml`](../.github/workflows/builder-league-render.yml)) needs the repository secrets `NLB_API_BASE` and `NLB_RENDER_API_KEY` (an admin API key minted with the `builder:render` scope; full keys are refused, see the runbook). Operations: [builder-league-runbook.md](./builder-league-runbook.md).
 - Staging runs Polar in sandbox (`POLAR_SERVER=sandbox` in `wrangler.jsonc`), so its Polar token, webhook secret and product ids must be sandbox values.
 - Membership onboarding secrets (Discord, Telegram, `ONBOARDING_ENCRYPTION_KEY`) and the Telegram webhook registration: [membership-onboarding.md](./membership-onboarding.md#configuration).
+- Website chat secrets (`DEWEE_*`, `DISCORD_LEADS_WEBHOOK_URL`) and the Dewee control-plane setup: [website-chat.md](./website-chat.md#configuration). Without them the widget stays hidden.
 
 ## Database
 

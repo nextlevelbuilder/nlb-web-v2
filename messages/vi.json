@@ -1160,5 +1160,15 @@
       "alreadyVip": "Bạn đã là thành viên VIP. Đang làm mới thông tin gói…"
     },
     "support": "Có câu hỏi về membership? Email cho"
+  },
+  "chat": {
+    "title": "Next Level Builders",
+    "subtitle": "Hỏi về gói thành viên, khoá học và cộng đồng",
+    "greeting": "Chào bạn, mình giúp gì được?",
+    "intro": "Hỏi về Premium và VIP, các khoá học, hoặc thứ bạn muốn xây. Để lại email, đội ngũ sẽ liên hệ lại.",
+    "placeholder": "Nhập câu hỏi…",
+    "suggestion1": "Gói nào hợp với mình?",
+    "suggestion2": "Có những khoá học nào?",
+    "suggestion3": "Mình muốn nói chuyện với đội ngũ"
   }
 }

@@ -36,6 +36,13 @@
       "when": 1793164446653,
       "tag": "0004_live_access",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793431567141,
+      "tag": "0005_chat_leads",
+      "breakpoints": true
     }
   ]
 }
