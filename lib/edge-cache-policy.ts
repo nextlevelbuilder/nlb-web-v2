@@ -61,11 +61,27 @@ function isEdgeCacheable(request: Request, response: Response): boolean {
   return isPublicPagePath(new URL(request.url).pathname);
 }
 
-/** Returns the response with the Cache-Control (and Vary) the edge cache should act on. */
-export function applyEdgeCachePolicy(request: Request, response: Response): Response {
-  // Upgrade responses (WebSocket) cannot be rebuilt and are never cached.
-  if (response.status === 101) return response;
+/**
+ * next-intl answers every `/vi` page with `Set-Cookie: NEXT_LOCALE=vi`, which would keep VI pages out of
+ * the edge cache. The prefix already fixes the locale there, and the language switcher writes the cookie
+ * client-side on an explicit choice, so a public `/vi` page drops it when it is the only cookie set.
+ */
+function dropPrefixedLocaleCookie(request: Request, response: Response): Response {
+  const { pathname } = new URL(request.url);
+  if (!splitLocale(pathname).prefixed || !isPublicPagePath(pathname)) return response;
+  const cookies = response.headers.getSetCookie();
+  if (cookies.length === 0 || !cookies.every((cookie) => cookie.startsWith("NEXT_LOCALE="))) return response;
+  const headers = new Headers(response.headers);
+  headers.delete("Set-Cookie");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
+/** Returns the response with the Cache-Control (and Vary) the edge cache should act on. */
+export function applyEdgeCachePolicy(request: Request, original: Response): Response {
+  // Upgrade responses (WebSocket) cannot be rebuilt and are never cached.
+  if (original.status === 101) return original;
+
+  const response = dropPrefixedLocaleCookie(request, original);
   const cacheable = isEdgeCacheable(request, response);
   if (!cacheable && response.headers.has("Cache-Control")) return response;
 
