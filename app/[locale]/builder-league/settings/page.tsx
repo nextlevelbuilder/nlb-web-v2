@@ -13,7 +13,7 @@ import { deleteMyLeagueData, savePrivacySettings } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const SWITCHES: PrivacySwitch[] = ["leaderboardPublic", "passportPublic", "wrappedPublic", "peerMentionsOk", "backfillOptIn", "redactFinancials"];
+const SWITCHES: PrivacySwitch[] = ["leaderboardPublic", "passportPublic", "peerMentionsOk", "backfillOptIn", "redactFinancials"];
 
 interface SettingsPageProps {
   params: Promise<{ locale: string }>;

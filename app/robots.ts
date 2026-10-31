@@ -4,7 +4,8 @@ import { siteUrl } from "@/lib/seo";
 const LOCALE_PREFIXES = ["", "/vi", "/en"];
 
 export default function robots(): MetadataRoute.Robots {
-  // Builder League member pages and personal share links (`/wrapped/{year}/{token}`) are never crawled.
+  // Builder League member pages and personal share links (`/wrapped/{year}/{token}`) are never crawled; share
+  // pages also always send `noindex`, because the token in the URL is the credential.
   // `/wrapped/*/` blocks every path below a year (RFC 9309: `*` matches any run of characters, rules are
   // prefix matches). The public Community Wrapped page `/wrapped/{year}` has no slash after the year, so it
   // stays allowed, and the annual Hall of Fame (and its `.md` twin) is re-allowed by an exact,

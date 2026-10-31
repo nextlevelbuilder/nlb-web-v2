@@ -8,7 +8,7 @@
 import { eq } from "drizzle-orm";
 import { resolveCaller } from "@/lib/auth-api-key";
 import { getDb, type AppDb } from "@/lib/db";
-import { builderPrivacy, users } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { getViewerAccess, isBuilderLeagueEnabled, type ViewerAccess } from "./access";
 import { BuilderApiError } from "./http";
 import { resolveShareToken } from "./share-links";
@@ -65,8 +65,6 @@ export async function requirePublicBuilderSurface(request: Request, db: AppDb = 
 export interface SharedYearView {
   shareLinkId: string;
   ownerName: string;
-  /** The owner opted in to a public, indexable Year in Review (`builder_privacy.wrapped_public`). */
-  indexable: boolean;
   review: PublicYearReview;
 }
 
@@ -79,14 +77,10 @@ export async function loadSharedYear(db: AppDb, token: string, year: number): Pr
   if (!link) return null;
   const snapshot = await getLatestYearSnapshot(db, link.userId, year);
   if (!snapshot) return null;
-  const [[owner], [privacy]] = await Promise.all([
-    db.select({ name: users.name }).from(users).where(eq(users.id, link.userId)).limit(1),
-    db.select({ wrappedPublic: builderPrivacy.wrappedPublic }).from(builderPrivacy).where(eq(builderPrivacy.userId, link.userId)).limit(1),
-  ]);
+  const [owner] = await db.select({ name: users.name }).from(users).where(eq(users.id, link.userId)).limit(1);
   return {
     shareLinkId: link.id,
     ownerName: owner?.name ?? "",
-    indexable: Boolean(privacy?.wrappedPublic),
     review: toPublicYearReview(snapshotData(snapshot), snapshot.hiddenScenes),
   };
 }

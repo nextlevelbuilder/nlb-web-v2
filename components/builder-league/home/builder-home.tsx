@@ -14,7 +14,7 @@ export function BuilderHome({ summary, locale }: { summary: BuilderSummary; loca
   const board = getLeaderboardCopy(locale);
   const { level, rank } = summary;
   const progress = Math.round(level.progress * 100);
-  const anyPublic = summary.privacy.leaderboardPublic || summary.privacy.passportPublic || summary.privacy.wrappedPublic;
+  const anyPublic = summary.privacy.leaderboardPublic || summary.privacy.passportPublic;
 
   const checklist = [
     { label: copy.checklist.privacy, href: "/builder-league/settings", done: anyPublic },
