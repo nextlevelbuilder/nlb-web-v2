@@ -42,6 +42,25 @@ describe("applyEdgeCachePolicy", () => {
     expect(response.headers.get("Cache-Control")).toContain("public");
   });
 
+  it("drops the locale cookie next-intl sets on public /vi pages so they can be cached", () => {
+    const response = applyEdgeCachePolicy(request("/vi/blog"), html({ headers: { "Set-Cookie": "NEXT_LOCALE=vi; Path=/; Max-Age=31536000" } }));
+    expect(response.headers.get("Set-Cookie")).toBeNull();
+    expect(response.headers.get("Cache-Control")).toContain("public");
+  });
+
+  it("keeps the locale cookie on unprefixed, private and multi-cookie responses", () => {
+    const localeCookie = "NEXT_LOCALE=vi; Path=/";
+    expect(applyEdgeCachePolicy(request("/"), html({ headers: { "Set-Cookie": localeCookie } })).headers.get("Set-Cookie")).toBe(localeCookie);
+    expect(applyEdgeCachePolicy(request("/vi/account"), html({ headers: { "Set-Cookie": localeCookie } })).headers.get("Set-Cookie")).toBe(localeCookie);
+
+    const headers = new Headers();
+    headers.append("Set-Cookie", localeCookie);
+    headers.append("Set-Cookie", "other=1; Path=/");
+    const response = applyEdgeCachePolicy(request("/vi"), new Response("<html></html>", { headers }));
+    expect(response.headers.getSetCookie()).toHaveLength(2);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
   it("never shares a render made for a signed-in request", () => {
     for (const cookie of ["better-auth.session_token=abc", "theme=dark; __Secure-better-auth.session_token=abc"]) {
       const response = applyEdgeCachePolicy(request("/", { headers: { Cookie: cookie } }), html());
