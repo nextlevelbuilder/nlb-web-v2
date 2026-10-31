@@ -57,7 +57,7 @@ Stream is not reachable with the current API token or OAuth scopes. The account 
 2. Create a signing key with a token that has **Stream: Edit**:
    `curl -X POST -H "Authorization: Bearer <token>" https://api.cloudflare.com/client/v4/accounts/7ac87c90789159ae1b10b7d78f5dcc08/stream/keys`
    `result.id` and `result.jwk` are shown once. Pipe them straight into the secrets in the next step. Do not paste them into files or chat.
-3. Set the Worker secrets for each environment. Production uses `--env=""`, staging uses `--env staging` (see [deployment-guide.md](./deployment-guide.md) for the wrangler invocation): `CF_STREAM_SIGNING_KEY_ID`, `CF_STREAM_SIGNING_KEY_JWK`, `CF_STREAM_CUSTOMER_SUBDOMAIN`, and `CF_STREAM_API_TOKEN` (Stream: Edit; `CF_ACCOUNT_ID` is already a var in `wrangler.jsonc`). The token endpoint returns 503 until the signing values are set; registering or publishing a video returns 503 until the API token is set.
+3. Set the Worker secrets for each environment. Production uses `--env=""`, staging uses `--env staging` (see [deployment-guide.md](./deployment-guide.md) for the wrangler invocation): `CF_STREAM_SIGNING_KEY_ID`, `CF_STREAM_SIGNING_KEY_JWK`, `CF_STREAM_CUSTOMER_SUBDOMAIN`, and `CF_STREAM_API_TOKEN` (a dedicated token with Stream: Edit only, not the repo `.env` token; `CF_ACCOUNT_ID` is already a var in `wrangler.jsonc`). The token endpoint returns 503 until the signing values are set; registering or publishing a video returns 503 until the API token is set.
 4. `POLAR_ACCESS_TOKEN` needs `products:write` so that publishing can create products.
 
 ## Publishing a video
