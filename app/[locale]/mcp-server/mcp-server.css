@@ -1,0 +1,55 @@
+/* ==========================================================================
+   MCP SERVER — /mcp-server (chapter VII · transmission, the official MCP endpoint)
+   Masthead with the endpoint and its copy pill, client setup cards as terminal surfaces,
+   scopes, tool groups, example prompts and machine-readable links.
+   Reuses .page-head, .plate, .h1-page, .h2, .lede, .surface, .term, .term-bar, .term-mcp,
+   .copy, .btn and .link-arrow. Everything new is prefixed `mcp-`. Tokens only, both themes.
+   ========================================================================== */
+
+.mcp-page { padding-bottom: clamp(4rem, 9vw, 7rem); }
+.mcp-head .h1-page { max-width: 16ch; }
+.mcp-endpoint { margin-top: var(--s-6); max-width: 40rem; }
+.mcp-endpoint .term-mcp { border-top: 0; }
+.mcp-ctas { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
+.mcp-facts { list-style: none; margin: var(--s-6) 0 0; padding: var(--s-4) 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-6); color: var(--ink-3); }
+.mcp-facts li { display: inline-flex; align-items: center; gap: var(--s-2); }
+.mcp-star { color: var(--accent); letter-spacing: 0; }
+
+.mcp-section { padding-top: clamp(3rem, 7vw, 5rem); scroll-margin-top: calc(var(--header-h) + 1rem); }
+.mcp-h2 { font-size: var(--t-2xl); }
+.mcp-intro { margin-top: var(--s-4); max-width: 60ch; }
+
+/* ---------- client setup ---------- */
+.mcp-clients { list-style: none; margin: var(--s-7) 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+@media (min-width: 900px) { .mcp-clients { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mcp-client { display: flex; flex-direction: column; }
+.mcp-client-name { font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); font-weight: 400; }
+.mcp-client-body { padding: var(--s-4) var(--s-5) 0; color: var(--ink-2); font-size: var(--t-sm); }
+.mcp-steps { margin: var(--s-3) 0 0; padding-left: 1.25rem; display: grid; gap: var(--s-1); }
+.mcp-client .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------- scopes ---------- */
+.mcp-scopes { margin: var(--s-6) 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+@media (min-width: 760px) { .mcp-scopes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mcp-scope { padding: var(--s-4) var(--s-5); }
+.mcp-scope code, .mcp-tool-names code { font-family: var(--f-mono); font-size: .8125rem; color: var(--accent); }
+.mcp-scope dd { margin: var(--s-2) 0 0; color: var(--ink-2); font-size: var(--t-sm); }
+.mcp-notes { margin: var(--s-5) 0 var(--s-5); padding-left: 1.25rem; display: grid; gap: var(--s-2); color: var(--ink-2); font-size: var(--t-sm); max-width: 70ch; }
+
+/* ---------- tool groups ---------- */
+.mcp-groups { list-style: none; margin: var(--s-6) 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+@media (min-width: 760px) { .mcp-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1140px) { .mcp-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mcp-group { padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); }
+.mcp-group-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s-2); }
+.mcp-group h3 { font-family: var(--f-display); font-weight: 400; font-size: var(--t-lg); line-height: 1.2; }
+.mcp-access { font-size: var(--t-xs); color: var(--ink-3); }
+.mcp-group p { color: var(--ink-2); font-size: var(--t-sm); }
+.mcp-tool-names { list-style: none; margin: auto 0 0; padding: var(--s-3) 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); }
+.mcp-tool-names code { overflow-wrap: anywhere; }
+
+/* ---------- prompts + resources ---------- */
+.mcp-prompts { list-style: none; margin: var(--s-6) 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+@media (min-width: 900px) { .mcp-prompts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mcp-prompts li { padding: var(--s-5); font-family: var(--f-display); font-size: var(--t-lg); line-height: 1.35; color: var(--ink); }
+.mcp-resources { margin-top: var(--s-5); display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-6); }

@@ -55,6 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: Array<[string, Date | undefined]> = [
     ["/", latest([productsChanged, videosChanged, postsChanged])],
     ["/build-with-us", productsChanged],
+    ["/mcp-server", undefined],
     ["/leaderboards", productsChanged],
     ["/blog", postsChanged],
     ["/courses", videosChanged],
