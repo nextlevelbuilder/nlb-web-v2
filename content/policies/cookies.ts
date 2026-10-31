@@ -7,13 +7,15 @@ import type { PolicyEntry } from "./policy-types";
  * entry (lib/site-audio/site-sound-engine.ts), the `nlb_traffic_visitor`
  * sessionStorage entry (lib/traffic-client.ts, no cookies) and the Google
  * Analytics 4 cookies loaded by app/layout.tsx, which must not load gtag when
- * the browser sends Do Not Track or Global Privacy Control.
+ * the browser sends Do Not Track or Global Privacy Control, and the referral
+ * cookies nlb_aff and nlb_wv set by app/r/[code]/route.ts (skipped under DNT/GPC), and the share-link
+ * cookies nlb_wv and nlb_share_ref set by app/api/v1/builder-wrapped/visit/route.ts.
  * LEGAL REVIEW PENDING: not yet reviewed by counsel. Update the tables when a
  * cookie or storage key is added, renamed or removed.
  */
 export const cookiesPolicy: PolicyEntry = {
   group: "legal",
-  lastUpdated: "2026-10-15",
+  lastUpdated: "2026-10-31",
   legalReviewPending: true,
   content: {
     en: {
@@ -48,17 +50,22 @@ export const cookiesPolicy: PolicyEntry = {
             "Google Analytics 4 (provided by Google LLC) measures aggregate site usage, such as which pages are visited and how visitors arrive:\n• _ga: first-party analytics cookie that distinguishes visitors. Kept for up to 2 years.\n• _ga_<container-id>: first-party analytics cookie that keeps the state of a visit. Kept for up to 2 years.\n\nWe do not load Google Analytics when your browser sends Do Not Track or Global Privacy Control. You can also opt out with Google's Analytics opt-out browser add-on (tools.google.com/dlpage/gaoptout).\n\nPostHog (provided by PostHog Inc.) measures product usage on nextlevelbuilder.io, including session replays with typed input masked:\n• ph_<project-key>_posthog: first-party analytics cookie that keeps an anonymous visitor ID (or your account ID when signed in) and the current session. Kept for up to 1 year.\n• PostHog also keeps short-lived replay and queue data in your browser's local and session storage.\n\nPostHog does not load when your browser sends Do Not Track or Global Privacy Control.\n\nOur own product traffic counts set no cookies: they use the session-storage ID above, which is hashed before product statistics are stored and is sent through our own servers. Private pages such as sign-in, account and profile are never counted there.",
         },
         {
-          heading: "6. Third-party pages",
+          heading: "6. Referral cookies",
+          content:
+            "Set only when you open an affiliate's referral link (nextlevelbuilder.io/r/<code>):\n• nlb_aff: remembers which referral link brought you, so the affiliate is credited and its member discount applies if you buy a first membership. Lasts 30 days. Not readable by scripts.\n• nlb_wv: a random visitor ID used to count unique clicks on referral links. Lasts 30 days. We store only a salted hash of it, never the ID itself.\n\nNeither cookie is set when your browser sends Do Not Track or Global Privacy Control. You can still buy through the link; the referral then applies only while the link is open in that visit.\n\nWhen you open a member's shared Year in Review page (/wrapped/<year>/<link>):\n• nlb_wv: the same random visitor ID, used to count unique visits to that shared page. Lasts 30 days. We store only a salted hash of it.\n• nlb_share_ref: remembers which shared page brought you, so the member is credited if you create an account. Lasts 30 days. Not readable by scripts.",
+        },
+        {
+          heading: "7. Third-party pages",
           content:
             "When you check out on Polar (polar.sh) or sign in on Google or GitHub, you are on their pages and their own cookie policies apply.",
         },
         {
-          heading: "7. Managing cookies",
+          heading: "8. Managing cookies",
           content:
             "You can view and delete cookies and site data in your browser settings. If you block essential cookies, signing in will not work, and the site will fall back to your browser's language and theme settings.",
         },
         {
-          heading: "8. Changes and contact",
+          heading: "9. Changes and contact",
           content:
             "If we add or change a cookie, we will update this page and its date first.\n\nNext Level Builders · nextlevelbuilder.io · hello@nextlevelbuilder.io",
         },
@@ -96,17 +103,22 @@ export const cookiesPolicy: PolicyEntry = {
             "Google Analytics 4 (do Google LLC cung cấp) đo lường tổng hợp cách website được sử dụng, chẳng hạn trang nào được xem và khách truy cập đến từ đâu:\n• _ga: cookie phân tích bên thứ nhất dùng để phân biệt khách truy cập. Lưu tối đa 2 năm.\n• _ga_<container-id>: cookie phân tích bên thứ nhất lưu trạng thái lượt truy cập. Lưu tối đa 2 năm.\n\nChúng tôi không tải Google Analytics khi trình duyệt của bạn gửi tín hiệu Do Not Track hoặc Global Privacy Control. Bạn cũng có thể từ chối bằng tiện ích trình duyệt Google Analytics Opt-out (tools.google.com/dlpage/gaoptout).\n\nPostHog (do PostHog Inc. cung cấp) đo lường cách sản phẩm được sử dụng trên nextlevelbuilder.io, gồm bản ghi phiên truy cập với nội dung nhập được che:\n• ph_<project-key>_posthog: cookie phân tích bên thứ nhất lưu mã khách truy cập ẩn danh (hoặc ID tài khoản khi bạn đăng nhập) và phiên hiện tại. Lưu tối đa 1 năm.\n• PostHog cũng lưu dữ liệu ngắn hạn cho bản ghi phiên và hàng đợi gửi trong local storage và session storage của trình duyệt.\n\nPostHog không tải khi trình duyệt gửi tín hiệu Do Not Track hoặc Global Privacy Control.\n\nSố liệu lưu lượng sản phẩm của chúng tôi không dùng cookie: chúng dựa trên mã trong session storage nêu trên, được băm trước khi lưu thống kê sản phẩm và được gửi qua máy chủ của chúng tôi. Các trang riêng tư như đăng nhập, tài khoản và hồ sơ không bao giờ được tính ở đó.",
         },
         {
-          heading: "6. Trang của bên thứ ba",
+          heading: "6. Cookie giới thiệu",
+          content:
+            "Chỉ được đặt khi bạn mở liên kết giới thiệu của affiliate (nextlevelbuilder.io/r/<mã>):\n• nlb_aff: ghi nhớ liên kết giới thiệu đã đưa bạn đến, để ghi nhận cho affiliate và áp dụng ưu đãi thành viên của liên kết nếu bạn mua gói thành viên đầu tiên. Tồn tại 30 ngày. Script không đọc được.\n• nlb_wv: mã khách truy cập ngẫu nhiên dùng để đếm lượt nhấp duy nhất vào liên kết giới thiệu. Tồn tại 30 ngày. Chúng tôi chỉ lưu giá trị băm có muối của mã này, không bao giờ lưu mã gốc.\n\nKhông cookie nào trong số này được đặt khi trình duyệt gửi tín hiệu Do Not Track hoặc Global Privacy Control. Bạn vẫn có thể mua qua liên kết; khi đó ưu đãi chỉ áp dụng trong lượt truy cập mở từ liên kết.\n\nKhi bạn mở trang Year in Review do một thành viên chia sẻ (/wrapped/<năm>/<liên-kết>):\n• nlb_wv: cùng mã khách truy cập ngẫu nhiên, dùng để đếm lượt xem duy nhất của trang được chia sẻ. Tồn tại 30 ngày. Chúng tôi chỉ lưu giá trị băm có muối.\n• nlb_share_ref: ghi nhớ trang chia sẻ đã đưa bạn đến, để ghi nhận cho thành viên đó nếu bạn tạo tài khoản. Tồn tại 30 ngày. Script không đọc được.",
+        },
+        {
+          heading: "7. Trang của bên thứ ba",
           content:
             "Khi bạn thanh toán trên Polar (polar.sh) hoặc đăng nhập trên Google hay GitHub, bạn đang ở trang của họ và chính sách cookie riêng của họ được áp dụng.",
         },
         {
-          heading: "7. Quản lý cookie",
+          heading: "8. Quản lý cookie",
           content:
             "Bạn có thể xem và xóa cookie cùng dữ liệu website trong phần cài đặt trình duyệt. Nếu chặn cookie thiết yếu, bạn sẽ không đăng nhập được, và website sẽ dùng ngôn ngữ cùng giao diện mặc định của trình duyệt.",
         },
         {
-          heading: "8. Thay đổi và liên hệ",
+          heading: "9. Thay đổi và liên hệ",
           content:
             "Nếu thêm hoặc thay đổi cookie, chúng tôi sẽ cập nhật trang này và ngày cập nhật trước.\n\nNext Level Builders · nextlevelbuilder.io · hello@nextlevelbuilder.io",
         },

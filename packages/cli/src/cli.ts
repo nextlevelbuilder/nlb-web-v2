@@ -18,8 +18,9 @@ import { registerBlogCommands, type BlogCommandDeps } from "./commands/blog.js";
 import { registerBuilderCommands, type BuilderCommandDeps } from "./commands/builder.js";
 import { registerOnboardingCommands, type OnboardingCommandDeps } from "./commands/onboarding.js";
 import { registerCourseCommands, type CourseCommandDeps } from "./commands/courses.js";
+import { registerAffiliateCommands, type AffiliateCommandDeps } from "./commands/affiliates.js";
 
-export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderCommandDeps; onboarding?: OnboardingCommandDeps; courses?: CourseCommandDeps } = {}): Command {
+export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderCommandDeps; onboarding?: OnboardingCommandDeps; courses?: CourseCommandDeps; affiliates?: AffiliateCommandDeps } = {}): Command {
   const program = new Command();
 
   program
@@ -201,6 +202,7 @@ export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderC
   registerBuilderCommands(program, deps.builder);
   registerOnboardingCommands(program, deps.onboarding);
   registerCourseCommands(program, deps.courses);
+  registerAffiliateCommands(program, deps.affiliates);
 
   return program;
 }

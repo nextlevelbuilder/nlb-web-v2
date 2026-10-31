@@ -7,6 +7,28 @@ import { env } from "@/lib/env";
 import { isOnboardingV2Enabled, onboardingPath } from "@/lib/onboarding/flags";
 import { defaultLocale, isLocale, locales, type Locale } from "@/i18n/routing";
 import { z } from "zod";
+import { getDb } from "@/lib/db";
+import { polar } from "@/lib/polar";
+import { ReferralError } from "@/lib/referrals/referral-errors";
+import { AFFILIATE_COOKIE, attachCheckoutId, attributeCheckout, type AttributionAttempt } from "@/lib/referrals/affiliate-checkout";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
+
+/** Reads one cookie from the request header. */
+function readCookie(request: Request, name: string): string | null {
+  const header = request.headers.get("cookie");
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) {
+      try {
+        return decodeURIComponent(rest.join("="));
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
 
 const checkoutSchema = z.object({
   productId: z.enum([
@@ -23,6 +45,8 @@ const checkoutSchema = z.object({
   customerEmail: z.string().email().optional(),
   productSlug: z.string().optional(),
   locale: z.enum(locales).optional(),
+  /** Referral code the buyer brought (`?ref=` or typed). Applies to signed-in buyers only. */
+  referralCode: z.string().trim().toLowerCase().regex(/^[a-z0-9-]{4,32}$/).optional(),
 });
 
 /** Buyer locale: explicit body field, else the `/vi` prefix of the page that started checkout, else the default. */
@@ -62,7 +86,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     requestBody = await request.json();
-    const { productId, customerEmail, productSlug, locale } = checkoutSchema.parse(requestBody);
+    const { productId, customerEmail, productSlug, locale, referralCode } = checkoutSchema.parse(requestBody);
 
     if (caller && customerEmail && customerEmail.toLowerCase() !== caller.user.email.toLowerCase()) {
       return NextResponse.json({ error: "Customer email must match the authenticated user" }, { status: 403 });
@@ -86,6 +110,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Referral: decided server-side from the signed-in buyer, the code or click cookie and the
+    // affiliate's current terms; the binding id travels in Polar metadata for the webhook. Off (no
+    // session lookup, no cookie read) while the program is disabled.
+    const affiliatesOn = isAffiliatesEnabled();
+    let referral: AttributionAttempt | null = null;
+    if (affiliatesOn && isMembershipProduct(productId)) {
+      const buyer = caller ? { id: caller.user.id, email: caller.user.email } : await sessionUser(request);
+      const cookieValue = readCookie(request, AFFILIATE_COOKIE);
+      if (buyer && (referralCode || cookieValue)) {
+        referral = await attributeCheckout(getDb(), polar, {
+          buyerUserId: buyer.id,
+          polarProductId: productId,
+          explicitCode: referralCode ?? null,
+          cookieValue,
+        });
+        if (referral.applied) {
+          options.nlbUserId = buyer.id;
+          options.referral = { attributionId: referral.attributionId, discountId: referral.polarDiscountId };
+          checkoutEmail = checkoutEmail ?? buyer.email ?? undefined;
+        }
+      }
+    }
+
     const checkoutArgs = [productId as ProductId, checkoutEmail, productSlug as string | undefined] as const;
     const checkout = Object.keys(options).length > 0
       ? await createCheckoutSession(...checkoutArgs, options)
@@ -99,8 +146,27 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ url: checkout.url });
+    if (referral?.applied) {
+      // Bookkeeping only: the attribution id already travels in the checkout metadata, so a failure
+      // here is logged and never fails the purchase.
+      await attachCheckoutId(getDb(), referral.attributionId, checkout.id).catch((error: unknown) => {
+        console.error("referral checkout id was not recorded", { error: error instanceof Error ? error.message : "unknown" });
+      });
+    }
+    const referralResult = referral
+      ? referral.applied
+        ? { applied: true, code: referral.code, discountBps: referral.discountBps }
+        : referralCode
+          ? { applied: false, reason: referral.reason }
+          : undefined
+      : referralCode && affiliatesOn
+        ? { applied: false, reason: "sign_in_required" }
+        : undefined;
+    return NextResponse.json({ url: checkout.url, ...(referralResult ? { referral: referralResult } : {}) });
   } catch (error) {
+    if (error instanceof ReferralError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     // Handle validation errors
     if (error instanceof z.ZodError) {
       console.error("Validation error:", error.errors);

@@ -1,5 +1,5 @@
 import { getAllPublishedProducts } from "@/lib/domain/catalog";
-import { POLICY_SLUGS } from "@/lib/constants/policy-slugs";
+import { publishedPolicySlugs } from "@/lib/policies/published-policies";
 import { fetchPageMarkdown } from "@/lib/markdown/page-markdown";
 import { productMarkdown } from "@/lib/markdown/product-markdown";
 import { localizedPath, siteUrl } from "@/lib/seo";
@@ -9,6 +9,7 @@ import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 import { isLiveEnabled } from "@/lib/live/live-flag";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
 /** Optional sources (blog, courses) drop out on failure instead of failing the whole document. */
@@ -33,7 +34,7 @@ export async function GET() {
       optional("blog posts", () => listPostSummaries({ status: "published", limit: MAX_POSTS, offset: 0 })),
       optional("course videos", () => listPublishedVideos(getDb())),
     ]);
-    const paths = ["/", "/build-with-us", "/leaderboards", "/courses", "/blog", "/policies", ...POLICY_SLUGS.map((slug) => `/policies/${slug}`), ...videos.map((video) => `/courses/${video.slug}`)];
+    const paths = ["/", "/build-with-us", "/leaderboards", "/courses", "/blog", "/policies", ...publishedPolicySlugs().map((slug) => `/policies/${slug}`), ...videos.map((video) => `/courses/${video.slug}`)];
     const localized = paths.flatMap((path) => [localizedPath(path, "vi"), localizedPath(path, "en")]);
     localized.push("/api-docs");
     // Posts are single-locale documents, so each appears once under its own path.
@@ -42,6 +43,8 @@ export async function GET() {
     for (const path of [...publicWrappedPaths(), ...publicHallOfFamePaths()]) for (const locale of ["vi", "en"]) optionalPages.add(localizedPath(path, locale));
     // NLB Live (flag on only) is optional as well.
     if (isLiveEnabled()) for (const locale of ["vi", "en"]) optionalPages.add(localizedPath("/live", locale));
+    // The affiliate program landing (flag on only) is optional as well.
+    if (isAffiliatesEnabled()) for (const locale of ["vi", "en"]) optionalPages.add(localizedPath("/affiliates", locale));
     localized.push(...optionalPages);
     const sections = ["# Next Level Builders — Full published content"];
     // Keep subrequest concurrency bounded for the Worker runtime.

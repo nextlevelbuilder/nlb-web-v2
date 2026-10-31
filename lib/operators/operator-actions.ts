@@ -8,6 +8,9 @@ const SENSITIVE_ACTION_DOMAIN: Record<SensitiveOperatorAction, OperatorDomain> =
   "live.ticket.refund": "live",
   "live.event.cancel": "live",
   "live.poll.override": "live",
+  "affiliate.payout.approve": "affiliate",
+  "affiliate.ledger.adjust": "affiliate",
+  "affiliate.rules.publish": "affiliate",
   "operator.grant": "system",
   "operator.revoke": "system",
 };
