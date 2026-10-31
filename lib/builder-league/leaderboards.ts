@@ -11,7 +11,7 @@
  * and the viewer always sees their own position privately.
  */
 import { createHash } from "crypto";
-import { and, gte, inArray, lt, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { builderPrivacy, scoreLedger, users } from "@/lib/db/schema";
 import { STAGES, isBoardKey, isPeriodType, isStage, type BoardKey, type PeriodType, type Stage } from "./types";
@@ -298,6 +298,19 @@ export interface ViewerPosition {
 export interface PublicBoard {
   entries: PublicBoardEntry[];
   viewer: ViewerPosition | null;
+}
+
+/** Which of the given members currently allow their builder passport to be shown publicly. */
+export async function getPublicPassportUserIds(db: AppDb, userIds: string[]): Promise<Set<string>> {
+  const result = new Set<string>();
+  for (let i = 0; i < userIds.length; i += 90) {
+    const rows = await db
+      .select({ userId: builderPrivacy.userId })
+      .from(builderPrivacy)
+      .where(and(inArray(builderPrivacy.userId, userIds.slice(i, i + 90)), eq(builderPrivacy.passportPublic, true)));
+    for (const row of rows) result.add(row.userId);
+  }
+  return result;
 }
 
 /**

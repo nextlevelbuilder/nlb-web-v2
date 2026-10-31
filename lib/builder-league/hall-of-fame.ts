@@ -13,11 +13,11 @@
  * - Fields are a subset of what the public boards already expose (name, avatar, score, verified event
  *   count, and the previous score on Rising). Stage components are not repeated here.
  */
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { builderPrivacy, leagueSnapshots } from "@/lib/db/schema";
+import { leagueSnapshots } from "@/lib/db/schema";
 import { BOARD_KEYS, type BoardKey } from "./types";
-import { toPublicBoard, type BoardEntry } from "./leaderboards";
+import { getPublicPassportUserIds, toPublicBoard, type BoardEntry } from "./leaderboards";
 import { graceFor } from "./snapshots";
 import { localYear, periodRange } from "./time-windows";
 import { isBuilderLeagueEnabled } from "./access";
@@ -85,19 +85,6 @@ export function latestPerBoard(rows: readonly SnapshotRow[]): Map<string, Snapsh
   return latest;
 }
 
-/** Which listed members have a public passport (current opt-in). */
-async function publicPassports(db: AppDb, userIds: string[]): Promise<Set<string>> {
-  const result = new Set<string>();
-  for (let i = 0; i < userIds.length; i += 90) {
-    const rows = await db
-      .select({ userId: builderPrivacy.userId })
-      .from(builderPrivacy)
-      .where(and(inArray(builderPrivacy.userId, userIds.slice(i, i + 90)), eq(builderPrivacy.passportPublic, true)));
-    for (const row of rows) result.add(row.userId);
-  }
-  return result;
-}
-
 /** The Hall of Fame of `year`, or its not-final state. Read-only. */
 export async function getHallOfFame(db: AppDb, year: number, now: Date = new Date()): Promise<HallOfFame> {
   const key = String(year);
@@ -129,7 +116,7 @@ export async function getHallOfFame(db: AppDb, year: number, now: Date = new Dat
       return { row, board, entries: view.entries };
     })
   );
-  const passports = await publicPassports(db, [...new Set(views.flatMap((view) => view.entries.map((entry) => entry.userId)))]);
+  const passports = await getPublicPassportUserIds(db, [...new Set(views.flatMap((view) => view.entries.map((entry) => entry.userId)))]);
   const boards: HallOfFameBoard[] = views.map(({ row, board, entries }) => ({
     board,
     revision: row.revision,

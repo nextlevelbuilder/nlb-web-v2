@@ -1,4 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { BoardView } from "@/components/builder-league/leaderboard/board-view";
 import { createLocalD1, type LocalD1 } from "../helpers/local-d1";
 import { leagueSnapshots } from "@/lib/db/schema";
 import {
@@ -8,6 +11,7 @@ import {
   finalizePeriod,
   getBoardSnapshot,
   getBuilderRankings,
+  getBuilderRankingsForPage,
   getSnapshotRevisions,
   isFinalizable,
   recomputeSnapshot,
@@ -15,6 +19,14 @@ import {
 import { BuilderApiError } from "@/lib/builder-league/http";
 import { periodRange } from "@/lib/builder-league/time-windows";
 import { HOUR, addLedger, addUsers, local, optIn } from "./leaderboards-fixtures";
+
+vi.mock("@/i18n/navigation", async () => {
+  const ReactModule = await import("react");
+  return {
+    Link: ({ href, children }: { href: string | { pathname: string }; children: React.ReactNode }) =>
+      ReactModule.createElement("a", { href: typeof href === "string" ? href : href.pathname }, children),
+  };
+});
 
 let d1: LocalD1;
 let db: LocalD1["db"];
@@ -126,5 +138,28 @@ describe("league snapshots", () => {
     const past = await getBuilderRankings(db, { period: "week", key: "2026-W37", viewerId: null, now: duringWeek });
     expect(past.nextKey).toBe(WEEK);
     await expect(getBuilderRankings(db, { period: "week", key: "2026-W40", viewerId: null, now: duringWeek })).rejects.toBeInstanceOf(BuilderApiError);
+  });
+
+  it("links only leaderboard members with a public passport without changing API entries", async () => {
+    await addUsers(db, ["public-passport", "private-passport"]);
+    await addLedger(db, "public-passport", { stage: "ship", rp: 30, at: local(2026, 9, 14) });
+    await addLedger(db, "private-passport", { stage: "ship", rp: 60, at: local(2026, 9, 14) });
+    await optIn(db, "public-passport", { leaderboardPublic: true, passportPublic: true });
+    await optIn(db, "private-passport", { leaderboardPublic: true, passportPublic: false });
+
+    const query = { board: "overall", period: "week", key: WEEK, viewerId: null, now: duringWeek };
+    const page = await getBuilderRankingsForPage(db, query);
+    expect(page.entries.map(({ userId, passportPublic }) => ({ userId, passportPublic }))).toEqual([
+      { userId: "private-passport", passportPublic: false },
+      { userId: "public-passport", passportPublic: true },
+    ]);
+    const html = renderToStaticMarkup(React.createElement(BoardView, { rankings: page, locale: "en" }));
+    expect(html).toContain('href="/builders/public-passport"');
+    expect(html).not.toContain('href="/builders/private-passport"');
+    expect(html).toContain('<span class="block truncate font-medium">Name private-passport</span>');
+
+    const api = await getBuilderRankings(db, query);
+    expect(api.entries).toHaveLength(2);
+    expect(api.entries.every((entry) => !("passportPublic" in entry))).toBe(true);
   });
 });
