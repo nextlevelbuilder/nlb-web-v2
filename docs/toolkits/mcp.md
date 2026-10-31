@@ -288,7 +288,7 @@ For platform operators who hold the `live:manage` grant. Every tool needs `mcp:o
 
 ### 21. Course video tools
 
-Admin tools over `/api/courses/*` (not `/api/v1`). The admin tools need `mcp:write` and an admin account; the web checks the role. Workflow and conventions: [docs/courses.md](../courses.md).
+Tools over `/api/courses/*` (not `/api/v1`). The admin tools need `mcp:write` and an admin account; the web checks the role. Workflow and conventions: [docs/courses.md](../courses.md).
 
 | Tool | Route |
 |---|---|
@@ -297,3 +297,5 @@ Admin tools over `/api/courses/*` (not `/api/v1`). The admin tools need `mcp:wri
 | `course_get_upload` | `GET /api/courses/uploads/{uid}`: processing state, `durationSec`, `requireSignedUrls` |
 | `course_create_video` · `course_update_video` | `POST /api/courses/videos` · `PATCH /api/courses/videos/{slug}` |
 | `course_publish_video` | `POST /api/courses/videos/{slug}/publish` (creates the Polar product) |
+| `course_get_transcript` | `GET /api/courses/videos/{slug}/transcript` (`mcp:read`, forwards the signed-in member). For buyers of the video and Premium/VIP members; others get 403 `purchase_required`. Pages with `offset`/`max_chars` (follow `nextOffset`) or searches with `query`. |
+| `course_set_transcript` | `PUT /api/courses/videos/{slug}/transcript` (admin) |

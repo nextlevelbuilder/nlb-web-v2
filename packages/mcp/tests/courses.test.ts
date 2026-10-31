@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requiredToolScope } from "../src/tool-context.js";
+import { isPrivateReadTool, requiredToolScope } from "../src/tool-context.js";
 import { callTool as callOverHttp, modernRequest, rpc } from "./helpers.js";
 
 const ENV = { NLB_API_KEY: "nlb_live_server", NLB_API_URL: "https://staging.nextlevelbuilder.io" };
@@ -77,11 +77,40 @@ describe("MCP course tools", () => {
     expect(JSON.stringify(payload)).toContain("slug_taken");
   });
 
-  it("refuses anonymous HTTP callers for admin tools", async () => {
+  it("reads a transcript page or search as a member read and writes it as an admin", async () => {
+    expect(requiredToolScope("course_get_transcript")).toBe("mcp:read");
+    expect(isPrivateReadTool("course_get_transcript")).toBe(true);
+    expect(requiredToolScope("course_set_transcript")).toBe("mcp:write");
+    const fetchFn = mockFetch({ data: {} });
+    vi.stubGlobal("fetch", fetchFn);
+    await callTool("course_get_transcript", { slug: "nlb-weekly-41-x" });
+    await callTool("course_get_transcript", { slug: "nlb-weekly-41-x", offset: 20000, max_chars: 5000 });
+    await callTool("course_get_transcript", { slug: "nlb-weekly-41-x", query: "công ty" });
+    await callTool("course_set_transcript", { slug: "nlb-weekly-41-x", content: "[00:00:01] Xin chào", source: "gemini" });
+    const calls = [0, 1, 2, 3].map((i) => call(fetchFn, i));
+    expect(calls.map((c) => `${c.init.method} ${c.url.pathname}${c.url.search}`)).toEqual([
+      "GET /api/courses/videos/nlb-weekly-41-x/transcript",
+      "GET /api/courses/videos/nlb-weekly-41-x/transcript?offset=20000&limit=5000",
+      `GET /api/courses/videos/nlb-weekly-41-x/transcript?q=${encodeURIComponent("công ty").replace(/%20/g, "+")}`,
+      "PUT /api/courses/videos/nlb-weekly-41-x/transcript"
+    ]);
+    expect(calls[3].body).toEqual({ content: "[00:00:01] Xin chào", source: "gemini" });
+  });
+
+  it("explains who may read transcripts when the API refuses", async () => {
+    vi.stubGlobal("fetch", mockFetch({ error: "Buy this video", code: "purchase_required" }, 403));
+    const { isError, payload } = await callTool("course_get_transcript", { slug: "nlb-weekly-41-x" });
+    expect(isError).toBe(true);
+    expect(JSON.stringify(payload)).toContain("Premium/VIP");
+  });
+
+  it("refuses anonymous HTTP callers for admin tools and transcripts", async () => {
     const fetchFn = mockFetch({ data: {} });
     vi.stubGlobal("fetch", fetchFn);
     const result = await callTool("course_create_upload", { name: "x", size_bytes: 1 }, {});
     expect(result.isError || result.status === 401).toBe(true);
+    const transcript = await callTool("course_get_transcript", { slug: "nlb-weekly-41-x" }, {});
+    expect(transcript.isError || transcript.status === 401).toBe(true);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

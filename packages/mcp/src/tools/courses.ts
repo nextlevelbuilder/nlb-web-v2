@@ -38,11 +38,13 @@ function parseArgs<T>(schema: ZodType<T, ZodTypeDef, unknown>, args: unknown, to
 }
 
 interface CourseCall {
-  method: "GET" | "POST" | "PATCH";
+  method: "GET" | "POST" | "PATCH" | "PUT";
   path: string;
   body?: unknown;
   /** Public reads never borrow the server's configured API key. */
   anonymous?: boolean;
+  /** Replaces the admin-oriented hint on 401/403. */
+  authHint?: string;
 }
 
 async function courseRequest(
@@ -80,9 +82,9 @@ async function courseRequest(
     if (code) data.code = code;
     if (body?.details !== undefined) data.details = body.details;
     if (response.status === 401 || response.status === 403) {
-      data.hint = context?.oauth
+      data.hint = call.authHint ?? (context?.oauth
         ? "The NLB API rejected this OAuth identity; course management requires an admin account connected with mcp:write."
-        : "Course management requires an admin account API key (api_key or NLB_API_KEY).";
+        : "Course management requires an admin account API key (api_key or NLB_API_KEY).");
     }
     throw new ToolError(`Courses API error (HTTP ${response.status}${code ? ` ${code}` : ""}: ${message})`, data);
   }
@@ -103,6 +105,22 @@ const UploadStatusArgs = z.object({ stream_uid: streamUidSchema, ...credentialAr
 const CreateVideoArgs = z.object({ video: z.object({ slug: slugSchema }).passthrough(), ...credentialArgs }).strict();
 const UpdateVideoArgs = z.object({ slug: slugSchema, changes: z.record(z.unknown()), ...credentialArgs }).strict();
 const SlugArgs = z.object({ slug: slugSchema, ...credentialArgs }).strict();
+const GetTranscriptArgs = z.object({
+  slug: slugSchema,
+  offset: z.number().int().min(0).optional(),
+  max_chars: z.number().int().min(1).max(50000).optional(),
+  query: z.string().trim().min(2).max(200).optional(),
+  ...credentialArgs
+}).strict();
+const SetTranscriptArgs = z.object({
+  slug: slugSchema,
+  content: z.string().min(1),
+  source: z.string().trim().min(1).max(40).optional(),
+  ...credentialArgs
+}).strict();
+
+const TRANSCRIPT_HINT =
+  "Transcripts are for members who bought the video or have an active Premium/VIP plan: connect the NLB MCP server with OAuth (mcp:read) as that account, or pass its API key. Plans: https://nextlevelbuilder.io/#pricing.";
 
 /**
  * Builds the Courses tools over `/api/courses/*`. The admin tools reserve a signed-only Stream upload,
@@ -113,11 +131,54 @@ export function createCourseTools(resolveEnv: ResolveToolEnv): McpToolDefinition
   return [
     {
       name: "course_list_videos",
-      description: "List published course videos (NLB Weekly recordings and others) with slug, title, description, weekNumber, duration and price. Use it to pick the next weekNumber and to follow the title, slug and description conventions. Public; no auth required.",
+      description: "List published course videos (NLB Weekly recordings and others) with slug, title, description, weekNumber, duration, price and hasTranscript (members with access can read it with course_get_transcript). Use it to pick the next weekNumber and to follow the title, slug and description conventions. Public; no auth required.",
       inputSchema: { type: "object", properties: { ...credentialProps } },
       handler: async (args, context) => {
         const a = parseArgs(ListArgs, args, "course_list_videos");
         return courseRequest(resolveEnv, a, context, { method: "GET", path: "/api/courses/videos", anonymous: true });
+      }
+    },
+    {
+      name: "course_get_transcript",
+      description: "Read the verbatim transcript of a course video (Vietnamese, paragraphs prefixed with [hh:mm:ss]). Pages by characters: read from offset 0 and follow data.nextOffset until it is null. Pass query to get only the matching paragraphs (case- and diacritic-insensitive) with their offsets. Videos with a transcript show hasTranscript: true in course_list_videos. Requires an account that bought the video or has an active Premium/VIP plan (OAuth mcp:read, or that account's API key).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          slug: slugProp,
+          offset: { type: "integer", minimum: 0, description: "Character offset; default 0" },
+          max_chars: { type: "integer", minimum: 1, maximum: 50000, description: "Page size; default 20000" },
+          query: { type: "string", minLength: 2, maxLength: 200, description: "Return only paragraphs containing this text" },
+          ...credentialProps
+        },
+        required: ["slug"]
+      },
+      handler: async (args, context) => {
+        const a = parseArgs(GetTranscriptArgs, args, "course_get_transcript");
+        const params = new URLSearchParams();
+        if (a.offset !== undefined) params.set("offset", String(a.offset));
+        if (a.max_chars !== undefined) params.set("limit", String(a.max_chars));
+        if (a.query) params.set("q", a.query);
+        const qs = params.size ? `?${params}` : "";
+        return courseRequest(resolveEnv, a, context, { method: "GET", path: `/api/courses/videos/${enc(a.slug)}/transcript${qs}`, authHint: TRANSCRIPT_HINT });
+      }
+    },
+    {
+      name: "course_set_transcript",
+      description: `Create or replace the transcript of a course video (markdown, paragraphs prefixed with [hh:mm:ss]). ${ADMIN_NOTE}`,
+      inputSchema: {
+        type: "object",
+        properties: {
+          slug: slugProp,
+          content: { type: "string", description: "Full transcript markdown" },
+          source: { type: "string", maxLength: 40, description: "Where it came from, e.g. gemini or manual" },
+          ...credentialProps
+        },
+        required: ["slug", "content"]
+      },
+      handler: async (args, context) => {
+        const a = parseArgs(SetTranscriptArgs, args, "course_set_transcript");
+        const body = { content: a.content, ...(a.source ? { source: a.source } : {}) };
+        return courseRequest(resolveEnv, a, context, { method: "PUT", path: `/api/courses/videos/${enc(a.slug)}/transcript`, body });
       }
     },
     {

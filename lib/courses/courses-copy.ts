@@ -27,7 +27,6 @@ export interface CoursesCopy {
   headingLead: string;
   headingAccent: string;
   headingTail: string;
-  catalogueLabel: (count: number) => string;
   observation: (n: number) => string;
   emptyKicker: string;
   emptyTitle: string;
@@ -51,6 +50,38 @@ export interface CoursesCopy {
   zueyAll: string;
   zueyFallback: string;
   zueyFallbackLink: string;
+  /** Catalogue controls */
+  controlsLabel: string;
+  searchLabel: string;
+  searchPlaceholder: string;
+  sortLabel: string;
+  sorts: Record<"newest" | "oldest" | "longest" | "shortest", string>;
+  speakerLabel: string;
+  allSpeakers: string;
+  transcriptFilter: string;
+  applyFilters: string;
+  clearFilters: string;
+  resultsLabel: (matched: number, total: number) => string;
+  noResultsTitle: string;
+  noResultsBody: string;
+  paginationLabel: string;
+  prevPage: string;
+  nextPage: string;
+  pageOf: (page: number, count: number) => string;
+  goToPage: (page: number) => string;
+  transcriptBadge: string;
+  /** Sidebar: reading transcripts through the MCP server */
+  mcpKicker: string;
+  mcpHeading: string;
+  mcpBody: string;
+  mcpSteps: [string, string, string];
+  mcpEndpointLabel: string;
+  mcpPromptLabel: string;
+  mcpPrompt: string;
+  mcpWho: string;
+  mcpTools: string;
+  mcpGuide: string;
+  mcpJoin: string;
 }
 
 const en: CoursesCopy = {
@@ -78,7 +109,6 @@ const en: CoursesCopy = {
   headingLead: "Build sessions you can ",
   headingAccent: "watch again",
   headingTail: ".",
-  catalogueLabel: (count) => `Catalogue · ${count} ${count === 1 ? "video" : "videos"}`,
   observation: (n) => `Obs. ${n}`,
   emptyKicker: "Obs. pending · no transmission yet",
   emptyTitle: "The first session is still in orbit.",
@@ -101,6 +131,40 @@ const en: CoursesCopy = {
   zueyAll: "All articles",
   zueyFallback: "The latest ZueyOS articles could not be loaded right now.",
   zueyFallbackLink: "Read on zuey.me",
+  controlsLabel: "Search and filter videos",
+  searchLabel: "Search",
+  searchPlaceholder: "Topic, tool or week…",
+  sortLabel: "Sort",
+  sorts: { newest: "Newest first", oldest: "Oldest first", longest: "Longest", shortest: "Shortest" },
+  speakerLabel: "Speaker",
+  allSpeakers: "All speakers",
+  transcriptFilter: "Has transcript",
+  applyFilters: "Apply",
+  clearFilters: "Clear filters",
+  resultsLabel: (matched, total) => (matched === total ? `Catalogue · ${total} ${total === 1 ? "video" : "videos"}` : `${matched} of ${total} videos`),
+  noResultsTitle: "No video matches these filters.",
+  noResultsBody: "Try a shorter search, another speaker, or clear the filters.",
+  paginationLabel: "Catalogue pages",
+  prevPage: "Previous",
+  nextPage: "Next",
+  pageOf: (page, count) => `Page ${page} of ${count}`,
+  goToPage: (page) => `Page ${page}`,
+  transcriptBadge: "Transcript",
+  mcpKicker: "MCP · for AI agents",
+  mcpHeading: "Read transcripts with your AI agent",
+  mcpBody: "Every session has a full Vietnamese transcript with timestamps. Connect the NLB MCP server and ask Claude, ChatGPT or Cursor to summarise, search or quote any video.",
+  mcpSteps: [
+    "Add the MCP server below as a custom connector in your AI client.",
+    "Sign in with your NLB account when it asks (OAuth).",
+    "Ask about a video; the agent calls course_list_videos and course_get_transcript.",
+  ],
+  mcpEndpointLabel: "MCP server",
+  mcpPromptLabel: "Try asking",
+  mcpPrompt: "Summarise NLB Weekly #43 and list every tool mentioned, with timestamps.",
+  mcpWho: "For members who bought the video, and every active Premium or VIP member.",
+  mcpTools: "Tools",
+  mcpGuide: "Connection guide",
+  mcpJoin: "See membership plans",
 };
 
 const vi: CoursesCopy = {
@@ -128,7 +192,6 @@ const vi: CoursesCopy = {
   headingLead: "Những buổi build bạn có thể ",
   headingAccent: "xem lại",
   headingTail: ".",
-  catalogueLabel: (count) => `Danh mục · ${count} video`,
   observation: (n) => `Q.sát ${n}`,
   emptyKicker: "Đang chờ tín hiệu · chưa có video",
   emptyTitle: "Buổi build đầu tiên vẫn đang trên quỹ đạo.",
@@ -151,6 +214,40 @@ const vi: CoursesCopy = {
   zueyAll: "Tất cả bài viết",
   zueyFallback: "Tạm thời chưa tải được các bài viết mới trên ZueyOS.",
   zueyFallbackLink: "Đọc trên zuey.me",
+  controlsLabel: "Tìm và lọc video",
+  searchLabel: "Tìm kiếm",
+  searchPlaceholder: "Chủ đề, công cụ hoặc tuần…",
+  sortLabel: "Sắp xếp",
+  sorts: { newest: "Mới nhất", oldest: "Cũ nhất", longest: "Dài nhất", shortest: "Ngắn nhất" },
+  speakerLabel: "Diễn giả",
+  allSpeakers: "Tất cả diễn giả",
+  transcriptFilter: "Có transcript",
+  applyFilters: "Áp dụng",
+  clearFilters: "Xoá bộ lọc",
+  resultsLabel: (matched, total) => (matched === total ? `Danh mục · ${total} video` : `${matched} / ${total} video`),
+  noResultsTitle: "Không có video nào khớp bộ lọc.",
+  noResultsBody: "Thử từ khoá ngắn hơn, chọn diễn giả khác hoặc xoá bộ lọc.",
+  paginationLabel: "Các trang danh mục",
+  prevPage: "Trước",
+  nextPage: "Sau",
+  pageOf: (page, count) => `Trang ${page} / ${count}`,
+  goToPage: (page) => `Trang ${page}`,
+  transcriptBadge: "Transcript",
+  mcpKicker: "MCP · cho AI agent",
+  mcpHeading: "Đọc transcript bằng AI agent",
+  mcpBody: "Mỗi buổi đều có transcript tiếng Việt đầy đủ, kèm mốc thời gian. Kết nối MCP server của NLB rồi nhờ Claude, ChatGPT hay Cursor tóm tắt, tìm hoặc trích dẫn bất kỳ video nào.",
+  mcpSteps: [
+    "Thêm MCP server bên dưới làm custom connector trong AI client của bạn.",
+    "Đăng nhập tài khoản NLB khi được hỏi (OAuth).",
+    "Hỏi về một video; agent sẽ gọi course_list_videos và course_get_transcript.",
+  ],
+  mcpEndpointLabel: "MCP server",
+  mcpPromptLabel: "Thử hỏi",
+  mcpPrompt: "Tóm tắt NLB Weekly #43 và liệt kê mọi công cụ được nhắc tới, kèm mốc thời gian.",
+  mcpWho: "Dành cho người đã mua video và mọi hội viên Premium hoặc VIP còn hiệu lực.",
+  mcpTools: "Công cụ",
+  mcpGuide: "Hướng dẫn kết nối",
+  mcpJoin: "Xem các gói hội viên",
 };
 
 const COPY: Record<CoursesLocale, CoursesCopy> = { en, vi };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { createCourseVideoSchema } from "@/lib/courses/course-video-schemas";
 import { createVideo, listPublishedVideos, toPublicCourseVideo } from "@/lib/courses/course-video-service";
+import { listTranscriptVideoIds } from "@/lib/courses/course-transcript-service";
 import { readJsonBody, requireAdmin, toErrorResponse } from "@/lib/courses/course-route-helpers";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +10,9 @@ export const dynamic = "force-dynamic";
 /** Public list of published course videos. */
 export async function GET() {
   try {
-    const videos = await listPublishedVideos(getDb());
-    return NextResponse.json({ data: videos.map(toPublicCourseVideo) });
+    const db = getDb();
+    const [videos, transcripts] = await Promise.all([listPublishedVideos(db), listTranscriptVideoIds(db)]);
+    return NextResponse.json({ data: videos.map((video) => toPublicCourseVideo(video, transcripts.has(video.id))) });
   } catch (error) {
     return toErrorResponse(error, "List course videos");
   }
