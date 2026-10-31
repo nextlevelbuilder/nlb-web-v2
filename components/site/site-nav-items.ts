@@ -2,7 +2,7 @@
  * Primary navigation shared by the desktop header and the full-screen menu.
  * Pure data + helpers (no React) so the routing rules are unit-testable.
  */
-export type NavKey = 'courses' | 'live' | 'directory' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs' | 'builderLeague';
+export type NavKey = 'courses' | 'live' | 'leaderboard' | 'blog' | 'pricing' | 'buildWithUs' | 'builderLeague';
 
 export interface NavItem {
   key: NavKey;
@@ -14,14 +14,13 @@ export interface NavItem {
   numeral: string;
 }
 
-// The old site's set (Directory, Leaderboard, Pricing, Build with us) plus Courses and Blog, in reading order.
+// Build with Us (directory and submission guide on one page), Leaderboard and Pricing, plus Courses and Blog, in reading order.
 export const NAV: readonly NavItem[] = [
   { key: 'courses', route: '/courses', numeral: 'III' },
-  { key: 'directory', route: '/build-with-us', numeral: 'IV' },
+  { key: 'buildWithUs', route: '/build-with-us', numeral: 'IV' },
   { key: 'leaderboard', route: '/leaderboards', numeral: 'IV·i' },
   { key: 'blog', route: '/blog', numeral: 'IX' },
   { key: 'pricing', route: { pathname: '/', hash: 'pricing' }, homeAnchor: '#pricing', numeral: 'VI' },
-  { key: 'buildWithUs', route: '/build-with-us/instructions', numeral: 'VII' },
 ];
 
 /**
@@ -55,7 +54,6 @@ export function isCurrentNavItem(pathname: string, item: NavItem): boolean {
   const route = item.route;
   if (pathname === route) return true;
   if (!pathname.startsWith(`${route}/`)) return false;
-  // "Directory" owns /build-with-us/* except /build-with-us/instructions, which belongs to "Build with us".
   return !NAV.some((other) => other !== item && typeof other.route === 'string'
     && other.route.startsWith(`${route}/`) && (pathname === other.route || pathname.startsWith(`${other.route}/`)));
 }

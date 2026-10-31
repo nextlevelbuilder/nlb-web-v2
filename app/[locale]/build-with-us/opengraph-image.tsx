@@ -8,5 +8,5 @@ export const alt = "Next Level Builders product directory";
 export default async function Image({ params }: { params: Promise<{ locale: string }> }) {
   const locale = toOgLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "buildWithUs" });
-  return renderConstellationOgCard({ numeral: "IV", kicker: await navLabel(locale, "directory"), title: t("heroTitle"), subtitle: t("heroDesc") });
+  return renderConstellationOgCard({ numeral: "IV", kicker: await navLabel(locale, "buildWithUs"), title: t("heroTitle"), subtitle: t("heroDesc") });
 }

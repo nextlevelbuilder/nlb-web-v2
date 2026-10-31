@@ -6,10 +6,9 @@ import BrandMark from './brand-mark';
 
 const PAGES = [
   { key: 'nav.courses', href: '/courses' },
-  { key: 'nav.directory', href: '/build-with-us' },
+  { key: 'nav.buildWithUs', href: '/build-with-us' },
   { key: 'nav.leaderboard', href: '/leaderboards' },
   { key: 'nav.blog', href: '/blog' },
-  { key: 'nav.buildWithUs', href: '/build-with-us/instructions' },
 ] as const;
 
 const LEGAL = [

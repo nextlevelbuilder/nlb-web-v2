@@ -409,10 +409,10 @@ export default function BuildWithUsClient({
           <p className="mono bwu-panel-kicker">{copy.howToSubmitSubtitle}</p>
           <h2 className="bwu-panel-title">{copy.howToSubmitTitle}</h2>
           <p className="bwu-panel-text">{copy.howToSubmitDesc}</p>
-          <Link href={`${localePrefix}/build-with-us/instructions`} className="btn btn-ghost btn-sm bwu-panel-cta">
+          <a href="#guide" className="btn btn-ghost btn-sm bwu-panel-cta">
             {t('instructionsBtn')}
             <ArrowRight aria-hidden className="arrow" />
-          </Link>
+          </a>
         </div>
 
         {/* Cloudflare Turnstile invisible container */}

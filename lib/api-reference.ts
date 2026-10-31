@@ -43,7 +43,7 @@ export function renderApiReference() {
 <link rel="icon" href="/favicon.ico">
 <style>body{margin:0;background:#0d1117;color:#e6edf3;font:16px/1.65 system-ui,sans-serif}#docs-intro a,#endpoint-index a{color:#a5b4fc}#docs-intro,#endpoint-index{max-width:1100px;margin:auto;padding:24px}#docs-intro h1{line-height:1.2}#docs-intro code,#endpoint-index code{overflow-wrap:anywhere}#endpoint-index summary{cursor:pointer}#endpoint-index li{margin-bottom:24px}#docs-intro nav{display:flex;gap:20px;flex-wrap:wrap}#scalar-reference{min-height:70vh}</style>
 </head><body>
-<header id="docs-intro"><nav aria-label="Developer navigation"><a href="/build-with-us">Build with Us</a><a href="/build-with-us/instructions">Integration guide</a><a href="/studio">Builder Studio</a><a href="/api/openapi.json">OpenAPI JSON</a><a href="/api-docs.md">Markdown</a></nav>
+<header id="docs-intro"><nav aria-label="Developer navigation"><a href="/build-with-us">Build with Us</a><a href="/build-with-us#guide">Integration guide</a><a href="/studio">Builder Studio</a><a href="/api/openapi.json">OpenAPI JSON</a><a href="/api-docs.md">Markdown</a></nav>
 <h1>Next Level Builders API</h1>
 <p>Explore request schemas, generate code snippets and send real requests with the interactive reference below.</p>
 <p>Create an API key in <a href="/profile">your profile</a>. Builder endpoints accept <code>Authorization: Bearer nlb_live_…</code> or <code>x-api-key: nlb_live_…</code>. Organization membership is required. Voting and key management require a signed-in browser session.</p>

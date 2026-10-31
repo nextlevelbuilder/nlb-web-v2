@@ -45,7 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     : [];
   // Listing pages take the newest change of the content they list; policies carry their own review date.
-  // The instructions page has no content timestamp, so it is listed without lastmod.
   const productsChanged = latest(products.map((product) => product.updatedAt));
   const videosChanged = latest(videos.map((video) => video.updatedAt));
   const postsChanged = latest(posts.map((post) => post.updatedAt));
@@ -54,7 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: Array<[string, Date | undefined]> = [
     ["/", latest([productsChanged, videosChanged, postsChanged])],
     ["/build-with-us", productsChanged],
-    ["/build-with-us/instructions", undefined],
     ["/leaderboards", productsChanged],
     ["/blog", postsChanged],
     ["/courses", videosChanged],

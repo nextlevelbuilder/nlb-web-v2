@@ -13,7 +13,7 @@ describe("Markdown page representations", () => {
     expect(markdownSourcePath("/directory.md")).toEqual({ path: "/build-with-us", pathname: "/build-with-us", locale: "en" });
     expect(markdownSourcePath("/vi/directory.md")).toEqual({ path: "/build-with-us", pathname: "/vi/build-with-us", locale: "vi" });
   });
-  it.each(["/.md", "/en.md", "/vi.md", "/build-with-us.md", "/en/build-with-us/instructions.md", "/policies/onboarding.md", "/products/tool.md", "/en/builders/id.md", "/account.md", "/profile.md", "/studio.md", "/en/studio/products/tool/preview.md", "/sign-in.md", "/sign-up.md", "/success.md", "/api-docs.md", "/docs/api.md"])("recognizes page %s", (path) => {
+  it.each(["/.md", "/en.md", "/vi.md", "/build-with-us.md", "/vi/build-with-us.md", "/policies/onboarding.md", "/products/tool.md", "/en/builders/id.md", "/account.md", "/profile.md", "/studio.md", "/en/studio/products/tool/preview.md", "/sign-in.md", "/sign-up.md", "/success.md", "/api-docs.md", "/docs/api.md"])("recognizes page %s", (path) => {
     expect(markdownSourcePath(path)).not.toBeNull();
   });
 

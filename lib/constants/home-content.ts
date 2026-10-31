@@ -4,6 +4,7 @@
  * UI strings live in messages/*.json; copy that belongs to a product or person lives here.
  */
 import type { Locale } from "@/i18n/routing";
+import { MCP_ENDPOINT } from "@/lib/discovery/agent-discovery-documents";
 
 export type Bilingual<T = string> = Record<Locale, T>;
 
@@ -226,13 +227,13 @@ export const PARTNERS: Partner[] = [
   },
 ];
 
-/** Real commands from the packages/cli and packages/mcp workspaces (@nextlevelbuilder/cli and @nextlevelbuilder/mcp). */
+/** Real @nextlevelbuilder/cli commands, plus the official remote MCP endpoint this site serves at /mcp. */
 export const TOOLKIT_COMMANDS = {
   template: "npx @nextlevelbuilder/cli template developer-cli --out product.json",
   validate: "npx @nextlevelbuilder/cli validate product.json",
   preview: "npx @nextlevelbuilder/cli preview product.json",
   submit: "npx @nextlevelbuilder/cli submit product.json --api-key $NLB_API_KEY",
-  mcp: "npx -y @nextlevelbuilder/mcp",
+  mcp: MCP_ENDPOINT,
 } as const;
 
 export const TOOLKITS_REPO_URL = "https://github.com/nextlevelbuilder/nlb-web-v2/tree/main/packages";
