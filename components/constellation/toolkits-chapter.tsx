@@ -17,7 +17,7 @@ const CLI_STEPS = [
 const CLI_TEXT = CLI_STEPS.flatMap((s) => s.commands).join('\n');
 
 /**
- * Chapter VII · transmission: the real Directory CLI and MCP commands in the terminal, then the
+ * Chapter VII · transmission: the real Directory CLI commands and the official MCP endpoint in the terminal, then the
  * products members launched through it and the products built by the NLB team.
  */
 export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedProduct[] | null }) {

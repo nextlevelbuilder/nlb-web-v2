@@ -85,7 +85,7 @@ export default function DirectoryChapter({ leaderboard }: { leaderboard: HomeLea
                     <span className="bayer" aria-hidden="true">{BAYER[i]}</span>
                     <span className="lb-star" aria-hidden="true" />
                     <div className="lb-name">
-                      <strong><Link className="lb-link" href="/build-with-us/instructions">{t('openTitle')}</Link></strong>
+                      <strong><Link className="lb-link" href="/build-with-us#guide">{t('openTitle')}</Link></strong>
                       <span>{t('openSub')}</span>
                     </div>
                     <div className="lb-trust" aria-hidden="true"><span className="tv mono"><span>{t('trust')}</span><b>—</b></span><span className="mag-bar" /></div>

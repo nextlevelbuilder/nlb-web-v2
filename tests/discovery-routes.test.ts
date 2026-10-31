@@ -40,7 +40,7 @@ describe("Discovery metadata and routes", () => {
     // Listing pages take the newest change of what they list; pages without a content date get no lastmod.
     expect(entries.find((entry) => entry.url === "https://example.test/")?.lastModified).toEqual(published.updatedAt);
     expect(entries.find((entry) => entry.url === "https://example.test/build-with-us")?.lastModified).toEqual(published.updatedAt);
-    expect(entries.find((entry) => entry.url === "https://example.test/build-with-us/instructions")).not.toHaveProperty("lastModified");
+    expect(entries.some((entry) => entry.url.endsWith("/build-with-us/instructions"))).toBe(false);
     expect(entries.find((entry) => entry.url === "https://example.test/policies/privacy")?.lastModified).toBeInstanceOf(Date);
     expect(entries.some((entry) => entry.url.endsWith("/account"))).toBe(false);
   });
