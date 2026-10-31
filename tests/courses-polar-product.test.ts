@@ -60,6 +60,18 @@ describe("course video publish and Polar product", () => {
     expect(published.publishedAt).toBeInstanceOf(Date);
   });
 
+  it("rejects a stored title over the Polar name limit with a 400 before calling Polar", async () => {
+    const video = await draftVideo();
+    await getDb().update(courseVideos).set({ title: "x".repeat(65) }).where(eq(courseVideos.id, video.id));
+    const { client, create } = mockPolarClient();
+
+    const error = await publishVideo(video.slug, getDb(), client, stream.client).catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(CourseError);
+    expect(error).toMatchObject({ status: 400, code: "title_too_long" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("is idempotent: publishing again never creates a second product", async () => {
     const video = await draftVideo();
     const { client, create } = mockPolarClient("polar-prod-b");

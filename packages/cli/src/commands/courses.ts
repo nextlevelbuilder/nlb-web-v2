@@ -4,6 +4,7 @@ import { Command } from "commander";
 import pc from "picocolors";
 import { resolveConfig } from "../config.js";
 import {
+  COURSE_VIDEO_TITLE_MAX,
   CoursesApiError,
   NlbCoursesClient,
   dateFromRecordingName,
@@ -133,6 +134,10 @@ export async function publishRecordingCommand(file: string, opts: PublishRecordi
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Pass --date YYYY-MM-DD (or name the file record-YYMMDD.mp4)");
     const topic = opts.title.trim().replace(/^NLB Weekly #\d+:\s*/i, "");
     const title = `NLB Weekly #${week}: ${topic}`;
+    // Fail before a multi-GB upload rather than at publish.
+    if (title.length > COURSE_VIDEO_TITLE_MAX) {
+      throw new Error(`Title "${title}" is ${title.length} characters; the limit is ${COURSE_VIDEO_TITLE_MAX} (the Polar product name limit). Shorten --title to at most ${COURSE_VIDEO_TITLE_MAX - (title.length - topic.length)} characters.`);
+    }
     const slug = opts.slug ?? slugifyTitle(title);
     const summary = (opts.descriptionFile ? readFileSync(opts.descriptionFile, "utf8") : opts.description ?? "").trim();
     if (!summary) throw new Error("Pass --description or --description-file with the session summary");

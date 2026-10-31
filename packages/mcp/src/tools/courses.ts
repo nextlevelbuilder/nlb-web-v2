@@ -17,7 +17,7 @@ const slugProp = { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$", maxLen
 const streamUidProp = { type: "string", pattern: "^[a-f0-9]{32}$", description: "Stream video uid (from course_create_upload)" };
 
 const videoFieldProps = {
-  title: { type: "string", maxLength: 200, description: "e.g. \"NLB Weekly #41: …\"" },
+  title: { type: "string", minLength: 3, maxLength: 64, description: "3–64 characters (it becomes the Polar product name), e.g. \"NLB Weekly #41: …\"" },
   description: { type: "string", maxLength: 5000, description: "Summary, then a blank line and \"Diễn giả: <name> · YYYY-MM-DD\"" },
   locale: { type: "string", enum: ["en", "vi"], description: "Default vi" },
   weekNumber: { type: ["integer", "null"], minimum: 0, maximum: 1000 },
@@ -77,7 +77,14 @@ async function courseRequest(
     // Courses routes answer `{ error, code, details? }`.
     const body = json as { error?: unknown; code?: unknown; details?: unknown } | undefined;
     const code = typeof body?.code === "string" ? body.code : undefined;
-    const message = typeof body?.error === "string" ? body.error : (text.trim().slice(0, 500) || response.statusText || "Request failed");
+    const baseMessage = typeof body?.error === "string" ? body.error : (text.trim().slice(0, 500) || response.statusText || "Request failed");
+    // Name the failing fields of a `validation_failed` body, e.g. "title: Title must be at most 64 characters …".
+    const issues = Array.isArray(body?.details)
+      ? (body.details as Array<{ path?: unknown; message?: unknown }>)
+          .filter((issue) => typeof issue?.message === "string")
+          .map((issue) => (Array.isArray(issue.path) && issue.path.length ? `${issue.path.join(".")}: ${issue.message}` : String(issue.message)))
+      : [];
+    const message = issues.length ? `${baseMessage} (${issues.join("; ")})` : baseMessage;
     const data: Record<string, unknown> = { status: response.status };
     if (code) data.code = code;
     if (body?.details !== undefined) data.details = body.details;

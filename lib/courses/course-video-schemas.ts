@@ -23,10 +23,20 @@ const currencySchema = z
   .regex(/^[a-zA-Z]{3}$/, "Currency must be a 3-letter ISO code")
   .transform((value) => value.toLowerCase());
 
+// The title is sent unchanged as the Polar product name, which Polar limits to 3–64 characters.
+export const COURSE_VIDEO_TITLE_MIN = 3;
+export const COURSE_VIDEO_TITLE_MAX = 64;
+export const COURSE_VIDEO_TITLE_TOO_LONG_MESSAGE = `Title must be at most ${COURSE_VIDEO_TITLE_MAX} characters (the Polar product name limit)`;
+const courseVideoTitleSchema = z
+  .string()
+  .trim()
+  .min(COURSE_VIDEO_TITLE_MIN, `Title must be at least ${COURSE_VIDEO_TITLE_MIN} characters (the Polar product name minimum)`)
+  .max(COURSE_VIDEO_TITLE_MAX, COURSE_VIDEO_TITLE_TOO_LONG_MESSAGE);
+
 export const createCourseVideoSchema = z
   .object({
     slug: courseSlugSchema,
-    title: z.string().trim().min(1).max(200),
+    title: courseVideoTitleSchema,
     description: z.string().max(5000).default(""),
     locale: z.enum(["en", "vi"]).default("vi"),
     weekNumber: z.number().int().min(0).max(1000).nullable().optional(),
@@ -42,7 +52,7 @@ export type CreateCourseVideoInput = z.infer<typeof createCourseVideoSchema>;
 /** Partial update. Publishing has its own endpoint, so `status` only moves between draft and archived. */
 export const updateCourseVideoSchema = z
   .object({
-    title: z.string().trim().min(1).max(200),
+    title: courseVideoTitleSchema,
     description: z.string().max(5000),
     locale: z.enum(["en", "vi"]),
     weekNumber: z.number().int().min(0).max(1000).nullable(),

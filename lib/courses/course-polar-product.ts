@@ -3,6 +3,7 @@ import type { Polar } from "@polar-sh/sdk";
 import type { AppDb } from "@/lib/db";
 import { courseVideos } from "@/lib/db/schema";
 import { CourseError } from "./course-errors";
+import { COURSE_VIDEO_TITLE_MAX, COURSE_VIDEO_TITLE_TOO_LONG_MESSAGE } from "./course-video-schemas";
 
 type CourseVideoRow = typeof courseVideos.$inferSelect;
 
@@ -25,6 +26,10 @@ export async function ensureCourseVideoPolarProduct(
   client: CoursePolarProductsClient
 ): Promise<string> {
   if (video.polarProductId) return video.polarProductId;
+  // Drafts saved before the title cap would otherwise reach Polar and fail as a bare 502.
+  if (video.title.length > COURSE_VIDEO_TITLE_MAX) {
+    throw new CourseError(400, "title_too_long", `${COURSE_VIDEO_TITLE_TOO_LONG_MESSAGE}; shorten it before publishing`);
+  }
 
   let productId: string;
   try {
