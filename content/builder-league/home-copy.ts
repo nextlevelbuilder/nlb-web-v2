@@ -1,7 +1,7 @@
 import { toPageLocale, type PageLocale } from "@/content/pages/page-locale";
 import type { RankRequirementKey } from "@/lib/builder-league/scoring";
 
-export type PrivacySwitch ="leaderboardPublic" | "passportPublic" | "wrappedPublic" | "peerMentionsOk" | "backfillOptIn" | "redactFinancials";
+export type PrivacySwitch ="leaderboardPublic" | "passportPublic" | "peerMentionsOk" | "backfillOptIn" | "redactFinancials";
 
 /** Builder League member home (`/builder-league`) and privacy settings (`/builder-league/settings`). */
 export interface HomeCopy {
@@ -134,7 +134,6 @@ const en: HomeCopy = {
     switches: {
       leaderboardPublic: { label: "Show me on public boards", desc: "Your name, photo and score appear on Builder League boards. You always see your own position." },
       passportPublic: { label: "Publish my passport", desc: "Adds your verified milestones, badges and public projects to your builder profile. Private evidence never appears." },
-      wrappedPublic: { label: "Share my season recap", desc: "Lets others open your season and year recap pages." },
       peerMentionsOk: { label: "Allow peer mentions", desc: "Other members may name you as the person they helped or were helped by." },
       backfillOptIn: { label: "Count earlier work", desc: "Lets moderators add verified work from before the league started." },
       redactFinancials: { label: "Hide payment details", desc: "Keeps titles and links of payment and commitment milestones off public pages." },
@@ -236,7 +235,6 @@ const vi: HomeCopy = {
     switches: {
       leaderboardPublic: { label: "Hiện tôi trên bảng công khai", desc: "Tên, ảnh và điểm của bạn xuất hiện trên bảng Builder League. Bạn luôn thấy vị trí của chính mình." },
       passportPublic: { label: "Công khai hộ chiếu", desc: "Thêm cột mốc đã xác minh, huy hiệu và dự án công khai vào hồ sơ builder. Bằng chứng riêng tư không bao giờ hiện." },
-      wrappedPublic: { label: "Chia sẻ tổng kết mùa", desc: "Cho phép người khác mở trang tổng kết mùa và năm của bạn." },
       peerMentionsOk: { label: "Cho phép nhắc tên", desc: "Thành viên khác có thể ghi tên bạn là người họ đã giúp hoặc được giúp." },
       backfillOptIn: { label: "Tính cả công việc trước đây", desc: "Cho phép moderator thêm công việc đã xác minh từ trước khi league bắt đầu." },
       redactFinancials: { label: "Ẩn chi tiết thanh toán", desc: "Giữ tiêu đề và liên kết của cột mốc thanh toán, cam kết trả tiền ngoài trang công khai." },

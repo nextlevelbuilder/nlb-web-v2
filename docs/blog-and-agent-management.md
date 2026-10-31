@@ -52,7 +52,7 @@ Paths are relative to `/api/v1/blog`. The exact flags and arguments are owned by
 
 ### Credentials for agents
 
-- An admin creates an API key on `/profile`. Send it as `Authorization: Bearer <key>` or `x-api-key: <key>`. Keys are stored as SHA-256 hashes, so a key cannot be recovered after it is created.
+- An admin creates an API key on `/account`. Send it as `Authorization: Bearer <key>` or `x-api-key: <key>`. Keys are stored as SHA-256 hashes, so a key cannot be recovered after it is created.
 - MCP clients authenticate to `https://nextlevelbuilder.io/mcp` with OAuth (`mcp:read`, `mcp:write`). The MCP server then calls this API with a short-lived `x-nlb-mcp-assertion`, never with the user's token (see [system-architecture.md](./system-architecture.md#auth)).
 - Delete temporary keys after smoke tests.
 
@@ -90,7 +90,7 @@ Every `builder_*` tool and `nlb builder ...` command calls the `/api/v1/builder-
 
 ## Smoke test (staging)
 
-1. Create an admin API key on staging `/profile`.
+1. Create an admin API key on staging `/account`.
 2. Create a post: `POST /api/v1/blog/posts` with a body that passes `POST /api/v1/blog/validate`.
 3. Publish it with its current `version`, then open `/blog/<slug>`.
 4. Archive the smoke post (`DELETE ...?version=N`) and delete the key.

@@ -28,7 +28,7 @@ Internal skill for NLB admins. It turns one or more NLB Weekly recordings into p
 | Field | Rule | Example |
 |---|---|---|
 | Week | Highest published `weekNumber` + 1, in recording-date order | `41`, `42`, `43` for 17/10, 24/10, 31/10 |
-| Title | `NLB Weekly #<week>: <topic>`; topic in Vietnamese, short, names the main subject | `NLB Weekly #43: Grok bot và công ty một người` |
+| Title | `NLB Weekly #<week>: <topic>`; topic in Vietnamese, short, names the main subject; the whole title is at most 64 characters (Polar product name limit), so the topic gets about 48 | `NLB Weekly #43: Grok bot và công ty một người` |
 | Slug | ASCII of the title (the CLI derives it) | `nlb-weekly-43-grok-bot-va-cong-ty-mot-nguoi` |
 | Description | 2–3 sentences of concrete content, then a blank line and `Diễn giả: <name> · YYYY-MM-DD` | see `nlb courses list --json` |
 | Price | `900` (9 USD), `usd`, locale `vi`. Locked once published. | |

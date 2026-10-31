@@ -48,6 +48,22 @@ const nextConfig: NextConfig = {
         destination: "/:locale/build-with-us#guide",
         permanent: true,
       },
+      // The builder profile and the account dashboard are one page: /account.
+      {
+        source: "/profile",
+        destination: "/account",
+        permanent: true,
+      },
+      {
+        source: "/en/profile",
+        destination: "/account",
+        permanent: true,
+      },
+      {
+        source: "/vi/profile",
+        destination: "/vi/account",
+        permanent: true,
+      },
     ];
   },
 };

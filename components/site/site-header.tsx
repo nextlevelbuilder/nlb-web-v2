@@ -13,7 +13,7 @@ import { isCurrentNavItem, navItemsFor, type NavItem } from './site-nav-items';
 import { useBuilderLeagueNav } from './use-builder-league-nav';
 import { useLiveNav } from './use-live-nav';
 
-const DESKTOP = '(min-width: 1140px)';
+const DESKTOP = '(min-width: 1280px)';
 
 /** Home sections render plain anchors on the home page (scrolled by the home engine); everything else is a locale-aware route. */
 function NavLink({ item, onHome, pathname, onNavigate, children, className }: {
@@ -145,7 +145,7 @@ export default function SiteHeader() {
             <ThemeSeg />
             <SoundToggle />
             {user ? (
-              <Link className="signin" href="/profile" aria-label={t('nav.profile')}>
+              <Link className="signin" href="/account" aria-label={who ? `${t('nav.account')}: ${who}` : t('nav.account')} title={who || undefined}>
                 <span className="avatar" aria-hidden="true">
                   {user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element -- provider avatar hosts are arbitrary; next/image would need an allow-list
@@ -157,7 +157,7 @@ export default function SiteHeader() {
                 <span className="who">{who}</span>
               </Link>
             ) : (
-              <Link className="signin" href="/sign-in?callbackUrl=/profile">{t('nav.signIn')}</Link>
+              <Link className="signin" href="/sign-in?callbackUrl=/account">{t('nav.signIn')}</Link>
             )}
             {join('btn btn-primary btn-sm magnetic', t('nav.join'), t('nav.joinAria'))}
             <button
@@ -184,11 +184,11 @@ export default function SiteHeader() {
           ))}
           {user ? (
             <>
-              <Link href="/profile"><b>{who || t('nav.profile')}</b><span>→</span></Link>
+              <Link href="/account"><b>{who || t('nav.account')}</b><span>→</span></Link>
               <button type="button" onClick={handleSignOut}><b>{t('nav.signOut')}</b><span>↗</span></button>
             </>
           ) : (
-            <Link href="/sign-in?callbackUrl=/profile"><b>{t('nav.signIn')}</b><span>→</span></Link>
+            <Link href="/sign-in?callbackUrl=/account"><b>{t('nav.signIn')}</b><span>→</span></Link>
           )}
         </nav>
         <div className="menu-controls">

@@ -13,11 +13,11 @@ describe("Markdown page representations", () => {
     expect(markdownSourcePath("/directory.md")).toEqual({ path: "/build-with-us", pathname: "/build-with-us", locale: "en" });
     expect(markdownSourcePath("/vi/directory.md")).toEqual({ path: "/build-with-us", pathname: "/vi/build-with-us", locale: "vi" });
   });
-  it.each(["/.md", "/en.md", "/vi.md", "/build-with-us.md", "/vi/build-with-us.md", "/policies/onboarding.md", "/products/tool.md", "/en/builders/id.md", "/account.md", "/profile.md", "/studio.md", "/en/studio/products/tool/preview.md", "/sign-in.md", "/sign-up.md", "/success.md", "/api-docs.md", "/docs/api.md"])("recognizes page %s", (path) => {
+  it.each(["/.md", "/en.md", "/vi.md", "/build-with-us.md", "/vi/build-with-us.md", "/mcp-server.md", "/vi/mcp-server.md", "/policies/onboarding.md", "/products/tool.md", "/en/builders/id.md", "/account.md", "/studio.md", "/en/studio/products/tool/preview.md", "/sign-in.md", "/sign-up.md", "/success.md", "/api-docs.md", "/docs/api.md"])("recognizes page %s", (path) => {
     expect(markdownSourcePath(path)).not.toBeNull();
   });
 
-  it.each(["/api/checkout.md", "/api/auth/callback/github.md", "/api/markdown.md", "/go/tool.md", "/unknown.md", "/policies/unknown.md", "/en/unknown.md", "/%2f%2fevil.test.md", "//evil.test.md", "/studio/../api.md", "/products/%2e%2e.md", "/products/foo?bar.md", "/fr/account.md"])("rejects non-page or unsafe path %s", (path) => {
+  it.each(["/api/checkout.md", "/api/auth/callback/github.md", "/api/markdown.md", "/go/tool.md", "/unknown.md", "/policies/unknown.md", "/en/unknown.md", "/%2f%2fevil.test.md", "//evil.test.md", "/studio/../api.md", "/products/%2e%2e.md", "/products/foo?bar.md", "/fr/account.md", "/profile.md"])("rejects non-page or unsafe path %s", (path) => {
     expect(markdownSourcePath(path)).toBeNull();
   });
 
@@ -66,8 +66,8 @@ describe("Markdown page representations", () => {
   });
 
   it("follows a safe locale redirect and preserves authorization failures", async () => {
-    const fetcher = vi.fn().mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: "/en/profile" } })).mockResolvedValueOnce(new Response("Denied", { status: 403 }));
-    const result = await fetchPageMarkdown("https://example.test", "/profile", "", new Headers(), fetcher);
+    const fetcher = vi.fn().mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: "/en/account" } })).mockResolvedValueOnce(new Response("Denied", { status: 403 }));
+    const result = await fetchPageMarkdown("https://example.test", "/account", "", new Headers(), fetcher);
     expect(result.status).toBe(403);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });

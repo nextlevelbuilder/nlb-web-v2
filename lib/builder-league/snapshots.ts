@@ -16,7 +16,15 @@ import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { leagueSnapshots, scoreLedger } from "@/lib/db/schema";
 import { PERIOD_TYPES, isTombstoneUserId, type BoardKey, type PeriodType } from "./types";
-import { computeBoards, parseBoardQuery, toPublicBoard, type BoardEntry, type ComputedBoard, type PublicBoard } from "./leaderboards";
+import {
+  computeBoards,
+  getPublicPassportUserIds,
+  parseBoardQuery,
+  toPublicBoard,
+  type BoardEntry,
+  type ComputedBoard,
+  type PublicBoard,
+} from "./leaderboards";
 import { nextPeriodKey, periodKey, periodRange, previousPeriodKey } from "./time-windows";
 import { evaluateRank } from "./ranks";
 
@@ -218,6 +226,11 @@ export interface BuilderRankings extends PublicBoard {
   };
 }
 
+/** Server-rendered leaderboard data with the current passport visibility needed for profile links. */
+export type BuilderRankingsPage = Omit<BuilderRankings, "entries"> & {
+  entries: (BuilderRankings["entries"][number] & { passportPublic: boolean })[];
+};
+
 /** A board as members and the API see it: snapshot meta, opted-in entries and the viewer's position. */
 export async function getBuilderRankings(db: AppDb, query: BuilderRankingsQuery): Promise<BuilderRankings> {
   const now = query.now ?? new Date();
@@ -243,6 +256,16 @@ export async function getBuilderRankings(db: AppDb, query: BuilderRankingsQuery)
       supersedesId: snapshot.supersedesId,
     },
     ...view,
+  };
+}
+
+/** Adds passport visibility for the leaderboard page without changing the public API response. */
+export async function getBuilderRankingsForPage(db: AppDb, query: BuilderRankingsQuery): Promise<BuilderRankingsPage> {
+  const rankings = await getBuilderRankings(db, query);
+  const publicPassportIds = await getPublicPassportUserIds(db, rankings.entries.map((entry) => entry.userId));
+  return {
+    ...rankings,
+    entries: rankings.entries.map((entry) => ({ ...entry, passportPublic: publicPassportIds.has(entry.userId) })),
   };
 }
 

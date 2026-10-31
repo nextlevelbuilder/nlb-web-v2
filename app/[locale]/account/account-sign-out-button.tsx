@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { signOut } from '@/lib/auth-client';
 import { useRouter } from '@/i18n/navigation';
 
-export default function ProfileSignOutButton() {
+export default function AccountSignOutButton() {
+  const t = useTranslations('profile');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -32,7 +34,7 @@ export default function ProfileSignOutButton() {
       className="gap-1.5 hover:border-destructive/50 hover:text-destructive"
     >
       <LogOut aria-hidden className="w-3.5 h-3.5" />
-      {loading ? 'Signing out...' : 'Sign Out'}
+      {loading ? t('signingOut') : t('signOut')}
     </Button>
   );
 }

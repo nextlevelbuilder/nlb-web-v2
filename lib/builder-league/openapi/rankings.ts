@@ -19,7 +19,7 @@ const tags = ["Builder League"];
 const privacyProperties = {
   leaderboardPublic: { type: "boolean", description: "List me on public builder boards." },
   passportPublic: { type: "boolean", description: "Show my Builder Passport on my public profile." },
-  wrappedPublic: { type: "boolean", description: "Include me in Community Wrapped." },
+  wrappedPublic: { type: "boolean", description: "Legacy switch with no effect. Year in Review share links open for anyone holding the link and are never indexed by search engines." },
   peerMentionsOk: { type: "boolean", description: "Others may name me in peer-help evidence." },
   backfillOptIn: { type: "boolean", description: "Import my earlier 2026 records into the league." },
   redactFinancials: { type: "boolean", description: "Hide payment details on public surfaces (default on)." },

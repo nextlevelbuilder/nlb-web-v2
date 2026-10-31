@@ -9,7 +9,7 @@ import { updatePrivacy, type PrivacyPatch } from "@/lib/builder-league/privacy";
 import { getBuilderPageViewer } from "@/components/builder-league/home/page-access";
 import { handleSelfDeleteForm } from "@/components/builder-league/settings/self-delete-form-handler";
 
-const SWITCHES = ["leaderboardPublic", "passportPublic", "wrappedPublic", "peerMentionsOk", "backfillOptIn", "redactFinancials"] as const;
+const SWITCHES = ["leaderboardPublic", "passportPublic", "peerMentionsOk", "backfillOptIn", "redactFinancials"] as const;
 
 /**
  * Saves the privacy form. Every checkbox is posted with the form, so an unchecked box turns its

@@ -56,7 +56,7 @@ TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=... npx tsx scripts/telegram/set-
 
 ## Existing members
 
-Existing members are self-service: the membership section on `/profile` (where the header account link leads) and `/account` shows a banner that links their membership and offers Discord and Telegram. Signing in with the purchase email links the customer on the fly. To link everyone up front, run the backfill (dry run by default, prints counts only):
+Existing members are self-service: the membership section on `/account` (where the header account link leads; `/profile` permanently redirects there) shows a banner that links their membership and offers Discord and Telegram. Signing in with the purchase email links the customer on the fly. To link everyone up front, run the backfill (dry run by default, prints counts only):
 
 ```bash
 npx tsx scripts/onboarding/backfill-customer-links.ts --target staging

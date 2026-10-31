@@ -37,6 +37,25 @@ describe("admin course video routes", () => {
     expect((await createRoute(jsonRequest(validVideo))).status).toBe(409);
   });
 
+  it("caps the title at Polar's 64-character product name limit on create and update", async () => {
+    resolveCallerMock.mockResolvedValue(admin);
+    const tooLong = await createRoute(jsonRequest({ ...validVideo, slug: "long-title", title: "x".repeat(65) }));
+    expect(tooLong.status).toBe(400);
+    const body = await tooLong.json();
+    expect(body.code).toBe("validation_failed");
+    expect(body.details).toEqual([
+      expect.objectContaining({ path: ["title"], message: "Title must be at most 64 characters (the Polar product name limit)" }),
+    ]);
+    expect((await createRoute(jsonRequest({ ...validVideo, slug: "short-title", title: "ab" }))).status).toBe(400);
+    // Surrounding whitespace is trimmed before the length check.
+    expect((await createRoute(jsonRequest({ ...validVideo, slug: "max-title", title: ` ${"x".repeat(64)} ` }))).status).toBe(201);
+
+    const ctx = { params: Promise.resolve({ slug: "max-title" }) };
+    const patched = await patchRoute(jsonRequest({ title: "y".repeat(65) }, "PATCH"), ctx);
+    expect(patched.status).toBe(400);
+    expect((await patched.json()).details[0].path).toEqual(["title"]);
+  });
+
   it("keeps drafts out of the public list and patches only allowed fields", async () => {
     resolveCallerMock.mockResolvedValue(admin);
     await createRoute(jsonRequest({ ...validVideo, slug: "draft-only" }));

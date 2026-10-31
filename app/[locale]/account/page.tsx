@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   User,
   ShieldCheck,
+  Building2,
   Layers,
   ArrowUpRight,
   CheckCircle2,
@@ -23,8 +24,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
-import ProfileSignOutButton from "../profile/profile-sign-out-button";
+import AccountSignOutButton from "./account-sign-out-button";
 import AccountIdentityHeader from "@/components/profile/account-identity-header";
+import ApiKeysManager from "@/components/profile/api-keys-manager";
+import DeveloperIntegrationGuide from "@/components/profile/developer-integration-guide";
+import { mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
 import BuySlotButton from "@/components/account/buy-slot-button";
 import AccountMembershipSection from "@/components/onboarding/account-membership-section";
 import { PRODUCT_IDS } from "@/lib/polar";
@@ -41,6 +45,7 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
   // Set by the Builder League self-delete when the member lost league access along with their data.
   const leagueDeleted = (await searchParams).leagueDeleted === "1";
   const t = await getTranslations({ locale, namespace: "account" });
+  const tProfile = await getTranslations({ locale, namespace: "profile" });
   const tAffiliate = await getTranslations({ locale, namespace: "affiliateAccount" });
   const auth = getAuth();
   const reqHeaders = await headers();
@@ -177,16 +182,16 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
             image={user.image}
             role={userRole}
             emailVerified={Boolean(user.emailVerified)}
-            verifiedLabel="Verified"
+            verifiedLabel={tProfile("verified")}
             actions={
               <>
                 <Button asChild variant="outline" size="sm" className="gap-1.5">
                   <Link href={`/builders/${user.id}`}>
                     <User aria-hidden className="h-3.5 w-3.5 text-primary" />
-                    View Public Profile
+                    {tProfile("publicProfileBtn")}
                   </Link>
                 </Button>
-                <ProfileSignOutButton />
+                <AccountSignOutButton />
               </>
             }
           />
@@ -217,7 +222,7 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
           <section aria-labelledby="account-slots" className="surface-panel space-y-6 p-6 sm:p-8">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <h2 id="account-slots" className="h-section flex items-center gap-3">
+                <h2 id="account-slots" className="h-section flex !h-auto items-center gap-3">
                   <Ticket aria-hidden className="h-5 w-5 shrink-0 text-primary" />
                   {t("title")}
                 </h2>
@@ -292,12 +297,12 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-step-xs">
                       {p.status === "published" ? (
                         <Link href={`/products/${p.slug}`} className="link-arrow">
-                          Public Page
+                          {tProfile("publicPage")}
                           <ArrowUpRight aria-hidden className="h-3 w-3" />
                         </Link>
                       ) : (
                         <Link href={`/studio/products/${p.slug}/preview`} className="link-arrow">
-                          Preview Draft
+                          {tProfile("preview")}
                           <ArrowUpRight aria-hidden className="h-3 w-3" />
                         </Link>
                       )}
@@ -350,6 +355,31 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
               </div>
             )}
           </section>
+          <section aria-labelledby="account-orgs" className="space-y-4">
+            <h2 id="account-orgs" className="flex items-center gap-2 font-display text-step-xl">
+              <Building2 aria-hidden className="h-4 w-4 text-primary" />
+              {tProfile("orgsTitle")} ({userMemberships.length})
+            </h2>
+            {userMemberships.length === 0 ? (
+              <p className="surface-panel p-6 text-center text-step-sm text-ink-2">{tProfile("noOrgs")}</p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {userMemberships.map((org) => (
+                  <li key={org.orgId} className="flex items-center justify-between gap-3 rounded-sm border border-line bg-surface p-5">
+                    <div className="min-w-0">
+                      <h3 className="break-words text-step-base font-medium text-foreground">{org.orgName}</h3>
+                      <p className="break-all font-mono text-step-xs text-ink-3">slug: {org.orgSlug}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0">{org.memberRole}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <DeveloperIntegrationGuide mcpUrl={mcpEndpoint()} />
+
+          <ApiKeysManager />
         </div>
       </main>
     </div>

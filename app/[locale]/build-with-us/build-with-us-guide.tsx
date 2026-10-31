@@ -73,7 +73,7 @@ export default function BuildWithUsGuide() {
         "Access is granted per scope: mcp:read, mcp:write and mcp:keys. Review or disconnect apps in Profile. For traffic, call get_product_traffic with slug and optional from/to UTC timestamps"
       ],
       ctaText: "Explore MCP Server",
-      ctaUrl: "/api-docs"
+      ctaUrl: "/mcp-server"
     },
     {
       id: "webmcp",
@@ -199,6 +199,7 @@ export default function BuildWithUsGuide() {
           <section className="space-y-5" aria-labelledby="agent-resources">
             <h3 id="agent-resources" className="h-section">Agent connections and readable content</h3>
             <Card className="space-y-4 p-6 text-step-sm text-ink-2">
+              <p>Setup for each client, sign-in scopes and every tool: <Link className="text-primary underline underline-offset-4" href="/mcp-server">MCP server</Link>.</p>
               <p>HTTP MCP endpoint: <a className="text-primary underline underline-offset-4 break-all" href="https://nextlevelbuilder.io/mcp">https://nextlevelbuilder.io/mcp</a></p>
               <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { "nextlevelbuilder": { url: "https://nextlevelbuilder.io/mcp" } } }, null, 2)}</code></pre>
               <p className="text-step-sm text-ink-2">Client configuration formats differ. Select HTTP (Streamable HTTP) transport and use the endpoint above. Read tools are public. Tools that act on your account ask you to sign in with NLB through OAuth 2.1 and approve the mcp:read, mcp:write or mcp:keys scope; access tokens last five minutes and the client renews them. For scripts, CI or clients without OAuth, run the local server (npx -y @nextlevelbuilder/mcp) with an nlb_live_ API key in NLB_API_KEY.</p>

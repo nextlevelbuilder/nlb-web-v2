@@ -162,6 +162,32 @@ describe("nlb courses publish-recording", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it("rejects a title over the 64-character Polar limit before uploading", async () => {
+    const fetchFn = server(on("GET", "/api/courses/videos", () => Response.json({ data: published })));
+    // "NLB Weekly #41: " is 16 characters, so the topic may use 48.
+    const res = await run(["publish-recording", recording(), ...args, "--title", "x".repeat(49)], fetchFn);
+    expect(res.json()).toMatchObject({ success: false });
+    expect(res.json().error).toContain("the limit is 64");
+    expect(res.json().error).toContain("at most 48 characters");
+    expect(calls(fetchFn)).toEqual(["GET /api/courses/videos"]);
+  });
+
+  it("names the failing field of a validation error", async () => {
+    const file = join(mkdtempSync(join(tmpdir(), "nlb-courses-")), "video.json");
+    writeFileSync(file, JSON.stringify({ slug: "x-y", title: "x".repeat(65), priceCents: 900 }));
+    const fetchFn = server(
+      on("POST", "/api/courses/videos", () =>
+        Response.json(
+          { error: "Invalid request data", code: "validation_failed", details: [{ path: ["title"], message: "Title must be at most 64 characters (the Polar product name limit)" }] },
+          { status: 400 }
+        )
+      )
+    );
+    const { json } = await run(["create", file, "--json"], fetchFn);
+    expect(json()).toMatchObject({ success: false, status: 400, code: "validation_failed" });
+    expect(json().error).toContain("title: Title must be at most 64 characters");
+  });
+
   it("surfaces admin errors from the API", async () => {
     const fetchFn = server(on("POST", "/api/courses/videos/x/publish", () => Response.json({ error: "Forbidden", code: "forbidden" }, { status: 403 })));
     const { json } = await run(["publish", "x", "--json"], fetchFn);

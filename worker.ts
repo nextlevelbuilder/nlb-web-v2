@@ -16,6 +16,7 @@ import { LIVE_CRON, runLiveCron } from "./lib/live/live-cron";
 import { REFERRAL_CRON, runReferralCron } from "./lib/referrals/referral-cron";
 import type { RenderBucket } from "./lib/builder-league/render-jobs";
 import { serveMcp, type McpWorkerEnv } from "./lib/mcp-worker-mount";
+import { applyEdgeCachePolicy } from "./lib/edge-cache-policy";
 
 interface ScheduledEnv {
   DB: D1Database;
@@ -32,7 +33,7 @@ const nextFetch = openNextHandler.fetch as NextFetch;
 const worker = {
   async fetch(request: Request, env: McpWorkerEnv, ctx: ExecutionContext): Promise<Response> {
     const mcpResponse = await serveMcp(request, env, (inner) => nextFetch(inner, env, ctx));
-    return mcpResponse ?? nextFetch(request, env, ctx);
+    return applyEdgeCachePolicy(request, mcpResponse ?? (await nextFetch(request, env, ctx)));
   },
 
   async scheduled(controller: ScheduledController, env: ScheduledEnv, ctx: ExecutionContext): Promise<void> {

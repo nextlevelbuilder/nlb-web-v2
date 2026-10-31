@@ -36,11 +36,11 @@ export async function generateMetadata({ params }: SharedYearPageProps): Promise
   return {
     title,
     description,
-    // Shared links stay out of search unless the member opted in to a public Year in Review.
-    robots: view.indexable ? { index: true, follow: false } : { index: false, follow: false },
+    // Share links are private by default: anyone holding the link can open it, but it never enters
+    // search results (robots.txt blocks `/wrapped/*/` too), so the token is never published.
+    robots: { index: false, follow: false },
     // The token is the credential: never send it to other sites in the Referer header.
     referrer: "no-referrer",
-    alternates: view.indexable ? { canonical: url } : undefined,
     openGraph: { title, description, url, type: "profile", siteName: "Next Level Builders", locale: locale === "en" ? "en_US" : "vi_VN" },
     twitter: { card: "summary_large_image", title, description },
   };
