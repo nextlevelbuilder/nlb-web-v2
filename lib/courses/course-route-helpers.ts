@@ -43,8 +43,17 @@ export async function requireCaller(request: Request): Promise<ResolvedCaller> {
   return caller;
 }
 
+/**
+ * Admin routes also accept an MCP delegation (`mcp:write`), so the NLB MCP server can manage videos
+ * for an OAuth-connected admin; members' routes keep to sessions and API keys.
+ */
 export async function requireAdmin(request: Request): Promise<ResolvedCaller> {
-  const caller = await requireCaller(request);
+  const caller = await resolveCaller(request.headers, undefined, {
+    scope: "mcp:write",
+    method: request.method,
+    path: new URL(request.url).pathname,
+  });
+  if (!caller) throw new CourseError(401, "unauthorized", "Sign in to continue");
   if (caller.user.role !== "admin") throw new CourseError(403, "forbidden", "Admin access required");
   return caller;
 }

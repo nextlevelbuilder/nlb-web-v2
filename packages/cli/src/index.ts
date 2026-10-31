@@ -22,4 +22,6 @@ export * from "./commands/builder.js";
 export * from "./api/builder-client.js";
 export * from "./commands/onboarding.js";
 export * from "./api/onboarding-client.js";
+export * from "./commands/courses.js";
+export * from "./api/courses-client.js";
 export * from "./cli.js";

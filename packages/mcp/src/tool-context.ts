@@ -11,6 +11,15 @@ export const BLOG_WRITE_TOOLS = [
   "blog_restore_revision"
 ] as const;
 
+/** Course video admin tools (mcp:write); the web also requires the caller to be an admin. */
+export const COURSE_ADMIN_TOOLS = [
+  "course_create_upload",
+  "course_get_upload",
+  "course_create_video",
+  "course_update_video",
+  "course_publish_video"
+] as const;
+
 /**
  * Builder League writes (mcp:write). Every one of them is member self-service: none can verify,
  * approve or award, because API keys and MCP agents may only submit `self_reported` activity.
@@ -108,7 +117,7 @@ export const IDENTITY_AWARE_READ_TOOLS = ["blog_list_posts", "blog_get_post"] as
 export function requiredToolScope(name: string): McpScope {
   if (["list_api_keys", "create_api_key", "revoke_api_key"].includes(name)) return "mcp:keys";
   if (isLiveOperatorTool(name)) return "mcp:operator";
-  if (["submit_product", "cast_vote", "upload_media", "create_checkout", ...BLOG_WRITE_TOOLS, ...BUILDER_WRITE_TOOLS].includes(name)) return "mcp:write";
+  if (["submit_product", "cast_vote", "upload_media", "create_checkout", ...BLOG_WRITE_TOOLS, ...BUILDER_WRITE_TOOLS, ...COURSE_ADMIN_TOOLS].includes(name)) return "mcp:write";
   return "mcp:read";
 }
 
@@ -120,6 +129,7 @@ export function isMutatingTool(name: string): boolean {
   return ["submit_product", "cast_vote", "upload_media", "create_checkout", "create_api_key", "revoke_api_key"].includes(name) ||
     (BLOG_WRITE_TOOLS as readonly string[]).includes(name) ||
     (BUILDER_WRITE_TOOLS as readonly string[]).includes(name) ||
+    (COURSE_ADMIN_TOOLS as readonly string[]).includes(name) ||
     (LIVE_OPERATOR_WRITE_TOOLS as readonly string[]).includes(name);
 }
 

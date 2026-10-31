@@ -17,8 +17,9 @@ import { checkoutCommand } from "./commands/checkout.js";
 import { registerBlogCommands, type BlogCommandDeps } from "./commands/blog.js";
 import { registerBuilderCommands, type BuilderCommandDeps } from "./commands/builder.js";
 import { registerOnboardingCommands, type OnboardingCommandDeps } from "./commands/onboarding.js";
+import { registerCourseCommands, type CourseCommandDeps } from "./commands/courses.js";
 
-export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderCommandDeps; onboarding?: OnboardingCommandDeps } = {}): Command {
+export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderCommandDeps; onboarding?: OnboardingCommandDeps; courses?: CourseCommandDeps } = {}): Command {
   const program = new Command();
 
   program
@@ -199,6 +200,7 @@ export function createProgram(deps: { blog?: BlogCommandDeps; builder?: BuilderC
   registerBlogCommands(program, deps.blog);
   registerBuilderCommands(program, deps.builder);
   registerOnboardingCommands(program, deps.onboarding);
+  registerCourseCommands(program, deps.courses);
 
   return program;
 }
