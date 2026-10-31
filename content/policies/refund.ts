@@ -8,7 +8,7 @@ import type { PolicyEntry } from "./policy-types";
  */
 export const refundPolicy: PolicyEntry = {
   group: "legal",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-31",
   legalReviewPending: true,
   content: {
     en: {
@@ -40,7 +40,7 @@ export const refundPolicy: PolicyEntry = {
         {
           heading: "5. What happens after a refund",
           content:
-            "• A refunded membership is cancelled and its benefits end, including Discord roles and VIP course access\n• A refunded course video is removed from your library\n• Your account stays open unless you also ask us to delete it",
+            "• A refunded membership is cancelled and its benefits end, including Discord roles and VIP course access\n• A refunded course video is removed from your library\n• Your account stays open unless you also ask us to delete it\n• If the purchase came through an affiliate's referral link, the affiliate's commission on the refunded amount is reversed",
         },
         {
           heading: "6. After 30 days",
@@ -97,7 +97,7 @@ export const refundPolicy: PolicyEntry = {
         {
           heading: "5. Sau khi hoàn tiền",
           content:
-            "• Gói thành viên đã hoàn tiền sẽ bị hủy và quyền lợi kết thúc, bao gồm vai trò Discord và quyền xem khóa học của VIP\n• Video khóa học đã hoàn tiền sẽ bị gỡ khỏi thư viện của bạn\n• Tài khoản của bạn vẫn được giữ, trừ khi bạn yêu cầu xóa",
+            "• Gói thành viên đã hoàn tiền sẽ bị hủy và quyền lợi kết thúc, bao gồm vai trò Discord và quyền xem khóa học của VIP\n• Video khóa học đã hoàn tiền sẽ bị gỡ khỏi thư viện của bạn\n• Tài khoản của bạn vẫn được giữ, trừ khi bạn yêu cầu xóa\n• Nếu giao dịch đến từ liên kết giới thiệu của affiliate, hoa hồng của affiliate trên số tiền được hoàn sẽ bị thu hồi",
         },
         {
           heading: "6. Sau 30 ngày",

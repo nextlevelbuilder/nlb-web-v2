@@ -14,6 +14,7 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [builder-league-adr.md](./builder-league-adr.md) | Understand Builder League scoring: the ledger, rulesets, caps, time windows, privacy and the rollout flag |
 | [builder-league-runbook.md](./builder-league-runbook.md) | Operate the Builder League: moderation, appeals, replays, finalization, renders, privacy requests, pilot, flag, backups, costs |
 | [live-runbook.md](./live-runbook.md) | Launch and operate NLB Live: Zoom secrets, first operators, rounds and events, OpenAPI publishing, retiring the old MCP Worker |
+| [affiliate-program-adr.md](./affiliate-program-adr.md) | Understand the affiliate program: levels and incentive budget, attribution, the commission ledger, payouts, flags and launch gates |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
 | [membership-onboarding.md](./membership-onboarding.md) | Operate post-checkout onboarding: tier rules, Discord/Telegram access, jobs and cron, secrets, backfill, rollback |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |

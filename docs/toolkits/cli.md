@@ -296,3 +296,27 @@ Course videos over `/api/courses/*` (admin API key except `list`; see [docs/cour
 - `nlb courses transcript <slug> [-q <text>] [-o <file>]`: reads a video's whole transcript, or searches it with `-q` (any key whose account may watch the video).
 - `nlb courses transcript-set <slug> <file> [--source <name>]`: stores or replaces a transcript (admin).
 - Common options: `-k, --api-key`, `-u, --url`, `--json`.
+
+### 20. `nlb affiliates ...`
+
+The affiliate program through `/api/v1/affiliates/*`, acting only on your own account. Authenticate like `nlb builder` (member API key, or a session cookie when no key is set); `program` needs no credential.
+
+```bash
+nlb affiliates program                                 # levels, budgets, fees, current termsVersion
+nlb affiliates join --terms-version 2026-10-31         # only after reading and accepting the Affiliate Agreement
+nlb affiliates me                                      # level, budgetBps, balances, masked payout method
+nlb affiliates preview --discount-bps 1000 --price-minor 4900
+nlb affiliates links list
+nlb affiliates links create --code my-code --discount-bps 1000 --destination /courses --utm-campaign launch
+nlb affiliates links update <id> --discount-bps 500 --expected-version 2
+nlb affiliates links update <id> --status archived     # permanent
+nlb affiliates conversions --limit 20
+nlb affiliates commissions --limit 50
+nlb affiliates payouts
+```
+
+- Money fields ending in `Minor` are minor units (cents); rates ending in `Bps` are basis points (`100` = 1%).
+- A discount above your budget fails with `over_budget`; a stale `--expected-version` fails with `conflict`. `--label ''` and `--utm-campaign ''` clear those fields.
+- Inputs are checked locally against the shared contracts before any request; failures exit 1 and `--json` prints `{ success: false, status, code, hint, notEnabled }`.
+- There are no payout-method or operator commands: payout setup happens in a signed-in browser session, and finance operators use the website or the `affiliate_admin_*` MCP tools.
+- Common options: `-k, --api-key`, `-c, --cookie`, `-u, --url`, `--json`.

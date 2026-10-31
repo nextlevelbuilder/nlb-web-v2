@@ -1,3 +1,4 @@
+import { affiliateAgreementPolicy } from "./affiliate-agreement";
 import { communityOverviewPolicy } from "./community-overview";
 import { contributorPolicy } from "./contributor-policy";
 import { cookiesPolicy } from "./cookies";
@@ -28,6 +29,7 @@ export const POLICY_PAGE_SLUGS = [
   "privacy",
   "refund",
   "cookies",
+  "affiliate-agreement",
 ] as const;
 
 export type PolicyPageSlug = (typeof POLICY_PAGE_SLUGS)[number];
@@ -43,7 +45,11 @@ export const POLICIES: Record<PolicyPageSlug, PolicyEntry> = {
   privacy: privacyPolicy,
   refund: refundPolicy,
   cookies: cookiesPolicy,
+  "affiliate-agreement": affiliateAgreementPolicy,
 };
+
+/** Policies published only once their program launches (the Affiliate Agreement is pending legal review). */
+export const LAUNCH_GATED_POLICY_SLUGS: readonly PolicyPageSlug[] = ["affiliate-agreement"];
 
 export function isPolicySlug(value: string): value is PolicyPageSlug {
   return (POLICY_PAGE_SLUGS as readonly string[]).includes(value);
@@ -64,8 +70,8 @@ export function getPolicy(
   return { ...entry.content[toPolicyLocale(locale)], slug, group: entry.group, lastUpdated: entry.lastUpdated };
 }
 
-export function policySlugsByGroup(group: PolicyGroup): PolicyPageSlug[] {
-  return POLICY_PAGE_SLUGS.filter((slug) => POLICIES[slug].group === group);
+export function policySlugsByGroup(group: PolicyGroup, published: readonly PolicyPageSlug[] = POLICY_PAGE_SLUGS): PolicyPageSlug[] {
+  return published.filter((slug) => POLICIES[slug].group === group);
 }
 
 /** Locale-less route of a policy page, ready for the next-intl `Link`. */

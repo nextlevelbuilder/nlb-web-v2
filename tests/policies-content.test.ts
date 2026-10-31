@@ -12,7 +12,9 @@ import {
 import { policyUiCopy } from "@/content/policies/policy-ui-copy";
 import { THEME_STORAGE_KEY } from "@/components/theme-provider";
 
-const LEGAL_SLUGS = ["terms", "privacy", "refund", "cookies"] as const;
+const LEGAL_SLUGS = ["terms", "privacy", "refund", "cookies", "affiliate-agreement"] as const;
+/** Legal pages that must stay free of draft wording; the affiliate agreement shows its review status on purpose. */
+const SETTLED_LEGAL_SLUGS = LEGAL_SLUGS.filter((slug) => slug !== "affiliate-agreement");
 const COMMUNITY_SLUGS = [
   "overview",
   "ship-policy",
@@ -38,7 +40,7 @@ describe("policy registry", () => {
 
   it.each(POLICY_PAGE_SLUGS)("%s has complete EN and VI content with a valid update date", (slug) => {
     const entry = POLICIES[slug];
-    expect(entry.lastUpdated).toMatch(/^2026-10-1[3-7]$/);
+    expect(entry.lastUpdated).toMatch(/^2026-10-(1[3-7]|31)$/);
     for (const locale of POLICY_LOCALES) {
       const doc = entry.content[locale];
       expect(doc.title.trim()).not.toBe("");
@@ -60,7 +62,7 @@ describe("policy registry", () => {
   });
 
   it("never renders a draft banner phrase to visitors", () => {
-    for (const slug of LEGAL_SLUGS) {
+    for (const slug of SETTLED_LEGAL_SLUGS) {
       for (const locale of POLICY_LOCALES) {
         expect(fullText(slug, locale)).not.toMatch(/\bdraft\b|legal review|bản nháp/i);
       }
@@ -69,6 +71,28 @@ describe("policy registry", () => {
 });
 
 describe("legal facts", () => {
+  it("affiliate agreement is versioned and opens with a visible pending-review notice", () => {
+    expect(POLICIES["affiliate-agreement"].lastUpdated).toBe("2026-10-31");
+    expect(POLICIES["affiliate-agreement"].legalReviewPending).toBe(true);
+    expect(getPolicy("affiliate-agreement", "en")?.sections[0].heading).toMatch(/pending legal review/i);
+    expect(getPolicy("affiliate-agreement", "vi")?.sections[0].heading).toMatch(/rà soát pháp lý/i);
+    expect(policyHref("affiliate-agreement")).toBe("/policies/affiliate-agreement");
+  });
+
+  it("other legal pages mention the affiliate program where it changes what they say", () => {
+    expect(fullText("terms", "en")).toMatch(/Affiliate Agreement/);
+    const privacy = fullText("privacy", "en");
+    expect(privacy).toMatch(/salted hash of a random visitor ID/);
+    expect(privacy).toMatch(/sealed with encryption/);
+    expect(privacy).toMatch(/do not store copies of identity documents/);
+    expect(fullText("refund", "en")).toMatch(/commission on the refunded amount is reversed/);
+    const cookies = fullText("cookies", "en");
+    expect(cookies).toMatch(/nlb_aff[^\n]*30 days/);
+    expect(cookies).toContain("nlb_wv");
+    expect(cookies).toMatch(/Neither cookie is set when your browser sends Do Not Track or Global Privacy Control/);
+    for (const slug of ["terms", "privacy", "refund", "cookies"]) expect(POLICIES[slug as "terms"].lastUpdated).toBe("2026-10-31");
+  });
+
   it("refund policy states the 30-day guarantee and Polar as merchant of record", () => {
     const en = fullText("refund", "en");
     expect(en).toMatch(/30-day money-back guarantee/);

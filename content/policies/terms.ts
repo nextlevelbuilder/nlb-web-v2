@@ -8,7 +8,7 @@ import type { PolicyEntry } from "./policy-types";
  */
 export const termsPolicy: PolicyEntry = {
   group: "legal",
-  lastUpdated: "2026-10-13",
+  lastUpdated: "2026-10-31",
   legalReviewPending: true,
   content: {
     en: {
@@ -20,7 +20,7 @@ export const termsPolicy: PolicyEntry = {
         {
           heading: "1. Agreement",
           content:
-            'These Terms of Service ("Terms") govern your use of nextlevelbuilder.io and every service operated by Next Level Builders ("NLB", "we", "us"): the website, memberships, courses, the Build with Us directory, Studio, public builder profiles, leaderboards, the API, the MCP server and the command-line tools.\n\nBy creating an account, making a purchase or otherwise using the services, you agree to these Terms, our Privacy Policy, Refund Policy and Cookie Policy. Members also agree to the community policies listed on this site (SHIP, Contributor, Membership Tiers, Onboarding and Violations), which form part of these Terms.\n\nIf you do not agree, please do not use the services.',
+            'These Terms of Service ("Terms") govern your use of nextlevelbuilder.io and every service operated by Next Level Builders ("NLB", "we", "us"): the website, memberships, courses, the Build with Us directory, Studio, public builder profiles, leaderboards, the API, the MCP server and the command-line tools.\n\nBy creating an account, making a purchase or otherwise using the services, you agree to these Terms, our Privacy Policy, Refund Policy and Cookie Policy. Members also agree to the community policies listed on this site (SHIP, Contributor, Membership Tiers, Onboarding and Violations), which form part of these Terms.\n\nIf you do not agree, please do not use the services.\n\nIf you join the affiliate program, the Affiliate Agreement also applies to your participation, alongside these Terms.',
         },
         {
           heading: "2. Eligibility and accounts",
@@ -111,7 +111,7 @@ export const termsPolicy: PolicyEntry = {
         {
           heading: "1. Thỏa thuận",
           content:
-            'Điều khoản dịch vụ này ("Điều khoản") áp dụng cho việc bạn sử dụng nextlevelbuilder.io và mọi dịch vụ do Next Level Builders ("NLB", "chúng tôi") vận hành: website, gói thành viên, khóa học, thư mục Build with Us, Studio, hồ sơ builder công khai, bảng xếp hạng, API, máy chủ MCP và công cụ dòng lệnh.\n\nKhi tạo tài khoản, mua hàng hoặc sử dụng dịch vụ, bạn đồng ý với Điều khoản này cùng Chính sách quyền riêng tư, Chính sách hoàn tiền và Chính sách cookie. Thành viên cũng đồng ý với các quy chế cộng đồng trên website (SHIP, Contributor, Hạng thành viên, Onboarding và Xử lý vi phạm); các quy chế này là một phần của Điều khoản.\n\nNếu không đồng ý, vui lòng không sử dụng dịch vụ.',
+            'Điều khoản dịch vụ này ("Điều khoản") áp dụng cho việc bạn sử dụng nextlevelbuilder.io và mọi dịch vụ do Next Level Builders ("NLB", "chúng tôi") vận hành: website, gói thành viên, khóa học, thư mục Build with Us, Studio, hồ sơ builder công khai, bảng xếp hạng, API, máy chủ MCP và công cụ dòng lệnh.\n\nKhi tạo tài khoản, mua hàng hoặc sử dụng dịch vụ, bạn đồng ý với Điều khoản này cùng Chính sách quyền riêng tư, Chính sách hoàn tiền và Chính sách cookie. Thành viên cũng đồng ý với các quy chế cộng đồng trên website (SHIP, Contributor, Hạng thành viên, Onboarding và Xử lý vi phạm); các quy chế này là một phần của Điều khoản.\n\nNếu không đồng ý, vui lòng không sử dụng dịch vụ.\n\nNếu bạn tham gia chương trình affiliate, Thỏa thuận affiliate cũng áp dụng cho việc tham gia đó, cùng với Điều khoản này.',
         },
         {
           heading: "2. Điều kiện và tài khoản",

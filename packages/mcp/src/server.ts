@@ -10,7 +10,7 @@ import {
 import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/server/validators/cf-worker";
 import { TOOLS, type McpToolDefinition } from "./tools/index.js";
 import {
-  LIVE_OPERATOR_READ_TOOLS,
+  OPERATOR_READ_TOOLS,
   ToolError,
   isMutatingTool,
   isPrivateReadTool,
@@ -31,7 +31,10 @@ const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set([
   "blog_archive_post",
   "live_admin_cancel_event",
   "live_admin_refund_ticket",
-  "live_admin_override_round_winner"
+  "live_admin_override_round_winner",
+  // Archiving a link (status archived) is permanent; a cancelled payout batch cannot be reopened.
+  "affiliate_update_link",
+  "affiliate_admin_cancel_batch"
 ]);
 
 /** Whether an HTTP caller must prove an identity (OAuth or the Worker token) before running the tool. */
@@ -92,7 +95,7 @@ export function toolContextFor(caller: McpCaller, toolName: string, args: Record
 function annotationsFor(tool: McpToolDefinition): ToolAnnotations {
   const readOnly = !MUTATING_TOOLS.has(tool.name) &&
     (requiredToolScope(tool.name) === "mcp:read" || /^(list|get)_/.test(tool.name) ||
-      (LIVE_OPERATOR_READ_TOOLS as readonly string[]).includes(tool.name));
+      (OPERATOR_READ_TOOLS as readonly string[]).includes(tool.name));
   const defaults: ToolAnnotations = readOnly
     ? { readOnlyHint: true }
     : { readOnlyHint: false, destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name) };

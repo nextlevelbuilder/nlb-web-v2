@@ -25,6 +25,7 @@ import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membe
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
 import { hasLiveTicketProduct, syncLiveTicketFromOrder } from "@/lib/live/live-webhook-tickets";
 import { recordPaidShareConversion } from "@/lib/builder-league/attribution";
+import { syncReferralOrder, type PolarOrderForReferral } from "@/lib/referrals/affiliate-conversions";
 import { WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { verifyPolarWebhook } from "@/lib/polar-webhook-signature";
 import crypto from "crypto";
@@ -323,6 +324,17 @@ function scheduleJobRun(db: AppDb) {
   }
 }
 
+/** Continue a best-effort task through `waitUntil`; without a Worker context (tests) finish it inline. */
+async function runAfterResponse(task: Promise<unknown>): Promise<void> {
+  try {
+    getCloudflareContext().ctx.waitUntil(task);
+    return;
+  } catch {
+    // No Worker request context.
+  }
+  await task;
+}
+
 /**
  * Link the Polar customer to an NLB user from server-trusted signals only (see
  * `linkCustomerFromPurchase`): `metadata.nlb_user_id` (set server-side by /api/checkout for a
@@ -472,6 +484,8 @@ async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effect
   if (!order || !order.id || !order.status) return;
 
   await db.update(orders).set({ status: order.status }).where(eq(orders.polarOrderId, order.id));
+  // Reverses referral commission in proportion to the refunded net amount (idempotent, see lib/referrals).
+  await syncReferralOrder(db, order as PolarOrderForReferral);
 
   const productId = order.product_id || order.product?.id || "";
   if (order.status !== "refunded" || !order.subscription_id || !MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
@@ -584,30 +598,28 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
         paidAt: isPaid ? new Date() : undefined,
       },
     });
+  // Referral commission accrues only from this signed, settled provider order (idempotent per order).
+  await syncReferralOrder(db, { ...(order as PolarOrderForReferral), paid: isPaid });
   if (!wasAlreadyPaid && isPaid) {
+    // One notification per paid order: the delivery intent survives Polar retries and the
+    // order.created/order.paid pair. Sent off the response path so Discord never fails the webhook.
     const salesKey = `sales_discord:${order.id}`;
-    const discordClaimed = await claimDeliveryIntent(salesKey, "discord_sales", db);
-    if (discordClaimed) {
-      try {
-        const orderProductId = order.product_id || order.product?.id || "";
-        const fallbackName = isDirectoryProduct(orderProductId)
-          ? "Directory Listing Submission"
-          : "Premium Community Access";
-        await sendDiscordSalesNotification({
-          customerName: customer.name || customer.email.split("@")[0],
-          customerEmail: customer.email,
+    if (await claimDeliveryIntent(salesKey, "discord_sales", db)) {
+      const orderProductId = order.product_id || order.product?.id || "";
+      const fallbackName = isDirectoryProduct(orderProductId)
+        ? "Directory Listing Submission"
+        : "Premium Community Access";
+      await runAfterResponse(
+        sendDiscordSalesNotification({
           productName: order.product?.name || fallbackName,
           amount: orderAmount,
           currency: order.currency || "usd",
-          orderId: order.id,
-        });
-        await markDeliveryComplete(salesKey, "discord_sales", { sent: true }, db);
-      } catch (error) {
-        console.error(
-          "Failed to send Discord sales notification (non-fatal):",
-          error
-        );
-      }
+          customerEmail: customer.email,
+          source: "Polar",
+        })
+          .then((sent) => markDeliveryComplete(salesKey, "discord_sales", { sent }, db))
+          .catch(() => console.error("Discord sales notification bookkeeping failed (non-fatal)"))
+      );
     }
   }
 }

@@ -42,5 +42,5 @@ export const config = {
   // - docs/* (root-level, non-localized redirects such as /docs/api -> /api-docs)
   // - llms.txt and sitemap.xml
   // - _next internals and static files
-  matcher: ['/((?!api|go|docs/|llms\\.txt|sitemap\\.xml|_next|.*\\..*).*)', '/:path*.md', '/.md'],
+  matcher: ['/((?!api|go|r/|docs/|llms\\.txt|sitemap\\.xml|_next|.*\\..*).*)', '/:path*.md', '/.md'],
 };

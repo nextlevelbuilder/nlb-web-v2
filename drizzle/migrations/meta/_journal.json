@@ -40,8 +40,15 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1793430943336,
-      "tag": "0005_course_video_transcripts",
+      "when": 1793433429118,
+      "tag": "0005_affiliate_program",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793440785121,
+      "tag": "0006_course_video_transcripts",
       "breakpoints": true
     }
   ]

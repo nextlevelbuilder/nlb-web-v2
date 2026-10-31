@@ -40,19 +40,28 @@ function getKey(rawKey: string | undefined = getOnboardingEnv().ONBOARDING_ENCRY
   return cached;
 }
 
-export async function encryptSecret(plain: string, rawKey?: string): Promise<string> {
+/** AES-GCM parameters; `associatedData` binds the ciphertext to its owner (it must match to decrypt). */
+function gcmParams(iv: Uint8Array<ArrayBuffer>, associatedData: string | undefined): AesGcmParams {
+  return associatedData === undefined ? { name: "AES-GCM", iv } : { name: "AES-GCM", iv, additionalData: encoder.encode(associatedData) };
+}
+
+/**
+ * Seals `plain`. Pass `associatedData` (for example the owning row's id) to bind the ciphertext to its
+ * owner: a sealed value copied to another owner then fails to decrypt.
+ */
+export async function encryptSecret(plain: string, rawKey?: string, associatedData?: string): Promise<string> {
   const key = await getKey(rawKey);
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const sealed = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(plain)));
+  const sealed = new Uint8Array(await crypto.subtle.encrypt(gcmParams(iv, associatedData), key, encoder.encode(plain)));
   return `${VERSION}.${toBase64Url(iv)}.${toBase64Url(sealed)}`;
 }
 
-/** Throws when the value was tampered with, sealed with another key, or is not in the sealed format. */
-export async function decryptSecret(enc: string, rawKey?: string): Promise<string> {
+/** Throws when the value was tampered with, sealed with another key or associated data, or is not in the sealed format. */
+export async function decryptSecret(enc: string, rawKey?: string, associatedData?: string): Promise<string> {
   const [version, ivPart, dataPart, extra] = enc.split(".");
   if (version !== VERSION || !ivPart || !dataPart || extra !== undefined) throw new Error("Malformed sealed secret");
   const key = await getKey(rawKey);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64(ivPart) }, key, fromBase64(dataPart));
+  const plain = await crypto.subtle.decrypt(gcmParams(fromBase64(ivPart), associatedData), key, fromBase64(dataPart));
   return decoder.decode(plain);
 }
 
