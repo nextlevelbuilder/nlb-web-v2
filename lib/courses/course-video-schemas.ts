@@ -61,3 +61,15 @@ export type UpdateCourseVideoInput = z.infer<typeof updateCourseVideoSchema>;
 export const courseCheckoutSchema = z
   .object({ locale: z.enum(["en", "vi"]).optional() })
   .strict();
+
+// Stream accepts uploads up to 30 GB and videos up to 6 hours.
+export const createCourseUploadSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200),
+    sizeBytes: z.number().int().min(1).max(30 * 1024 ** 3),
+    maxDurationSec: z.number().int().min(1).max(6 * 60 * 60).optional(),
+  })
+  .strict();
+export type CreateCourseUploadInput = z.infer<typeof createCourseUploadSchema>;
+
+export const streamUidParamSchema = streamUidSchema;

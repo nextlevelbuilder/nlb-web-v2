@@ -35,3 +35,6 @@ plans/reports/visual-parity-*/*.png
 /test-results/
 /playwright-report/
 /tests/e2e/.auth/
+
+# Course recording audio chunks and transcripts (scripts/courses)
+.recordings/

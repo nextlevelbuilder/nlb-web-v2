@@ -32,12 +32,13 @@ These live under `app/api/courses/`. They are not part of `/api/v1` or the OpenA
 | Endpoint | Who |
 |---|---|
 | `GET /api/courses/videos`, `GET /api/courses/videos/<slug>` | public catalogue. The Stream uid is never exposed. |
+| `POST /api/courses/uploads`, `GET /api/courses/uploads/<uid>` | admin. Reserves a signed-only Stream upload (one-time tus URL) and reads its processing status. |
 | `POST /api/courses/videos`, `PATCH /api/courses/videos/<slug>` | admin |
 | `POST /api/courses/videos/<slug>/publish` | admin. Creates the Polar product. |
 | `POST /api/courses/videos/<slug>/checkout` | signed-in user. Returns a Polar checkout URL. |
 | `POST /api/courses/videos/<slug>/token` | signed-in user with access. Returns a signed playback URL. |
 
-Admin means `role === "admin"` through `resolveCaller`, which accepts a session or an API key ([`lib/courses/course-route-helpers.ts`](../lib/courses/course-route-helpers.ts)). Request bodies are defined by [`lib/courses/course-video-schemas.ts`](../lib/courses/course-video-schemas.ts).
+Admin means `role === "admin"` through `resolveCaller`, which accepts a session, an API key or an MCP delegation for `mcp:write` ([`lib/courses/course-route-helpers.ts`](../lib/courses/course-route-helpers.ts)). Request bodies are defined by [`lib/courses/course-video-schemas.ts`](../lib/courses/course-video-schemas.ts).
 
 Pages: `/courses` and `/courses/<slug>` (and `/vi/...`). UI components are in `components/courses/`.
 
@@ -53,7 +54,9 @@ Stream is not reachable with the current API token or OAuth scopes. The account 
 
 ## Publishing a video
 
-1. Upload the video to Stream. Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
+For NLB Weekly recordings, `npm run courses:publish -- <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <summary>` runs steps 1–3 with the house conventions (`nlb courses publish-recording`, see [toolkits/cli.md](./toolkits/cli.md)); `npm run courses:transcribe -- <file>` prepares 10-minute transcript chunks to write the summary from. The internal agent skill [`skills/nlb-course-video-publish`](../skills/nlb-course-video-publish/SKILL.md) covers the whole routine, and the MCP `course_*` tools expose the same steps.
+
+1. Upload the video to Stream (`POST /api/courses/uploads`, then send the file to the returned tus URL). Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
 2. As an admin, `POST /api/courses/videos` with the slug, title, price and `streamUid`. The video is created as a draft.
 3. `POST /api/courses/videos/<slug>/publish`. This creates the Polar product and makes the video visible.
 4. Verify on staging:

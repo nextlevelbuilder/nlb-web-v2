@@ -23,7 +23,9 @@
     "db:migrate:production": "wrangler d1 migrations apply DB --remote --env=\"\"",
     "build:packages": "npm run build --workspaces",
     "test:packages": "npm run test --workspaces",
-    "type-check:packages": "npm run type-check --workspaces"
+    "type-check:packages": "npm run type-check --workspaces",
+    "courses:transcribe": "bash scripts/courses/prepare-recording-transcript.sh",
+    "courses:publish": "node scripts/courses/publish-recording.mjs"
   },
   "dependencies": {
     "@better-auth/mcp": "1.7.2",

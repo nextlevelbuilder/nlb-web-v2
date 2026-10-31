@@ -1,0 +1,11 @@
+{
+  "name": "nlb-course-video-publish",
+  "displayName": "NLB Course Video Publish (internal)",
+  "version": "0.1.0",
+  "description": "Internal admin workflow: transcribe, title, upload signed-only to Cloudflare Stream and publish NLB Weekly recordings as course videos",
+  "author": "Next Level Builders",
+  "homepage": "https://nextlevelbuilder.io/courses",
+  "repository": "https://github.com/nextlevelbuilder/nlb-web-v2",
+  "license": "MIT",
+  "keywords": ["courses", "nlb-weekly", "cloudflare-stream", "polar", "admin", "agent-skill"]
+}

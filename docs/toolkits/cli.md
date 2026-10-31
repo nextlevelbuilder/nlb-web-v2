@@ -284,3 +284,13 @@ nlb builder wrapped 2026
 ### 18. `nlb onboarding status`
 
 Shows the signed-in member's onboarding progress from `GET /api/v1/onboarding-status`: payment, membership, profile completion, and Discord and Telegram access with the next action for each. Options: `-k, --api-key`, `-u, --url`, `--json`.
+
+### 19. `nlb courses ...` (admin)
+
+Course videos over `/api/courses/*` (admin API key except `list`; see [docs/courses.md](../courses.md)).
+
+- `nlb courses list`: published videos and the next NLB Weekly number.
+- `nlb courses publish-recording <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <file>`: the whole weekly flow. Derives the week (highest + 1), date (from the file name), title `NLB Weekly #<week>: <topic>`, slug and description, uploads signed-only to Stream with resumable tus, waits for processing, registers and publishes (Polar product). Rerunnable: published slugs are skipped, `--stream-uid` reuses an upload. `--dry-run` writes nothing. Also `--week`, `--date`, `--slug`, `--price` (default 900), `--currency`, `--locale`, `--poll-seconds`, `--timeout-minutes`. From the repo root: `npm run courses:publish -- <file> ...` builds the CLI first.
+- `nlb courses upload <file> --name <name>`, `nlb courses status <uid>`, `nlb courses create <video.json>`, `nlb courses publish <slug>`: the individual steps.
+- `nlb courses put <file> <uploadUrl>`: sends a file to the one-time URL returned by the MCP tool `course_create_upload` (no credentials).
+- Common options: `-k, --api-key`, `-u, --url`, `--json`.

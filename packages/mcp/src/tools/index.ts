@@ -1,6 +1,7 @@
 import type { ToolContext } from "../tool-context.js";
 import { createBlogTools } from "./blog.js";
 import { createBuilderLeagueTools } from "./builder-league.js";
+import { createCourseTools } from "./courses.js";
 import { createLiveOperatorTools } from "./live-operator.js";
 import { createOnboardingTools } from "./onboarding.js";
 import {
@@ -1064,5 +1065,6 @@ export const TOOLS: McpToolDefinition[] = [
   ...createBlogTools(resolveToolEnv),
   ...createBuilderLeagueTools(resolveToolEnv),
   ...createOnboardingTools(resolveToolEnv),
+  ...createCourseTools(resolveToolEnv),
   ...createLiveOperatorTools(resolveToolEnv)
 ];
