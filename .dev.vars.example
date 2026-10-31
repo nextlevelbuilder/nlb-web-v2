@@ -89,7 +89,7 @@ DISCORD_BOT_TOKEN=
 DISCORD_GUILD_ID=
 # Role id granted to paying members.
 DISCORD_PREMIUM_ROLE_ID=
-# Incoming webhook URL for sales notifications.
+# Incoming webhook URL that gets one embed per paid checkout (secret; unset skips the notification).
 DISCORD_SALES_WEBHOOK_URL=
 # Discord OAuth2 application client id (member account linking).
 DISCORD_CLIENT_ID=
