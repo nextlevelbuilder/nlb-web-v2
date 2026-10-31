@@ -341,4 +341,68 @@ describe("Polar Webhook Route: Email Isolation & Idempotency", () => {
     expect(notificationCall.productName).toBe("Directory Listing Submission");
     expect(notificationCall.productName).not.toBe("Premium Access");
   });
+
+  it("notifies Discord once per paid order across order.created, order.paid and Polar retries", async () => {
+    const { POST } = await import("@/app/api/webhooks/polar/route");
+    sendDiscordSalesMock.mockClear();
+
+    const deliver = (webhookId: string, type: string) =>
+      POST(
+        new Request("https://nextlevelbuilder.io/api/webhooks/polar", {
+          method: "POST",
+          headers: { "webhook-id": webhookId, "webhook-timestamp": "1700000000", "webhook-signature": "v1,dummy" },
+          body: JSON.stringify({
+            type,
+            data: {
+              id: "ord_discord_once",
+              status: "paid",
+              paid: true,
+              customer_email: "buyer.once@example.com",
+              product_id: PRODUCT_IDS.VIP_ANNUAL,
+              product: { id: PRODUCT_IDS.VIP_ANNUAL, name: "VIP Annual" },
+              total_amount: 29900,
+              currency: "usd",
+            },
+          }),
+        })
+      );
+
+    expect((await deliver("wh_once_created", "order.created")).status).toBe(200);
+    expect((await deliver("wh_once_paid", "order.paid")).status).toBe(200);
+    expect((await deliver("wh_once_paid", "order.paid")).status).toBe(200);
+
+    expect(sendDiscordSalesMock).toHaveBeenCalledTimes(1);
+    expect(sendDiscordSalesMock.mock.calls[0][0]).toMatchObject({
+      productName: "VIP Annual",
+      amount: 29900,
+      currency: "usd",
+      source: "Polar",
+    });
+  });
+
+  it("keeps the webhook successful when the Discord notification fails", async () => {
+    const { POST } = await import("@/app/api/webhooks/polar/route");
+    sendDiscordSalesMock.mockClear().mockRejectedValueOnce(new Error("discord down"));
+
+    const res = await POST(
+      new Request("https://nextlevelbuilder.io/api/webhooks/polar", {
+        method: "POST",
+        headers: { "webhook-id": "wh_discord_down", "webhook-timestamp": "1700000000", "webhook-signature": "v1,dummy" },
+        body: JSON.stringify({
+          type: "order.paid",
+          data: {
+            id: "ord_discord_down",
+            status: "paid",
+            customer_email: "buyer.down@example.com",
+            product_id: PRODUCT_IDS.PREMIUM_ANNUAL,
+            total_amount: 9900,
+            currency: "usd",
+          },
+        }),
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(sendDiscordSalesMock).toHaveBeenCalledTimes(1);
+  });
 });
