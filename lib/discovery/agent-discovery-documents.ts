@@ -53,7 +53,7 @@ export function mcpServerCard() {
     version: MCP_SERVER_VERSION,
     title: "Next Level Builders Directory",
     description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding; platform operators also run NLB Live.",
-    websiteUrl: `${site}/build-with-us#guide`,
+    websiteUrl: `${site}/mcp-server`,
     repository: { url: TOOLKITS_REPOSITORY, source: "github", subfolder: "packages/mcp" },
     icons: [
       { src: `${site}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },

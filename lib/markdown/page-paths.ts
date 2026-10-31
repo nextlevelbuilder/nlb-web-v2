@@ -7,7 +7,7 @@ import { isPublicHallOfFamePath } from "@/lib/builder-league/hall-of-fame";
 
 // Only page routes may be fetched. API, OAuth callbacks, checkout and /go are
 // deliberately excluded: requesting a representation must never execute them.
-const pages = new Set(["/", "/blog", "/courses", "/build-with-us", "/leaderboards", "/policies", "/studio", "/account", "/sign-in", "/sign-up", "/success", "/api-docs", "/api/docs", "/docs/api"]);
+const pages = new Set(["/", "/blog", "/courses", "/build-with-us", "/mcp-server", "/leaderboards", "/policies", "/studio", "/account", "/sign-in", "/sign-up", "/success", "/api-docs", "/api/docs", "/docs/api"]);
 
 /** NLB Live index and event pages, only while the Live flag is on (the pages 404 otherwise). */
 function isLivePath(path: string) {

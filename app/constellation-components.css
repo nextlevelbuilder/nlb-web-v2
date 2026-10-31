@@ -79,3 +79,20 @@ html[lang="vi"] .card h3 { line-height: 1.25; }
 .page-head .h1-page em { font-style: italic; color: var(--accent); }
 html[lang="vi"] .page-head .h1-page { line-height: 1.14; }
 .page-head .lede { margin-top: var(--s-5); max-width: 52ch; }
+
+/* ---------- terminal surface + copy pill (home toolkits chapter, /mcp-server) ---------- */
+.term { overflow: hidden; min-width: 0; }
+.term-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--line); color: var(--ink-3); }
+.term-bar .dots { display: flex; gap: 6px; }
+.term-bar .dots i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--line-2); }
+.term pre { margin: 0; padding: var(--s-5); overflow-x: auto; font-family: var(--f-mono); font-size: .8125rem; line-height: 1.85; color: var(--ink); tab-size: 2; }
+.term pre .c { color: var(--ink-3); }
+.term pre .p { color: var(--accent); user-select: none; }
+.term .ln { display: block; white-space: pre; }
+.term .ln.c { white-space: pre-wrap; }
+.term-mcp { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line); }
+.term-mcp .mcp-k { color: var(--ink-3); display: block; margin-bottom: 4px; }
+.term-mcp code { font-family: var(--f-mono); font-size: .8125rem; color: var(--ink); overflow-wrap: anywhere; }
+.copy { min-height: 44px; padding: 0 var(--s-4); border: 1px solid var(--line-2); border-radius: var(--r-pill); font-family: var(--f-mono); font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); transition: border-color var(--d-2), color var(--d-2); }
+.copy:hover { border-color: var(--ink); color: var(--ink); }
+.copy.ok { border-color: var(--accent); color: var(--accent); }

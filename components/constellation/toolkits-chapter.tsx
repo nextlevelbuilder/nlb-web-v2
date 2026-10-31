@@ -2,7 +2,6 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { TEAM_PRODUCTS, TOOLKIT_MCP, pick } from '@/lib/constants/home-content';
-import { GUIDE_ANCHOR } from '@/app/[locale]/build-with-us/build-with-us-guide';
 import type { HomeLaunchedProduct } from '@/lib/home/home-page-data';
 import ChapterPlate from './chapter-plate';
 import SplitText from './split-text';
@@ -26,7 +25,7 @@ export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedPr
             <SplitText id="tool-title" className="h2" text={t.raw('title') as string} />
             <p className="lede">{t('body')}</p>
             <p className="lede">{t('mcp')}</p>
-            <Link className="link-arrow" href={{ pathname: '/build-with-us', hash: GUIDE_ANCHOR }}>{t('docs')} <span aria-hidden="true">→</span></Link>
+            <Link className="link-arrow" href="/mcp-server">{t('docs')} <span aria-hidden="true">→</span></Link>
           </div>
           <div className="surface term">
             <div className="term-bar">

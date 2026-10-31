@@ -61,6 +61,7 @@ export async function GET() {
       "## Documentation",
       `- [Home](${baseUrl}/index.md): Membership, founders, courses, the directory and pricing in one page.`,
       `- [Build with Us](${baseUrl}/build-with-us.md): Published directory, product documents, submission and agent integrations.`,
+      `- [MCP server](${baseUrl}/mcp-server.md): Connect an MCP client to the official endpoint, sign-in scopes and every tool group.`,
       `- [REST API reference](${baseUrl}/api-docs.md): Endpoints, authentication and schemas.`,
       `- [Leaderboards](${baseUrl}/leaderboards.md): Daily, weekly and monthly rankings from organic votes.`,
       `- [Policies](${baseUrl}/policies.md): Community and publication rules.`,

@@ -38,6 +38,7 @@ export default function SiteFooter() {
             {PAGES.map(({ key, href }) => <Link key={key} href={href}>{t(key)}</Link>)}
             {/* API docs live outside the localized tree. */}
             <a href={API_DOCS_PATH}>{t('footer.apiDocs')}</a>
+            <Link href="/mcp-server">{t('footer.mcpServer')}</Link>
             {LEGAL.map(({ key, href }) => <Link key={key} href={href}>{t(key)}</Link>)}
             {SOCIAL_ORDER.map((network) => (
               <a key={network} href={SOCIAL_LINKS[network]} target="_blank" rel="noopener noreferrer">
