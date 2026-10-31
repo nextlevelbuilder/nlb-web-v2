@@ -176,7 +176,7 @@ Operating it:
 - **Stuck jobs:** `GET /api/v1/builder-admin/render-jobs?status=claimed`. An expired lease returns the job to the queue by itself.
 - **Failed jobs:** `?status=failed` shows the error. Fix the cause, then the member requests again.
 - **Pausing rendering:** disable the workflow in GitHub Actions. Queued jobs wait and expire after 14 days.
-- **Setting or rotating the key:** mint a `builder:render` key (below), store it with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), run the workflow once by hand to confirm it claims jobs, then revoke the old key in `/profile`.
+- **Setting or rotating the key:** mint a `builder:render` key (below), store it with `gh secret set NLB_RENDER_API_KEY -R nextlevelbuilder/nlb-web-v2` (paste at the prompt, never on the command line), run the workflow once by hand to confirm it claims jobs, then revoke the old key in `/account`.
 
 ### Minting a scoped key
 
@@ -194,7 +194,7 @@ Use `scopes: ["builder:ingest"]` and a matching name for the Discord bot. `data.
 
 - works only on the routes for its scope (`builder:render`: `/api/v1/builder-admin/render-jobs/**`; `builder:ingest`: `/api/v1/builder-admin/ingest/discord`) and counts as no credential everywhere else, so it cannot read member data, moderate or award;
 - still needs its owner to be an admin; if the owner loses the role the key stops working;
-- shows its scopes in `GET /api/v1/api-keys` and is revoked like any other key, in `/profile` or with `DELETE /api/v1/api-keys/{id}`.
+- shows its scopes in `GET /api/v1/api-keys` and is revoked like any other key, in `/account` or with `DELETE /api/v1/api-keys/{id}`.
 
 Full API keys minted before this change keep working on member routes but no longer drive the renderer or Discord ingest; replace any such key with a scoped one.
 

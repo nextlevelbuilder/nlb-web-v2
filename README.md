@@ -97,7 +97,7 @@ Published catalog reads (list, detail, Markdown, and `llms.txt`) and product UI 
 
 Published catalog JSON also returns `votesCount`, the cumulative counter previously exposed as `trustScore`. The database column `products.trust_score` retains that legacy counter; voting still increments it by one, with one vote per account/product/UTC day. Never persist the calculated score into this column. Published products use the approved/published revision's website URL for both scoring and ordering, including in private dashboards that still show editable draft metadata. Product detail badges use `votesCount`, and Build with Us updates the score after a successful vote. Seed scripts no longer assign synthetic counter values or overwrite existing votes; historical seeded counters are not repaired by this code change.
 
-Manage secret API keys in your builder profile (`/profile`) to authenticate automated workflows.
+Manage secret API keys on your account page (`/account`) to authenticate automated workflows.
 
 - **Developer toolkits:** [`packages/cli`](packages/cli), [`packages/mcp`](packages/mcp) and [`packages/contracts`](packages/contracts) in this repository
 - **CLI:** `@nextlevelbuilder/cli` (`nlb submit <product.json> --api-key <KEY>`)

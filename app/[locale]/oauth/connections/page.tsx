@@ -26,7 +26,7 @@ export default async function OAuthConnectionsPage() {
         <p className="text-step-base text-ink-2">Manage MCP access to <strong className="break-all font-medium text-foreground">{session.user.email}</strong>. Disconnecting stops token renewal. Existing access expires within five minutes.</p>
       </header>
       <OAuthConnections connections={connections} />
-      <p className="border-t border-line pt-6 text-step-sm text-ink-3">Long-lived API keys remain active until you revoke them from your <Link href="/profile" className="text-foreground underline underline-offset-4">profile</Link>.</p>
+      <p className="border-t border-line pt-6 text-step-sm text-ink-3">Long-lived API keys remain active until you revoke them from your <Link href="/account" className="text-foreground underline underline-offset-4">account</Link>.</p>
     </div>
   </main>;
 }
