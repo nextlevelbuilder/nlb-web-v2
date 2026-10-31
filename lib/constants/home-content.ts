@@ -227,13 +227,11 @@ export const PARTNERS: Partner[] = [
   },
 ];
 
-/** Real @nextlevelbuilder/cli commands, plus the official remote MCP endpoint this site serves at /mcp. */
-export const TOOLKIT_COMMANDS = {
-  template: "npx @nextlevelbuilder/cli template developer-cli --out product.json",
-  validate: "npx @nextlevelbuilder/cli validate product.json",
-  preview: "npx @nextlevelbuilder/cli preview product.json",
-  submit: "npx @nextlevelbuilder/cli submit product.json --api-key $NLB_API_KEY",
-  mcp: MCP_ENDPOINT,
+/** The official remote MCP endpoint this site serves at /mcp, and how each kind of client connects to it. */
+export const TOOLKIT_MCP = {
+  endpoint: MCP_ENDPOINT,
+  claudeCode: `claude mcp add --transport http nlb-directory ${MCP_ENDPOINT}`,
+  clientConfig: JSON.stringify({ mcpServers: { "nlb-directory": { url: MCP_ENDPOINT } } }, null, 2),
 } as const;
 
 export const TOOLKITS_REPO_URL = "https://github.com/nextlevelbuilder/nlb-web-v2/tree/main/packages";

@@ -299,6 +299,7 @@ html[data-theme="light"] .plan-star .phalo { fill: none; stroke: var(--accent); 
 .term pre .c { color: var(--ink-3); }
 .term pre .p { color: var(--accent); user-select: none; }
 .term .ln { display: block; white-space: pre; }
+.term .ln.c { white-space: pre-wrap; }
 .term-mcp { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line); }
 .term-mcp .mcp-k { color: var(--ink-3); display: block; margin-bottom: 4px; }
 .term-mcp code { font-family: var(--f-mono); font-size: .8125rem; color: var(--ink); overflow-wrap: anywhere; }

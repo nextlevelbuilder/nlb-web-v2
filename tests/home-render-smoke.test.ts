@@ -166,7 +166,7 @@ describe("homepage chapters render", () => {
 
   it("shows honest empty states instead of sample data", () => {
     const html = renderHome("en");
-    expect(html).toContain("Be the next one — submit from your terminal");
+    expect(html).toContain("Be the next one — submit from your AI agent");
     expect(html.match(/class="lb-row is-open"/g)?.length).toBe(5);
     expect(html).toContain(`aria-label="${en.home.directory.chartAltEmpty}"`);
     expect(html).not.toContain("From the logbook"); // no posts, no teaser
