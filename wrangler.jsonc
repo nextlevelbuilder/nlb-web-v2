@@ -15,7 +15,6 @@
   "observability": {
     "enabled": true
   },
-  // Workers Cache in front of the Worker; worker.ts sets Cache-Control on every response.
   "cache": {
     "enabled": true
   },
