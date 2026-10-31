@@ -1,24 +1,16 @@
-import { Fragment } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { API_DOCS_PATH, TEAM_PRODUCTS, TOOLKIT_COMMANDS, pick } from '@/lib/constants/home-content';
+import { TEAM_PRODUCTS, TOOLKIT_MCP, pick } from '@/lib/constants/home-content';
+import { GUIDE_ANCHOR } from '@/app/[locale]/build-with-us/build-with-us-guide';
 import type { HomeLaunchedProduct } from '@/lib/home/home-page-data';
 import ChapterPlate from './chapter-plate';
 import SplitText from './split-text';
 import TerminalCopyButton from './terminal-copy-button';
 
-const CLI_STEPS = [
-  { comment: 'step1', commands: [TOOLKIT_COMMANDS.template] },
-  { comment: 'step2', commands: [TOOLKIT_COMMANDS.validate, TOOLKIT_COMMANDS.preview] },
-  { comment: 'step3', commands: [TOOLKIT_COMMANDS.submit] },
-] as const;
-
-const CLI_TEXT = CLI_STEPS.flatMap((s) => s.commands).join('\n');
-
 /**
- * Chapter VII · transmission: the real Directory CLI commands and the official MCP endpoint in the terminal, then the
- * products members launched through it and the products built by the NLB team.
+ * Chapter VII · transmission: how to connect an MCP client to the official /mcp endpoint, then the products members
+ * launched through it and the products built by the NLB team.
  */
 export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedProduct[] | null }) {
   const t = useTranslations('home.toolkits');
@@ -34,26 +26,26 @@ export default function ToolkitsChapter({ launched }: { launched: HomeLaunchedPr
             <SplitText id="tool-title" className="h2" text={t.raw('title') as string} />
             <p className="lede">{t('body')}</p>
             <p className="lede">{t('mcp')}</p>
-            <a className="link-arrow" href={API_DOCS_PATH}>{t('docs')} <span aria-hidden="true">→</span></a>
+            <Link className="link-arrow" href={{ pathname: '/build-with-us', hash: GUIDE_ANCHOR }}>{t('docs')} <span aria-hidden="true">→</span></Link>
           </div>
           <div className="surface term">
             <div className="term-bar">
               <span className="dots" aria-hidden="true"><i /><i /><i /></span>
-              <span className="mono">~/my-product — nlb cli</span>
-              <TerminalCopyButton text={CLI_TEXT} label={t('copyCli')} />
+              <span className="mono">~ — nlb mcp</span>
+              <TerminalCopyButton text={TOOLKIT_MCP.claudeCode} label={t('copyClaudeCode')} />
             </div>
-            <pre aria-label={t('terminalLabel')}><code id="cli-code">
-              {CLI_STEPS.map((step, i) => (
-                <Fragment key={step.comment}>
-                  {i > 0 && <span className="ln c"> </span>}
-                  <span className="ln c">{t(step.comment)}</span>
-                  {step.commands.map((cmd) => <span className="ln" key={cmd}><span className="p">$ </span>{cmd}</span>)}
-                </Fragment>
-              ))}
+            <pre aria-label={t('terminalLabel')}><code id="mcp-setup">
+              <span className="ln c">{t('step1')}</span>
+              <span className="ln"><span className="p">$ </span>{TOOLKIT_MCP.claudeCode}</span>
+              <span className="ln c"> </span>
+              <span className="ln c">{t('step2')}</span>
+              <span className="ln c"> </span>
+              <span className="ln c">{t('step3')}</span>
+              {TOOLKIT_MCP.clientConfig.split('\n').map((line, i) => <span className="ln" key={i}>{line}</span>)}
             </code></pre>
             <div className="term-mcp">
-              <span><span className="mono mcp-k">MCP</span><code id="mcp-code">{TOOLKIT_COMMANDS.mcp}</code></span>
-              <TerminalCopyButton text={TOOLKIT_COMMANDS.mcp} label={t('copyMcp')} />
+              <span><span className="mono mcp-k">{t('endpointLabel')}</span><code id="mcp-code">{TOOLKIT_MCP.endpoint}</code></span>
+              <TerminalCopyButton text={TOOLKIT_MCP.endpoint} label={t('copyMcp')} />
             </div>
           </div>
         </div>
