@@ -5,7 +5,7 @@
  * system and records each transfer with its external reference. Recording is gated by
  * `AFFILIATE_PAYOUTS_ENABLED` until the legal/finance review is signed off.
  */
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import {
   affiliatePayoutBatches,
@@ -17,8 +17,8 @@ import {
 } from "@/lib/db/schema";
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secret-box";
 import { isUniqueViolation } from "@/lib/membership/member-access";
-import { affiliateBalances, ledgerInsert, recordLedgerMove } from "./commission-ledger";
-import { matureConversions } from "./affiliate-conversions";
+import { bucketBalanceSql, ledgerInsertSelect, recordLedgerMove } from "./commission-ledger";
+import { matureDueConversions } from "./affiliate-conversions";
 import { payoutAmounts } from "./program-math";
 import { getActiveRules } from "./program-rules";
 import { ReferralError, referralInvalid, referralNotFound } from "./referral-errors";
@@ -81,7 +81,7 @@ export async function setPayoutMethod(db: AppDb, affiliateId: string, input: Pay
     details = { bankName, accountHolder, accountNumber };
     displayHint = `${bankName} ${mask(accountNumber)}`;
   }
-  const sealedDetails = await encryptSecret(JSON.stringify(details));
+  const sealedDetails = await encryptSecret(JSON.stringify(details), undefined, payoutDetailsAad(affiliateId));
   await db
     .update(affiliatePayoutMethods)
     .set({ status: "archived", updatedAt: now })
@@ -109,9 +109,14 @@ export function payoutMethodView(row: PayoutMethodRow | null) {
   return { id: row.id, type: row.type, displayHint: row.displayHint, payeeType: row.payeeType, residency: row.residency, createdAt: row.createdAt.toISOString() };
 }
 
+/** Associated data binding sealed payout details to their affiliate: a sealed blob moved to another affiliate's row fails to open. */
+function payoutDetailsAad(affiliateId: string): string {
+  return `affiliate_payout_method:${affiliateId}`;
+}
+
 /** Unseals the transfer details for the operator who records a payment. Never logged or returned by MCP. */
 export async function revealPayoutDetails(row: PayoutMethodRow): Promise<Record<string, string>> {
-  return JSON.parse(await decryptSecret(row.sealedDetails)) as Record<string, string>;
+  return JSON.parse(await decryptSecret(row.sealedDetails, undefined, payoutDetailsAad(row.affiliateId))) as Record<string, string>;
 }
 
 // ------------------------------------------------------------------
@@ -126,15 +131,6 @@ export function withholdingBpsFor(rules: ProgramRules, method: Pick<PayoutMethod
 
 export function serviceFeeBpsFor(rules: ProgramRules, type: PayoutMethodType): number {
   return type === "paypal" ? rules.paypalServiceFeeBps : rules.bankVnServiceFeeBps;
-}
-
-async function isVerified(db: AppDb, affiliateId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ id: affiliateVerifications.id })
-    .from(affiliateVerifications)
-    .where(and(eq(affiliateVerifications.affiliateId, affiliateId), eq(affiliateVerifications.status, "verified")))
-    .limit(1);
-  return Boolean(row);
 }
 
 export type PayoutBlocker = "below_threshold" | "payout_method_required" | "withholding_rule_missing" | "verification_required" | "affiliate_suspended";
@@ -168,29 +164,53 @@ export function assertClosedPeriod(period: unknown, now: Date): string {
   return period;
 }
 
+/** Ledger expression of an affiliate's `available` balance, for grouped reads. */
+const AVAILABLE_DELTA = sql<number>`sum(case when ${commissionLedger.toBucket} = 'available' then ${commissionLedger.amountMinor} else 0 end) - sum(case when ${commissionLedger.fromBucket} = 'available' then ${commissionLedger.amountMinor} else 0 end)`;
+
 /**
- * What a batch for `period` would pay right now. Commissions are matured first. Each affiliate with
- * an available balance is listed with blockers (threshold, method, approved withholding rule, and
- * identity verification for Vietnamese bank payees).
+ * What a batch for `period` would pay right now: read-only. Each affiliate with an available balance
+ * is listed with blockers (threshold, method, approved withholding rule, and identity verification for
+ * Vietnamese bank payees). Maturation is left to the cron and to batch creation. A fixed number of
+ * grouped queries, whatever the number of affiliates.
  */
 export async function previewPayouts(db: AppDb, periodInput: unknown, now = new Date()): Promise<PayoutPreview> {
   const period = assertClosedPeriod(periodInput, now);
-  await matureConversions(db, now);
   const { version, rules } = await getActiveRules(db);
-  const candidates = await db
+  const touchedAvailable = db
     .selectDistinct({ affiliateId: commissionLedger.affiliateId })
     .from(commissionLedger)
-    .where(sql`${commissionLedger.toBucket} = 'available' or ${commissionLedger.fromBucket} = 'available'`);
+    .where(eq(commissionLedger.toBucket, "available"));
+  const [balances, methods, verified] = await Promise.all([
+    db
+      .select({ affiliateId: commissionLedger.affiliateId, status: affiliates.status, available: AVAILABLE_DELTA })
+      .from(commissionLedger)
+      .leftJoin(affiliates, eq(affiliates.id, commissionLedger.affiliateId))
+      .where(or(eq(commissionLedger.toBucket, "available"), eq(commissionLedger.fromBucket, "available")))
+      .groupBy(commissionLedger.affiliateId, affiliates.status)
+      .having(sql`${AVAILABLE_DELTA} > 0`)
+      .orderBy(commissionLedger.affiliateId),
+    db
+      .select()
+      .from(affiliatePayoutMethods)
+      .where(and(eq(affiliatePayoutMethods.status, "active"), inArray(affiliatePayoutMethods.affiliateId, touchedAvailable)))
+      .orderBy(desc(affiliatePayoutMethods.createdAt)),
+    db
+      .selectDistinct({ affiliateId: affiliateVerifications.affiliateId })
+      .from(affiliateVerifications)
+      .where(and(eq(affiliateVerifications.status, "verified"), inArray(affiliateVerifications.affiliateId, touchedAvailable))),
+  ]);
+  const methodByAffiliate = new Map<string, PayoutMethodRow>();
+  for (const method of methods) if (!methodByAffiliate.has(method.affiliateId)) methodByAffiliate.set(method.affiliateId, method);
+  const verifiedIds = new Set(verified.map((row) => row.affiliateId));
 
   const lines: PayoutPreviewLine[] = [];
-  for (const { affiliateId } of candidates) {
-    const balances = await affiliateBalances(db, affiliateId);
-    if (balances.available <= 0) continue;
-    const [affiliate] = await db.select({ status: affiliates.status }).from(affiliates).where(eq(affiliates.id, affiliateId)).limit(1);
-    const method = await activePayoutMethod(db, affiliateId);
+  for (const { affiliateId, status, available: rawAvailable } of balances) {
+    const available = Number(rawAvailable) || 0;
+    if (available <= 0) continue;
+    const method = methodByAffiliate.get(affiliateId) ?? null;
     const blockers: PayoutBlocker[] = [];
-    if (affiliate?.status !== "active") blockers.push("affiliate_suspended");
-    if (balances.available < rules.payoutThresholdMinor) blockers.push("below_threshold");
+    if (status !== "active") blockers.push("affiliate_suspended");
+    if (available < rules.payoutThresholdMinor) blockers.push("below_threshold");
     let serviceFeeBps: number | null = null;
     let withholdingBps: number | null = null;
     if (!method) blockers.push("payout_method_required");
@@ -198,10 +218,10 @@ export async function previewPayouts(db: AppDb, periodInput: unknown, now = new 
       serviceFeeBps = serviceFeeBpsFor(rules, method.type);
       withholdingBps = withholdingBpsFor(rules, method);
       if (withholdingBps === null) blockers.push("withholding_rule_missing");
-      if (method.type === "bank_vn" && !(await isVerified(db, affiliateId))) blockers.push("verification_required");
+      if (method.type === "bank_vn" && !verifiedIds.has(affiliateId)) blockers.push("verification_required");
     }
-    const amounts = serviceFeeBps !== null && withholdingBps !== null ? payoutAmounts(balances.available, serviceFeeBps, withholdingBps) : null;
-    lines.push({ affiliateId, availableMinor: balances.available, method: payoutMethodView(method), serviceFeeBps, withholdingBps, amounts, blockers });
+    const amounts = serviceFeeBps !== null && withholdingBps !== null ? payoutAmounts(available, serviceFeeBps, withholdingBps) : null;
+    lines.push({ affiliateId, availableMinor: available, method: payoutMethodView(method), serviceFeeBps, withholdingBps, amounts, blockers });
   }
   const payable = lines.filter((line) => line.blockers.length === 0 && line.amounts);
   const totals = payable.reduce(
@@ -232,15 +252,71 @@ export async function listPayoutBatches(db: AppDb, limit = 24): Promise<PayoutBa
   return db.select().from(affiliatePayoutBatches).orderBy(desc(affiliatePayoutBatches.period)).limit(limit);
 }
 
+/** Payees per `db.batch` when creating a batch (two statements each). */
+const LOCK_CHUNK = 25;
+
 /**
- * Creates the batch for a closed period (one per period) and locks each payable line's gross amount:
- * `available -> payout_locked`. The lock is keyed by batch and affiliate, so a retry locks nothing twice.
+ * The item of one payee and the lock of its gross amount (`available -> payout_locked`), as two
+ * statements for one atomic `db.batch`. The item is inserted only while the affiliate's available
+ * balance, computed in SQL at write time, still covers the gross and the batch is still a draft; the
+ * lock is inserted only if that item row exists. So an item never exists without its lock, and two
+ * batches (any periods) can never lock the same available money twice.
+ */
+function lockPayeeStatements(db: AppDb, input: { batchId: string; currency: string; line: PayoutPreviewLine; actorUserId: string; now: Date }) {
+  const { line, now } = input;
+  const amounts = line.amounts!;
+  const method = line.method!;
+  const itemId = crypto.randomUUID();
+  const at = now.getTime();
+  const item = db
+    .insert(affiliatePayoutItems)
+    .select(
+      sql`select ${itemId}, ${input.batchId}, ${line.affiliateId}, ${method.id}, ${method.type}, ${amounts.grossMinor}, ${amounts.serviceFeeMinor}, ${amounts.withholdingMinor}, ${amounts.netMinor}, 'pending', null, null, null, null, null, null, null, ${at}, ${at}
+        where ${bucketBalanceSql("affiliate", line.affiliateId, "available")} >= ${amounts.grossMinor}
+          and exists (select 1 from affiliate_payout_batches b where b.id = ${input.batchId} and b.status = 'draft')`
+    )
+    .onConflictDoNothing();
+  const lock = ledgerInsertSelect(
+    db,
+    {
+      id: crypto.randomUUID(),
+      affiliateId: sql`i.affiliate_id`,
+      payoutItemId: sql`i.id`,
+      kind: "payout_lock",
+      from: "available",
+      to: "payout_locked",
+      amount: sql`i.gross_minor`,
+      currency: input.currency,
+      idempotencyKey: `payout_lock:${input.batchId}:${line.affiliateId}`,
+      actorUserId: input.actorUserId,
+      createdAt: now,
+    },
+    sql`from affiliate_payout_items i where i.id = ${itemId}`
+  );
+  return [item, lock] as const;
+}
+
+/**
+ * Creates the batch for a closed period and locks each payable line's gross amount. Due commissions
+ * are matured first. A period has at most one batch that is not cancelled; a payee whose available
+ * balance no longer covers the previewed gross (a refund or another batch got there first) is skipped.
+ * A batch that ends up with no item is removed and the call fails with `nothing_to_pay`.
  */
 export async function createPayoutBatch(db: AppDb, periodInput: unknown, actorUserId: string, now = new Date()): Promise<{ batch: PayoutBatchRow; items: PayoutItemRow[] }> {
-  const preview = await previewPayouts(db, periodInput, now);
+  const period = assertClosedPeriod(periodInput, now);
+  const [open] = await db
+    .select({ id: affiliatePayoutBatches.id })
+    .from(affiliatePayoutBatches)
+    .where(and(eq(affiliatePayoutBatches.period, period), sql`${affiliatePayoutBatches.status} != 'cancelled'`))
+    .limit(1);
+  // Early, clearer refusal; the partial unique index below is what holds under concurrency.
+  if (open) throw new ReferralError(409, "conflict", "A payout batch already exists for this period");
+  await matureDueConversions(db, now);
+  const preview = await previewPayouts(db, period, now);
   const payable = preview.lines.filter((line) => line.blockers.length === 0 && line.amounts && line.method);
   if (payable.length === 0) throw new ReferralError(409, "nothing_to_pay", "No affiliate is payable for this period");
 
+  // No conflict target: the period is unique only among batches that are not cancelled (partial index).
   const [batch] = await db
     .insert(affiliatePayoutBatches)
     .values({
@@ -252,45 +328,33 @@ export async function createPayoutBatch(db: AppDb, periodInput: unknown, actorUs
       createdAt: now,
       updatedAt: now,
     })
-    .onConflictDoNothing({ target: affiliatePayoutBatches.period })
+    .onConflictDoNothing()
     .returning();
   if (!batch) throw new ReferralError(409, "conflict", "A payout batch already exists for this period");
 
-  for (const line of payable) {
-    const amounts = line.amounts!;
-    const [item] = await db
-      .insert(affiliatePayoutItems)
-      .values({
-        batchId: batch.id,
-        affiliateId: line.affiliateId,
-        payoutMethodId: line.method!.id,
-        methodType: line.method!.type,
-        grossMinor: amounts.grossMinor,
-        serviceFeeMinor: amounts.serviceFeeMinor,
-        withholdingMinor: amounts.withholdingMinor,
-        netMinor: amounts.netMinor,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoNothing()
-      .returning();
-    if (!item) continue;
-    await recordLedgerMove(db, {
-      affiliateId: line.affiliateId,
-      payoutItemId: item.id,
-      kind: "payout_lock",
-      from: "available",
-      to: "payout_locked",
-      amountMinor: amounts.grossMinor,
-      currency: preview.currency,
-      idempotencyKey: `payout_lock:${batch.id}:${line.affiliateId}`,
-      actorUserId,
-    });
+  const removeIfEmpty = () =>
+    db
+      .delete(affiliatePayoutBatches)
+      .where(and(eq(affiliatePayoutBatches.id, batch.id), sql`not exists (select 1 from affiliate_payout_items i where i.batch_id = ${batch.id})`))
+      .returning({ id: affiliatePayoutBatches.id });
+  try {
+    for (let start = 0; start < payable.length; start += LOCK_CHUNK) {
+      const statements = payable
+        .slice(start, start + LOCK_CHUNK)
+        .flatMap((line) => lockPayeeStatements(db, { batchId: batch.id, currency: preview.currency, line, actorUserId, now }));
+      await db.batch(statements as unknown as [(typeof statements)[number], ...(typeof statements)[number][]]);
+    }
+  } catch (error) {
+    // Items already written keep their locks (same batch); an empty batch must not block the period.
+    await removeIfEmpty().catch((cleanup: unknown) => console.error("payout batch cleanup failed", { batchId: batch.id, error: cleanup instanceof Error ? cleanup.message : "unknown" }));
+    throw error;
   }
+  const [removed] = await removeIfEmpty();
+  if (removed) throw new ReferralError(409, "nothing_to_pay", "No affiliate is payable for this period");
   return getPayoutBatch(db, batch.id);
 }
 
-/** Marks a draft batch approved. The route consumes a second operator's approval before calling this. */
+/** Marks a draft batch approved. The route checks the batch is a draft and consumes a second operator's approval before calling this. */
 export async function approvePayoutBatch(db: AppDb, batchId: string, input: { actorUserId: string; approvalId: string | null }, now = new Date()): Promise<PayoutBatchRow> {
   const [row] = await db
     .update(affiliatePayoutBatches)
@@ -299,6 +363,13 @@ export async function approvePayoutBatch(db: AppDb, batchId: string, input: { ac
     .returning();
   if (!row) throw new ReferralError(409, "invalid_transition", "Only draft batches can be approved");
   return row;
+}
+
+/** Refuses approval of a batch that is not a draft, before any approval is consumed. */
+export async function assertBatchApprovable(db: AppDb, batchId: string): Promise<PayoutBatchRow> {
+  const { batch } = await getPayoutBatch(db, batchId);
+  if (batch.status !== "draft") throw new ReferralError(409, "invalid_transition", "Only draft batches can be approved");
+  return batch;
 }
 
 export interface MarkPaidInput {
@@ -310,9 +381,11 @@ export interface MarkPaidInput {
 }
 
 /**
- * Records one transfer made outside the system. The item moves `pending -> paid` with one guarded
- * update and the external reference is unique, so a retry, a second operator or an agent cannot
- * record the same payout twice.
+ * Records one transfer made outside the system. One atomic `db.batch`: the item moves `pending -> paid`
+ * only while its batch is `approved` (so it cannot land in a batch being cancelled), the
+ * `payout_locked -> paid` ledger entry is written only for an item that is paid, and the batch becomes
+ * `paid` once no item is pending. The external reference is unique, so a retry, a second operator or
+ * an agent cannot record the same payout twice.
  */
 export async function markPayoutItemPaid(db: AppDb, itemId: string, input: MarkPaidInput, actorUserId: string, now = new Date()): Promise<PayoutItemRow> {
   if (!isAffiliatePayoutsEnabled()) throw new ReferralError(403, "payouts_disabled", "Recording payouts is disabled until the finance review is complete");
@@ -333,21 +406,57 @@ export async function markPayoutItemPaid(db: AppDb, itemId: string, input: MarkP
 
   let updated: PayoutItemRow | undefined;
   try {
-    [updated] = await db
-      .update(affiliatePayoutItems)
-      .set({
-        status: "paid",
-        externalReference,
-        payoutCurrency,
-        fxRate,
-        payoutAmountMinor: input.payoutAmountMinor as number,
-        providerFeeMinor: providerFee as number | null,
-        paidBy: actorUserId,
-        paidAt: now,
-        updatedAt: now,
-      })
-      .where(and(eq(affiliatePayoutItems.id, itemId), eq(affiliatePayoutItems.status, "pending")))
-      .returning();
+    const [rows] = await db.batch([
+      db
+        .update(affiliatePayoutItems)
+        .set({
+          status: "paid",
+          externalReference,
+          payoutCurrency,
+          fxRate,
+          payoutAmountMinor: input.payoutAmountMinor as number,
+          providerFeeMinor: providerFee as number | null,
+          paidBy: actorUserId,
+          paidAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(affiliatePayoutItems.id, itemId),
+            eq(affiliatePayoutItems.status, "pending"),
+            sql`exists (select 1 from affiliate_payout_batches b where b.id = ${affiliatePayoutItems.batchId} and b.status = 'approved')`
+          )
+        )
+        .returning(),
+      ledgerInsertSelect(
+        db,
+        {
+          id: crypto.randomUUID(),
+          affiliateId: sql`i.affiliate_id`,
+          payoutItemId: sql`i.id`,
+          kind: "payout_paid",
+          from: "payout_locked",
+          to: "paid",
+          amount: sql`i.gross_minor`,
+          currency: batch.currency,
+          idempotencyKey: `payout_paid:${itemId}`,
+          actorUserId,
+          createdAt: now,
+        },
+        sql`from affiliate_payout_items i where i.id = ${itemId} and i.status = 'paid'`
+      ),
+      db
+        .update(affiliatePayoutBatches)
+        .set({ status: "paid", updatedAt: now })
+        .where(
+          and(
+            eq(affiliatePayoutBatches.id, batch.id),
+            eq(affiliatePayoutBatches.status, "approved"),
+            sql`not exists (select 1 from affiliate_payout_items i where i.batch_id = ${batch.id} and i.status = 'pending')`
+          )
+        ),
+    ]);
+    updated = rows[0];
   } catch (error) {
     if (isUniqueViolation(error)) {
       throw new ReferralError(409, "conflict", "That external reference was already recorded");
@@ -355,65 +464,59 @@ export async function markPayoutItemPaid(db: AppDb, itemId: string, input: MarkP
     throw error;
   }
   if (!updated) throw new ReferralError(409, "invalid_transition", "This payout was already recorded or cancelled");
-  await recordLedgerMove(db, {
-    affiliateId: item.affiliateId,
-    payoutItemId: item.id,
-    kind: "payout_paid",
-    from: "payout_locked",
-    to: "paid",
-    amountMinor: item.grossMinor,
-    currency: batch.currency,
-    idempotencyKey: `payout_paid:${item.id}`,
-    actorUserId,
-  });
-  const [{ open }] = await db
-    .select({ open: sql<number>`count(*)` })
-    .from(affiliatePayoutItems)
-    .where(and(eq(affiliatePayoutItems.batchId, batch.id), eq(affiliatePayoutItems.status, "pending")));
-  if (Number(open) === 0) {
-    await db
-      .update(affiliatePayoutBatches)
-      .set({ status: "paid", updatedAt: now })
-      .where(and(eq(affiliatePayoutBatches.id, batch.id), eq(affiliatePayoutBatches.status, "approved")));
-  }
   return updated;
 }
 
 /**
- * Cancels a batch that has no recorded payment yet: unpaid items are cancelled and their locked
- * amounts return to `available` (`payout_unlock`, keyed per item).
+ * Cancels a batch that has no recorded payment yet, in one atomic `db.batch`: the batch becomes
+ * `cancelled` only while no item is paid (so it cannot race a payment being recorded), each pending
+ * item's locked amount returns to `available` (`payout_unlock`, keyed per item) and the item is
+ * cancelled. A cancelled batch frees its period for a new batch.
  */
 export async function cancelPayoutBatch(db: AppDb, batchId: string, actorUserId: string, now = new Date()): Promise<PayoutBatchRow> {
   const { batch, items } = await getPayoutBatch(db, batchId);
   if (items.some((item) => item.status === "paid")) throw new ReferralError(409, "invalid_transition", "A batch with recorded payments cannot be cancelled");
-  const [cancelled] = await db
-    .update(affiliatePayoutBatches)
-    .set({ status: "cancelled", cancelledAt: now, updatedAt: now })
-    .where(and(eq(affiliatePayoutBatches.id, batchId), inArray(affiliatePayoutBatches.status, ["draft", "approved"])))
-    .returning();
-  if (!cancelled) throw new ReferralError(409, "invalid_transition", "Only draft or approved batches can be cancelled");
-  for (const item of items) {
-    const [released] = await db
-      .update(affiliatePayoutItems)
-      .set({ status: "cancelled", updatedAt: now })
-      .where(and(eq(affiliatePayoutItems.id, item.id), eq(affiliatePayoutItems.status, "pending")))
-      .returning({ id: affiliatePayoutItems.id });
-    if (!released) continue;
-    await db.batch([
-      ledgerInsert(db, {
-        affiliateId: item.affiliateId,
-        payoutItemId: item.id,
+  const [cancelled] = await db.batch([
+    db
+      .update(affiliatePayoutBatches)
+      .set({ status: "cancelled", cancelledAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(affiliatePayoutBatches.id, batchId),
+          inArray(affiliatePayoutBatches.status, ["draft", "approved"]),
+          sql`not exists (select 1 from affiliate_payout_items i where i.batch_id = ${batchId} and i.status = 'paid')`
+        )
+      )
+      .returning(),
+    ledgerInsertSelect(
+      db,
+      {
+        affiliateId: sql`i.affiliate_id`,
+        payoutItemId: sql`i.id`,
         kind: "payout_unlock",
         from: "payout_locked",
         to: "available",
-        amountMinor: item.grossMinor,
+        amount: sql`i.gross_minor`,
         currency: batch.currency,
-        idempotencyKey: `payout_unlock:${item.id}`,
+        idempotencyKey: sql`'payout_unlock:' || i.id`,
         actorUserId,
-      }),
-    ]);
-  }
-  return cancelled;
+        createdAt: now,
+      },
+      sql`from affiliate_payout_items i join affiliate_payout_batches b on b.id = i.batch_id where i.batch_id = ${batchId} and i.status = 'pending' and b.status = 'cancelled'`
+    ),
+    db
+      .update(affiliatePayoutItems)
+      .set({ status: "cancelled", updatedAt: now })
+      .where(
+        and(
+          eq(affiliatePayoutItems.batchId, batchId),
+          eq(affiliatePayoutItems.status, "pending"),
+          sql`exists (select 1 from affiliate_payout_batches b where b.id = ${batchId} and b.status = 'cancelled')`
+        )
+      ),
+  ]);
+  if (!cancelled[0]) throw new ReferralError(409, "invalid_transition", "Only draft or approved batches without recorded payments can be cancelled");
+  return cancelled[0];
 }
 
 /**

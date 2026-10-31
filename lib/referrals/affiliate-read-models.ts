@@ -6,8 +6,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { affiliateConversions, affiliatePayoutItems, affiliatePayoutBatches, affiliatePayoutMethods, commissionLedger, affiliateLinks } from "@/lib/db/schema";
 import { tierForProductId } from "@/lib/membership/tiers";
-import { affiliateBalances, LEDGER_BUCKETS, type LedgerBalances } from "./commission-ledger";
-import { affiliateStanding, listAffiliates, type AffiliateRow } from "./affiliates";
+import { affiliateBalances, affiliateBalancesMany, bucketBalanceSql, LEDGER_BUCKETS, type LedgerBalances } from "./commission-ledger";
+import { affiliateStanding, affiliateStandings, listAffiliates, type AffiliateRow } from "./affiliates";
 import { clickCounts, listLinks, type AffiliateLinkRow } from "./affiliate-links";
 import { activePayoutMethod, payoutMethodView } from "./affiliate-payouts";
 import { maxCommissionBps } from "./program-math";
@@ -121,6 +121,11 @@ export async function listConversions(db: AppDb, affiliateId: string, limit = 50
   }));
 }
 
+/**
+ * Member view of the affiliate's ledger. Entries written by an operator (holds, adjustments) carry the
+ * operator's free-text reason, which is internal: members get `reason: null` for those. System reasons
+ * (for example `refund`) are kept. The shape is the same for every entry.
+ */
 export async function listLedger(db: AppDb, affiliateId: string, limit = 100) {
   const rows = await db
     .select()
@@ -137,7 +142,7 @@ export async function listLedger(db: AppDb, affiliateId: string, limit = 100) {
     currency: row.currency,
     conversionId: row.conversionId,
     payoutItemId: row.payoutItemId,
-    reason: row.reason,
+    reason: row.actorUserId ? null : row.reason,
     createdAt: row.createdAt.toISOString(),
   }));
 }
@@ -180,7 +185,10 @@ export function payoutItemView(item: typeof affiliatePayoutItems.$inferSelect, p
  * - every conversion's ledger accrual equals its commission;
  * - reversals never exceed the commission;
  * - the `paid` bucket equals the sum of payout items recorded as paid;
- * - the `payout_locked` bucket equals the sum of pending payout items.
+ * - the `payout_locked` bucket equals the sum of pending payout items;
+ * - no affiliate has a negative `pending`, `held` or `payout_locked` bucket (`available` may be
+ *   negative: a refund after payout is recovered from future earnings);
+ * - no conversion that left `pending` (matured, held or reversed) still has money in `pending`.
  */
 export async function reconciliationReport(db: AppDb, input: { since?: Date; until?: Date } = {}) {
   const conditions = [
@@ -236,12 +244,39 @@ export async function reconciliationReport(db: AppDb, input: { since?: Date; unt
       locked: sql<number>`coalesce(sum(case when status = 'pending' then gross_minor end), 0)`,
     })
     .from(affiliatePayoutItems);
+  const negativeRows = await db
+    .select({ affiliateId: sql<string>`affiliate_id`, bucket: sql<string>`bucket`, total: sql<number>`sum(delta)` })
+    .from(
+      sql`(select affiliate_id, to_bucket as bucket, amount_minor as delta from commission_ledger where to_bucket in ('pending', 'held', 'payout_locked')
+          union all select affiliate_id, from_bucket as bucket, -amount_minor as delta from commission_ledger where from_bucket in ('pending', 'held', 'payout_locked'))`
+    )
+    .groupBy(sql`affiliate_id`, sql`bucket`)
+    .having(sql`sum(delta) < 0`)
+    .limit(1000);
+  const negativeBuckets = negativeRows.map((row) => ({ affiliateId: row.affiliateId, bucket: row.bucket, balanceMinor: Number(row.total) }));
+  const pendingBalance = bucketBalanceSql("conversion", sql`${affiliateConversions.id}`, "pending");
+  const strandedRows = await db
+    .select({ conversionId: affiliateConversions.id, affiliateId: affiliateConversions.affiliateId, status: affiliateConversions.status, pending: sql<number>`${pendingBalance}` })
+    .from(affiliateConversions)
+    .where(and(sql`${affiliateConversions.status} != 'pending'`, sql`${pendingBalance} != 0`))
+    .limit(1000);
+  const strandedPending = strandedRows.map((row) => ({ conversionId: row.conversionId, affiliateId: row.affiliateId, status: row.status, pendingMinor: Number(row.pending) }));
   const checks = {
     paidMatchesItems: buckets.paid === Number(items?.paid ?? 0),
     lockedMatchesItems: buckets.payout_locked === Number(items?.locked ?? 0),
     conversionsBalanced: lines.every((line) => !line.issues.some((issue) => issue === "accrual_mismatch" || issue === "over_reversed")),
+    bucketsNonNegative: negativeBuckets.length === 0,
+    noPendingAfterTransition: strandedPending.length === 0,
   };
-  return { generatedAt: new Date().toISOString(), buckets, payoutItems: { paidMinor: Number(items?.paid ?? 0), lockedMinor: Number(items?.locked ?? 0) }, checks, conversions: lines };
+  return {
+    generatedAt: new Date().toISOString(),
+    buckets,
+    payoutItems: { paidMinor: Number(items?.paid ?? 0), lockedMinor: Number(items?.locked ?? 0) },
+    checks,
+    negativeBuckets,
+    strandedPending,
+    conversions: lines,
+  };
 }
 
 /** Link owned by the affiliate, for member routes. */
@@ -250,27 +285,29 @@ export async function findOwnLink(db: AppDb, affiliateId: string, linkId: string
   return row ?? null;
 }
 
-/** Operator view of affiliate accounts with level, budget and balances. Account ids only, no names or emails. */
+/**
+ * Operator view of affiliate accounts with level, budget and balances. Account ids only, no names or
+ * emails. Standing and balances come from grouped queries, not two or three queries per affiliate.
+ */
 export async function listAffiliatesForOperators(db: AppDb, input: { status?: AffiliateStatus; limit?: number } = {}, now = new Date()) {
   const [rows, active] = await Promise.all([listAffiliates(db, input), getActiveRules(db)]);
-  return Promise.all(
-    rows.map(async (affiliate) => {
-      const [standing, balances] = await Promise.all([affiliateStanding(db, affiliate, now, active), affiliateBalances(db, affiliate.id)]);
-      return {
-        affiliateId: affiliate.id,
-        userId: affiliate.userId,
-        status: affiliate.status,
-        suspendedReason: affiliate.suspendedReason,
-        termsVersion: affiliate.termsVersion,
-        joinedAt: affiliate.createdAt.toISOString(),
-        level: standing.level.key,
-        qualifyingCustomers: standing.customers,
-        incentiveBasis: standing.basis,
-        budgetBps: standing.budgetBps,
-        balances: balancesView(balances),
-      };
-    })
-  );
+  const [standings, balances] = await Promise.all([affiliateStandings(db, rows, now, active), affiliateBalancesMany(db, rows.map((row) => row.id))]);
+  return rows.map((affiliate) => {
+    const standing = standings.get(affiliate.id)!;
+    return {
+      affiliateId: affiliate.id,
+      userId: affiliate.userId,
+      status: affiliate.status,
+      suspendedReason: affiliate.suspendedReason,
+      termsVersion: affiliate.termsVersion,
+      joinedAt: affiliate.createdAt.toISOString(),
+      level: standing.level.key,
+      qualifyingCustomers: standing.customers,
+      incentiveBasis: standing.basis,
+      budgetBps: standing.budgetBps,
+      balances: balancesView(balances.get(affiliate.id)!),
+    };
+  });
 }
 
 export function operatorAffiliateView(affiliate: AffiliateRow) {

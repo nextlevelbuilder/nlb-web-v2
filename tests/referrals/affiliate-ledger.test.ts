@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { affiliateConversions, affiliateVerifications, commissionLedger } from "@/lib/db/schema";
 import { attributeCheckout } from "@/lib/referrals/affiliate-checkout";
-import { holdConversion, matureConversions, releaseConversion, syncReferralOrder } from "@/lib/referrals/affiliate-conversions";
+import { holdConversion, matureConversions, matureDueConversions, releaseConversion, syncReferralOrder } from "@/lib/referrals/affiliate-conversions";
 import {
   adjustAffiliateBalance,
   approvePayoutBatch,
@@ -135,6 +135,7 @@ describe("payouts", () => {
     const paidAt = new Date("2026-07-01T00:00:00Z");
     const orderId = `order-${nextSeq()}`;
     await syncReferralOrder(getDb(), paidOrder({ orderId, attributionId: attempt.attributionId, buyerUserId: buyer.id, discountId: null, net: 50_000, createdAt: paidAt }), paidAt);
+    await matureDueConversions(getDb(), new Date("2026-10-31T00:00:00Z"));
     return { affiliate, orderId };
   }
 
@@ -181,7 +182,7 @@ describe("payouts", () => {
     expect(await affiliateBalances(getDb(), affiliate.id)).toMatchObject({ available: -5000, paid: 5000 });
 
     const report = await reconciliationReport(getDb());
-    expect(report.checks).toEqual({ paidMatchesItems: true, lockedMatchesItems: true, conversionsBalanced: true });
+    expect(report.checks).toEqual({ paidMatchesItems: true, lockedMatchesItems: true, conversionsBalanced: true, bucketsNonNegative: true, noPendingAfterTransition: true });
   });
 
   it("refuses a reused external reference and unlocks on cancel", async () => {

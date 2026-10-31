@@ -4,10 +4,10 @@
  * duplicated or out-of-order event converges on the same rows, because the conversion is unique per
  * order, attribution and buyer, and each ledger movement has a deterministic idempotency key.
  */
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, lt, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { affiliateAttributions, affiliateConversions } from "@/lib/db/schema";
-import { conversionBalances, ledgerInsert, planReversal, recordLedgerMove, reversedTotal } from "./commission-ledger";
+import { bucketBalanceSql, ledgerInsertSelect, recordLedgerMove, reversedTotalSql } from "./commission-ledger";
 import { AFFILIATE_METADATA_KEY } from "./affiliate-checkout";
 import { commissionMinor, reversalTarget } from "./program-math";
 import { getActiveRules } from "./program-rules";
@@ -160,123 +160,191 @@ async function ensureAccrual(db: AppDb, conversion: ConversionRow): Promise<void
   });
 }
 
-/** Reverses commission in proportion to the net amount refunded; the refunded amount only grows. */
-async function syncRefund(db: AppDb, conversion: ConversionRow, order: PolarOrderForReferral, now: Date): Promise<void> {
-  const refundedNet = Math.min(conversion.netMinor, Math.max(0, int(order.refunded_amount) - int(order.refunded_tax_amount)));
-  if (refundedNet <= conversion.refundedNetMinor) return;
-  const target = reversalTarget(conversion.commissionMinor, conversion.netMinor, refundedNet);
-  const already = await reversedTotal(db, conversion.id);
-  const delta = target - already;
-  if (delta > 0) {
-    const plan = planReversal(await conversionBalances(db, conversion.id), delta);
-    await db.batch(
-      plan.map((step, index) =>
-        ledgerInsert(db, {
-          affiliateId: conversion.affiliateId,
-          conversionId: conversion.id,
-          kind: "reversal",
-          from: step.from,
-          to: null,
-          amountMinor: step.amount,
-          currency: conversion.currency,
-          idempotencyKey: `reversal:${conversion.id}:${target}:${index}`,
-          reason: "refund",
-        })
-      ) as [ReturnType<typeof ledgerInsert>, ...ReturnType<typeof ledgerInsert>[]]
-    );
-  }
-  const fullyRefunded = refundedNet >= conversion.netMinor;
-  await db
-    .update(affiliateConversions)
-    .set({ refundedNetMinor: refundedNet, ...(fullyRefunded ? { status: "reversed" as const } : {}), updatedAt: now })
-    .where(and(eq(affiliateConversions.id, conversion.id), lte(affiliateConversions.refundedNetMinor, refundedNet)));
+/**
+ * Net (pre-tax) amount refunded so far. Polar's `refunded_amount` is already pre-tax (tax refunds are
+ * reported separately in `refunded_tax_amount`), and an order in status `refunded` is refunded in full.
+ */
+export function refundedNetOf(order: Pick<PolarOrderForReferral, "status" | "refunded_amount">, netMinor: number): number {
+  if (order.status === "refunded") return netMinor;
+  return Math.min(netMinor, int(order.refunded_amount));
+}
+
+/** Buckets a reversal draws from, in order; whatever is left comes out of `available` (it may go negative). */
+const REVERSAL_ORDER = ["pending", "held", "available"] as const;
+
+/**
+ * One reversal step from `bucket`, as a single guarded statement. The amount is computed in SQL at
+ * write time: what is still owed (`target` minus everything reversed so far) capped by what the
+ * conversion holds in `bucket` (the last step takes the rest). Concurrent events with different
+ * targets therefore converge on the largest target and never over-reverse.
+ */
+function reversalStep(db: AppDb, conversionId: string, target: number, bucket: (typeof REVERSAL_ORDER)[number], now: Date) {
+  const owed = sql`max(${target} - ${reversedTotalSql(sql`c.id`)}, 0)`;
+  const amount = bucket === "available" ? owed : sql`min(${owed}, max(${bucketBalanceSql("conversion", sql`c.id`, bucket)}, 0))`;
+  return ledgerInsertSelect(
+    db,
+    {
+      id: crypto.randomUUID(),
+      affiliateId: sql`s.affiliate_id`,
+      conversionId: sql`s.id`,
+      kind: "reversal",
+      from: bucket,
+      to: null,
+      amount: sql`s.amount`,
+      currency: sql`s.currency`,
+      idempotencyKey: `reversal:${conversionId}:${target}:${bucket}`,
+      reason: "refund",
+      createdAt: now,
+    },
+    sql`from (select c.id, c.affiliate_id, c.currency, ${amount} as amount from affiliate_conversions c where c.id = ${conversionId}) s where s.amount > 0`
+  );
 }
 
 /**
- * Moves commissions whose refund hold has passed from `pending` to `available`. Each conversion is
- * claimed with a conditional status update, so concurrent runs mature it once.
+ * Reverses commission in proportion to the net amount refunded; the refunded amount only grows. The
+ * reversal steps and the conversion's refund state are written in one atomic `db.batch`, each amount
+ * computed from the ledger inside the batch, so a stale read or a concurrent event cannot skew them.
  */
-export async function matureConversions(db: AppDb, now = new Date(), limit = 200): Promise<number> {
-  const due = await db
-    .select()
-    .from(affiliateConversions)
-    .where(and(eq(affiliateConversions.status, "pending"), lte(affiliateConversions.maturesAt, now)))
-    .limit(limit);
-  let matured = 0;
-  for (const conversion of due) {
-    const [claimed] = await db
-      .update(affiliateConversions)
-      .set({ status: "available", updatedAt: now })
-      .where(and(eq(affiliateConversions.id, conversion.id), eq(affiliateConversions.status, "pending")))
-      .returning({ id: affiliateConversions.id });
-    if (!claimed) continue;
-    const { pending } = await conversionBalances(db, conversion.id);
-    if (pending > 0) {
-      await recordLedgerMove(db, {
-        affiliateId: conversion.affiliateId,
-        conversionId: conversion.id,
+async function syncRefund(db: AppDb, conversion: ConversionRow, order: PolarOrderForReferral, now: Date): Promise<void> {
+  const refundedNet = refundedNetOf(order, conversion.netMinor);
+  if (refundedNet <= 0 || refundedNet <= conversion.refundedNetMinor) return;
+  const target = reversalTarget(conversion.commissionMinor, conversion.netMinor, refundedNet);
+  const claim = db
+    .update(affiliateConversions)
+    .set({
+      refundedNetMinor: refundedNet,
+      status: sql`case when ${refundedNet} >= ${affiliateConversions.netMinor} then 'reversed' else ${affiliateConversions.status} end`,
+      updatedAt: now,
+    })
+    .where(and(eq(affiliateConversions.id, conversion.id), lt(affiliateConversions.refundedNetMinor, refundedNet)));
+  if (target <= 0) {
+    await claim;
+    return;
+  }
+  await db.batch([claim, ...REVERSAL_ORDER.map((bucket) => reversalStep(db, conversion.id, target, bucket, now))]);
+}
+
+/** Pending conversions whose refund hold has passed, oldest first (a fixed, repeatable selection). */
+function dueConversionIds(now: Date, limit: number): SQL {
+  return sql`(select id from affiliate_conversions where status = 'pending' and matures_at <= ${now.getTime()} order by matures_at, id limit ${limit})`;
+}
+
+/**
+ * Moves commissions whose refund hold has passed from `pending` to `available`: up to `limit`
+ * conversions in one atomic `db.batch` of two statements. The maturation entry moves exactly what each
+ * conversion still has in `pending` (computed in SQL, so a refund that landed first is respected), and
+ * the status flips in the same batch, so a conversion is never `available` while its money is pending.
+ */
+export async function matureConversions(db: AppDb, now = new Date(), limit = MATURATION_BATCH_SIZE): Promise<number> {
+  const due = dueConversionIds(now, limit);
+  const [, claimed] = await db.batch([
+    ledgerInsertSelect(
+      db,
+      {
+        affiliateId: sql`s.affiliate_id`,
+        conversionId: sql`s.id`,
         kind: "maturation",
         from: "pending",
         to: "available",
-        amountMinor: pending,
-        currency: conversion.currency,
-        idempotencyKey: `maturation:${conversion.id}`,
-      });
-    }
-    matured++;
+        amount: sql`s.amount`,
+        currency: sql`s.currency`,
+        idempotencyKey: sql`'maturation:' || s.id`,
+        createdAt: now,
+      },
+      sql`from (select c.id, c.affiliate_id, c.currency, ${bucketBalanceSql("conversion", sql`c.id`, "pending")} as amount from affiliate_conversions c where c.id in ${due}) s where s.amount > 0`
+    ),
+    db
+      .update(affiliateConversions)
+      .set({ status: "available", updatedAt: now })
+      .where(and(sql`${affiliateConversions.id} in ${due}`, eq(affiliateConversions.status, "pending")))
+      .returning({ id: affiliateConversions.id }),
+  ]);
+  return claimed.length;
+}
+
+/** Conversions matured per batch, and batches per run: 2 statements each, far below D1's per-invocation query limit. */
+export const MATURATION_BATCH_SIZE = 200;
+export const MATURATION_MAX_ROUNDS = 5;
+
+/** Matures every due conversion, at most `MATURATION_BATCH_SIZE × MATURATION_MAX_ROUNDS` per call. */
+export async function matureDueConversions(db: AppDb, now = new Date()): Promise<number> {
+  let matured = 0;
+  for (let round = 0; round < MATURATION_MAX_ROUNDS; round++) {
+    const count = await matureConversions(db, now, MATURATION_BATCH_SIZE);
+    matured += count;
+    if (count < MATURATION_BATCH_SIZE) break;
   }
   return matured;
 }
 
+/**
+ * A conversion status change together with the ledger move of what it currently holds in `from`, as
+ * one atomic batch. The move is written first, guarded on the status still being `fromStatus`, and the
+ * amount is the bucket balance at write time; the guarded update then flips the status.
+ */
+async function transitionWithMove(
+  db: AppDb,
+  input: {
+    conversionId: string;
+    fromStatus: "pending" | "held";
+    set: Partial<typeof affiliateConversions.$inferInsert>;
+    move: { kind: "hold" | "release"; from: "pending" | "held"; to: "held" | "pending"; idempotencyKey: string; actorUserId: string; reason?: string | null };
+    now: Date;
+  }
+): Promise<ConversionRow | undefined> {
+  const { move } = input;
+  const [, updated] = await db.batch([
+    ledgerInsertSelect(
+      db,
+      {
+        id: crypto.randomUUID(),
+        affiliateId: sql`s.affiliate_id`,
+        conversionId: sql`s.id`,
+        kind: move.kind,
+        from: move.from,
+        to: move.to,
+        amount: sql`s.amount`,
+        currency: sql`s.currency`,
+        idempotencyKey: move.idempotencyKey,
+        actorUserId: move.actorUserId,
+        reason: move.reason ?? null,
+        createdAt: input.now,
+      },
+      sql`from (select c.id, c.affiliate_id, c.currency, ${bucketBalanceSql("conversion", sql`c.id`, move.from)} as amount from affiliate_conversions c where c.id = ${input.conversionId} and c.status = ${input.fromStatus}) s where s.amount > 0`
+    ),
+    db
+      .update(affiliateConversions)
+      .set(input.set)
+      .where(and(eq(affiliateConversions.id, input.conversionId), eq(affiliateConversions.status, input.fromStatus)))
+      .returning(),
+  ]);
+  return updated[0];
+}
+
 /** Operator: freeze a pending conversion (suspected fraud, dispute). Its commission moves to `held`. */
 export async function holdConversion(db: AppDb, conversionId: string, input: { reason: string; actorUserId: string }, now = new Date()): Promise<ConversionRow> {
-  const [conversion] = await db.select().from(affiliateConversions).where(eq(affiliateConversions.id, conversionId)).limit(1);
+  const [conversion] = await db.select({ id: affiliateConversions.id }).from(affiliateConversions).where(eq(affiliateConversions.id, conversionId)).limit(1);
   if (!conversion) throw referralNotFound("Conversion");
-  const [updated] = await db
-    .update(affiliateConversions)
-    .set({ status: "held", holdReason: input.reason, updatedAt: now })
-    .where(and(eq(affiliateConversions.id, conversionId), eq(affiliateConversions.status, "pending")))
-    .returning();
+  const updated = await transitionWithMove(db, {
+    conversionId,
+    fromStatus: "pending",
+    set: { status: "held", holdReason: input.reason, updatedAt: now },
+    move: { kind: "hold", from: "pending", to: "held", idempotencyKey: `hold:${conversionId}:${now.getTime()}`, actorUserId: input.actorUserId, reason: input.reason },
+    now,
+  });
   if (!updated) throw new ReferralError(409, "invalid_transition", "Only pending conversions can be held");
-  const { pending } = await conversionBalances(db, conversionId);
-  if (pending > 0) {
-    await recordLedgerMove(db, {
-      affiliateId: conversion.affiliateId,
-      conversionId,
-      kind: "hold",
-      from: "pending",
-      to: "held",
-      amountMinor: pending,
-      currency: conversion.currency,
-      idempotencyKey: `hold:${conversionId}:${updated.updatedAt.getTime()}`,
-      actorUserId: input.actorUserId,
-      reason: input.reason,
-    });
-  }
   return updated;
 }
 
 /** Operator: release a held conversion back to `pending`; it matures on its original schedule. */
 export async function releaseConversion(db: AppDb, conversionId: string, input: { actorUserId: string }, now = new Date()): Promise<ConversionRow> {
-  const [updated] = await db
-    .update(affiliateConversions)
-    .set({ status: "pending", holdReason: null, updatedAt: now })
-    .where(and(eq(affiliateConversions.id, conversionId), eq(affiliateConversions.status, "held")))
-    .returning();
+  const updated = await transitionWithMove(db, {
+    conversionId,
+    fromStatus: "held",
+    set: { status: "pending", holdReason: null, updatedAt: now },
+    move: { kind: "release", from: "held", to: "pending", idempotencyKey: `release:${conversionId}:${now.getTime()}`, actorUserId: input.actorUserId },
+    now,
+  });
   if (!updated) throw new ReferralError(409, "invalid_transition", "Only held conversions can be released");
-  const { held } = await conversionBalances(db, conversionId);
-  if (held > 0) {
-    await recordLedgerMove(db, {
-      affiliateId: updated.affiliateId,
-      conversionId,
-      kind: "release",
-      from: "held",
-      to: "pending",
-      amountMinor: held,
-      currency: updated.currency,
-      idempotencyKey: `release:${conversionId}:${now.getTime()}`,
-      actorUserId: input.actorUserId,
-    });
-  }
   return updated;
 }

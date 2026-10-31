@@ -1,8 +1,9 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { affiliateConversions, affiliates, users } from "@/lib/db/schema";
-import { getMemberTier } from "@/lib/membership/member-access";
-import { isUniqueViolation } from "@/lib/membership/member-access";
+import { affiliateConversions, affiliates, customers, subscriptions, users } from "@/lib/db/schema";
+import { getMemberTier, isUniqueViolation, toMembershipState } from "@/lib/membership/member-access";
+import { resolveEffectiveTier, type EffectiveTier } from "@/lib/membership/effective-tier";
+import { getPastDueGraceDays } from "@/lib/onboarding/flags";
 import { budgetFor, levelFor, nextLevel } from "./program-math";
 import { getActiveRules, type ActiveRules } from "./program-rules";
 import { ReferralError } from "./referral-errors";
@@ -81,9 +82,64 @@ export interface AffiliateStanding {
 export async function affiliateStanding(db: AppDb, affiliate: Pick<AffiliateRow, "id" | "userId">, now = new Date(), active?: ActiveRules): Promise<AffiliateStanding> {
   const { version, rules } = active ?? (await getActiveRules(db));
   const [customers, tier] = await Promise.all([qualifyingCustomers(db, affiliate.id), getMemberTier(db, affiliate.userId, now)]);
+  return standingFrom({ version, rules }, customers, tier);
+}
+
+function standingFrom({ version, rules }: ActiveRules, customers: number, tier: EffectiveTier): AffiliateStanding {
   const level = levelFor(rules, customers);
   const basis: AffiliateIncentiveBasis = tier.tier === "none" ? "ordinary" : "member";
   return { rulesVersion: version, customers, level, next: nextLevel(rules, customers), basis, budgetBps: budgetFor(level, basis) };
+}
+
+/** Ids per `IN (…)` list, under D1's limit of 100 bound parameters per statement. */
+const ID_CHUNK = 90;
+
+function chunks<T>(values: readonly T[], size = ID_CHUNK): T[][] {
+  const out: T[][] = [];
+  for (let start = 0; start < values.length; start += size) out.push(values.slice(start, start + size));
+  return out;
+}
+
+/**
+ * Standing of many affiliates with grouped queries (qualifying customers and linked subscriptions per
+ * chunk of ids) instead of two queries per affiliate. Same result as `affiliateStanding` for each.
+ */
+export async function affiliateStandings(
+  db: AppDb,
+  rows: ReadonlyArray<Pick<AffiliateRow, "id" | "userId">>,
+  now: Date,
+  active: ActiveRules
+): Promise<Map<string, AffiliateStanding>> {
+  const customersById = new Map<string, number>();
+  const subscriptionsByUser = new Map<string, Array<typeof subscriptions.$inferSelect>>();
+  for (const group of chunks(rows)) {
+    const [counts, linked] = await Promise.all([
+      db
+        .select({ affiliateId: affiliateConversions.affiliateId, count: sql<number>`count(distinct ${affiliateConversions.buyerUserId})` })
+        .from(affiliateConversions)
+        .where(and(inArray(affiliateConversions.affiliateId, group.map((row) => row.id)), inArray(affiliateConversions.status, ["pending", "available"])))
+        .groupBy(affiliateConversions.affiliateId),
+      db
+        .select({ userId: customers.userId, subscription: subscriptions })
+        .from(subscriptions)
+        .innerJoin(customers, eq(customers.id, subscriptions.customerId))
+        .where(inArray(customers.userId, group.map((row) => row.userId))),
+    ]);
+    for (const row of counts) customersById.set(row.affiliateId, Number(row.count));
+    for (const row of linked) {
+      if (!row.userId) continue;
+      const list = subscriptionsByUser.get(row.userId) ?? [];
+      list.push(row.subscription);
+      subscriptionsByUser.set(row.userId, list);
+    }
+  }
+  const graceDays = getPastDueGraceDays();
+  const result = new Map<string, AffiliateStanding>();
+  for (const row of rows) {
+    const tier = resolveEffectiveTier((subscriptionsByUser.get(row.userId) ?? []).map(toMembershipState), now, graceDays);
+    result.set(row.id, standingFrom(active, customersById.get(row.id) ?? 0, tier));
+  }
+  return result;
 }
 
 /** Operator list of affiliate accounts, newest first, optionally filtered by status. */

@@ -146,7 +146,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (referral?.applied) await attachCheckoutId(getDb(), referral.attributionId, checkout.id);
+    if (referral?.applied) {
+      // Bookkeeping only: the attribution id already travels in the checkout metadata, so a failure
+      // here is logged and never fails the purchase.
+      await attachCheckoutId(getDb(), referral.attributionId, checkout.id).catch((error: unknown) => {
+        console.error("referral checkout id was not recorded", { error: error instanceof Error ? error.message : "unknown" });
+      });
+    }
     const referralResult = referral
       ? referral.applied
         ? { applied: true, code: referral.code, discountBps: referral.discountBps }

@@ -204,22 +204,29 @@ export const affiliatePayoutMethods = sqliteTable(
   (t) => [index("affiliate_payout_methods_affiliate_idx").on(t.affiliateId, t.status)]
 );
 
-/** Monthly manual payout batch for one closed period (`YYYY-MM`). */
-export const affiliatePayoutBatches = sqliteTable("affiliate_payout_batches", {
-  id: id(),
-  period: text("period").notNull().unique(),
-  status: text("status").$type<PayoutBatchStatus>().notNull().default("draft"),
-  currency: text("currency").notNull(),
-  rulesVersion: integer("rules_version").notNull(),
-  thresholdMinor: integer("threshold_minor").notNull(),
-  createdBy: text("created_by").notNull(),
-  approvedBy: text("approved_by"),
-  approvalId: text("approval_id"),
-  approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
-  cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
+/**
+ * Monthly manual payout batch for one closed period (`YYYY-MM`). A period has at most one batch that
+ * is not cancelled (partial unique index), so cancelling a batch frees its period for a new one.
+ */
+export const affiliatePayoutBatches = sqliteTable(
+  "affiliate_payout_batches",
+  {
+    id: id(),
+    period: text("period").notNull(),
+    status: text("status").$type<PayoutBatchStatus>().notNull().default("draft"),
+    currency: text("currency").notNull(),
+    rulesVersion: integer("rules_version").notNull(),
+    thresholdMinor: integer("threshold_minor").notNull(),
+    createdBy: text("created_by").notNull(),
+    approvedBy: text("approved_by"),
+    approvalId: text("approval_id"),
+    approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
+    cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("affiliate_payout_batches_period_open").on(t.period).where(sql`${t.status} != 'cancelled'`)]
+);
 
 export const affiliatePayoutItems = sqliteTable(
   "affiliate_payout_items",

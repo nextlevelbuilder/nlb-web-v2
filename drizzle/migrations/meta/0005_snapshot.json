@@ -9814,12 +9814,13 @@
         }
       },
       "indexes": {
-        "affiliate_payout_batches_period_unique": {
-          "name": "affiliate_payout_batches_period_unique",
+        "affiliate_payout_batches_period_open": {
+          "name": "affiliate_payout_batches_period_open",
           "columns": [
             "period"
           ],
-          "isUnique": true
+          "isUnique": true,
+          "where": "\"affiliate_payout_batches\".\"status\" != 'cancelled'"
         }
       },
       "foreignKeys": {},

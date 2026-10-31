@@ -35,7 +35,8 @@ export function previousPeriod(now = new Date()): string {
 
 /**
  * An affiliate with one referred first purchase paid `paidAt` (net 50_000 at the 10% starter budget,
- * so 5000 commission). With an old `paidAt` the commission matures on the next payout preview.
+ * so 5000 commission). The commission stays `pending` until maturation runs (the hourly cron or
+ * batch creation); payout preview never writes.
  */
 export async function seedReferredSale(paidAt = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000)) {
   const seeded = await seedAffiliateWithLink(0);

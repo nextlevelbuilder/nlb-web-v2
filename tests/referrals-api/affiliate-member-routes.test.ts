@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 vi.mock("@/lib/auth-api-key", async () => (await import("../live-api/live-api-fixtures")).authApiKeyMock);
 
 import { getDb } from "@/lib/db";
-import { affiliateLinks } from "@/lib/db/schema";
+import { affiliateConversions, affiliateLinks } from "@/lib/db/schema";
+import { holdConversion as holdConversionAsOperator } from "@/lib/referrals/affiliate-conversions";
 import { AFFILIATE_TERMS_VERSION } from "@/lib/referrals/program-rules";
 import { GET as getProgram } from "@/app/api/v1/affiliates/program/route";
 import { GET as getMe, POST as enroll } from "@/app/api/v1/affiliates/me/route";
@@ -212,6 +213,18 @@ describe("earnings reads", () => {
     expect(serialized).not.toContain(buyer.id);
     expect(serialized).not.toContain(buyer.email);
     expect((await listConversions(getRequest("/api/v1/affiliates/conversions?limit=abc"))).status).toBe(400);
+  });
+
+  it("never shows the operator's free-text reason in the member ledger", async () => {
+    const { user, affiliate } = await seedReferredSale();
+    const [conversion] = await getDb().select().from(affiliateConversions).where(eq(affiliateConversions.affiliateId, affiliate.id));
+    await holdConversionAsOperator(getDb(), conversion.id, { reason: "Internal: card shared with another buyer", actorUserId: "operator-1" });
+    setCaller(asCaller({ id: user.id, email: user.email }, "api_key"));
+
+    const commissions = await readJson(await getCommissions(getRequest("/api/v1/affiliates/commissions")));
+    const hold = commissions.data.ledger.find((entry: { kind: string }) => entry.kind === "hold");
+    expect(hold).toMatchObject({ from: "pending", to: "held", amountMinor: 5000, reason: null });
+    expect(JSON.stringify(commissions)).not.toContain("card shared");
   });
 });
 

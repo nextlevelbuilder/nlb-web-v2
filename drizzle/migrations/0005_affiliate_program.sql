@@ -89,7 +89,7 @@ CREATE TABLE `affiliate_payout_batches` (
 	`updated_at` integer DEFAULT (cast(unixepoch('subsec') * 1000 as integer)) NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `affiliate_payout_batches_period_unique` ON `affiliate_payout_batches` (`period`);--> statement-breakpoint
+CREATE UNIQUE INDEX `affiliate_payout_batches_period_open` ON `affiliate_payout_batches` (`period`) WHERE "affiliate_payout_batches"."status" != 'cancelled';--> statement-breakpoint
 CREATE TABLE `affiliate_payout_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`batch_id` text NOT NULL,

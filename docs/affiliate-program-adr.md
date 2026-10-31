@@ -52,6 +52,8 @@ so correctness comes from unique keys and conditional updates, not transactions.
   Fractions stay with NLB.
 - Refund reversal is proportional to the net refunded, rounded **up** and capped at the commission,
   so a full refund always reverses the whole commission and partial refunds never under-reverse.
+  The net refunded is `min(net, refunded_amount)`: Polar's `refunded_amount` is already pre-tax
+  (refunded tax is reported separately), and an order in status `refunded` counts as a full refund.
 - Payout service fee and withholding are each floored on the gross; the payee receives the rest.
 
 ### Attribution
@@ -60,9 +62,12 @@ so correctness comes from unique keys and conditional updates, not transactions.
   **signed-in** buyer is referred. A buyer converts once ever (`affiliate_conversions.buyer_user_id`
   is unique) and a buyer with an earlier paid or refunded membership order is skipped.
 - Source: an explicit code (`?ref=` carried to checkout, or typed) wins over the `nlb_aff` click
-  cookie. The cookie counts within `attributionWindowDays` (30) of the click. Self-referral,
-  inactive or ineligible affiliates and banned or unverified buyers are skipped; a skipped referral
-  never blocks the purchase.
+  cookie. The cookie counts within `attributionWindowDays` (30) of the click. An explicit code that
+  is unknown or cannot apply (inactive affiliate, self-referral) falls back to a valid cookie; with no
+  usable cookie the explicit code's reason is reported. Self-referral, inactive or ineligible
+  affiliates and banned or unverified buyers are skipped. A skipped referral never blocks the
+  purchase, and neither does a failure while attributing (database or Polar discount error): it is
+  logged and the checkout continues without a referral (`reason: "unavailable"`).
 - At checkout the server writes an immutable **attribution snapshot** (level, basis, budget,
   discount, commission, rules and link version, Polar discount id) and sends only its id in Polar
   metadata (`nlb_aff_attr`). The webhook reads the snapshot, never the client.
@@ -78,38 +83,66 @@ so correctness comes from unique keys and conditional updates, not transactions.
 - `commission_ledger` is append-only (D1 triggers abort `UPDATE` and `DELETE`). Each entry moves an
   amount between buckets — `pending`, `held`, `available`, `payout_locked`, `paid` (or from/to
   outside) — and has a unique deterministic idempotency key (`accrual:<order>`,
-  `reversal:<conversion>:<target>:<i>`, `maturation:<conversion>`, `payout_lock:<batch>:<affiliate>`,
+  `reversal:<conversion>:<target>:<bucket>`, `maturation:<conversion>`, `payout_lock:<batch>:<affiliate>`,
   `payout_paid:<item>`, `payout_unlock:<item>`, adjustments keyed by their approval). A retried,
   duplicated or concurrent event inserts nothing twice. Balances are sums, never stored.
 - Lifecycle: accrual → `pending`; after `holdDays` (45, longer than the 30-day refund window) the
   hourly cron matures it to `available`; operators can hold and release. Refunds reverse from
   `pending`, then `held`, then `available`. A refund after payout drives `available` negative; the
   debt is recovered from future earnings (stated in the Affiliate Agreement).
+- Amounts that depend on the current ledger are computed **by SQLite inside the write**, never from
+  a balance read earlier: each statement is an `INSERT … SELECT … WHERE` over ledger sums. A refund
+  writes its reversal steps (owed = target − already reversed, capped per bucket) and the
+  conversion's refunded amount in one `db.batch`, so concurrent refund events with different targets
+  converge on the largest target. Maturation, hold and release each write the move of what the
+  conversion still has in the source bucket and the guarded status change in one `db.batch`, so a
+  conversion is never `available` (or `held`) while its money is still in `pending`.
+- The hourly cron matures at most 200 conversions per batch of two statements and five batches per
+  run (1000 conversions, 10 D1 queries), well inside D1's 1000-queries-per-invocation limit; a larger
+  backlog drains over the next runs.
 
 ### Payouts
 
-- Monthly batches for closed months only, one per period. Preview lists every affiliate with an
-  available balance and its blockers: `below_threshold` ($25), `payout_method_required`,
-  `withholding_rule_missing`, `verification_required` (Vietnamese bank payees), `affiliate_suspended`.
-- Create locks each payable gross amount (`available → payout_locked`). Approval is a sensitive
-  two-person action (`affiliate.payout.approve`). Each transfer is made outside the system and
+- Monthly batches for closed months only. A period has at most one batch that is not cancelled
+  (partial unique index), so cancelling a batch frees its period. Preview is read-only (it never
+  matures commissions) and lists every affiliate with an available balance and its blockers:
+  `below_threshold` ($25), `payout_method_required`, `withholding_rule_missing`,
+  `verification_required` (Vietnamese bank payees), `affiliate_suspended`.
+- Create matures due commissions, then locks each payable gross amount (`available →
+  payout_locked`). Each payee's item and its lock are written in one `db.batch`: the item is
+  inserted only while the affiliate's `available` balance, summed in SQL at write time, still covers
+  the gross, and the lock is inserted only if that item exists. So an item never exists without its
+  lock, and two batches (for any periods, even created in parallel) cannot lock the same money
+  twice. We chose this guard over "one open batch at a time" because it is the invariant itself and
+  needs no extra state: a later batch simply pays what became available since. A payee whose balance
+  no longer covers the preview is skipped; a batch left with no item is removed (`nothing_to_pay`).
+- Approval is a sensitive two-person action (`affiliate.payout.approve`); a batch that is not a
+  draft is refused before the approval is consumed. Each transfer is made outside the system and
   recorded once with the provider's unique external reference, payout currency, FX rate and
-  provider fee (`payout_locked → paid`). Cancelling an unpaid batch unlocks its items.
+  provider fee (`payout_locked → paid`): the item update (only while the batch is `approved`), the
+  ledger entry and the batch's move to `paid` are one `db.batch`. Cancelling an unpaid batch is one
+  `db.batch` too: the batch is cancelled only while no item is paid, and each pending item is
+  unlocked and cancelled with it, so cancel and mark-paid cannot interleave.
 - Recording a payment is gated by `AFFILIATE_PAYOUTS_ENABLED`, a session-only operator action, and
   never exposed to API keys or MCP.
 - Reconciliation reports per-conversion accrual and reversal next to the Polar amounts, and checks
-  that `paid` equals recorded items and `payout_locked` equals pending items.
+  that `paid` equals recorded items, `payout_locked` equals pending items, no affiliate has a
+  negative `pending`, `held` or `payout_locked` bucket (`negativeBuckets`), and no conversion that
+  left `pending` still has money there (`strandedPending`).
 
 ### Payout methods, tax and privacy
 
 - PayPal (any residency; a 20% NLB service fee covering processing and FX) or a Vietnamese bank
-  transfer (VN residents only). Details are sealed with AES-GCM (`ONBOARDING_ENCRYPTION_KEY`); only
-  a masked hint is readable. Setting a method is session-only. Operators reveal details only
+  transfer (VN residents only). Details are sealed with AES-GCM (`ONBOARDING_ENCRYPTION_KEY`) with
+  the affiliate id as associated data, so a sealed blob copied to another affiliate's row does not
+  open; only a masked hint is readable. Setting a method is session-only. Operators reveal details only
   through an audited session route.
 - Withholding rates are part of the rules. Vietnamese rates ship as `null`, which blocks Vietnamese
   payees until a tax adviser approves the rates. Bank payees also need a `verified` identity record;
   eKYC is P2 and we store only the provider reference, never raw documents.
-- Member views never show buyer identity: a conversion is a date, plan and amounts.
+- Member views never show buyer identity: a conversion is a date, plan and amounts. The member
+  ledger omits an operator's free-text reason (`reason: null` on entries an operator wrote, such as
+  holds and adjustments); system reasons such as `refund` stay.
 
 ### Interfaces
 

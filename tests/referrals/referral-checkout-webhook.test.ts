@@ -118,4 +118,24 @@ describe("referred membership purchase, end to end", () => {
     expect(anonymous.body.referral).toEqual({ applied: false, reason: "sign_in_required" });
     expect(anonymous.request.metadata).not.toHaveProperty("nlb_aff_attr");
   });
+
+  it("completes the purchase without a referral when the referral discount cannot be prepared", async () => {
+    // A rate no earlier test cached, so a Polar discount must be created.
+    const { link } = await seedAffiliateWithLink(700);
+    const buyer = await seedUser("discount-down-buyer");
+    getSessionMock.mockResolvedValue({ user: { id: buyer.id, email: buyer.email } });
+    createDiscountMock.mockReset().mockRejectedValue(new Error("Polar is unavailable"));
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const result = await checkout({ productId: PRODUCT_IDS.PREMIUM_ANNUAL, referralCode: link.code });
+      expect(result.status).toBe(200);
+      expect(result.body.url).toBe("https://polar.test/checkout/chk_ref_1");
+      expect(result.body.referral).toEqual({ applied: false, reason: "unavailable" });
+      expect(result.request).not.toHaveProperty("discountId");
+      expect(result.request.metadata ?? {}).not.toHaveProperty("nlb_aff_attr");
+      expect(errors).toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
 });

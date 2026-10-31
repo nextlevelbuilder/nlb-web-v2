@@ -1,6 +1,6 @@
 import { ok } from "@/lib/builder-league/http";
 import { readJsonObject, requirePathParam } from "@/lib/live/http/live-request-context";
-import { approvePayoutBatch, getPayoutBatch } from "@/lib/referrals/affiliate-payouts";
+import { approvePayoutBatch, assertBatchApprovable } from "@/lib/referrals/affiliate-payouts";
 import { payoutBatchView } from "@/lib/referrals/affiliate-read-models";
 import { runAffiliateOperatorRoute } from "@/lib/referrals/http/affiliate-operator-route";
 import { batchApproveSchema } from "@/lib/referrals/http/affiliate-operator-schemas";
@@ -21,7 +21,8 @@ export async function POST(request: Request, { params }: Params) {
     prepare: async ({ db }) => {
       const batchId = requirePathParam((await params).id, "id");
       const { approvalId } = batchApproveSchema.parse((await readJsonObject(request)).body);
-      await getPayoutBatch(db, batchId);
+      // Refuse a batch that is not a draft before the approval is consumed.
+      await assertBatchApprovable(db, batchId);
       return { ...payoutApproveTarget(batchId), approvalId, batchId };
     },
     run: async ({ db, now }, { batchId }, grant) =>

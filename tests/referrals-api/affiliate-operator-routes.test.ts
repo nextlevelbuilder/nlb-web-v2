@@ -4,9 +4,10 @@ import { and, eq } from "drizzle-orm";
 vi.mock("@/lib/auth-api-key", async () => (await import("../live-api/live-api-fixtures")).authApiKeyMock);
 
 import { getDb } from "@/lib/db";
-import { affiliateConversions, commissionLedger, operatorAuditLogs } from "@/lib/db/schema";
+import { affiliateConversions, commissionLedger, operatorApprovals, operatorAuditLogs } from "@/lib/db/schema";
 import { DEFAULT_PROGRAM_RULES } from "@/lib/referrals/program-rules";
 import { setPayoutMethod } from "@/lib/referrals/affiliate-payouts";
+import { matureDueConversions } from "@/lib/referrals/affiliate-conversions";
 import { GET as getRules, POST as publishRules } from "@/app/api/v1/affiliate-admin/rules/route";
 import { POST as previewRules } from "@/app/api/v1/affiliate-admin/rules/preview/route";
 import { GET as listAffiliates } from "@/app/api/v1/affiliate-admin/affiliates/route";
@@ -182,6 +183,11 @@ describe("payouts", () => {
     const approver = await financeOperator();
     setCaller(asCaller(requester, "session"));
 
+    // Payout preview is read-only: the commission is still pending until the hourly cron matures it.
+    const before = await readJson(await previewPayouts(getRequest(`/api/v1/affiliate-admin/payouts/preview?period=${period}`)));
+    expect(before.data.lines.find((line: { affiliateId: string }) => line.affiliateId === affiliate.id)).toBeUndefined();
+    await matureDueConversions(getDb());
+
     const preview = await readJson(await previewPayouts(getRequest(`/api/v1/affiliate-admin/payouts/preview?period=${period}`)));
     expect(preview.data.lines.find((line: { affiliateId: string }) => line.affiliateId === affiliate.id)).toMatchObject({ blockers: [], availableMinor: 5000 });
 
@@ -201,6 +207,14 @@ describe("payouts", () => {
     const approved = await approveBatch(jsonRequest("/a", "POST", { approvalId }), params({ id: batch.id }));
     expect(approved.status).toBe(200);
     expect((await readJson(approved)).data).toMatchObject({ status: "approved", approvedBy: requester.id });
+
+    // Approving a batch that is no longer a draft is refused before a second approval is consumed.
+    const spareApprovalId = await approveAffiliateAction(requester, approver, "affiliate.payout.approve", { batchId: batch.id });
+    const again = await approveBatch(jsonRequest("/a", "POST", { approvalId: spareApprovalId }), params({ id: batch.id }));
+    expect(again.status).toBe(409);
+    expect((await readJson(again)).error?.code).toBe("invalid_transition");
+    const [spare] = await getDb().select().from(operatorApprovals).where(eq(operatorApprovals.id, spareApprovalId));
+    expect(spare).toMatchObject({ status: "approved", consumedAt: null });
 
     // Payee details: MCP refused, session reveal audited without the values.
     setCaller(asCaller(requester, "delegation"), "mcp:operator");
@@ -231,7 +245,7 @@ describe("payouts", () => {
     expect((await readJson(await getBatch(getRequest(`/b/${batch.id}`), params({ id: batch.id })))).data.status).toBe("paid");
 
     const report = await readJson(await reconciliation(getRequest("/api/v1/affiliate-admin/reconciliation")));
-    expect(report.data.checks).toEqual({ paidMatchesItems: true, lockedMatchesItems: true, conversionsBalanced: true });
+    expect(report.data.checks).toEqual({ paidMatchesItems: true, lockedMatchesItems: true, conversionsBalanced: true, bucketsNonNegative: true, noPendingAfterTransition: true });
     expect((await reconciliation(getRequest("/api/v1/affiliate-admin/reconciliation?since=nope"))).status).toBe(400);
   });
 
