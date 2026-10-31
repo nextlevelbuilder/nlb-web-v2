@@ -57,7 +57,8 @@ Run steps 2–3 for every file while earlier uploads are processing; uploads and
    - if it stops after the upload, rerun with the printed `--stream-uid <uid>`;
    - a draft left by a failed run is refreshed instead of failing on `slug_taken`.
    Publish multiple recordings oldest first so week numbers follow the dates, or pass `--week`.
-6. **Verify**: `/courses` and `/vi/courses` list the new videos; `nlb courses list` shows the duration and price. With a VIP account, the player loads.
+6. **Transcript**: members read transcripts through MCP. Store the merged transcript with `node packages/cli/bin/nlb.js courses transcript-set <slug> <transcript.md>`, or run `node scripts/courses/backfill-transcripts.mjs --weeks <n> --upload` to transcribe from Stream and upload.
+7. **Verify**: `/courses` and `/vi/courses` list the new videos (with the transcript badge); `nlb courses list` shows the duration and price. With a VIP account, the player loads.
 
 Use `--url https://staging.nextlevelbuilder.io` with the staging admin key to rehearse.
 

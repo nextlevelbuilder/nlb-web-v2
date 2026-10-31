@@ -17,8 +17,12 @@ export const COURSE_ADMIN_TOOLS = [
   "course_get_upload",
   "course_create_video",
   "course_update_video",
-  "course_publish_video"
+  "course_publish_video",
+  "course_set_transcript"
 ] as const;
+
+/** Course reads bound to the caller's access (purchase or Premium/VIP), so they forward identity (mcp:read). */
+export const COURSE_MEMBER_READ_TOOLS = ["course_get_transcript"] as const;
 
 /**
  * Builder League writes (mcp:write). Every one of them is member self-service: none can verify,
@@ -159,6 +163,7 @@ export const PRIVATE_READ_TOOLS = [
   "blog_list_revisions",
   "blog_get_revision",
   "onboarding_get_status",
+  ...COURSE_MEMBER_READ_TOOLS,
   ...BUILDER_READ_TOOLS,
   ...AFFILIATE_MEMBER_READ_TOOLS,
   ...OPERATOR_READ_TOOLS

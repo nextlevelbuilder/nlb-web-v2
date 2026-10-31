@@ -37,10 +37,18 @@ These live under `app/api/courses/`. They are not part of `/api/v1` or the OpenA
 | `POST /api/courses/videos/<slug>/publish` | admin. Creates the Polar product. |
 | `POST /api/courses/videos/<slug>/checkout` | signed-in user. Returns a Polar checkout URL. |
 | `POST /api/courses/videos/<slug>/token` | signed-in user with access. Returns a signed playback URL. |
+| `GET /api/courses/videos/<slug>/transcript` | signed-in user with access (same rule as playback), or an MCP delegation for `mcp:read`. Pages with `offset` and `limit` (default 20,000, max 50,000 characters; follow `nextOffset`), or searches with `q`. |
+| `PUT /api/courses/videos/<slug>/transcript` | admin. Stores or replaces the transcript (`content`, `source`). |
 
 Admin means `role === "admin"` through `resolveCaller`, which accepts a session, an API key or an MCP delegation for `mcp:write` ([`lib/courses/course-route-helpers.ts`](../lib/courses/course-route-helpers.ts)). Request bodies are defined by [`lib/courses/course-video-schemas.ts`](../lib/courses/course-video-schemas.ts).
 
-Pages: `/courses` and `/courses/<slug>` (and `/vi/...`). UI components are in `components/courses/`.
+Pages: `/courses` and `/courses/<slug>` (and `/vi/...`). UI components are in `components/courses/`. The catalogue reads `?q=&sort=newest|oldest|longest|shortest&speaker=&transcript=1&page=` and pages by 12 on the server ([`lib/courses/course-catalogue.ts`](../lib/courses/course-catalogue.ts)); search ignores case and Vietnamese diacritics. The speaker filter comes from the description line `Diễn giả: <name> · <date>`.
+
+## Transcripts
+
+Each video can have one Markdown transcript with `[hh:mm:ss]` timestamps (table `course_video_transcripts`, [`lib/courses/course-transcript-service.ts`](../lib/courses/course-transcript-service.ts)). Catalogue entries carry `hasTranscript`. Viewers who may watch a video may read its transcript; members read them through the MCP tool `course_get_transcript` (see [toolkits/mcp.md](./toolkits/mcp.md)) or `nlb courses transcript <slug>`. The transcript is never shown on the public pages.
+
+`node scripts/courses/backfill-transcripts.mjs` transcribes published videos that have none: it downloads the audio rendition of each Stream video in 10-minute parts, transcribes each part with `multix gemini`, and writes `.recordings/<slug>/transcript.md`. Rerun it with `--upload` and an admin `NLB_API_KEY` to store them (work already done is reused). Options: `--weeks 41,42`, `--parallel`, `--concurrency`, `--force`.
 
 ## One-time setup: Cloudflare Stream
 
@@ -66,4 +74,4 @@ For NLB Weekly recordings, `npm run courses:publish -- <record-YYMMDD.mp4> --tit
 
 ## Tests
 
-`tests/courses-*.test.ts` cover the access policy, admin routes, the Polar product, signed URLs, the token route and webhook entitlements.
+`tests/courses-*.test.ts` cover the access policy, admin routes, the Polar product, signed URLs, the token route, webhook entitlements, transcripts and the catalogue query.

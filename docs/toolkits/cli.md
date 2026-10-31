@@ -293,6 +293,8 @@ Course videos over `/api/courses/*` (admin API key except `list`; see [docs/cour
 - `nlb courses publish-recording <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <file>`: the whole weekly flow. Derives the week (highest + 1), date (from the file name), title `NLB Weekly #<week>: <topic>`, slug and description, uploads signed-only to Stream with resumable tus, waits for processing, registers and publishes (Polar product). Rerunnable: published slugs are skipped, `--stream-uid` reuses an upload. `--dry-run` writes nothing. Also `--week`, `--date`, `--slug`, `--price` (default 900), `--currency`, `--locale`, `--poll-seconds`, `--timeout-minutes`. From the repo root: `npm run courses:publish -- <file> ...` builds the CLI first.
 - `nlb courses upload <file> --name <name>`, `nlb courses status <uid>`, `nlb courses create <video.json>`, `nlb courses publish <slug>`: the individual steps.
 - `nlb courses put <file> <uploadUrl>`: sends a file to the one-time URL returned by the MCP tool `course_create_upload` (no credentials).
+- `nlb courses transcript <slug> [-q <text>] [-o <file>]`: reads a video's whole transcript, or searches it with `-q` (any key whose account may watch the video).
+- `nlb courses transcript-set <slug> <file> [--source <name>]`: stores or replaces a transcript (admin).
 - Common options: `-k, --api-key`, `-u, --url`, `--json`.
 
 ### 20. `nlb affiliates ...`
