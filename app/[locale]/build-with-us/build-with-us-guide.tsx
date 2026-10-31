@@ -66,11 +66,11 @@ export default function BuildWithUsGuide() {
       description: "Connect our official MCP server to your AI IDE or agent runtime so AI tools can draft, format, and submit products autonomously.",
       icon: Bot,
       steps: [
-        "Add an HTTP MCP server with URL https://nextlevelbuilder.io/mcp",
+        "Add an HTTP MCP server with URL https://nextlevelbuilder.io/mcp (Claude Desktop and claude.ai: Settings → Connectors → Add custom connector)",
         "Tools include list_templates, validate_listing, submit_product, get_product, get_product_markdown and get_product_traffic",
         "Prompt your AI: 'Draft a full 5-block product document for my repo and submit it to Next Level Builders directory'",
-        "Remote mutations require the MCP operator-provided authorization token; REST API keys are separate. Keep secrets in your client configuration.",
-        "For traffic, call get_product_traffic with slug and optional from/to UTC timestamps"
+        "Public directory reads need no sign-in. When a tool needs your account, the client opens your browser to sign in with NLB and approve access (OAuth 2.1); there is no API key to copy",
+        "Access is granted per scope: mcp:read, mcp:write and mcp:keys. Review or disconnect apps in Profile. For traffic, call get_product_traffic with slug and optional from/to UTC timestamps"
       ],
       ctaText: "Explore MCP Server",
       ctaUrl: "/api-docs"
@@ -201,7 +201,7 @@ export default function BuildWithUsGuide() {
             <Card className="space-y-4 p-6 text-step-sm text-ink-2">
               <p>HTTP MCP endpoint: <a className="text-primary underline underline-offset-4 break-all" href="https://nextlevelbuilder.io/mcp">https://nextlevelbuilder.io/mcp</a></p>
               <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { "nextlevelbuilder": { url: "https://nextlevelbuilder.io/mcp" } } }, null, 2)}</code></pre>
-              <p className="text-step-sm text-ink-2">Client configuration formats differ. Select HTTP transport and use the endpoint above. Read tools are public; remote writes require the operator-provided MCP token in the Authorization header. Your nlb_live_ API key authenticates REST requests and does not replace that token.</p>
+              <p className="text-step-sm text-ink-2">Client configuration formats differ. Select HTTP (Streamable HTTP) transport and use the endpoint above. Read tools are public. Tools that act on your account ask you to sign in with NLB through OAuth 2.1 and approve the mcp:read, mcp:write or mcp:keys scope; access tokens last five minutes and the client renews them. For scripts, CI or clients without OAuth, run the local server (npx -y @nextlevelbuilder/mcp) with an nlb_live_ API key in NLB_API_KEY.</p>
               <p>WebMCP connection setup:</p>
               <pre className="overflow-x-auto rounded-sm bg-canvas-deep p-4 text-xs"><code>{JSON.stringify({ mcpServers: { webmcp: { command: "npx", args: ["-y", "@jason.today/webmcp@0.1.13", "--mcp"] } } }, null, 2)}</code></pre>
               <p className="text-step-sm text-ink-2">Enable the connection only for a client you trust: it can read and change the draft in this tab. Disconnect when finished. Setup details: <a className="text-primary underline underline-offset-4" href="https://webmcp.dev/" target="_blank" rel="noopener noreferrer">WebMCP</a>.</p>
@@ -278,7 +278,7 @@ export default function BuildWithUsGuide() {
               </div>
               <div className="space-y-2">
                 <h5 className="mono-label text-ink-3">MCP</h5>
-                <p className="text-step-xs text-ink-2">With NLB_API_KEY configured for your MCP server, call get_product_traffic:</p>
+                <p className="text-step-xs text-ink-2">Over the remote endpoint, sign in with NLB (mcp:read) as a member of the product organization; with the local server, set NLB_API_KEY. Then call get_product_traffic:</p>
                 <pre className="p-4 rounded-sm bg-canvas-deep border border-line overflow-x-auto text-xs"><code>{JSON.stringify({ slug: "my-product", from: "2026-09-01T00:00:00Z", to: "2026-09-08T00:00:00Z" }, null, 2)}</code></pre>
               </div>
               <Button asChild variant="outline" className="gap-2">
