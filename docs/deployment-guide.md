@@ -15,7 +15,7 @@ Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Product
 
 Rules:
 - **Always pin the account.** The shared wrangler OAuth login can also see the Digitop account, which must never be written to.
-- **Unset the repo token.** Wrangler auto-loads `CLOUDFLARE_API_TOKEN` from `./.env`, and that token only covers R2 and zones. Run OAuth commands with the token unset, from outside the repo, passing the config explicitly.
+- **Unset the repo token.** Wrangler auto-loads `CLOUDFLARE_API_TOKEN` from `./.env`, and that token covers R2, zones, Stream and Workers AI (it is not limited to R2 and zones). The Workers' `CF_STREAM_API_TOKEN` should be a separate token limited to Stream: Edit. Run OAuth commands with the token unset, from outside the repo, passing the config explicitly.
 - **Name the environment explicitly.** Use `--env=""` for production (wrangler's top-level environment) and `--env staging` for staging. Omitting `--env` is ambiguous when environments are defined.
 
 Helper, the same pattern as `wr_project` in [`scripts/provision-cloudflare.sh`](../scripts/provision-cloudflare.sh):

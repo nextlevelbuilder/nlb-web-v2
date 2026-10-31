@@ -57,7 +57,8 @@ describe("secret box", () => {
     expect(await decryptSecret(a)).toBe("refresh-token-value");
 
     const [version, iv, data] = a.split(".");
-    const flipped = `${version}.${iv}.${data.slice(0, -2)}${data.endsWith("A") ? "B" : "A"}${data.slice(-1)}`;
+    const flipped = `${version}.${iv}.${data.slice(0, -2)}${data.at(-2) === "A" ? "B" : "A"}${data.slice(-1)}`;
+    expect(flipped).not.toBe(a);
     await expect(decryptSecret(flipped)).rejects.toThrow();
     await expect(decryptSecret(a, OTHER_KEY)).rejects.toThrow();
     await expect(decryptSecret("v2.x.y")).rejects.toThrow("Malformed sealed secret");

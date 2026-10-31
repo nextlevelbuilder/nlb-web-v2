@@ -139,7 +139,7 @@ export async function POST(request: Request) {
       : await createCheckoutSession(...checkoutArgs);
 
     if (!checkout.url) {
-      console.error("Checkout created but no URL returned:", checkout);
+      console.error("Checkout created but no URL returned", { checkoutId: checkout.id, reason: "missing_url" });
       return NextResponse.json(
         { error: "Failed to create checkout session: No checkout URL returned" },
         { status: 500 }
@@ -184,7 +184,8 @@ export async function POST(request: Request) {
       // Log detailed error for debugging
       console.error("Polar API error:", {
         statusCode,
-        error: errorBody,
+        // Polar echoes the submitted input (customer email) in validation details, so keep only type and message.
+        error: summarizePolarError(errorBody),
         productId: requestBody?.productId,
         timestamp: new Date().toISOString(),
       });
@@ -223,7 +224,7 @@ export async function POST(request: Request) {
     }
 
     // Handle unknown errors
-    console.error("Unexpected checkout error:", error);
+    console.error("Unexpected checkout error:", error instanceof Error ? error.message : "unknown");
     return NextResponse.json(
       {
         error: "Failed to create checkout session",
@@ -232,4 +233,15 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function summarizePolarError(body: unknown) {
+  const detail = (body as { detail?: unknown } | null | undefined)?.detail;
+  if (typeof detail === "string") return detail;
+  if (!Array.isArray(detail)) return undefined;
+  return detail.map((item) => ({
+    loc: (item as { loc?: unknown })?.loc,
+    type: (item as { type?: unknown })?.type,
+    msg: (item as { msg?: unknown })?.msg,
+  }));
 }
