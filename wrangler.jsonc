@@ -7,7 +7,8 @@
   "compatibility_flags": [
     "nodejs_compat",
     "global_fetch_strictly_public",
-    "cache_option_enabled"
+    "cache_option_enabled",
+    "enable_ctx_exports"
   ],
   "keep_names": false,
   "workers_dev": true,
@@ -17,6 +18,12 @@
   },
   "cache": {
     "enabled": true
+  },
+  // Workers Cache only in front of CachedPages; the default entrypoint normalises cookies and locale
+  // first (lib/edge-cache-gateway.ts) so analytics cookies do not split the cache per visitor.
+  "exports": {
+    "default": { "type": "worker", "cache": { "enabled": false } },
+    "CachedPages": { "type": "worker", "cache": { "enabled": true } }
   },
   "triggers": {
     "crons": ["* * * * *", "17 * * * *"]
@@ -82,6 +89,10 @@
       "workers_dev": true,
       "cache": {
         "enabled": true
+      },
+      "exports": {
+        "default": { "type": "worker", "cache": { "enabled": false } },
+        "CachedPages": { "type": "worker", "cache": { "enabled": true } }
       },
       "preview_urls": false,
       "triggers": {
