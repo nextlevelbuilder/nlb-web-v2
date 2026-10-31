@@ -1,6 +1,6 @@
 # Project roadmap
 
-Status as of 2026-10-13. This page is a stateful record, so update the date when you change it. Scope and acceptance criteria come from `plans/reports/bootstrap-261013-1759-brainstorm-contract.md`. Evidence for "done" is in `plans/reports/` (build, review and live-check reports).
+Status as of 2026-10-31. This page is a stateful record, so update the date when you change it. Scope and acceptance criteria come from `plans/reports/bootstrap-261013-1759-brainstorm-contract.md`. Evidence for "done" is in `plans/reports/` (build, review and live-check reports).
 
 ## Milestones
 
@@ -9,6 +9,7 @@ Status as of 2026-10-13. This page is a stateful record, so update the date when
 | **M1: v2 site on hi@** (feature parity, Constellation design, D1, CI/CD, data migrated) | Deployed to staging and production on workers.dev. Domain cutover pending. |
 | **M2: Courses** (Stream signed URLs, a Polar product per video, VIP access) | Code deployed. Stream not enabled yet, so no videos are playable. |
 | **Blog** (block posts managed via REST, CLI, MCP) | Live on v2. The CLI and MCP tools live in `packages/` of this repo; the next `packages-v*` release publishes them. |
+| **Affiliate program** (levels, links, commission ledger, payouts, REST/MCP/CLI) | P1 code shipped behind `AFFILIATES_ENABLED` (staging on, production off). Production launch waits on legal, finance and tax review ([affiliate-program-adr.md](./affiliate-program-adr.md#launch-gates)); eKYC and fraud heuristics are P2. |
 | **Cutover** | Blocked on owner actions (below) |
 
 ## Blocked on the account owner

@@ -11,17 +11,37 @@ vi.mock("@/i18n/navigation", () => ({ Link: () => null }));
 
 import { parsePolicyContent } from "@/app/[locale]/policies/policy-content";
 import PolicySlugPage, { generateMetadata, generateStaticParams } from "@/app/[locale]/policies/[slug]/page";
-import { POLICY_PAGE_SLUGS } from "@/content/policies";
+import { LAUNCH_GATED_POLICY_SLUGS, POLICY_PAGE_SLUGS, policySlugsByGroup } from "@/content/policies";
+import { publishedPolicySlugs } from "@/lib/policies/published-policies";
 
 const params = (locale: string, slug: string) => ({ params: Promise.resolve({ locale, slug }) });
 
 describe("policy slug route", () => {
   beforeEach(() => {
     notFound.mockClear();
+    vi.unstubAllEnvs();
   });
 
-  it("pre-renders every policy slug", () => {
-    expect(generateStaticParams()).toEqual(POLICY_PAGE_SLUGS.map((slug) => ({ slug })));
+  it("pre-renders every policy slug except launch-gated ones, which render on demand", () => {
+    expect(generateStaticParams()).toEqual(
+      POLICY_PAGE_SLUGS.filter((slug) => !LAUNCH_GATED_POLICY_SLUGS.includes(slug)).map((slug) => ({ slug }))
+    );
+  });
+
+  it("hides the affiliate agreement everywhere while AFFILIATES_ENABLED is off", async () => {
+    vi.stubEnv("AFFILIATES_ENABLED", "false");
+    expect(publishedPolicySlugs()).not.toContain("affiliate-agreement");
+    expect(policySlugsByGroup("legal", publishedPolicySlugs())).not.toContain("affiliate-agreement");
+    await expect(PolicySlugPage(params("en", "affiliate-agreement"))).rejects.toThrow("NEXT_NOT_FOUND");
+    expect((await generateMetadata(params("en", "affiliate-agreement"))).robots).toEqual({ index: false });
+  });
+
+  it("publishes the affiliate agreement once AFFILIATES_ENABLED is on", async () => {
+    vi.stubEnv("AFFILIATES_ENABLED", "true");
+    expect(publishedPolicySlugs()).toContain("affiliate-agreement");
+    const element = await PolicySlugPage(params("en", "affiliate-agreement"));
+    expect(notFound).not.toHaveBeenCalled();
+    expect(element.props.doc.title).toMatch(/Affiliate/);
   });
 
   it("calls notFound() for an unknown slug", async () => {
@@ -33,7 +53,7 @@ describe("policy slug route", () => {
     const element = await PolicySlugPage(params("vi", "refund"));
     expect(notFound).not.toHaveBeenCalled();
     expect(element.props.doc.title).toBe("Chính sách hoàn tiền");
-    expect(element.props.lastUpdated).toBe("2026-10-13");
+    expect(element.props.lastUpdated).toBe("2026-10-31");
     expect(element.props.showToc).toBe(true);
   });
 

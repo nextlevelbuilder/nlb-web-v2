@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
+import { publishedPolicySlugs } from '@/lib/policies/published-policies';
 import { POLICIES, getPolicy, policyHref, policySlugsByGroup, toPolicyLocale, type PolicyGroup } from '@/content/policies';
 import { policyUiCopy } from '@/content/policies/policy-ui-copy';
 import { pageMetadata } from '@/lib/seo';
@@ -44,7 +45,7 @@ export default async function PoliciesPage({ params }: Props) {
           <div key={group}>
             <h3 className="mono-label mb-4 text-ink-3">{label}</h3>
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {policySlugsByGroup(group)
+              {policySlugsByGroup(group, publishedPolicySlugs())
                 .filter((slug) => slug !== 'overview')
                 .map((slug) => {
                   const doc = POLICIES[slug].content[policyLocale];

@@ -24,6 +24,7 @@ export interface CourseVideo {
   currency: string;
   thumbnailUrl: string | null;
   publishedAt: string | null;
+  hasTranscript?: boolean;
   status?: string;
   streamUid?: string | null;
 }
@@ -39,6 +40,22 @@ export interface CourseVideoInput {
   priceCents: number;
   currency?: string;
   thumbnailUrl?: string | null;
+}
+
+export interface TranscriptPage {
+  slug: string;
+  title: string;
+  totalChars: number;
+  offset: number;
+  content: string;
+  nextOffset: number | null;
+}
+
+export interface TranscriptSearch {
+  slug: string;
+  title: string;
+  query: string;
+  matches: Array<{ offset: number; text: string }>;
 }
 
 export interface StreamUpload {
@@ -101,8 +118,34 @@ export class NlbCoursesClient {
     return this.request<CourseVideo>("POST", `/api/courses/videos/${encodeURIComponent(slug)}/publish`);
   }
 
+  getTranscriptPage(slug: string, offset = 0, limit?: number): Promise<TranscriptPage> {
+    const params = new URLSearchParams({ offset: String(offset) });
+    if (limit) params.set("limit", String(limit));
+    return this.request<TranscriptPage>("GET", `/api/courses/videos/${encodeURIComponent(slug)}/transcript?${params}`);
+  }
+
+  searchTranscript(slug: string, query: string): Promise<TranscriptSearch> {
+    return this.request<TranscriptSearch>("GET", `/api/courses/videos/${encodeURIComponent(slug)}/transcript?${new URLSearchParams({ q: query })}`);
+  }
+
+  /** The whole transcript, following `nextOffset` page by page. */
+  async getTranscript(slug: string): Promise<string> {
+    let offset: number | null = 0;
+    let content = "";
+    while (offset !== null) {
+      const page: TranscriptPage = await this.getTranscriptPage(slug, offset, 50000);
+      content += page.content;
+      offset = page.nextOffset;
+    }
+    return content;
+  }
+
+  setTranscript(slug: string, content: string, source?: string): Promise<{ slug: string; totalChars: number; source: string; updatedAt: string }> {
+    return this.request("PUT", `/api/courses/videos/${encodeURIComponent(slug)}/transcript`, { content, ...(source ? { source } : {}) });
+  }
+
   private async request<T>(method: string, path: string, body?: unknown, authed = true): Promise<T> {
-    if (authed && !this.apiKey) throw new Error("An admin API key is required: pass --api-key, set NLB_API_KEY, or run 'nlb config set api-key'.");
+    if (authed && !this.apiKey) throw new Error("An API key is required (an admin key for uploads, publishing and transcript-set): pass --api-key, set NLB_API_KEY, or run 'nlb config set api-key'.");
     const headers: Record<string, string> = { Accept: "application/json" };
     if (authed && this.apiKey) {
       headers.Authorization = `Bearer ${this.apiKey}`;

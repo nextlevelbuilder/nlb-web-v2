@@ -38,9 +38,11 @@ export interface PublicCourseVideo {
   currency: string;
   thumbnailUrl: string | null;
   publishedAt: string | null;
+  /** True when members with access can read the transcript (web or MCP `course_get_transcript`). */
+  hasTranscript: boolean;
 }
 
-export function toPublicCourseVideo(video: CourseVideoRow): PublicCourseVideo {
+export function toPublicCourseVideo(video: CourseVideoRow, hasTranscript = false): PublicCourseVideo {
   return {
     id: video.id,
     slug: video.slug,
@@ -53,6 +55,7 @@ export function toPublicCourseVideo(video: CourseVideoRow): PublicCourseVideo {
     currency: video.currency,
     thumbnailUrl: video.thumbnailUrl ?? null,
     publishedAt: video.publishedAt ? video.publishedAt.toISOString() : null,
+    hasTranscript,
   };
 }
 

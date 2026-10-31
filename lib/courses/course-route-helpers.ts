@@ -37,8 +37,12 @@ export async function readJsonBody(request: Request): Promise<unknown> {
   }
 }
 
-export async function requireCaller(request: Request): Promise<ResolvedCaller> {
-  const caller = await resolveCaller(request.headers);
+/** Signed-in caller. `mcpRead` also accepts an MCP delegation, for reads the NLB MCP server makes for a member. */
+export async function requireCaller(request: Request, options: { mcpRead?: boolean } = {}): Promise<ResolvedCaller> {
+  const delegation = options.mcpRead
+    ? { scope: "mcp:read" as const, method: request.method, path: new URL(request.url).pathname }
+    : undefined;
+  const caller = await resolveCaller(request.headers, undefined, delegation);
   if (!caller) throw new CourseError(401, "unauthorized", "Sign in to continue");
   return caller;
 }

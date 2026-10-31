@@ -14,8 +14,10 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [builder-league-adr.md](./builder-league-adr.md) | Understand Builder League scoring: the ledger, rulesets, caps, time windows, privacy and the rollout flag |
 | [builder-league-runbook.md](./builder-league-runbook.md) | Operate the Builder League: moderation, appeals, replays, finalization, renders, privacy requests, pilot, flag, backups, costs |
 | [live-runbook.md](./live-runbook.md) | Launch and operate NLB Live: Zoom secrets, first operators, rounds and events, OpenAPI publishing, retiring the old MCP Worker |
+| [affiliate-program-adr.md](./affiliate-program-adr.md) | Understand the affiliate program: levels and incentive budget, attribution, the commission ledger, payouts, flags and launch gates |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
 | [membership-onboarding.md](./membership-onboarding.md) | Operate post-checkout onboarding: tier rules, Discord/Telegram access, jobs and cron, secrets, backfill, rollback |
+| [website-chat.md](./website-chat.md) | Operate the Dewee website chat: agent setup, page actions, leads, identity, secrets |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |
 | [data-migration-neon-to-d1.md](./data-migration-neon-to-d1.md) | Understand the one-way Neon → D1 data copy and its risks |
 | [cutover-runbook.md](./cutover-runbook.md) | Move `nextlevelbuilder.io` from the Digitop account to hi@ |

@@ -42,7 +42,7 @@ Markdown twins render the HTML page through the `WORKER_SELF_REFERENCE` service 
 
 The old app also declared `GO_REDIRECTS` (KV), `POLAR_WEBHOOK_QUEUE` (Queue) and `AI` (Workers AI), but never used them: `/go/[slug]` reads D1, Polar webhooks are processed inline, and listing screening is a deterministic heuristic. They are not bound here.
 
-Scheduled work runs in [`worker.ts`](../worker.ts) on the two crons in `wrangler.jsonc`: every minute (the onboarding job queue) and hourly at `:17` (the membership resync, plus the Builder League cron: period finalization, the year snapshots and Community Wrapped, render job expiry; [`lib/builder-league/cron.ts`](../lib/builder-league/cron.ts)). The league cron runs whatever `BUILDER_LEAGUE_ENABLED` says: it writes only league tables, and pages check the flag. The flag is `false` in production (admins and pilot members only) and `true` on staging.
+Scheduled work runs in [`worker.ts`](../worker.ts) on the two crons in `wrangler.jsonc`: every minute (the onboarding job queue) and hourly at `:17` (the membership resync, plus the Builder League cron: period finalization, the year snapshots and Community Wrapped, render job expiry; [`lib/builder-league/cron.ts`](../lib/builder-league/cron.ts)). The hourly cron also matures affiliate commissions past their refund hold ([`lib/referrals/referral-cron.ts`](../lib/referrals/referral-cron.ts)). The league cron runs whatever `BUILDER_LEAGUE_ENABLED` says: it writes only league tables, and pages check the flag. The flag is `false` in production (admins and pilot members only) and `true` on staging.
 
 Staging and production share the `nlb-media-staging` bucket for `MEDIA_STAGING`. Only the public bucket is split.
 
@@ -64,6 +64,7 @@ Bot protection: votes require a Turnstile token, verified server-side in [`lib/d
 
 - Checkout sessions are created in [`lib/polar.ts`](../lib/polar.ts) (memberships, directory listings) and [`lib/courses/course-checkout.ts`](../lib/courses/course-checkout.ts) (course videos). Success URLs are derived from `NEXT_PUBLIC_APP_URL`.
 - Webhooks arrive at `POST /api/webhooks/polar` and are verified with the Polar SDK (Standard Webhooks, `POLAR_WEBHOOK_SECRET`). The route fails closed when the secret is empty. Idempotency comes from the unique event id in `webhook_events`. A delivery claims an event with an atomic conditional update on `locked_until` (a 5-minute lease), so concurrent redeliveries cannot process it twice; a failure releases the lease for Polar's retry ([`lib/domain/webhook-event-lock.ts`](../lib/domain/webhook-event-lock.ts)). Side effects (Resend email, Discord) go through delivery intents ([`lib/domain/events.ts`](../lib/domain/events.ts)).
+- Affiliate referrals: membership checkout binds a signed-in buyer's first purchase to an affiliate snapshot carried in Polar metadata (`nlb_aff_attr`); the order webhook accrues commission into an append-only ledger and reverses it on refunds. See [affiliate-program-adr.md](./affiliate-program-adr.md).
 - After a membership payment, onboarding links the buyer to the subscription and grants Discord and Telegram access from the effective tier, through a D1 job queue drained by the worker cron (behind `ONBOARDING_V2_ENABLED`). See [membership-onboarding.md](./membership-onboarding.md).
 - Membership plans (Premium, VIP) and the FOMO seat caps are in [`lib/home`](../lib/home) and [`lib/polar.ts`](../lib/polar.ts). Seat counts come from real `active` subscriptions, not fabricated numbers (a contract decision).
 
@@ -72,6 +73,7 @@ Bot protection: votes require a Turnstile token, verified server-side in [`lib/d
 - **Build with Us directory**: products, revisions, moderation, votes, rankings, Pulse and traffic. The domain logic is in [`lib/domain`](../lib/domain). The submission guide on `/build-with-us` (anchor `#guide`; the old `/build-with-us/instructions` URL redirects there) and the root README cover the agent-facing workflows.
 - **Blog**: typed widget blocks managed over REST, CLI or MCP. See [blog-and-agent-management.md](./blog-and-agent-management.md).
 - **Courses**: one Polar product per video, Cloudflare Stream signed playback. See [courses.md](./courses.md).
+- **Website chat**: the Dewee widget on public pages talks to `/api/dewee`, which proxies to the hosted Dewee control plane with server-only credentials. The agent reads plans, courses and FAQ through page actions and records leads in D1. See [website-chat.md](./website-chat.md).
 - **Discovery**: `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt` and markdown twins. Implemented in `app/robots.ts`, `app/sitemap.ts`, `app/llms*.txt/` and [`lib/markdown`](../lib/markdown).
 
 ## Environments

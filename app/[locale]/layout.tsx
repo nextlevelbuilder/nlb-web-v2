@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import SiteChat from '@/components/chat/site-chat';
 import NavigationProgress from '@/components/site/navigation-progress';
 import SiteCursor from '@/components/site/site-cursor';
 import SiteFooter from '@/components/site/site-footer';
@@ -40,6 +41,7 @@ export default async function LocaleLayout({ children, params }: {
       <SiteSoundEffects />
       {children}
       <SiteFooter />
+      <SiteChat />
     </NextIntlClientProvider>
   );
 }

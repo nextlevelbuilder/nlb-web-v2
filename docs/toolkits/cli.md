@@ -293,4 +293,30 @@ Course videos over `/api/courses/*` (admin API key except `list`; see [docs/cour
 - `nlb courses publish-recording <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <file>`: the whole weekly flow. Derives the week (highest + 1), date (from the file name), title `NLB Weekly #<week>: <topic>`, slug and description, uploads signed-only to Stream with resumable tus, waits for processing, registers and publishes (Polar product). Rerunnable: published slugs are skipped, `--stream-uid` reuses an upload. `--dry-run` writes nothing. Also `--week`, `--date`, `--slug`, `--price` (default 900), `--currency`, `--locale`, `--poll-seconds`, `--timeout-minutes`. From the repo root: `npm run courses:publish -- <file> ...` builds the CLI first.
 - `nlb courses upload <file> --name <name>`, `nlb courses status <uid>`, `nlb courses create <video.json>`, `nlb courses publish <slug>`: the individual steps.
 - `nlb courses put <file> <uploadUrl>`: sends a file to the one-time URL returned by the MCP tool `course_create_upload` (no credentials).
+- `nlb courses transcript <slug> [-q <text>] [-o <file>]`: reads a video's whole transcript, or searches it with `-q` (any key whose account may watch the video).
+- `nlb courses transcript-set <slug> <file> [--source <name>]`: stores or replaces a transcript (admin).
 - Common options: `-k, --api-key`, `-u, --url`, `--json`.
+
+### 20. `nlb affiliates ...`
+
+The affiliate program through `/api/v1/affiliates/*`, acting only on your own account. Authenticate like `nlb builder` (member API key, or a session cookie when no key is set); `program` needs no credential.
+
+```bash
+nlb affiliates program                                 # levels, budgets, fees, current termsVersion
+nlb affiliates join --terms-version 2026-10-31         # only after reading and accepting the Affiliate Agreement
+nlb affiliates me                                      # level, budgetBps, balances, masked payout method
+nlb affiliates preview --discount-bps 1000 --price-minor 4900
+nlb affiliates links list
+nlb affiliates links create --code my-code --discount-bps 1000 --destination /courses --utm-campaign launch
+nlb affiliates links update <id> --discount-bps 500 --expected-version 2
+nlb affiliates links update <id> --status archived     # permanent
+nlb affiliates conversions --limit 20
+nlb affiliates commissions --limit 50
+nlb affiliates payouts
+```
+
+- Money fields ending in `Minor` are minor units (cents); rates ending in `Bps` are basis points (`100` = 1%).
+- A discount above your budget fails with `over_budget`; a stale `--expected-version` fails with `conflict`. `--label ''` and `--utm-campaign ''` clear those fields.
+- Inputs are checked locally against the shared contracts before any request; failures exit 1 and `--json` prints `{ success: false, status, code, hint, notEnabled }`.
+- There are no payout-method or operator commands: payout setup happens in a signed-in browser session, and finance operators use the website or the `affiliate_admin_*` MCP tools.
+- Common options: `-k, --api-key`, `-c, --cookie`, `-u, --url`, `--json`.

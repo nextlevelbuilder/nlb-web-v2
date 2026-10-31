@@ -42,7 +42,7 @@ export type AccessAction =
   | "download"
   | "manage";
 
-export type OperatorDomain = "live" | "courses" | "assets" | "directory" | "users" | "membership" | "commerce" | "builder_league" | "community" | "system";
+export type OperatorDomain = "live" | "courses" | "assets" | "directory" | "users" | "membership" | "commerce" | "builder_league" | "community" | "affiliate" | "system";
 
 /** Runtime list of every operator domain, used to validate capability strings from storage or input. */
 export const OPERATOR_DOMAINS = [
@@ -55,6 +55,7 @@ export const OPERATOR_DOMAINS = [
   "commerce",
   "builder_league",
   "community",
+  "affiliate",
   "system",
 ] as const satisfies readonly OperatorDomain[];
 
@@ -72,6 +73,9 @@ export const SENSITIVE_OPERATOR_ACTIONS = [
   "live.ticket.refund",
   "live.event.cancel",
   "live.poll.override",
+  "affiliate.payout.approve",
+  "affiliate.ledger.adjust",
+  "affiliate.rules.publish",
   "operator.grant",
   "operator.revoke",
 ] as const;
