@@ -137,7 +137,7 @@ describe("POST /api/courses/videos/[slug]/token", () => {
     expect((await tokenRequest(video.slug)).status).toBe(200);
   });
 
-  it("returns 200 for an active VIP and 403 for an active Premium-only member", async () => {
+  it("returns 200 for both an active VIP and an active Premium member", async () => {
     const video = await seedVideo();
     const vip = await seedUser();
     const premium = await seedUser();
@@ -151,7 +151,7 @@ describe("POST /api/courses/videos/[slug]/token", () => {
     resolveCallerMock.mockResolvedValue(vip);
     expect((await tokenRequest(video.slug)).status).toBe(200);
     resolveCallerMock.mockResolvedValue(premium);
-    expect((await tokenRequest(video.slug)).status).toBe(403);
+    expect((await tokenRequest(video.slug)).status).toBe(200);
   });
 
   it("returns 403 for a VIP whose subscription is canceled", async () => {
@@ -196,13 +196,13 @@ describe("POST /api/courses/videos/[slug]/token", () => {
     expect((await tokenRequest(video.slug)).status).toBe(403);
   });
 
-  it("refuses an active VIP subscription with no recorded period end", async () => {
+  it("refuses a VIP set to cancel at period end with no recorded period end", async () => {
     const video = await seedVideo();
     const caller = await seedUser();
     const customerId = await seedCustomer(caller.user.email);
     await getDb().insert(subscriptions).values({
       customerId, polarSubscriptionId: `sub-no-period-${seq}`, polarProductId: PRODUCT_IDS.VIP_ANNUAL,
-      productName: "VIP", status: "active",
+      productName: "VIP", status: "active", cancelAtPeriodEnd: true,
     });
     resolveCallerMock.mockResolvedValue(caller);
     expect((await tokenRequest(video.slug)).status).toBe(403);

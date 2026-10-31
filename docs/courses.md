@@ -1,6 +1,6 @@
 # Courses
 
-Courses sell individual videos. Each video is bought once through Polar and plays through Cloudflare Stream signed URLs. Members on a qualifying plan (VIP by default) can watch everything.
+Courses sell individual videos. Each video is bought once through Polar and plays through Cloudflare Stream signed URLs. Members on a paid plan (Premium or VIP by default) can watch everything.
 
 ## Decisions
 
@@ -8,8 +8,8 @@ Courses sell individual videos. Each video is bought once through Polar and play
 |---|---|---|
 | One one-time Polar product per video, created when the video is published | Per-video purchase without a cart. Polar is merchant of record. | [`lib/courses/course-polar-product.ts`](../lib/courses/course-polar-product.ts) |
 | The price is locked once the Polar product exists | Avoids a mismatch between the D1 price and Polar | [`lib/courses/course-video-service.ts`](../lib/courses/course-video-service.ts) |
-| VIP unlocks every video, Premium does not | A product decision, changeable in one place | `COURSE_ACCESS_PLANS` in [`lib/courses/course-access-policy.ts`](../lib/courses/course-access-policy.ts), overridable per environment with the `COURSES_ACCESS_PLANS` var in [`wrangler.jsonc`](../wrangler.jsonc). `none` disables plan access. An invalid value falls back to the constant. |
-| `trialing` subscriptions do not grant access | Paid content requires a paid period | `ACTIVE_SUBSCRIPTION_STATUSES` (same file) |
+| Every paid plan (Premium and VIP) unlocks every video | A product decision, changeable in one place | `COURSE_ACCESS_PLANS` in [`lib/courses/course-access-policy.ts`](../lib/courses/course-access-policy.ts), overridable per environment with the `COURSES_ACCESS_PLANS` var in [`wrangler.jsonc`](../wrangler.jsonc). `none` disables plan access. An invalid value falls back to the constant. |
+| Plan access follows the membership tier resolver | Course access matches what the member sees on their profile: early-bird products, trials and the past-due grace window count the same way | `resolveEffectiveTier` in [`lib/membership/effective-tier.ts`](../lib/membership/effective-tier.ts) |
 | Archived videos stay playable for existing buyers, but the detail page returns 404 | Buyers keep what they paid for. New buyers cannot find it. | Token route, detail page |
 | A full refund revokes access. A partial refund keeps it. A repurchase after a refund restores it. | Matches Polar's event semantics (`order.refunded` is also sent for partial refunds) | [`lib/courses/course-webhook-entitlements.ts`](../lib/courses/course-webhook-entitlements.ts) |
 | Signed Stream URLs (RS256, short-lived), no DRM | Stops link sharing at reasonable cost. Hard DRM is a non-goal. | [`lib/courses/stream-signed-url.ts`](../lib/courses/stream-signed-url.ts) |
@@ -19,7 +19,7 @@ Courses sell individual videos. Each video is bought once through Polar and play
 [`lib/courses/course-video-access.ts`](../lib/courses/course-video-access.ts) decides who may watch. A viewer qualifies with any one of the following (the file's doc comment is authoritative):
 1. an active `video:<id>` entitlement (granted by the Polar webhook on a paid order);
 2. a paid or partially refunded order for the video's Polar product placed with the viewer's email;
-3. an `active` subscription on a plan in the access policy whose `current_period_end` is still in the future. A VIP who cancels keeps access until the paid period ends; a subscription without a period end does not qualify.
+3. a subscription whose effective membership tier (the same resolver the profile page uses) is a plan in the access policy. The subscription's customer is matched by the linked user id or by the viewer's email. A member who cancels keeps access until the paid period ends.
 
 Commerce rows are keyed by email. That is safe because every sign-in method proves the email (email OTP or OAuth, with password sign-in disabled).
 

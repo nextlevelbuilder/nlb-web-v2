@@ -1,14 +1,10 @@
 import type { MembershipPlan } from "@/lib/polar";
 
 /**
- * Membership plans whose active subscription unlocks every course video.
- * Single source of truth: change this constant (or the COURSES_ACCESS_PLANS var) to widen access,
- * e.g. ["vip", "premium"]. Premium is deliberately excluded.
+ * Membership plans whose subscription unlocks every course video: every paid plan.
+ * Single source of truth: change this constant (or the COURSES_ACCESS_PLANS var) to change access.
  */
-export const COURSE_ACCESS_PLANS: readonly MembershipPlan[] = ["vip"];
-
-/** Subscription statuses that count as "active" for course access. */
-export const ACTIVE_SUBSCRIPTION_STATUSES: readonly string[] = ["active"];
+export const COURSE_ACCESS_PLANS: readonly MembershipPlan[] = ["premium", "vip"];
 
 const KNOWN_PLANS: readonly MembershipPlan[] = ["premium", "vip"];
 

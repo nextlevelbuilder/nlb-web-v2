@@ -798,7 +798,7 @@
     "courses": {
       "plate": "Đài quan sát",
       "title": "Học từ những gì <em>đang thực sự ra mắt.</em>",
-      "body": "Mỗi tuần một video mới — AI automation, SEO, phát triển & tăng trưởng sản phẩm. Mua lẻ từng video, xem trọn đời. VIP xem toàn bộ.",
+      "body": "Mỗi tuần một video mới — AI automation, SEO, phát triển & tăng trưởng sản phẩm. Mua lẻ từng video, xem trọn đời. Hội viên Premium và VIP xem toàn bộ.",
       "dropTitle": "Video mới mỗi thứ Hai",
       "dropSub": "{days, plural, =0 {Ra mắt hôm nay} other {Video tiếp theo sau # ngày}} · VIP xem miễn phí ngay khi ra mắt",
       "s1t": "Mỗi tuần một video",
@@ -806,7 +806,7 @@
       "s2t": "Mua lẻ từng video",
       "s2d": "Trả một lần, xem trọn đời. Không cần đăng ký gói.",
       "s3t": "VIP xem toàn bộ",
-      "s3d": "Mọi video đã và sẽ ra mắt đều nằm trong gói VIP.",
+      "s3d": "Mọi video đã và sẽ ra mắt đều nằm trong gói Premium và VIP.",
       "cta": "Xem các video",
       "all": "Xem tất cả video",
       "badge": "VIP xem miễn phí",

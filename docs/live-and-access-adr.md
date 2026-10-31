@@ -22,7 +22,7 @@ The runtime is a Cloudflare Worker on D1. D1 has no interactive transactions: on
 
 | Resource | Action | Allowed when |
 |---|---|---|
-| `video:<id>` | watch | unchanged `canWatchVideo`: active `video:<id>` entitlement, paid order, or a plan in `COURSES_ACCESS_PLANS` (VIP by default). Premium alone does not unlock Courses. |
+| `video:<id>` | watch | unchanged `canWatchVideo`: active `video:<id>` entitlement, paid order, or a subscription granting a plan in `COURSES_ACCESS_PLANS` (Premium and VIP by default), judged by the membership tier resolver. |
 | `live:event:<id>` | read | anyone (published events only; drafts are operator-only) |
 | `live:poll:<roundId>` | vote | signed-in, email-verified, not banned; free accounts included; write scope |
 | `live:event:<id>` | purchase | signed-in, email-verified, not banned; write scope |
