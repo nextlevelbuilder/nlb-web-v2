@@ -7,6 +7,8 @@ import { defineRouting } from 'next-intl/routing';
  * - Unprefixed requests are matched against the NEXT_LOCALE cookie, then Accept-Language, so a
  *   Vietnamese browser opening an old VI deep link (the previous site served VI at `/`) is
  *   redirected to the same page under `/vi`. Old `/en/...` links redirect to the unprefixed path.
+ * - The cookie comes from the language switcher; public `/vi` pages drop the one the middleware sets
+ *   so they stay edge-cacheable (see lib/edge-cache-policy.ts).
  */
 export const locales = ['en', 'vi'] as const;
 export type Locale = (typeof locales)[number];
