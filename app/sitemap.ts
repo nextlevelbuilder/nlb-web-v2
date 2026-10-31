@@ -4,11 +4,12 @@ import { listPostSummaries } from "@/lib/blog/blog-queries";
 import { blogPostPath } from "@/lib/blog/blog-slug-rules";
 import { listPublishedVideos } from "@/lib/courses/course-video-service";
 import { getDb } from "@/lib/db";
-import { POLICY_SLUGS } from "@/lib/constants/policy-slugs";
+import { publishedPolicySlugs } from "@/lib/policies/published-policies";
 import { getPolicy } from "@/content/policies";
 import { localizedPath, siteUrl } from "@/lib/seo";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 import { isLiveEnabled } from "@/lib/live/live-flag";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 import { listPastEvents, listUpcomingEvents } from "@/lib/live/event-read-models";
 import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
@@ -48,7 +49,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productsChanged = latest(products.map((product) => product.updatedAt));
   const videosChanged = latest(videos.map((video) => video.updatedAt));
   const postsChanged = latest(posts.map((post) => post.updatedAt));
-  const policyDates = new Map(POLICY_SLUGS.map((slug) => [slug, latest([getPolicy(slug, "en")?.lastUpdated])]));
+  const policySlugs = publishedPolicySlugs();
+  const policyDates = new Map(policySlugs.map((slug) => [slug, latest([getPolicy(slug, "en")?.lastUpdated])]));
   const policiesChanged = latest([...policyDates.values()]);
   const staticPages: Array<[string, Date | undefined]> = [
     ["/", latest([productsChanged, videosChanged, postsChanged])],
@@ -57,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/blog", postsChanged],
     ["/courses", videosChanged],
     ["/policies", policiesChanged],
-    ...POLICY_SLUGS.map((slug): [string, Date | undefined] => [`/policies/${slug}`, policyDates.get(slug)]),
+    ...policySlugs.map((slug): [string, Date | undefined] => [`/policies/${slug}`, policyDates.get(slug)]),
   ];
   const entries: MetadataRoute.Sitemap = [];
   const add = (path: string, lastModified?: Date) => {
@@ -77,6 +79,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const video of videos) add(`/courses/${video.slug}`, video.updatedAt);
   if (liveOn) add("/live");
   for (const event of liveEvents) add(`/live/${event.slug}`);
+  // The affiliate program landing exists only while the program flag is on.
+  if (isAffiliatesEnabled()) add("/affiliates", policyDates.get("affiliate-agreement"));
   // Blog posts are single-locale documents; translations are linked through hreflang on the page.
   for (const post of posts) entries.push({ url: `${baseUrl}${blogPostPath(post.locale, post.slug)}`, lastModified: new Date(post.updatedAt) });
   return entries;

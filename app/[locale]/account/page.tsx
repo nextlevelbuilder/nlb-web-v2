@@ -19,6 +19,8 @@ import {
   PlusCircle,
   Receipt,
   Ticket,
+  Megaphone,
+  ArrowRight,
 } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
 import ProfileSignOutButton from "../profile/profile-sign-out-button";
@@ -27,6 +29,7 @@ import BuySlotButton from "@/components/account/buy-slot-button";
 import AccountMembershipSection from "@/components/onboarding/account-membership-section";
 import { PRODUCT_IDS } from "@/lib/polar";
 import { getTranslations } from "next-intl/server";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 
 interface AccountPageProps {
   params: Promise<{ locale: string }>;
@@ -38,6 +41,7 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
   // Set by the Builder League self-delete when the member lost league access along with their data.
   const leagueDeleted = (await searchParams).leagueDeleted === "1";
   const t = await getTranslations({ locale, namespace: "account" });
+  const tAffiliate = await getTranslations({ locale, namespace: "affiliateAccount" });
   const auth = getAuth();
   const reqHeaders = await headers();
   let session = null;
@@ -191,6 +195,24 @@ export default async function AccountDashboardPage({ params, searchParams }: Acc
             locale={locale}
             user={{ id: user.id, email: user.email, emailVerified: Boolean(user.emailVerified) }}
           />
+
+          {isAffiliatesEnabled() && (
+            <section aria-labelledby="account-affiliates" className="surface-panel flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center sm:p-8">
+              <div>
+                <h2 id="account-affiliates" className="flex items-center gap-3 font-display text-step-xl">
+                  <Megaphone aria-hidden className="h-5 w-5 shrink-0 text-primary" />
+                  {tAffiliate("entryTitle")}
+                </h2>
+                <p className="mt-2 text-step-sm text-ink-2">{tAffiliate("entryDesc")}</p>
+              </div>
+              <Button asChild variant="outline" size="sm" className="shrink-0 gap-2">
+                <Link href="/account/referrals">
+                  {tAffiliate("entryCta")}
+                  <ArrowRight aria-hidden />
+                </Link>
+              </Button>
+            </section>
+          )}
 
           <section aria-labelledby="account-slots" className="surface-panel space-y-6 p-6 sm:p-8">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">

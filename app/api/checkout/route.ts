@@ -11,6 +11,7 @@ import { getDb } from "@/lib/db";
 import { polar } from "@/lib/polar";
 import { ReferralError } from "@/lib/referrals/referral-errors";
 import { AFFILIATE_COOKIE, attachCheckoutId, attributeCheckout, type AttributionAttempt } from "@/lib/referrals/affiliate-checkout";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 
 /** Reads one cookie from the request header. */
 function readCookie(request: Request, name: string): string | null {
@@ -110,9 +111,11 @@ export async function POST(request: Request) {
     }
 
     // Referral: decided server-side from the signed-in buyer, the code or click cookie and the
-    // affiliate's current terms; the binding id travels in Polar metadata for the webhook.
+    // affiliate's current terms; the binding id travels in Polar metadata for the webhook. Off (no
+    // session lookup, no cookie read) while the program is disabled.
+    const affiliatesOn = isAffiliatesEnabled();
     let referral: AttributionAttempt | null = null;
-    if (isMembershipProduct(productId)) {
+    if (affiliatesOn && isMembershipProduct(productId)) {
       const buyer = caller ? { id: caller.user.id, email: caller.user.email } : await sessionUser(request);
       const cookieValue = readCookie(request, AFFILIATE_COOKIE);
       if (buyer && (referralCode || cookieValue)) {
@@ -150,7 +153,7 @@ export async function POST(request: Request) {
         : referralCode
           ? { applied: false, reason: referral.reason }
           : undefined
-      : referralCode
+      : referralCode && affiliatesOn
         ? { applied: false, reason: "sign_in_required" }
         : undefined;
     return NextResponse.json({ url: checkout.url, ...(referralResult ? { referral: referralResult } : {}) });

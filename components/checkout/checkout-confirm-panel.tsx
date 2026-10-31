@@ -1,12 +1,13 @@
 'use client';
 
 import { useId } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCheckout } from '@/components/home/checkout-context';
 import TermsAgreementCheckbox from '@/components/home/terms-agreement-checkbox';
 import CheckoutError from './checkout-error';
+import { formatBps } from '@/components/affiliates/affiliate-format';
 import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PRICES, type MembershipPlan } from '@/lib/constants/launch';
 
 /**
@@ -15,7 +16,9 @@ import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PRICES, type MembershipPlan } from '@
  */
 export default function CheckoutConfirmPanel({ plan, source }: { plan: MembershipPlan; source: string }) {
   const t = useTranslations('home');
-  const { billing, agreed, pending, source: activeSource, isAvailable, startCheckout } = useCheckout();
+  const tReferral = useTranslations('affiliateCheckout');
+  const { billing, agreed, pending, source: activeSource, isAvailable, startCheckout, referralCode, referralAppliedBps } = useCheckout();
+  const locale = useLocale();
   const hintId = useId();
   const price = MEMBERSHIP_PRICES[plan][billing];
   const saving = MEMBERSHIP_PRICES[plan].quarterly.amount * 4 - MEMBERSHIP_PRICES[plan].annual.amount;
@@ -38,6 +41,14 @@ export default function CheckoutConfirmPanel({ plan, source }: { plan: Membershi
             : t('pricing.subQuarterly', { perMonth: price.perMonth })}
         </p>
       </div>
+
+      {referralCode && (
+        <p role="status" className="rounded-sm border border-line bg-surface p-3 text-step-sm text-ink-2">
+          {busy && referralAppliedBps !== null
+            ? tReferral('referralApplied', { discount: formatBps(referralAppliedBps, locale) })
+            : tReferral('referralNote', { code: referralCode })}
+        </p>
+      )}
 
       <TermsAgreementCheckbox hintId={hintId} />
 
