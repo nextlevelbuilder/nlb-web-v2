@@ -6,12 +6,3 @@ type R2Bucket = import("@cloudflare/workers-types").R2Bucket;
 type Queue<Body = unknown> = import("@cloudflare/workers-types").Queue<Body>;
 type Ai = import("@cloudflare/workers-types").Ai;
 type Fetcher = import("@cloudflare/workers-types").Fetcher;
-
-// The runtime module worker.ts extends; declared narrowly for the same reason as the types above.
-declare module "cloudflare:workers" {
-  export abstract class WorkerEntrypoint<Env = unknown> {
-    protected readonly ctx: import("@cloudflare/workers-types").ExecutionContext;
-    protected readonly env: Env;
-    constructor(ctx: import("@cloudflare/workers-types").ExecutionContext, env: Env);
-  }
-}

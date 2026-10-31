@@ -19,11 +19,6 @@ These decisions are recorded in `plans/reports/advisor-261013-1240-nlb-web-v2-re
 
 ## Request path
 
-Edge cache: Workers Cache sits only in front of the `CachedPages` entrypoint in [`worker.ts`](../worker.ts) (`exports` in `wrangler.jsonc`). The default entrypoint runs on every request.
-- It sends anonymous GET/HEAD requests for public pages to `CachedPages` with `Cookie` removed and `Accept-Language` pinned to the path's locale ([`lib/edge-cache-gateway.ts`](../lib/edge-cache-gateway.ts)), because per-visitor analytics cookies would otherwise give each visitor a separate cache entry.
-- Unprefixed requests that resolve to Vietnamese bypass the cache, so next-intl can redirect them to `/vi`.
-- [`lib/edge-cache-policy.ts`](../lib/edge-cache-policy.ts) sets the `Cache-Control` the cache acts on.
-
 1. [`middleware.ts`](../middleware.ts):
    - Rewrites `*.md` paths to `/api/markdown`. These are markdown twins of pages.
    - Passes everything else through next-intl locale routing ([`i18n/routing.ts`](../i18n/routing.ts)). English is unprefixed and Vietnamese lives under `/vi`. Detection uses the `NEXT_LOCALE` cookie, then `Accept-Language`.
