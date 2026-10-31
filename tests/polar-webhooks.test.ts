@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { customers, orders } from "@/lib/db/schema";
 import {
   PRODUCT_IDS,
   MEMBERSHIP_PRODUCT_IDS,
@@ -404,5 +407,79 @@ describe("Polar Webhook Route: Email Isolation & Idempotency", () => {
 
     expect(res.status).toBe(200);
     expect(sendDiscordSalesMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Polar Webhook Route: order paidAt and customer identity", () => {
+  const deliver = async (webhookId: string, type: string, data: Record<string, unknown>) => {
+    const { POST } = await import("@/app/api/webhooks/polar/route");
+    return POST(
+      new Request("https://nextlevelbuilder.io/api/webhooks/polar", {
+        method: "POST",
+        headers: { "webhook-id": webhookId, "webhook-timestamp": "1700000000", "webhook-signature": "v1,dummy" },
+        body: JSON.stringify({ type, data: { product_id: PRODUCT_IDS.PREMIUM_ANNUAL, total_amount: 9900, currency: "usd", ...data } }),
+      })
+    );
+  };
+  const findOrder = async (polarOrderId: string) => {
+    const [row] = await getDb().select().from(orders).where(eq(orders.polarOrderId, polarOrderId));
+    return row;
+  };
+
+  it("keeps the first paidAt, taken from the Polar order, across paid and updated redeliveries", async () => {
+    const paidAt = "2026-10-01T03:00:00.000Z";
+    const order = { id: "ord_paid_once", status: "paid", customer_id: "cus_paid_once", customer_email: "paid.once@example.com" };
+
+    expect((await deliver("wh_paid_once_1", "order.paid", { ...order, created_at: "2026-10-01T02:59:00.000Z", modified_at: paidAt })).status).toBe(200);
+    expect((await findOrder("ord_paid_once"))?.paidAt?.toISOString()).toBe(paidAt);
+
+    expect((await deliver("wh_paid_once_2", "order.updated", { ...order, modified_at: "2026-10-05T00:00:00.000Z" })).status).toBe(200);
+    expect((await deliver("wh_paid_once_3", "order.paid", { ...order, modified_at: "2026-10-06T00:00:00.000Z" })).status).toBe(200);
+    expect((await findOrder("ord_paid_once"))?.paidAt?.toISOString()).toBe(paidAt);
+  });
+
+  it("sets paidAt when a pending order is later paid", async () => {
+    const order = { id: "ord_pending_then_paid", customer_id: "cus_pending_paid", customer_email: "pending.paid@example.com" };
+    expect((await deliver("wh_pending_1", "order.created", { ...order, status: "pending" })).status).toBe(200);
+    expect((await findOrder("ord_pending_then_paid"))?.paidAt).toBeNull();
+
+    const paidAt = "2026-10-02T08:00:00.000Z";
+    expect((await deliver("wh_pending_2", "order.paid", { ...order, status: "paid", modified_at: paidAt })).status).toBe(200);
+    expect((await findOrder("ord_pending_then_paid"))?.paidAt?.toISOString()).toBe(paidAt);
+  });
+
+  it("finds the customer by Polar customer id first and follows a Polar email change", async () => {
+    expect((await deliver("wh_email_change_1", "order.paid", { id: "ord_email_change_1", status: "paid", customer_id: "cus_email_change", customer_email: "old.address@example.com" })).status).toBe(200);
+    const [original] = await getDb().select().from(customers).where(eq(customers.polarCustomerId, "cus_email_change"));
+    expect(original.email).toBe("old.address@example.com");
+
+    expect((await deliver("wh_email_change_2", "order.paid", { id: "ord_email_change_2", status: "paid", customer_id: "cus_email_change", customer_email: "New.Address@example.com" })).status).toBe(200);
+
+    const rows = await getDb().select().from(customers).where(eq(customers.polarCustomerId, "cus_email_change"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: original.id, email: "new.address@example.com" });
+    expect(await getDb().select().from(customers).where(eq(customers.email, "old.address@example.com"))).toHaveLength(0);
+    expect((await findOrder("ord_email_change_2"))?.customerId).toBe(original.id);
+  });
+
+  it("never attaches a different Polar customer to a row that shares its email", async () => {
+    expect((await deliver("wh_shared_1", "order.paid", { id: "ord_shared_a", status: "paid", customer_id: "cus_shared_a", customer_email: "shared@example.com" })).status).toBe(200);
+    const [owner] = await getDb().select().from(customers).where(eq(customers.email, "shared@example.com"));
+
+    const res = await deliver("wh_shared_2", "order.paid", { id: "ord_shared_b", status: "paid", customer_id: "cus_shared_b", customer_email: "shared@example.com" });
+    expect(res.status).toBe(500);
+
+    const [after] = await getDb().select().from(customers).where(eq(customers.id, owner.id));
+    expect(after.polarCustomerId).toBe("cus_shared_a");
+    expect(await findOrder("ord_shared_b")).toBeUndefined();
+  });
+
+  it("claims an email-only customer row for its Polar customer id", async () => {
+    const [legacy] = await getDb().insert(customers).values({ email: "legacy.row@example.com", name: "Legacy" }).returning();
+    expect((await deliver("wh_legacy_1", "order.paid", { id: "ord_legacy", status: "paid", customer_id: "cus_legacy", customer_email: "legacy.row@example.com" })).status).toBe(200);
+
+    const [after] = await getDb().select().from(customers).where(eq(customers.id, legacy.id));
+    expect(after.polarCustomerId).toBe("cus_legacy");
+    expect((await findOrder("ord_legacy"))?.customerId).toBe(legacy.id);
   });
 });

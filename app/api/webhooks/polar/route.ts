@@ -188,33 +188,67 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Resolve the local customer for a Polar customer. The Polar customer id is the identity; the email
+ * is only a fallback for rows created before the id was known. A Polar email change updates the
+ * stored email. A row owned by another Polar customer is never reused: the delivery fails so Polar
+ * retries it once that row's email has moved on.
+ */
 async function ensureCustomer(
   {
     email,
     name,
     polarCustomerId,
   }: {
-    email: string;
+    email?: string | null;
     name?: string | null;
     polarCustomerId?: string | null;
   },
   db: AppDb
 ) {
-  if (!email) {
+  const normalizedEmail = email ? email.toLowerCase().trim() : "";
+
+  if (polarCustomerId) {
+    const [byPolarId] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.polarCustomerId, polarCustomerId))
+      .limit(1);
+    if (byPolarId) {
+      if (normalizedEmail && byPolarId.email !== normalizedEmail) {
+        const [emailOwner] = await db
+          .select({ id: customers.id })
+          .from(customers)
+          .where(eq(customers.email, normalizedEmail))
+          .limit(1);
+        if (emailOwner) {
+          console.warn(`Polar customer ${polarCustomerId} changed email to one another customer row holds; email left unchanged`);
+        } else {
+          await db
+            .update(customers)
+            .set({ email: normalizedEmail, updatedAt: new Date() })
+            .where(eq(customers.id, byPolarId.id));
+          byPolarId.email = normalizedEmail;
+        }
+      }
+      return byPolarId;
+    }
+  }
+
+  if (!normalizedEmail) {
     return null;
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
   const customerName = name || normalizedEmail.split("@")[0];
 
-  const [customer] = await db
+  let [customer] = await db
     .select()
     .from(customers)
     .where(eq(customers.email, normalizedEmail))
     .limit(1);
 
   if (!customer) {
-    const [newCustomer] = await db
+    [customer] = await db
       .insert(customers)
       .values({
         email: normalizedEmail,
@@ -225,20 +259,22 @@ async function ensureCustomer(
         target: customers.email,
         set: {
           name: customerName,
-          polarCustomerId: polarCustomerId || undefined,
+          // A concurrent insert may have claimed the row first; never replace its Polar customer.
+          polarCustomerId: sql`coalesce(${customers.polarCustomerId}, excluded.polar_customer_id)`,
           updatedAt: new Date(),
         },
       })
       .returning();
-    return newCustomer;
-  }
-
-  if (polarCustomerId && !customer.polarCustomerId) {
+  } else if (polarCustomerId && !customer.polarCustomerId) {
     await db
       .update(customers)
       .set({ polarCustomerId, updatedAt: new Date() })
       .where(eq(customers.id, customer.id));
     customer.polarCustomerId = polarCustomerId;
+  }
+
+  if (polarCustomerId && customer.polarCustomerId && customer.polarCustomerId !== polarCustomerId) {
+    throw new Error(`Polar customer ${polarCustomerId} shares an email with customer row ${customer.id} owned by another Polar customer`);
   }
 
   return customer;
@@ -385,14 +421,7 @@ async function resolveEventCustomer(data: NonNullable<PolarWebhookPayload["data"
   const polarCustomerId = data.customer_id || data.customer?.id;
   const customerEmail = data.customer?.email || data.customer_email;
   const customerName = data.customer?.name || data.customer_name;
-  if (customerEmail) {
-    return ensureCustomer({ email: customerEmail, name: customerName, polarCustomerId }, db);
-  }
-  if (polarCustomerId) {
-    const [c] = await db.select().from(customers).where(eq(customers.polarCustomerId, polarCustomerId)).limit(1);
-    return c ?? null;
-  }
-  return null;
+  return ensureCustomer({ email: customerEmail, name: customerName, polarCustomerId }, db);
 }
 
 /**
@@ -515,29 +544,14 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
   const order = event.data;
   if (!order || !order.id) return;
 
-  const customerEmail = order.customer?.email || order.customer_email;
-  const customerName =
-    order.customer?.name || order.customer_name || order.billing_name;
-  const polarCustomerId = order.customer_id || order.customer?.id;
-
-  let customer = null;
-  if (customerEmail) {
-    customer = await ensureCustomer(
-      {
-        email: customerEmail,
-        name: customerName,
-        polarCustomerId,
-      },
-      db
-    );
-  } else if (polarCustomerId) {
-    const [c] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.polarCustomerId, polarCustomerId))
-      .limit(1);
-    customer = c;
-  }
+  const customer = await ensureCustomer(
+    {
+      email: order.customer?.email || order.customer_email,
+      name: order.customer?.name || order.customer_name || order.billing_name,
+      polarCustomerId: order.customer_id || order.customer?.id,
+    },
+    db
+  );
 
   if (!customer) {
     console.error("Could not find or create customer for order:", order.id);
@@ -587,7 +601,8 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
       amount: orderAmount.toString(),
       currency: order.currency || "usd",
       status: orderStatus,
-      paidAt: isPaid ? new Date() : null,
+      // Polar orders carry no paid timestamp; the paid delivery's modified_at is the closest one.
+      paidAt: isPaid ? (parseDate(order.modified_at) ?? parseDate(order.created_at) ?? new Date()) : null,
     })
     .onConflictDoUpdate({
       target: orders.polarOrderId,
@@ -595,7 +610,8 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
         // Refunds are terminal: a late or retried paid/updated event must not resurrect a refunded order.
         status: sql`case when ${orders.status} in ('refunded', 'partially_refunded') and excluded.status not in ('refunded', 'partially_refunded') then ${orders.status} else excluded.status end`,
         productSlug: productSlug || undefined,
-        paidAt: isPaid ? new Date() : undefined,
+        // The first paid delivery sets paidAt; redeliveries keep it.
+        paidAt: isPaid ? sql`coalesce(${orders.paidAt}, excluded.paid_at)` : undefined,
       },
     });
   // Referral commission accrues only from this signed, settled provider order (idempotent per order).
