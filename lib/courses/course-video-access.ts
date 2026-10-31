@@ -1,8 +1,11 @@
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { customers, entitlements, orders, subscriptions, users, type courseVideos } from "@/lib/db/schema";
-import { productIdsForPlans, type MembershipPlan } from "@/lib/polar";
-import { ACTIVE_SUBSCRIPTION_STATUSES, readCourseAccessPlans } from "./course-access-policy";
+import type { MembershipPlan } from "@/lib/polar";
+import { resolveEffectiveTier } from "@/lib/membership/effective-tier";
+import { toMembershipState } from "@/lib/membership/member-access";
+import { getPastDueGraceDays } from "@/lib/onboarding/flags";
+import { readCourseAccessPlans } from "./course-access-policy";
 import { getCourseRuntimeEnv } from "./course-runtime-env";
 
 type CourseVideoRow = typeof courseVideos.$inferSelect;
@@ -23,11 +26,12 @@ export interface CanWatchOptions {
  * 1. an active, unexpired `video:<id>` entitlement, or
  * 2. a paid (or only partially refunded) order for the video's Polar product placed with the
  *    viewer's email, or
- * 3. an active subscription to a plan listed in the course access policy (VIP by default) whose paid
- *    period has not ended. A member who cancels keeps status `active` with `cancel_at_period_end` until
- *    Polar ends the period, so access lasts exactly as long as the paid period; a missed revoke webhook
- *    can never extend it past `current_period_end`.
- * Commerce rows are keyed by customer email, so the user's email links them to orders/subscriptions.
+ * 3. a subscription that currently grants a membership tier listed in the course access policy
+ *    (Premium and VIP by default). The grant follows the membership resolver used everywhere else:
+ *    active or trialing, until `current_period_end` once cancelled, and through the past-due grace
+ *    period; early-bird annual products count as their plan.
+ * Subscriptions are found through the customer linked to the user (`customers.user_id`) or, for
+ * purchases not linked yet, the customer whose email equals the user's email.
  */
 export async function canWatchVideo(
   userId: string,
@@ -53,9 +57,8 @@ export async function canWatchVideo(
 
   const [user] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
   const email = user?.email.trim().toLowerCase();
-  if (!email) return false;
 
-  if (video.polarProductId) {
+  if (email && video.polarProductId) {
     const [paidOrder] = await db
       .select({ id: orders.id })
       .from(orders)
@@ -73,21 +76,20 @@ export async function canWatchVideo(
   }
 
   const plans = options.accessPlans ?? readCourseAccessPlans(getCourseRuntimeEnv().COURSES_ACCESS_PLANS);
-  const planProductIds = productIdsForPlans(plans);
-  if (planProductIds.length === 0) return false;
+  if (plans.length === 0) return false;
 
-  const [activeSubscription] = await db
-    .select({ id: subscriptions.id })
+  const owner = email
+    ? or(eq(customers.userId, userId), sql`lower(trim(${customers.email})) = ${email}`)
+    : eq(customers.userId, userId);
+  const rows = await db
+    .select({ subscription: subscriptions })
     .from(subscriptions)
     .innerJoin(customers, eq(customers.id, subscriptions.customerId))
-    .where(
-      and(
-        sql`lower(${customers.email}) = ${email}`,
-        inArray(subscriptions.polarProductId, planProductIds),
-        inArray(subscriptions.status, [...ACTIVE_SUBSCRIPTION_STATUSES]),
-        gt(subscriptions.currentPeriodEnd, now)
-      )
-    )
-    .limit(1);
-  return Boolean(activeSubscription);
+    .where(owner);
+  const graceDays = getPastDueGraceDays();
+  // Each subscription is judged on its own, so a VIP grant still counts when only Premium is listed and vice versa.
+  return rows.some(({ subscription }) => {
+    const { tier } = resolveEffectiveTier([toMembershipState(subscription)], now, graceDays);
+    return tier !== "none" && plans.includes(tier);
+  });
 }
