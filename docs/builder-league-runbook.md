@@ -148,7 +148,7 @@ Community Wrapped is refreshed by the hourly cron for the current and the previo
 
 Community Wrapped publishes aggregates only. Cohorts smaller than `MIN_COHORT` (5) are suppressed, and no member is named.
 
-Members choose what their shared year shows. They can hide scenes with `PATCH /api/v1/builder-year/{year}` (`hiddenScenes`) and create or revoke share links under `/api/v1/builder-year/{year}/share`.
+Members choose what their shared year shows. They can hide scenes with `PATCH /api/v1/builder-year/{year}` (`hiddenScenes`) and create or revoke share links under `/api/v1/builder-year/{year}/share`. A share link opens for anyone holding it, but the page always sends `noindex` and `robots.txt` blocks `/wrapped/{year}/{token}`, so shared years never enter search results or the sitemap. The `wrappedPublic` privacy field is kept in the API for compatibility and has no effect.
 
 In the first week of January, check the logs for `year_snapshots` or `community_wrapped` failures, and compare the dashboard's Wrapped funnel against the share links created.
 
