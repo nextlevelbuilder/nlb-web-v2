@@ -85,10 +85,10 @@ The authorization server is the web's Better Auth provider at `<site>/api/auth`,
 
 | Scope | Permission |
 | --- | --- |
-| `mcp:read` | Read directory data, authorized product traffic, blog drafts and revisions (admins), Builder League and onboarding status |
-| `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions, course video publishing (admins) |
+| `mcp:read` | Read directory data, authorized product traffic, blog drafts and revisions (admins), Builder League, onboarding status and the caller's own affiliate account |
+| `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions, course video publishing (admins), joining the affiliate program and managing one's own referral links |
 | `mcp:keys` | List, create and revoke the user's API keys; newly created keys can outlive this OAuth grant |
-| `mcp:operator` | NLB Live operator tools (`live_admin_*`). Only platform operators get it: for anyone else the consent screen hides it and the server drops it from the grant |
+| `mcp:operator` | Operator tools (`live_admin_*`, `affiliate_admin_*`). Only platform operators get it: for anyone else the consent screen hides it and the server drops it from the grant |
 
 Public reads need no token. A protected call without a valid token returns `401` with a `WWW-Authenticate` challenge (`resource_metadata`, `scope`); a token missing the tool's scope returns `403 insufficient_scope`.
 
@@ -297,3 +297,38 @@ Admin tools over `/api/courses/*` (not `/api/v1`). The admin tools need `mcp:wri
 | `course_get_upload` | `GET /api/courses/uploads/{uid}`: processing state, `durationSec`, `requireSignedUrls` |
 | `course_create_video` · `course_update_video` | `POST /api/courses/videos` · `PATCH /api/courses/videos/{slug}` |
 | `course_publish_video` | `POST /api/courses/videos/{slug}/publish` (creates the Polar product) |
+
+### 22. Affiliate program tools
+
+The referral program of [web #63](https://github.com/nextlevelbuilder/nlb-web-v2/issues/63) on the same `/mcp` endpoint; there is no separate affiliate server. Tools are thin clients of `/api/v1/affiliates/*` and `/api/v1/affiliate-admin/*`, and the web decides every rule: ownership, the budget invariant `discount + (1 - discount) × commission ≤ budget`, the operator grant and the audit trail. Shapes are in [contracts.md](./contracts.md#affiliate-program).
+
+- **Units**: fields ending in `Minor` are integer minor units (USD cents); fields ending in `Bps` are integer basis points (`10000` = 100%).
+- **Members** (owner-only): every member tool acts on the caller's own affiliate account through OAuth or a member API key (`api_key` / `NLB_API_KEY`). While `AFFILIATES_ENABLED` is off the API answers 404 and the error carries `notEnabled: true`.
+- **Joining**: `affiliate_join` requires `termsVersion`, the Affiliate Agreement version the user read and accepted (`affiliate_get_program` returns the current one). An agent must not accept the agreement on the user's behalf.
+- **Link edits** apply to future checkouts only. Pass `expectedVersion` (the link's `version`) to get `409 conflict` instead of overwriting a concurrent change. Archiving is permanent.
+- **Operators**: `affiliate_admin_*` tools need `mcp:operator` and the web's affiliate operator grant; without OAuth they take the operator's `session_cookie` (or `NLB_SESSION_COOKIE`). API keys are refused. Previews never write.
+- **Not available through MCP or API keys**: setting or reading payout methods (bank, PayPal, identity data), revealing payee details, marking items paid, publishing rules, ledger adjustments, suspending or reinstating affiliates, approving batches, and requesting or deciding two-person approvals (`POST …/approvals`, `POST …/approvals/{id}/decision`). Payout setup is a signed-in browser action on the website; the money-moving operator steps need a signed-in operator and, where sensitive, a second operator's approval.
+
+| Tool | Scope | Route |
+| --- | --- | --- |
+| `affiliate_get_program` | `mcp:read` (public) | `GET /api/v1/affiliates/program` |
+| `affiliate_get_me` · `affiliate_join` | `mcp:read` · `mcp:write` | `GET` · `POST /api/v1/affiliates/me` |
+| `affiliate_preview_incentive` | `mcp:read` | `GET /api/v1/affiliates/preview?discountBps&priceMinor` |
+| `affiliate_list_links` · `affiliate_create_link` | `mcp:read` · `mcp:write` | `GET` · `POST /api/v1/affiliates/links` |
+| `affiliate_update_link` | `mcp:write` | `PATCH /api/v1/affiliates/links/{id}` |
+| `affiliate_list_conversions` | `mcp:read` | `GET /api/v1/affiliates/conversions?limit` |
+| `affiliate_get_commissions` | `mcp:read` | `GET /api/v1/affiliates/commissions?limit` |
+| `affiliate_list_payouts` | `mcp:read` | `GET /api/v1/affiliates/payouts` |
+| `affiliate_admin_get_rules` | `mcp:operator` | `GET /api/v1/affiliate-admin/rules` |
+| `affiliate_admin_preview_rules` | `mcp:operator` | `POST …/rules/preview` (`{ rules }`, no write) |
+| `affiliate_admin_list_affiliates` | `mcp:operator` | `GET …/affiliates?status&limit` → `{ affiliates }` |
+| `affiliate_admin_list_conversions` | `mcp:operator` | `GET …/conversions?status&limit` → `{ conversions }` |
+| `affiliate_admin_hold_conversion` · `affiliate_admin_release_conversion` | `mcp:operator` | `POST …/conversions/{id}/hold` (`{ reason }`) · `…/release` |
+| `affiliate_admin_preview_payouts` | `mcp:operator` | `GET …/payouts/preview?period=YYYY-MM` |
+| `affiliate_admin_list_batches` · `affiliate_admin_create_batch` | `mcp:operator` | `GET …/payouts/batches` → `{ batches }` · `POST` (`{ period }`, locks funds, sends nothing) → batch with `totals` and `items` |
+| `affiliate_admin_get_batch` | `mcp:operator` | `GET …/payouts/batches/{id}` |
+| `affiliate_admin_cancel_batch` | `mcp:operator` | `POST …/payouts/batches/{id}/cancel` |
+| `affiliate_admin_reconciliation` | `mcp:operator` | `GET …/reconciliation?since&until` |
+| `affiliate_admin_list_approvals` | `mcp:operator` | `GET …/approvals?status&limit&cursor` (array plus `pagination`) |
+
+Annotations: reads and previews are `readOnlyHint: true`; `affiliate_update_link` (it can archive) and `affiliate_admin_cancel_batch` are `destructiveHint: true`. Writes accept an optional `idempotency_key`, sent as `Idempotency-Key`.
