@@ -3,10 +3,10 @@ import { COURSE_ACCESS_PLANS, readCourseAccessPlans } from "@/lib/courses/course
 import { PRODUCT_IDS, productIdsForPlans } from "@/lib/polar";
 
 describe("course access policy", () => {
-  it("defaults to VIP only", () => {
-    expect(COURSE_ACCESS_PLANS).toEqual(["vip"]);
-    expect(readCourseAccessPlans(undefined)).toEqual(["vip"]);
-    expect(readCourseAccessPlans("  ")).toEqual(["vip"]);
+  it("defaults to every paid plan", () => {
+    expect(COURSE_ACCESS_PLANS).toEqual(["premium", "vip"]);
+    expect(readCourseAccessPlans(undefined)).toEqual(["premium", "vip"]);
+    expect(readCourseAccessPlans("  ")).toEqual(["premium", "vip"]);
   });
 
   it("reads a comma-separated plan list from the env var", () => {
@@ -16,7 +16,7 @@ describe("course access policy", () => {
   });
 
   it("falls back to the constant when the var names no known plan", () => {
-    expect(readCourseAccessPlans("platinum")).toEqual(["vip"]);
+    expect(readCourseAccessPlans("platinum")).toEqual(["premium", "vip"]);
   });
 
   it("maps plans to every billing interval's Polar product", () => {

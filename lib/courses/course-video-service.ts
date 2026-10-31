@@ -5,11 +5,22 @@ import { CourseError, courseNotFound } from "./course-errors";
 import { ensureCourseVideoPolarProduct, type CoursePolarProductsClient } from "./course-polar-product";
 import type { CreateCourseVideoInput, UpdateCourseVideoInput } from "./course-video-schemas";
 import { getCourseRuntimeEnv } from "./course-runtime-env";
-import { createStreamVideoClient, loadStreamVideoApiConfig, type StreamVideoClient } from "./stream-video-api";
+import {
+  createStreamUploadClient,
+  createStreamVideoClient,
+  loadStreamVideoApiConfig,
+  type StreamUploadClient,
+  type StreamVideoClient,
+} from "./stream-video-api";
 
 /** Stream client from runtime config; resolved lazily so videos without a uid need no Stream setup. */
 export function defaultStreamVideoClient(): StreamVideoClient {
   return { requireSignedUrls: (uid) => createStreamVideoClient(loadStreamVideoApiConfig(getCourseRuntimeEnv())).requireSignedUrls(uid) };
+}
+
+/** Stream upload client from runtime config; 503 until the Stream API token is set. */
+export function defaultStreamUploadClient(): StreamUploadClient {
+  return createStreamUploadClient(loadStreamVideoApiConfig(getCourseRuntimeEnv()));
 }
 
 export type CourseVideoRow = typeof courseVideos.$inferSelect;

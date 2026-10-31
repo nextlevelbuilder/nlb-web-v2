@@ -1,6 +1,6 @@
 # Courses
 
-Courses sell individual videos. Each video is bought once through Polar and plays through Cloudflare Stream signed URLs. Members on a qualifying plan (VIP by default) can watch everything.
+Courses sell individual videos. Each video is bought once through Polar and plays through Cloudflare Stream signed URLs. Members on a paid plan (Premium or VIP by default) can watch everything.
 
 ## Decisions
 
@@ -8,8 +8,8 @@ Courses sell individual videos. Each video is bought once through Polar and play
 |---|---|---|
 | One one-time Polar product per video, created when the video is published | Per-video purchase without a cart. Polar is merchant of record. | [`lib/courses/course-polar-product.ts`](../lib/courses/course-polar-product.ts) |
 | The price is locked once the Polar product exists | Avoids a mismatch between the D1 price and Polar | [`lib/courses/course-video-service.ts`](../lib/courses/course-video-service.ts) |
-| VIP unlocks every video, Premium does not | A product decision, changeable in one place | `COURSE_ACCESS_PLANS` in [`lib/courses/course-access-policy.ts`](../lib/courses/course-access-policy.ts), overridable per environment with the `COURSES_ACCESS_PLANS` var in [`wrangler.jsonc`](../wrangler.jsonc). `none` disables plan access. An invalid value falls back to the constant. |
-| `trialing` subscriptions do not grant access | Paid content requires a paid period | `ACTIVE_SUBSCRIPTION_STATUSES` (same file) |
+| Every paid plan (Premium and VIP) unlocks every video | A product decision, changeable in one place | `COURSE_ACCESS_PLANS` in [`lib/courses/course-access-policy.ts`](../lib/courses/course-access-policy.ts), overridable per environment with the `COURSES_ACCESS_PLANS` var in [`wrangler.jsonc`](../wrangler.jsonc). `none` disables plan access. An invalid value falls back to the constant. |
+| Plan access follows the membership tier resolver | Course access matches what the member sees on their profile: early-bird products, trials and the past-due grace window count the same way | `resolveEffectiveTier` in [`lib/membership/effective-tier.ts`](../lib/membership/effective-tier.ts) |
 | Archived videos stay playable for existing buyers, but the detail page returns 404 | Buyers keep what they paid for. New buyers cannot find it. | Token route, detail page |
 | A full refund revokes access. A partial refund keeps it. A repurchase after a refund restores it. | Matches Polar's event semantics (`order.refunded` is also sent for partial refunds) | [`lib/courses/course-webhook-entitlements.ts`](../lib/courses/course-webhook-entitlements.ts) |
 | Signed Stream URLs (RS256, short-lived), no DRM | Stops link sharing at reasonable cost. Hard DRM is a non-goal. | [`lib/courses/stream-signed-url.ts`](../lib/courses/stream-signed-url.ts) |
@@ -19,7 +19,7 @@ Courses sell individual videos. Each video is bought once through Polar and play
 [`lib/courses/course-video-access.ts`](../lib/courses/course-video-access.ts) decides who may watch. A viewer qualifies with any one of the following (the file's doc comment is authoritative):
 1. an active `video:<id>` entitlement (granted by the Polar webhook on a paid order);
 2. a paid or partially refunded order for the video's Polar product placed with the viewer's email;
-3. an `active` subscription on a plan in the access policy whose `current_period_end` is still in the future. A VIP who cancels keeps access until the paid period ends; a subscription without a period end does not qualify.
+3. a subscription whose effective membership tier (the same resolver the profile page uses) is a plan in the access policy. The subscription's customer is matched by the linked user id or by the viewer's email. A member who cancels keeps access until the paid period ends.
 
 Commerce rows are keyed by email. That is safe because every sign-in method proves the email (email OTP or OAuth, with password sign-in disabled).
 
@@ -32,12 +32,13 @@ These live under `app/api/courses/`. They are not part of `/api/v1` or the OpenA
 | Endpoint | Who |
 |---|---|
 | `GET /api/courses/videos`, `GET /api/courses/videos/<slug>` | public catalogue. The Stream uid is never exposed. |
+| `POST /api/courses/uploads`, `GET /api/courses/uploads/<uid>` | admin. Reserves a signed-only Stream upload (one-time tus URL) and reads its processing status. |
 | `POST /api/courses/videos`, `PATCH /api/courses/videos/<slug>` | admin |
 | `POST /api/courses/videos/<slug>/publish` | admin. Creates the Polar product. |
 | `POST /api/courses/videos/<slug>/checkout` | signed-in user. Returns a Polar checkout URL. |
 | `POST /api/courses/videos/<slug>/token` | signed-in user with access. Returns a signed playback URL. |
 
-Admin means `role === "admin"` through `resolveCaller`, which accepts a session or an API key ([`lib/courses/course-route-helpers.ts`](../lib/courses/course-route-helpers.ts)). Request bodies are defined by [`lib/courses/course-video-schemas.ts`](../lib/courses/course-video-schemas.ts).
+Admin means `role === "admin"` through `resolveCaller`, which accepts a session, an API key or an MCP delegation for `mcp:write` ([`lib/courses/course-route-helpers.ts`](../lib/courses/course-route-helpers.ts)). Request bodies are defined by [`lib/courses/course-video-schemas.ts`](../lib/courses/course-video-schemas.ts).
 
 Pages: `/courses` and `/courses/<slug>` (and `/vi/...`). UI components are in `components/courses/`.
 
@@ -53,7 +54,9 @@ Stream is not reachable with the current API token or OAuth scopes. The account 
 
 ## Publishing a video
 
-1. Upload the video to Stream. Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
+For NLB Weekly recordings, `npm run courses:publish -- <record-YYMMDD.mp4> --title <topic> --speaker <name> --description-file <summary>` runs steps 1–3 with the house conventions (`nlb courses publish-recording`, see [toolkits/cli.md](./toolkits/cli.md)); `npm run courses:transcribe -- <file>` prepares 10-minute transcript chunks to write the summary from. The internal agent skill [`skills/nlb-course-video-publish`](../skills/nlb-course-video-publish/SKILL.md) covers the whole routine, and the MCP `course_*` tools expose the same steps.
+
+1. Upload the video to Stream (`POST /api/courses/uploads`, then send the file to the returned tus URL). Registering or publishing it calls the Stream API to set `requireSignedURLs: true` and checks the answer ([`lib/courses/stream-video-api.ts`](../lib/courses/stream-video-api.ts)); only then is the video marked `stream_signed_only` in D1. An unknown uid returns 422, a Stream failure 502.
 2. As an admin, `POST /api/courses/videos` with the slug, title, price and `streamUid`. The video is created as a draft.
 3. `POST /api/courses/videos/<slug>/publish`. This creates the Polar product and makes the video visible.
 4. Verify on staging:

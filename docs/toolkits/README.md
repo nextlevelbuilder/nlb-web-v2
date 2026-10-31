@@ -15,16 +15,18 @@ nlb-web-v2/
 │   ├── cli/             # @nextlevelbuilder/cli: the `nlb` binary
 │   └── mcp/             # @nextlevelbuilder/mcp: MCP server (stdio and Cloudflare Workers)
 ├── skills/
-│   └── nlb-submit/      # SKILL.md: AgentSkill for Claude Code, Cursor, Codex, OpenCode, skills.sh
+│   ├── nlb-submit/      # SKILL.md: AgentSkill for Claude Code, Cursor, Codex, OpenCode, skills.sh
+│   └── nlb-course-video-publish/  # internal admin skill: publish NLB Weekly recordings
 └── docs/toolkits/       # CLI, MCP, contracts and architecture guides
 ```
 
 | Package | Description |
 |---|---|
 | **`@nextlevelbuilder/contracts`** | Product document and block schemas, layout templates, the canonical SHA-256 hasher, and API wire contracts (blog, Builder League, traffic). The web app imports the same source. |
-| **`@nextlevelbuilder/cli`** | The `nlb` binary: validation, preview, submissions, rankings, stats, traffic, blog management, Builder League and onboarding status. |
+| **`@nextlevelbuilder/cli`** | The `nlb` binary: validation, preview, submissions, rankings, stats, traffic, blog management, Builder League, onboarding status and course video publishing (admin). |
 | **`@nextlevelbuilder/mcp`** | MCP server for local IDEs (stdio) and the hosted endpoint `https://nextlevelbuilder.io/mcp` (OAuth 2.1), served by the web Worker. |
 | **`skills/nlb-submit`** | AgentSkill for repository scanning, block formatting and directory submission. |
+| **`skills/nlb-course-video-publish`** | Internal admin skill: transcribe, title, upload and publish NLB Weekly recordings to `/courses`. |
 
 ---
 

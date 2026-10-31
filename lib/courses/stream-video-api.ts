@@ -77,3 +77,126 @@ export function createStreamVideoClient(config: StreamVideoApiConfig, fetcher: t
     },
   };
 }
+
+/** Stream's per-video duration cap; also the default upload limit. */
+export const STREAM_MAX_DURATION_SEC = 6 * 60 * 60;
+
+export interface StreamUploadInput {
+  /** Shown in the Stream dashboard, e.g. "41 - 2026-10-17 - Cường Võ". */
+  name: string;
+  sizeBytes: number;
+  maxDurationSec?: number;
+}
+
+/** A one-time tus endpoint: the uploader PATCHes bytes to `uploadUrl` without any Cloudflare credential. */
+export interface StreamUpload {
+  streamUid: string;
+  uploadUrl: string;
+}
+
+export interface StreamVideoStatus {
+  streamUid: string;
+  /** Stream processing state: pendingupload, downloading, queued, inprogress, ready or error. */
+  state: string;
+  pctComplete: number | null;
+  readyToStream: boolean;
+  requireSignedUrls: boolean;
+  /** Whole seconds; 0 until Stream knows the duration. */
+  durationSec: number;
+  errorReason: string | null;
+}
+
+/** Creates direct (tus) uploads and reads processing status, so uploaders never hold the Stream API token. */
+export interface StreamUploadClient {
+  createUpload(input: StreamUploadInput): Promise<StreamUpload>;
+  getStatus(streamUid: string): Promise<StreamVideoStatus>;
+}
+
+function base64Utf8(value: string): string {
+  let binary = "";
+  for (const byte of new TextEncoder().encode(value)) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+interface StreamVideoEnvelope {
+  success?: boolean;
+  errors?: Array<{ code?: number; message?: string }>;
+  result?: {
+    uid?: string;
+    readyToStream?: boolean;
+    requireSignedURLs?: boolean;
+    duration?: number;
+    status?: { state?: string; pctComplete?: string | number; errorReasonCode?: string; errorReasonText?: string };
+  } | null;
+}
+
+/**
+ * Stream upload client. `POST /stream?direct_user=true` with tus headers reserves a uid and returns a
+ * one-time upload URL; `requiresignedurls` in the metadata makes the video signed-only from its first
+ * byte, so it is never publicly playable, not even before it is registered as a course video.
+ */
+export function createStreamUploadClient(config: StreamVideoApiConfig, fetcher: typeof fetch = fetch): StreamUploadClient {
+  const accountUrl = `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/stream`;
+
+  async function call(url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await fetcher(url, { ...init, signal: AbortSignal.timeout(15_000) });
+    } catch (error) {
+      console.error("Stream API request failed:", error instanceof Error ? error.message : error);
+      throw new CourseError(502, "stream_unavailable", "Cloudflare Stream could not be reached");
+    }
+  }
+
+  return {
+    async createUpload({ name, sizeBytes, maxDurationSec = STREAM_MAX_DURATION_SEC }) {
+      const metadata = [
+        `name ${base64Utf8(name)}`,
+        "requiresignedurls",
+        `maxdurationseconds ${base64Utf8(String(maxDurationSec))}`,
+      ].join(",");
+      const response = await call(`${accountUrl}?direct_user=true`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiToken}`,
+          "Tus-Resumable": "1.0.0",
+          "Upload-Length": String(sizeBytes),
+          "Upload-Metadata": metadata,
+        },
+      });
+      const uploadUrl = response.headers.get("location") ?? "";
+      const streamUid = response.headers.get("stream-media-id") ?? "";
+      if (response.status !== 201 || !uploadUrl.startsWith("https://") || !STREAM_UID_PATTERN.test(streamUid)) {
+        console.error(`Stream refused the upload reservation (${response.status})`);
+        throw new CourseError(502, "stream_unavailable", "Cloudflare Stream did not create the upload");
+      }
+      return { streamUid, uploadUrl };
+    },
+
+    async getStatus(streamUid) {
+      assertStreamUid(streamUid);
+      const response = await call(`${accountUrl}/${streamUid}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${config.apiToken}` },
+      });
+      if (response.status === 404) {
+        throw new CourseError(422, "stream_video_not_found", "No Cloudflare Stream video has this uid");
+      }
+      const body = (await response.json().catch(() => null)) as StreamVideoEnvelope | null;
+      if (!response.ok || !body?.success || !body.result) {
+        console.error(`Stream API refused the status read (${response.status})`);
+        throw new CourseError(502, "stream_unavailable", "Cloudflare Stream rejected the status read");
+      }
+      const { result } = body;
+      const pct = Number(result.status?.pctComplete);
+      return {
+        streamUid,
+        state: result.status?.state ?? "unknown",
+        pctComplete: Number.isFinite(pct) ? pct : null,
+        readyToStream: result.readyToStream === true,
+        requireSignedUrls: result.requireSignedURLs === true,
+        durationSec: result.duration && result.duration > 0 ? Math.round(result.duration) : 0,
+        errorReason: result.status?.errorReasonText || result.status?.errorReasonCode || null,
+      };
+    },
+  };
+}

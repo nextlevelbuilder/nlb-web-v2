@@ -798,7 +798,7 @@
     "courses": {
       "plate": "Observatory",
       "title": "Learn from what's <em>actually shipping.</em>",
-      "body": "One new video every week — AI automation, SEO, product development and growth. Buy any single video and keep it forever. VIP watches everything.",
+      "body": "One new video every week — AI automation, SEO, product development and growth. Buy any single video and keep it forever. Premium and VIP members watch everything.",
       "dropTitle": "New video every Monday",
       "dropSub": "{days, plural, =0 {Drops today} one {Next drop in # day} other {Next drop in # days}} · free for VIP the moment it lands",
       "s1t": "One video a week",
@@ -806,7 +806,7 @@
       "s2t": "Buy any single video",
       "s2d": "Pay once and keep it forever. No subscription needed.",
       "s3t": "VIP watches everything",
-      "s3d": "Every past and future video is included with VIP.",
+      "s3d": "Every past and future video is included with Premium and VIP.",
       "cta": "Browse the videos",
       "all": "See all videos",
       "badge": "Free for VIP",

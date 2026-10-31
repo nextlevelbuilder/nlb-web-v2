@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/polar", () => ({
+  MEMBERSHIP_PLAN_PRODUCT_IDS: { premium: ["prod_premium"], vip: ["prod_vip"] },
+  EARLYBIRD_MEMBERSHIP_PRODUCT_IDS: { premium: "", vip: "" },
   productIdsForPlans: (plans: readonly ("premium" | "vip")[]) =>
     plans.flatMap((plan) => ({ premium: ["prod_premium"], vip: ["prod_vip"] })[plan]),
 }));
@@ -26,6 +28,8 @@ beforeAll(async () => {
     { id: "ban-expired", banned: true, banExpires: new Date(Date.now() - DAY) },
     { id: "vip" },
     { id: "premium" },
+    { id: "premium-trial" },
+    { id: "vip-canceled" },
     { id: "buyer" },
     { id: "refunded" },
     { id: "entitled-no-ticket" },
@@ -34,6 +38,8 @@ beforeAll(async () => {
   ]);
   await seedSubscription(db, "vip", "prod_vip");
   await seedSubscription(db, "premium", "prod_premium");
+  await seedSubscription(db, "premium-trial", "prod_premium", "trialing");
+  await seedSubscription(db, "vip-canceled", "prod_vip", "canceled");
   await seedLiveEvent(db, "evt_1");
 
   await seedEntitlement(db, "buyer", liveTicketFeatureKey("evt_1"));
@@ -54,7 +60,7 @@ afterAll(async () => {
 });
 
 const check = (subject: AccessSubject, action: AuthorizeInput["action"], resource: AccessResource) =>
-  authorize({ subject, action, resource }, { db: local.db, videoAccess: { accessPlans: ["vip"] } });
+  authorize({ subject, action, resource }, { db: local.db, videoAccess: { accessPlans: ["premium", "vip"] } });
 
 const ticket: AccessResource = { kind: "live_ticket", eventId: "evt_1" };
 const poll: AccessResource = { kind: "live_poll", roundId: "round_1" };
@@ -133,11 +139,19 @@ describe("authorize: live rules", () => {
 });
 
 describe("authorize: videos and reserved resources", () => {
-  it("keeps canWatchVideo semantics: VIP and buyers watch, Premium alone does not", async () => {
-    expect(await check(session("vip"), "watch", video)).toEqual({ allow: true, basis: ["course_video_access"] });
-    expect(await check(session("video-buyer"), "watch", video)).toEqual({ allow: true, basis: ["course_video_access"] });
-    expect(await check(session("premium"), "watch", video)).toEqual({ allow: false, reason: "no_entitlement" });
+  it("keeps canWatchVideo semantics: paid members and buyers watch, free and lapsed members do not", async () => {
+    for (const user of ["vip", "premium", "premium-trial", "video-buyer"]) {
+      expect(await check(session(user), "watch", video)).toEqual({ allow: true, basis: ["course_video_access"] });
+    }
+    expect(await check(session("vip-canceled"), "watch", video)).toEqual({ allow: false, reason: "no_entitlement" });
     expect(await check(session("free"), "watch", video)).toEqual({ allow: false, reason: "no_entitlement" });
+  });
+
+  it("limits subscription access to the configured plans", async () => {
+    const vipOnly = (user: string) =>
+      authorize({ subject: session(user), action: "watch", resource: video }, { db: local.db, videoAccess: { accessPlans: ["vip"] } });
+    expect(await vipOnly("vip")).toEqual({ allow: true, basis: ["course_video_access"] });
+    expect(await vipOnly("premium")).toEqual({ allow: false, reason: "no_entitlement" });
   });
 
   it("denies assets, unknown resources and unsupported actions", async () => {
