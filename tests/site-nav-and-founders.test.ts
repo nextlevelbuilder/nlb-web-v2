@@ -9,14 +9,14 @@ const item = (key: string) => {
 };
 
 describe("primary navigation", () => {
-  it("lists every destination in the old site's order plus courses and blog", () => {
-    expect(NAV.map((entry) => entry.key)).toEqual(["courses", "directory", "leaderboard", "blog", "pricing", "buildWithUs"]);
+  it("lists Build with Us in the directory's slot, with courses, leaderboard, blog and pricing", () => {
+    expect(NAV.map((entry) => entry.key)).toEqual(["courses", "buildWithUs", "leaderboard", "blog", "pricing"]);
   });
 
-  it("routes courses, directory, leaderboard and blog to real pages, never home anchors", () => {
+  it("routes courses, Build with Us, leaderboard and blog to real pages, never home anchors", () => {
     expect(item("courses").route).toBe("/courses");
     expect(NAV.filter((entry) => entry.homeAnchor).map((entry) => entry.key)).toEqual(["pricing"]);
-    expect(item("directory").route).toBe("/build-with-us");
+    expect(item("buildWithUs").route).toBe("/build-with-us");
     expect(item("leaderboard").route).toBe("/leaderboards");
     expect(item("blog").route).toBe("/blog");
   });
@@ -27,9 +27,7 @@ describe("primary navigation", () => {
 
   it("marks the deepest owning item as current", () => {
     expect(isCurrentNavItem("/courses/week-1", item("courses"))).toBe(true);
-    expect(isCurrentNavItem("/build-with-us", item("directory"))).toBe(true);
-    expect(isCurrentNavItem("/build-with-us/instructions", item("directory"))).toBe(false);
-    expect(isCurrentNavItem("/build-with-us/instructions", item("buildWithUs"))).toBe(true);
+    expect(isCurrentNavItem("/build-with-us", item("buildWithUs"))).toBe(true);
     expect(isCurrentNavItem("/blog/hello", item("blog"))).toBe(true);
     expect(isCurrentNavItem("/blogger", item("blog"))).toBe(false);
     expect(isCurrentNavItem("/", item("pricing"))).toBe(false);

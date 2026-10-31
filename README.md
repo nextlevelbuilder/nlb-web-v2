@@ -107,7 +107,7 @@ Manage secret API keys in your builder profile (`/profile`) to authenticate auto
 
 ## Build with Us pages and agent access
 
-The integration guide at `/build-with-us/instructions` covers Studio, CLI, HTTP MCP, WebMCP and REST workflows. Interactive `/api-docs` uses `/api/openapi.json`; the document and all 18 block schemas are derived from [the validation contracts](./packages/contracts/src/product-document.ts).
+The integration guide on `/build-with-us#guide` (the old `/build-with-us/instructions` URL redirects there) covers Studio, CLI, HTTP MCP, WebMCP and REST workflows. Interactive `/api-docs` uses `/api/openapi.json`; the document and all 18 block schemas are derived from [the validation contracts](./packages/contracts/src/product-document.ts).
 
 Product website, media, embed and block link fields accept HTTP(S) URLs only, consistently across Studio and REST validation.
 

@@ -36,7 +36,7 @@ describe("social metadata", () => {
   });
 
   it("ships an opengraph-image route next to every public page that sets its own metadata", () => {
-    const publicPages = ["", "courses", "courses/[slug]", "blog", "blog/[slug]", "products/[slug]", "policies", "policies/[slug]", "leaderboards", "build-with-us", "build-with-us/instructions", "builders/[id]"];
+    const publicPages = ["", "courses", "courses/[slug]", "blog", "blog/[slug]", "products/[slug]", "policies", "policies/[slug]", "leaderboards", "build-with-us", "builders/[id]"];
     for (const dir of publicPages) {
       expect(existsSync(join(process.cwd(), "app/[locale]", dir, "opengraph-image.tsx")), dir || "home").toBe(true);
     }

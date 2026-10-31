@@ -1,6 +1,7 @@
 import { getPublishedProducts } from "@/lib/domain/catalog";
 import { getLatestRankingSnapshot, computeRankingSnapshot } from "@/lib/domain/rankings";
 import BuildWithUsClient, { type RankEntry } from "./build-with-us-client";
+import BuildWithUsGuide from "./build-with-us-guide";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import ChapterPlate from "@/components/constellation/chapter-plate";
@@ -97,6 +98,8 @@ export default async function BuildWithUsPage({ params, searchParams }: BuildWit
           weeklyRanks={toRankEntries(weeklySnapshot?.ranks)}
           monthlyRanks={toRankEntries(monthlySnapshot?.ranks)}
         />
+
+        <BuildWithUsGuide />
       </div>
     </main>
   );

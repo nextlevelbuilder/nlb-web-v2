@@ -37,6 +37,17 @@ const nextConfig: NextConfig = {
         destination: "/:locale/build-with-us",
         permanent: true,
       },
+      // The submission guide now lives on the Build with Us page itself.
+      {
+        source: "/build-with-us/instructions",
+        destination: "/build-with-us#guide",
+        permanent: true,
+      },
+      {
+        source: "/:locale/build-with-us/instructions",
+        destination: "/:locale/build-with-us#guide",
+        permanent: true,
+      },
     ];
   },
 };

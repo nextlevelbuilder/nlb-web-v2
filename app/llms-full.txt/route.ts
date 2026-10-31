@@ -33,7 +33,7 @@ export async function GET() {
       optional("blog posts", () => listPostSummaries({ status: "published", limit: MAX_POSTS, offset: 0 })),
       optional("course videos", () => listPublishedVideos(getDb())),
     ]);
-    const paths = ["/", "/build-with-us", "/build-with-us/instructions", "/leaderboards", "/courses", "/blog", "/policies", ...POLICY_SLUGS.map((slug) => `/policies/${slug}`), ...videos.map((video) => `/courses/${video.slug}`)];
+    const paths = ["/", "/build-with-us", "/leaderboards", "/courses", "/blog", "/policies", ...POLICY_SLUGS.map((slug) => `/policies/${slug}`), ...videos.map((video) => `/courses/${video.slug}`)];
     const localized = paths.flatMap((path) => [localizedPath(path, "vi"), localizedPath(path, "en")]);
     localized.push("/api-docs");
     // Posts are single-locale documents, so each appears once under its own path.
