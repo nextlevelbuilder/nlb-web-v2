@@ -86,7 +86,7 @@ The authorization server is the web's Better Auth provider at `<site>/api/auth`,
 | Scope | Permission |
 | --- | --- |
 | `mcp:read` | Read directory data, authorized product traffic, blog drafts and revisions (admins), Builder League and onboarding status |
-| `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions |
+| `mcp:write` | Submit products, upload media, vote, create checkout links, blog writes (admins), Builder League self-reported submissions and member actions, course video publishing (admins) |
 | `mcp:keys` | List, create and revoke the user's API keys; newly created keys can outlive this OAuth grant |
 | `mcp:operator` | NLB Live operator tools (`live_admin_*`). Only platform operators get it: for anyone else the consent screen hides it and the server drops it from the grant |
 
@@ -285,3 +285,15 @@ For platform operators who hold the `live:manage` grant. Every tool needs `mcp:o
 | `live_admin_list_audit` | `GET /api/v1/live-admin/audit` |
 | `live_admin_get_metrics` | `GET /api/v1/live-admin/metrics` |
 | `live_admin_run_sweeps` | `POST /api/v1/live-admin/sweeps` |
+
+### 21. Course video tools
+
+Admin tools over `/api/courses/*` (not `/api/v1`). The admin tools need `mcp:write` and an admin account; the web checks the role. Workflow and conventions: [docs/courses.md](../courses.md).
+
+| Tool | Route |
+|---|---|
+| `course_list_videos` | `GET /api/courses/videos` (public, `mcp:read`) |
+| `course_create_upload` | `POST /api/courses/uploads`: signed-only Stream upload, returns `streamUid` and a one-time tus `uploadUrl`. Send the file with `nlb courses put <file> <uploadUrl>`. |
+| `course_get_upload` | `GET /api/courses/uploads/{uid}`: processing state, `durationSec`, `requireSignedUrls` |
+| `course_create_video` · `course_update_video` | `POST /api/courses/videos` · `PATCH /api/courses/videos/{slug}` |
+| `course_publish_video` | `POST /api/courses/videos/{slug}/publish` (creates the Polar product) |
