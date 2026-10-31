@@ -15,6 +15,9 @@
   "observability": {
     "enabled": true
   },
+  "cache": {
+    "enabled": true
+  },
   "triggers": {
     "crons": ["* * * * *", "17 * * * *"]
   },
@@ -77,6 +80,9 @@
     "staging": {
       "name": "nextlevelbuilder-web-staging",
       "workers_dev": true,
+      "cache": {
+        "enabled": true
+      },
       "preview_urls": false,
       "triggers": {
         "crons": ["* * * * *", "17 * * * *"]
