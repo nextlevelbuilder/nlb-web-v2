@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { useTranslations } from 'next-intl';
 import CheckoutConfirmDialog from '@/components/checkout/checkout-confirm-dialog';
+import { useCheckoutDeepLink } from '@/components/checkout/use-checkout-deep-link';
 import { useCheckout } from '@/components/home/checkout-context';
 import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PRICES, type BillingCycle, type MembershipPlan } from '@/lib/constants/launch';
 import type { PlanSeats } from '@/lib/home/membership-seats';
@@ -90,6 +91,11 @@ export default function PricingPlans() {
   const premium = MEMBERSHIP_PRICES.premium;
   const savePercent = Math.round(((premium.quarterly.amount * 4 - premium.annual.amount) / (premium.quarterly.amount * 4)) * 100);
 
+  const deepLink = useCheckoutDeepLink();
+  useEffect(() => {
+    if (deepLink) setBilling(deepLink.billing);
+  }, [deepLink, setBilling]);
+
   const choose = (next: BillingCycle) => {
     if (next === billing) return;
     setBilling(next);
@@ -141,7 +147,7 @@ export default function PricingPlans() {
                 {features.map((f) => <li key={f.key} className={f.hi ? 'hi' : undefined}>{t(f.key)}</li>)}
               </ul>
               {available ? (
-                <CheckoutConfirmDialog plan={plan} source={`pricing-${plan}`}>
+                <CheckoutConfirmDialog plan={plan} source={`pricing-${plan}`} openRequest={deepLink?.plan === plan ? deepLink.nonce : undefined}>
                   <button type="button" className={btnClass} aria-label={t('joinAria', { plan: name, price: `$${amount}`, per })}>
                     {t('join', { plan: name })}
                   </button>

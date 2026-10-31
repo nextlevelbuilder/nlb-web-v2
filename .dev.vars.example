@@ -176,6 +176,22 @@ CLICKHOUSE_PASSWORD=
 # ClickHouse database (legacy, optional).
 CLICKHOUSE_DATABASE=
 
+# --- Website chat (Dewee; optional, unset hides the widget) ---
+# Chat URL of the CCP "Website chat" integration, https://<ccp>/api/public/webchat/v1/wci_...
+DEWEE_CCP_CHAT_URL=
+# Integration id (wci_...).
+DEWEE_WEBCHAT_INTEGRATION_ID=
+# Integration secret (dwc_...). Server only, never NEXT_PUBLIC.
+DEWEE_WEBCHAT_INTEGRATION_SECRET=
+# 32+ random characters; signs the widget's visitor session tokens.
+DEWEE_WEBCHAT_SECRET=
+# Optional Dewee identity application, so signed-in members chat as themselves (all three or none).
+DEWEE_IDENTITY_APP_ID=
+DEWEE_IDENTITY_ISSUER=
+DEWEE_IDENTITY_ASSERTION_SECRET=
+# Discord incoming webhook for new chat leads (falls back to DISCORD_SALES_WEBHOOK_URL).
+DISCORD_LEADS_WEBHOOK_URL=
+
 # --- Data migration script only (not read by the app) ---
 # Read-only Neon connection string for scripts/migrate (or use scripts/migrate/dump/.neon-uri).
 NEON_DATABASE_URL=

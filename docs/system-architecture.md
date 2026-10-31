@@ -73,6 +73,7 @@ Bot protection: votes require a Turnstile token, verified server-side in [`lib/d
 - **Build with Us directory**: products, revisions, moderation, votes, rankings, Pulse and traffic. The domain logic is in [`lib/domain`](../lib/domain). The submission guide on `/build-with-us` (anchor `#guide`; the old `/build-with-us/instructions` URL redirects there) and the root README cover the agent-facing workflows.
 - **Blog**: typed widget blocks managed over REST, CLI or MCP. See [blog-and-agent-management.md](./blog-and-agent-management.md).
 - **Courses**: one Polar product per video, Cloudflare Stream signed playback. See [courses.md](./courses.md).
+- **Website chat**: the Dewee widget on public pages talks to `/api/dewee`, which proxies to the hosted Dewee control plane with server-only credentials. The agent reads plans, courses and FAQ through page actions and records leads in D1. See [website-chat.md](./website-chat.md).
 - **Discovery**: `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt` and markdown twins. Implemented in `app/robots.ts`, `app/sitemap.ts`, `app/llms*.txt/` and [`lib/markdown`](../lib/markdown).
 
 ## Environments

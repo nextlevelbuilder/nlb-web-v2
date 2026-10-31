@@ -12,15 +12,22 @@ interface CheckoutConfirmDialogProps {
   source: string;
   /** The CTA button; it becomes the dialog trigger and receives focus back when the dialog closes. */
   children: ReactElement;
+  /** A new value opens the dialog without a click (checkout deep links). */
+  openRequest?: number;
 }
 
 /**
  * Pre-checkout confirmation. Radix Dialog provides the modal semantics: focus trap, Esc to close, focus
  * returned to the trigger, and the title/description wired to aria-labelledby/aria-describedby.
  */
-export default function CheckoutConfirmDialog({ plan, source, children }: CheckoutConfirmDialogProps) {
+export default function CheckoutConfirmDialog({ plan, source, children, openRequest }: CheckoutConfirmDialogProps) {
   const t = useTranslations('home.checkout');
   const [open, setOpen] = useState(false);
+  const [seenRequest, setSeenRequest] = useState<number>();
+  if (openRequest !== seenRequest) {
+    setSeenRequest(openRequest);
+    if (openRequest) setOpen(true);
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

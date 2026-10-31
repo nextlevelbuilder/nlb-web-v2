@@ -1485,5 +1485,15 @@
   "affiliateCheckout": {
     "referralNote": "Referral code {code} is applied at checkout when you are signed in and this is your first membership.",
     "referralApplied": "Referral discount of {discount} applied. Opening checkout…"
+  },
+  "chat": {
+    "title": "Next Level Builders",
+    "subtitle": "Ask about plans, courses and the community",
+    "greeting": "Hi, how can we help?",
+    "intro": "Ask about Premium and VIP, the courses, or what you want to build. Leave your email and the team will follow up.",
+    "placeholder": "Type your question…",
+    "suggestion1": "Which plan fits me?",
+    "suggestion2": "What courses are included?",
+    "suggestion3": "I want to talk to the team"
   }
 }
