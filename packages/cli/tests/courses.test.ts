@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -167,5 +167,33 @@ describe("nlb courses publish-recording", () => {
     const { json } = await run(["publish", "x", "--json"], fetchFn);
     expect(json()).toMatchObject({ success: false, status: 403, code: "forbidden" });
     expect(json().error).toContain("admin account");
+  });
+});
+
+describe("nlb courses transcript", () => {
+  const SLUG = "nlb-weekly-41-x";
+  const path = `/api/courses/videos/${SLUG}/transcript`;
+
+  it("follows nextOffset to read the whole transcript into a file", async () => {
+    const pages: Record<string, unknown> = {
+      "0": { slug: SLUG, title: "T", totalChars: 12, offset: 0, content: "[00:00:01] A\n\n", nextOffset: 14 },
+      "14": { slug: SLUG, title: "T", totalChars: 26, offset: 14, content: "[00:10:00] B\n", nextOffset: null }
+    };
+    const fetchFn = server((url, init) =>
+      (init.method ?? "GET") === "GET" && url.pathname === path ? Response.json({ data: pages[url.searchParams.get("offset")!] }) : undefined
+    );
+    const out = join(mkdtempSync(join(tmpdir(), "nlb-transcript-")), "t.md");
+    const { json } = await run(["transcript", SLUG, "--out", out, "--json"], fetchFn);
+    expect(json()).toMatchObject({ slug: SLUG, file: out });
+    expect(readFileSync(out, "utf8")).toBe("[00:00:01] A\n\n[00:10:00] B\n");
+    expect(calls(fetchFn)).toEqual([`GET ${path}`, `GET ${path}`]);
+  });
+
+  it("uploads a transcript file as an admin", async () => {
+    const file = join(mkdtempSync(join(tmpdir(), "nlb-transcript-")), "t.md");
+    writeFileSync(file, "[00:00:01] Xin chào");
+    const fetchFn = server(on("PUT", path, () => Response.json({ data: { slug: SLUG, totalChars: 19, source: "gemini", updatedAt: "2026-10-31T00:00:00.000Z" } })));
+    await run(["transcript-set", SLUG, file, "--source", "gemini", "--json"], fetchFn);
+    expect(bodyOf(fetchFn, "PUT", path)).toEqual({ content: "[00:00:01] Xin chào", source: "gemini" });
   });
 });

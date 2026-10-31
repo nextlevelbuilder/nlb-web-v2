@@ -704,6 +704,18 @@ export const courseVideos = sqliteTable(
   (t) => [index("course_videos_listing_idx").on(t.status, t.publishedAt)]
 );
 
+/**
+ * Verbatim transcript of a course video (markdown, paragraphs prefixed with `[hh:mm:ss]`). Readable by
+ * the same people who may watch the video; kept out of `course_videos` so catalogue reads stay small.
+ */
+export const courseVideoTranscripts = sqliteTable("course_video_transcripts", {
+  videoId: text("video_id").primaryKey().references(() => courseVideos.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  source: text("source").notNull().default("manual"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(nowMs).$defaultFn(() => new Date()).notNull(),
+});
+
 // ==========================================
 // 11. API idempotency (Idempotency-Key replay store)
 // ==========================================
@@ -845,4 +857,5 @@ export const onboardingNonces = sqliteTable(
 
 export * from "./builder-league-schema";
 export * from "./live-access-schema";
+export * from "./affiliate-schema";
 export * from "./chat-leads-schema";

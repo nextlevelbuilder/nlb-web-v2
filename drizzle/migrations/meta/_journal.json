@@ -40,8 +40,22 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1793431567141,
-      "tag": "0005_chat_leads",
+      "when": 1793433429118,
+      "tag": "0005_affiliate_program",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793440785121,
+      "tag": "0006_course_video_transcripts",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793442886333,
+      "tag": "0007_chat_leads",
       "breakpoints": true
     }
   ]

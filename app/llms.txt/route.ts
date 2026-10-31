@@ -8,6 +8,7 @@ import { getDb } from "@/lib/db";
 import { DISCOVERY_PATHS, mcpEndpoint } from "@/lib/discovery/agent-discovery-documents";
 import { publicWrappedPaths } from "@/lib/builder-league/public-surfaces";
 import { isLiveEnabled } from "@/lib/live/live-flag";
+import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 import { listUpcomingEvents } from "@/lib/live/event-read-models";
 import { publicHallOfFamePaths } from "@/lib/builder-league/hall-of-fame";
 
@@ -68,6 +69,7 @@ export async function GET() {
       `- [Blog](${baseUrl}/blog.md): Build logs, product lessons and engineering notes.`,
       `- [Courses](${baseUrl}/courses.md): Recorded build sessions, sold per video or included with VIP.`,
       ...(isLiveEnabled() ? [`- [NLB Live](${baseUrl}/live.md): Weekly live build sessions, the members' topic vote and paid seats.`] : []),
+      ...(isAffiliatesEnabled() ? [`- [Affiliate program](${baseUrl}/affiliates.md): How referral links, levels, the member discount and commission split work, plus payout terms.`] : []),
       `- [Full content](${baseUrl}/llms-full.txt): Full public pages and approved product documents, including every block.`,
       "## Agent interfaces",
       `- MCP server (streamable HTTP, MCP 2026-07-28 with 2025 fallback, OAuth 2.1 or API key): ${mcpEndpoint()}`,

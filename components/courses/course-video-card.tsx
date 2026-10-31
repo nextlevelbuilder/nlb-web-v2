@@ -40,6 +40,7 @@ export function CourseVideoCard({ video, locale, index = 0 }: CourseVideoCardPro
         <p className="card-meta mono">
           {video.weekNumber !== null && <><span>{copy.week(video.weekNumber)}</span><span aria-hidden="true">·</span></>}
           <span>{copy.minutes(minutes)}</span>
+          {video.hasTranscript && <><span aria-hidden="true">·</span><span className="courses-card-transcript">{copy.transcriptBadge}</span></>}
         </p>
         <h3 id={titleId}>{video.title}</h3>
         {video.description && <p className="card-desc courses-card-desc">{video.description}</p>}

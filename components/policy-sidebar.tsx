@@ -18,7 +18,7 @@ const GROUPS: PolicyGroup[] = ['community', 'legal'];
  * Policy navigation: a sticky grouped list from `md` up, and a native
  * disclosure on small screens (no horizontal scrolling at 320 px).
  */
-export default function PolicySidebar() {
+export default function PolicySidebar({ published }: { published: readonly PolicyPageSlug[] }) {
   const locale = toPolicyLocale(useLocale());
   const copy = policyUiCopy[locale];
   // next-intl's usePathname returns the path without the locale prefix.
@@ -35,7 +35,7 @@ export default function PolicySidebar() {
         <div key={group}>
           <p className="mono-label mb-3 text-ink-3">{groupLabel(group)}</p>
           <ul className="border-l border-line">
-            {policySlugsByGroup(group).map((slug) => {
+            {policySlugsByGroup(group, published).map((slug) => {
               const active = isActive(slug);
               return (
                 <li key={slug}>

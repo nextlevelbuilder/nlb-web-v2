@@ -25,6 +25,7 @@ import { applySubscriptionSnapshot, markSubscriptionRefunded } from "@/lib/membe
 import { hasCourseVideoProduct, syncCourseVideoEntitlementFromOrder } from "@/lib/courses/course-webhook-entitlements";
 import { hasLiveTicketProduct, syncLiveTicketFromOrder } from "@/lib/live/live-webhook-tickets";
 import { recordPaidShareConversion } from "@/lib/builder-league/attribution";
+import { syncReferralOrder, type PolarOrderForReferral } from "@/lib/referrals/affiliate-conversions";
 import { WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { verifyPolarWebhook } from "@/lib/polar-webhook-signature";
 import crypto from "crypto";
@@ -483,6 +484,8 @@ async function handleOrderRefunded(event: PolarWebhookPayload, db: AppDb, effect
   if (!order || !order.id || !order.status) return;
 
   await db.update(orders).set({ status: order.status }).where(eq(orders.polarOrderId, order.id));
+  // Reverses referral commission in proportion to the refunded net amount (idempotent, see lib/referrals).
+  await syncReferralOrder(db, order as PolarOrderForReferral);
 
   const productId = order.product_id || order.product?.id || "";
   if (order.status !== "refunded" || !order.subscription_id || !MEMBERSHIP_ENTITLEMENT_PRODUCT_IDS.has(productId)) return;
@@ -595,6 +598,8 @@ async function handleOrderCreated(event: PolarWebhookPayload, eventId: string, d
         paidAt: isPaid ? new Date() : undefined,
       },
     });
+  // Referral commission accrues only from this signed, settled provider order (idempotent per order).
+  await syncReferralOrder(db, { ...(order as PolarOrderForReferral), paid: isPaid });
   if (!wasAlreadyPaid && isPaid) {
     // One notification per paid order: the delivery intent survives Polar retries and the
     // order.created/order.paid pair. Sent off the response path so Discord never fails the webhook.

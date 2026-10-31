@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 import { Command } from "commander";
 import pc from "picocolors";
@@ -271,6 +271,47 @@ export function registerCourseCommands(program: Command, deps: CourseCommandDeps
       });
     }
   );
+
+  withAuth(
+    courses
+      .command("transcript")
+      .description("Read a video's transcript (buyers, Premium/VIP members and admins)")
+      .argument("<slug>", "Video slug")
+      .option("-q, --query <text>", "Only paragraphs containing this text")
+      .option("-o, --out <file>", "Write the transcript to a file instead of stdout")
+  ).action(async (slug: string, opts: BaseOptions & { query?: string; out?: string }) => {
+    await run(opts, async () => {
+      const { client } = clientFor(opts, deps);
+      if (opts.query) {
+        const result = await client.searchTranscript(slug, opts.query);
+        if (!opts.json) for (const m of result.matches) console.log(`${safe(m.text)}\n`);
+        return result;
+      }
+      const content = await client.getTranscript(slug);
+      if (opts.out) {
+        writeFileSync(opts.out, content);
+        log(opts, pc.green(`✔ ${content.length} characters written to ${opts.out}`));
+      } else if (!opts.json) {
+        console.log(content);
+      }
+      return { slug, totalChars: content.length, ...(opts.out ? { file: opts.out } : { content }) };
+    });
+  });
+
+  withAuth(
+    courses
+      .command("transcript-set")
+      .description("Create or replace a video's transcript from a markdown file (admin)")
+      .argument("<slug>", "Video slug")
+      .argument("<file>", "Transcript markdown, paragraphs prefixed with [hh:mm:ss]")
+      .option("--source <name>", "Where it came from, e.g. gemini or manual")
+  ).action(async (slug: string, file: string, opts: BaseOptions & { source?: string }) => {
+    await run(opts, async () => {
+      const saved = await clientFor(opts, deps).client.setTranscript(slug, readFileSync(file, "utf8"), opts.source);
+      if (!opts.json) console.log(pc.green(`✔ Transcript of ${safe(saved.slug)} saved (${saved.totalChars} characters)`));
+      return saved;
+    });
+  });
 
   withWait(withAuth(
     courses

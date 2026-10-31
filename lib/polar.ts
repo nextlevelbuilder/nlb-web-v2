@@ -150,6 +150,12 @@ export interface CheckoutSessionOptions {
   nlbUserId?: string;
   /** Site locale of the buyer, stored as `metadata.nlb_locale` for the onboarding email. */
   locale?: string;
+  /** Server-verified referral binding (lib/referrals/affiliate-checkout.ts). */
+  referral?: {
+    attributionId: string;
+    /** Polar discount for the buyer; other discount codes are then disabled so promotions never stack. */
+    discountId: string | null;
+  };
 }
 
 export async function createCheckoutSession(
@@ -175,10 +181,12 @@ export async function createCheckoutSession(
       products: [productId],
       successUrl,
       customerEmail,
+      ...(options.referral ? { allowDiscountCodes: false, ...(options.referral.discountId ? { discountId: options.referral.discountId } : {}) } : {}),
       metadata: {
         ...(productSlug ? { productSlug } : {}),
         ...(options.nlbUserId ? { nlb_user_id: options.nlbUserId } : {}),
         ...(options.locale ? { nlb_locale: options.locale } : {}),
+        ...(options.referral ? { nlb_aff_attr: options.referral.attributionId } : {}),
         productCategory: isPublishingProduct(productId) ? "developer_tooling" : "education_advisory",
         exposureGuaranteed: "false",
       },
