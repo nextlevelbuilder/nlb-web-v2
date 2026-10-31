@@ -37,7 +37,7 @@ describe("/r/<code>", () => {
 
   it("honours GPC and DNT: no cookies, no click count, the ref still travels", async () => {
     const { link } = await seedAffiliateWithLink(0);
-    for (const headers of [{ "sec-gpc": "1" }, { dnt: "1" }]) {
+    for (const headers of [{ "sec-gpc": "1" }, { dnt: "1" }] as Record<string, string>[]) {
       const response = await call(link.code, headers);
       expect(response.status).toBe(307);
       expect(new URL(response.headers.get("location")!).searchParams.get("ref")).toBe(link.code);

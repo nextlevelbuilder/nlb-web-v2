@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { affiliateConversions, affiliates, users } from "@/lib/db/schema";
 import { getMemberTier } from "@/lib/membership/member-access";
@@ -6,7 +6,7 @@ import { isUniqueViolation } from "@/lib/membership/member-access";
 import { budgetFor, levelFor, nextLevel } from "./program-math";
 import { getActiveRules, type ActiveRules } from "./program-rules";
 import { ReferralError } from "./referral-errors";
-import type { AffiliateIncentiveBasis, ProgramLevel } from "./types";
+import type { AffiliateIncentiveBasis, AffiliateStatus, ProgramLevel } from "./types";
 
 export type AffiliateRow = typeof affiliates.$inferSelect;
 
@@ -84,4 +84,35 @@ export async function affiliateStanding(db: AppDb, affiliate: Pick<AffiliateRow,
   const level = levelFor(rules, customers);
   const basis: AffiliateIncentiveBasis = tier.tier === "none" ? "ordinary" : "member";
   return { rulesVersion: version, customers, level, next: nextLevel(rules, customers), basis, budgetBps: budgetFor(level, basis) };
+}
+
+/** Operator list of affiliate accounts, newest first, optionally filtered by status. */
+export async function listAffiliates(db: AppDb, input: { status?: AffiliateStatus; limit?: number } = {}): Promise<AffiliateRow[]> {
+  return db
+    .select()
+    .from(affiliates)
+    .where(input.status ? eq(affiliates.status, input.status) : undefined)
+    .orderBy(desc(affiliates.createdAt))
+    .limit(input.limit ?? 50);
+}
+
+/**
+ * Operator: suspend an active affiliate (new checkouts stop attributing, payouts are blocked) or
+ * reinstate a suspended one. One guarded update, so a concurrent change is a 409, never a silent overwrite.
+ */
+export async function setAffiliateStatus(
+  db: AppDb,
+  affiliateId: string,
+  input: { status: AffiliateStatus; reason: string },
+  now = new Date()
+): Promise<AffiliateRow> {
+  const from: AffiliateStatus = input.status === "suspended" ? "active" : "suspended";
+  const [row] = await db
+    .update(affiliates)
+    .set({ status: input.status, suspendedReason: input.status === "suspended" ? input.reason : null, updatedAt: now })
+    .where(and(eq(affiliates.id, affiliateId), eq(affiliates.status, from)))
+    .returning();
+  if (row) return row;
+  if (!(await findAffiliateById(db, affiliateId))) throw new ReferralError(404, "not_found", "Affiliate not found");
+  throw new ReferralError(409, "invalid_transition", input.status === "suspended" ? "Only active affiliates can be suspended" : "Only suspended affiliates can be reinstated");
 }

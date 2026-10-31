@@ -78,3 +78,17 @@ ADR `docs/affiliate-program-adr.md`, docs updates, isolated review, PR to `dev`.
 
 ## Acceptance
 Unit+route tests green; tsc/lint/build green; screenshots at 1440/768/375/320; review findings fixed.
+
+## Contract changes (REST agent)
+Additive only; no listed path or field was renamed.
+- Operators need to request and decide the two-person approvals the sensitive routes consume, so the
+  affiliate-admin approvals surface mirrors Live: `POST approvals` (`{ action, target, reason, ttlMinutes? }`;
+  targets: `affiliate.rules.publish` → `{ rules, note? }`, `affiliate.payout.approve` → `{ batchId }`,
+  `affiliate.ledger.adjust` → `{ affiliateId, amountMinor, reason }`), `GET approvals/{id}`,
+  `POST approvals/{id}/decision` (`{ decision: "approve" | "reject" }`). `GET approvals` takes `status?`
+  (default `pending`), `cursor?`, `limit?`.
+- Sensitive bodies: rules publish `{ rules, note?, approvalId }`; batch approve `{ approvalId }`;
+  ledger adjustment `{ affiliateId, amountMinor, reason, approvalId }` (ledger key `adjustment:<approvalId>`).
+- Operator list reads wrap arrays: `{ affiliates }`, `{ conversions }`, `{ batches }`; batch create/read
+  return the batch with `totals` and `items`. Suspend/reinstate/hold take `{ reason }` (3-300 chars).
+- `GET /affiliates/preview` returns `example` only when `priceMinor` is given and the discount is within budget.

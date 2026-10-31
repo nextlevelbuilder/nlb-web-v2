@@ -4,15 +4,15 @@
  */
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { affiliateConversions, affiliatePayoutItems, affiliatePayoutBatches, commissionLedger, affiliateLinks } from "@/lib/db/schema";
+import { affiliateConversions, affiliatePayoutItems, affiliatePayoutBatches, affiliatePayoutMethods, commissionLedger, affiliateLinks } from "@/lib/db/schema";
 import { tierForProductId } from "@/lib/membership/tiers";
 import { affiliateBalances, LEDGER_BUCKETS, type LedgerBalances } from "./commission-ledger";
-import { affiliateStanding, type AffiliateRow } from "./affiliates";
+import { affiliateStanding, listAffiliates, type AffiliateRow } from "./affiliates";
 import { clickCounts, listLinks, type AffiliateLinkRow } from "./affiliate-links";
 import { activePayoutMethod, payoutMethodView } from "./affiliate-payouts";
 import { maxCommissionBps } from "./program-math";
 import { getActiveRules } from "./program-rules";
-import type { ProgramRules } from "./types";
+import type { AffiliateConversionStatus, AffiliateStatus, ProgramRules } from "./types";
 
 export function programView(version: number, rules: ProgramRules) {
   return {
@@ -247,5 +247,105 @@ export async function reconciliationReport(db: AppDb, input: { since?: Date; unt
 /** Link owned by the affiliate, for member routes. */
 export async function findOwnLink(db: AppDb, affiliateId: string, linkId: string): Promise<AffiliateLinkRow | null> {
   const [row] = await db.select().from(affiliateLinks).where(and(eq(affiliateLinks.id, linkId), eq(affiliateLinks.affiliateId, affiliateId))).limit(1);
+  return row ?? null;
+}
+
+/** Operator view of affiliate accounts with level, budget and balances. Account ids only, no names or emails. */
+export async function listAffiliatesForOperators(db: AppDb, input: { status?: AffiliateStatus; limit?: number } = {}, now = new Date()) {
+  const [rows, active] = await Promise.all([listAffiliates(db, input), getActiveRules(db)]);
+  return Promise.all(
+    rows.map(async (affiliate) => {
+      const [standing, balances] = await Promise.all([affiliateStanding(db, affiliate, now, active), affiliateBalances(db, affiliate.id)]);
+      return {
+        affiliateId: affiliate.id,
+        userId: affiliate.userId,
+        status: affiliate.status,
+        suspendedReason: affiliate.suspendedReason,
+        termsVersion: affiliate.termsVersion,
+        joinedAt: affiliate.createdAt.toISOString(),
+        level: standing.level.key,
+        qualifyingCustomers: standing.customers,
+        incentiveBasis: standing.basis,
+        budgetBps: standing.budgetBps,
+        balances: balancesView(balances),
+      };
+    })
+  );
+}
+
+export function operatorAffiliateView(affiliate: AffiliateRow) {
+  return {
+    affiliateId: affiliate.id,
+    userId: affiliate.userId,
+    status: affiliate.status,
+    suspendedReason: affiliate.suspendedReason,
+    updatedAt: affiliate.updatedAt.toISOString(),
+  };
+}
+
+/** Operator view of one conversion (review, hold and release). Includes the buyer account id for fraud review. */
+export function operatorConversionView(row: typeof affiliateConversions.$inferSelect) {
+  return {
+    id: row.id,
+    affiliateId: row.affiliateId,
+    buyerUserId: row.buyerUserId,
+    polarOrderId: row.polarOrderId,
+    plan: tierForProductId(row.polarProductId),
+    currency: row.currency,
+    netMinor: row.netMinor,
+    discountMinor: row.discountMinor,
+    commissionBps: row.commissionBps,
+    commissionMinor: row.commissionMinor,
+    refundedNetMinor: row.refundedNetMinor,
+    status: row.status,
+    holdReason: row.holdReason,
+    paidAt: row.paidAt.toISOString(),
+    maturesAt: row.maturesAt.toISOString(),
+  };
+}
+
+export async function listConversionsForOperators(db: AppDb, input: { status?: AffiliateConversionStatus; limit?: number } = {}) {
+  const rows = await db
+    .select()
+    .from(affiliateConversions)
+    .where(input.status ? eq(affiliateConversions.status, input.status) : undefined)
+    .orderBy(desc(affiliateConversions.paidAt))
+    .limit(input.limit ?? 50);
+  return rows.map(operatorConversionView);
+}
+
+export function payoutBatchView(batch: typeof affiliatePayoutBatches.$inferSelect) {
+  return {
+    id: batch.id,
+    period: batch.period,
+    currency: batch.currency,
+    status: batch.status,
+    rulesVersion: batch.rulesVersion,
+    thresholdMinor: batch.thresholdMinor,
+    createdBy: batch.createdBy,
+    approvedBy: batch.approvedBy,
+    approvedAt: batch.approvedAt?.toISOString() ?? null,
+    cancelledAt: batch.cancelledAt?.toISOString() ?? null,
+    createdAt: batch.createdAt.toISOString(),
+  };
+}
+
+/** A batch with its items. Payout details stay sealed; only the method type is shown. */
+export function payoutBatchDetailView(batch: typeof affiliatePayoutBatches.$inferSelect, items: Array<typeof affiliatePayoutItems.$inferSelect>) {
+  const totals = items.reduce(
+    (sum, item) => ({ grossMinor: sum.grossMinor + item.grossMinor, netMinor: sum.netMinor + item.netMinor }),
+    { grossMinor: 0, netMinor: 0 }
+  );
+  return { ...payoutBatchView(batch), totals: { items: items.length, ...totals }, items: items.map((item) => payoutItemView(item, batch.period, batch.status)) };
+}
+
+/** A payout item and the payout method it was locked with (also when that method was replaced since). */
+export async function findPayoutItemWithMethod(db: AppDb, itemId: string) {
+  const [row] = await db
+    .select({ item: affiliatePayoutItems, method: affiliatePayoutMethods })
+    .from(affiliatePayoutItems)
+    .innerJoin(affiliatePayoutMethods, eq(affiliatePayoutMethods.id, affiliatePayoutItems.payoutMethodId))
+    .where(eq(affiliatePayoutItems.id, itemId))
+    .limit(1);
   return row ?? null;
 }

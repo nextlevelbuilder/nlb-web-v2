@@ -8,6 +8,7 @@ import { progressionPaths, progressionSchemas } from "@/lib/builder-league/opena
 import { journeyPaths, journeySchemas } from "@/lib/builder-league/openapi/journey";
 import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/privacy";
 import { livePaths, liveSchemas } from "@/lib/live/openapi";
+import { affiliatePaths, affiliateSchemas } from "@/lib/referrals/openapi";
 
 /**
  * Whether the NLB Live member and operator API is part of this public document. Off until Live
@@ -16,6 +17,13 @@ import { livePaths, liveSchemas } from "@/lib/live/openapi";
  * The Live module in lib/live/openapi stays complete and tested; flip this one switch at launch.
  */
 const PUBLISH_LIVE_OPENAPI = false;
+
+/**
+ * Whether the affiliate member and operator API is part of this public document. Off until the program
+ * launches (`AFFILIATES_ENABLED` in production), for the same reason as Live: the document is an
+ * additive-only contract. The module in lib/referrals/openapi.ts stays complete and tested.
+ */
+const PUBLISH_AFFILIATE_OPENAPI = false;
 
 // Derive the document and all block shapes from the runtime validation contract.
 const productDocumentJsonSchema = zodToJsonSchema(ProductDocumentSchema, { $refStrategy: "none", target: "jsonSchema7" });
@@ -55,6 +63,7 @@ export const openApiSpec = {
       ...journeyPaths,
       ...privacyPaths,
       ...(PUBLISH_LIVE_OPENAPI ? livePaths : {}),
+      ...(PUBLISH_AFFILIATE_OPENAPI ? affiliatePaths : {}),
       "/api/v1/onboarding-status": {
         get: {
           operationId: "getOnboardingStatus",
@@ -441,6 +450,7 @@ export const openApiSpec = {
         ...journeySchemas,
         ...privacySchemas,
         ...(PUBLISH_LIVE_OPENAPI ? liveSchemas : {}),
+        ...(PUBLISH_AFFILIATE_OPENAPI ? affiliateSchemas : {}),
         PulseSummary: {
           type: "object",
           properties: {
