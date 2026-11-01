@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import type {
   LiveAttendeeRegistrationStatus,
@@ -94,6 +94,31 @@ export const operatorAuditLogs = sqliteTable(
   (t) => [
     index("operator_audit_logs_resource_idx").on(t.resource, t.createdAt),
     index("operator_audit_logs_actor_idx").on(t.actorUserId, t.createdAt),
+  ]
+);
+
+/**
+ * Manual entitlements granted by an operator with an approval. Kept apart from `entitlements` (which
+ * purchases write and refunds revoke), so a manual grant is never mistaken for a Polar order and a
+ * refund never ends a grant, nor a revoked grant a purchase. At most one live grant per user and key.
+ */
+export const entitlementGrants = sqliteTable(
+  "entitlement_grants",
+  {
+    id: id(),
+    userId: text("user_id").notNull(),
+    featureKey: text("feature_key").notNull(),
+    reason: text("reason").notNull(),
+    grantedBy: text("granted_by").notNull(),
+    approvalId: text("approval_id").notNull(),
+    validUntil: integer("valid_until", { mode: "timestamp_ms" }),
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    revokedBy: text("revoked_by"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("entitlement_grants_live_unique").on(t.userId, t.featureKey).where(sql`${t.revokedAt} is null`),
+    index("entitlement_grants_user_idx").on(t.userId, t.createdAt),
   ]
 );
 

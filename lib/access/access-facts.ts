@@ -1,6 +1,6 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { assets, entitlements, liveTickets, members, users } from "@/lib/db/schema";
+import { assets, entitlementGrants, entitlements, liveTickets, members, users } from "@/lib/db/schema";
 
 /**
  * Fresh facts `authorize()` reads on every call. Nothing here is cached, so a ban, refund, revoked
@@ -26,8 +26,24 @@ export async function loadUserFacts(db: AppDb, userId: string, now: Date): Promi
   return { emailVerified: row.emailVerified === true, banned, role: row.role };
 }
 
-/** True when the user holds an active, unexpired entitlement for `featureKey`. */
+/**
+ * True when the user holds an active, unexpired entitlement for `featureKey`: one written by a purchase
+ * (`entitlements`) or an unrevoked operator grant (`entitlement_grants`).
+ */
 export async function hasActiveEntitlement(db: AppDb, userId: string, featureKey: string, now: Date): Promise<boolean> {
+  const [grant] = await db
+    .select({ id: entitlementGrants.id })
+    .from(entitlementGrants)
+    .where(
+      and(
+        eq(entitlementGrants.userId, userId),
+        eq(entitlementGrants.featureKey, featureKey),
+        isNull(entitlementGrants.revokedAt),
+        or(isNull(entitlementGrants.validUntil), gt(entitlementGrants.validUntil, now))
+      )
+    )
+    .limit(1);
+  if (grant) return true;
   const [row] = await db
     .select({ id: entitlements.id })
     .from(entitlements)
