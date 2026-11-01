@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import type { ResolvedCaller } from "@/lib/auth-api-key";
 
 const resolveCallerMock = vi.fn<(headers: Headers) => Promise<ResolvedCaller | null>>();
@@ -129,6 +130,18 @@ describe("builder league access", () => {
     await expect(requireBuilderLeagueUser(request("POST"), "builder:write", local.db)).resolves.toMatchObject({ actorRole: "api" });
     resolveCallerMock.mockResolvedValue(caller("vip", "delegation"));
     await expect(requireBuilderLeagueUser(request(), "builder:read", local.db)).resolves.toMatchObject({ actorRole: "agent" });
+  });
+
+  it("refuses a banned paid member through the shared policy, hidden as 404 while the flag is off", async () => {
+    await local.db.update(users).set({ banned: true }).where(eq(users.id, "vip"));
+    try {
+      resolveCallerMock.mockResolvedValue(caller("vip"));
+      await expect(requireBuilderLeagueUser(request(), "builder:read", local.db)).rejects.toMatchObject({ status: 404 });
+      vi.stubEnv("BUILDER_LEAGUE_ENABLED", "true");
+      await expect(requireBuilderLeagueUser(request(), "builder:read", local.db)).rejects.toMatchObject({ status: 403, code: "banned" });
+    } finally {
+      await local.db.update(users).set({ banned: false }).where(eq(users.id, "vip"));
+    }
   });
 
   it("requires an admin session for admin routes", async () => {
