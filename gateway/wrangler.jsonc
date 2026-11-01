@@ -1,0 +1,29 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "nextlevelbuilder-gateway",
+  "account_id": "7ac87c90789159ae1b10b7d78f5dcc08",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "services": [
+    {
+      "binding": "WEB",
+      "service": "nextlevelbuilder-web"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "nextlevelbuilder-gateway-staging",
+      "services": [
+        {
+          "binding": "WEB",
+          "service": "nextlevelbuilder-web-staging"
+        }
+      ]
+    }
+  }
+}

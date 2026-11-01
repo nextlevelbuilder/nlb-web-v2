@@ -7,9 +7,17 @@ nextlevelbuilder.io runs as two Cloudflare Workers on the **hi@nextlevelbuilder.
 | production | `nextlevelbuilder-web` | `main` | https://nextlevelbuilder-web.hi-7ac.workers.dev | nextlevelbuilder.io, www |
 | staging | `nextlevelbuilder-web-staging` | `dev` | https://nextlevelbuilder-web-staging.hi-7ac.workers.dev | staging.nextlevelbuilder.io |
 
+The final domains are attached to a gateway Worker per environment, `nextlevelbuilder-gateway` and `nextlevelbuilder-gateway-staging` ([Edge gateway](#edge-gateway)). It forwards every request to the web Worker above. `mcp.nextlevelbuilder.io` stays on `nextlevelbuilder-web`.
+
 Each web Worker also serves the MCP server from [`packages/mcp`](../packages/mcp) at `/mcp`: https://nextlevelbuilder.io/mcp in production and https://staging.nextlevelbuilder.io/mcp on staging ([MCP server](#mcp-server)).
 
 Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Production is the top-level config, and staging is `env.staging`. What each binding is for: [system-architecture.md](./system-architecture.md#cloudflare-bindings).
+
+## Edge gateway
+
+[`gateway/worker.ts`](../gateway/worker.ts) is a few-KB Worker ([`gateway/wrangler.jsonc`](../gateway/wrangler.jsonc)) that forwards every request over the `WEB` service binding to the web Worker's default entrypoint. Service binding calls go through the web Worker's Workers Cache. Before forwarding, anonymous public page requests drop the visitor's cookies and pin `Accept-Language` to the path locale ([`lib/edge-cache-gateway.ts`](../lib/edge-cache-gateway.ts)), so visitors with different analytics cookies share one cached render. A hit is served without starting the web Worker's large isolate. Everything else is forwarded unchanged.
+
+CI deploys the gateway right after the web Worker. The custom domains were moved with the Workers custom-domain API (`PUT /accounts/{account}/workers/domains` with `override_existing_origin: true`), which reassigns a hostname without a gap: `staging.nextlevelbuilder.io` on 2026-11-01. To roll back, run the same call with `"service"` set to the web Worker (`nextlevelbuilder-web` or `nextlevelbuilder-web-staging`); the web Worker serves the domain directly as before.
 
 ## Wrangler access
 

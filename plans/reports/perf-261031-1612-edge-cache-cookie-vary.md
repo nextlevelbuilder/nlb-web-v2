@@ -1,6 +1,6 @@
 # Edge cache misses for returning visitors
 
-Status: open, needs a product decision. Date: 2026-10-31.
+Status: option A chosen on 2026-11-01 and shipped as the gateway Worker (see "Outcome"). Date: 2026-10-31.
 
 ## Summary
 
@@ -33,3 +33,20 @@ Either option should also drop `next-router-state-tree` from `Vary` for RSC requ
 
 1. A or B?
 2. If A: may the gateway take over the production custom domain, with the current Worker as a fallback route during rollout?
+
+## Outcome
+
+Option A is in `gateway/`. Its Worker bundle is about 3 KB. It forwards every request over a service binding to the web Worker's default entrypoint, which keeps its Workers Cache. Anonymous public page requests drop their cookies and get a pinned `Accept-Language` first. The web Worker itself is unchanged, and unprefixed paths that resolve to Vietnamese still reach next-intl for the `/vi` redirect.
+
+Staging after `staging.nextlevelbuilder.io` moved to `nextlevelbuilder-gateway-staging` (2026-11-01), each request with a different `_ga` and PostHog cookie:
+
+| Case | Result |
+|---|---|
+| `/`, `/mcp-server` | first MISS 2–5 s, then HIT 0.13–0.16 s |
+| `/blog`, `/vi` | HIT or UPDATING 0.11–0.22 s |
+| Real RSC navigation `/blog` → `/courses`, replayed with four different visitors | HIT 0.13–0.21 s |
+| `Accept-Language: vi` on `/` | 307 to `/vi` |
+| `/account` | `private, no-cache, no-store` |
+| `POST /mcp` initialize, `/api/auth/get-session`, OpenAPI, sitemap, static chunks | same status as the web Worker directly |
+
+RSC entries still vary on `next-router-state-tree`, so each source page and target page pair has its own entry, but that entry is now shared by all visitors.

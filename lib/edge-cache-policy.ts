@@ -30,8 +30,12 @@ const PUBLIC_PAGE_PATTERNS = [
 // better-auth's default cookie names; the `__Secure-` variant is used over HTTPS.
 const SESSION_COOKIE = /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/;
 
+export function hasSessionCookie(request: Request): boolean {
+  return SESSION_COOKIE.test(request.headers.get("Cookie") ?? "");
+}
+
 /** Strips the `/vi` locale prefix and reports whether it was present. */
-function splitLocale(pathname: string): { path: string; prefixed: boolean } {
+export function splitLocale(pathname: string): { path: string; prefixed: boolean } {
   if (pathname === "/vi") return { path: "/", prefixed: true };
   if (pathname.startsWith("/vi/")) return { path: pathname.slice(3), prefixed: true };
   return { path: pathname, prefixed: false };
@@ -57,7 +61,7 @@ function appendVary(headers: Headers, values: string[]): void {
 function isEdgeCacheable(request: Request, response: Response): boolean {
   if (request.method !== "GET" && request.method !== "HEAD") return false;
   if (response.status !== 200 || response.headers.has("Set-Cookie")) return false;
-  if (SESSION_COOKIE.test(request.headers.get("Cookie") ?? "")) return false;
+  if (hasSessionCookie(request)) return false;
   return isPublicPagePath(new URL(request.url).pathname);
 }
 
