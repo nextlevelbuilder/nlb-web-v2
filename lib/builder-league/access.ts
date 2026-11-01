@@ -121,8 +121,8 @@ export async function requireBuilderLeagueUser(
     { db }
   );
   if (!decision.allow) {
-    if (decision.reason === "no_entitlement") throw denied(flagEnabled, 403, "membership_required");
-    if (decision.reason === "unauthenticated") throw denied(flagEnabled, 401, "unauthorized");
+    // The caller is signed in here, so an account the policy cannot load reads as "no membership".
+    if (decision.reason === "no_entitlement" || decision.reason === "unauthenticated") throw denied(flagEnabled, 403, "membership_required");
     throw flagEnabled ? new BuilderApiError(403, decision.reason, "Not allowed") : notFoundError();
   }
   const access = await getViewerAccess(db, { id: caller.user.id, role: caller.user.role });
