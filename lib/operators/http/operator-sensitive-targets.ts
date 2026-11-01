@@ -88,11 +88,22 @@ export const orderRefundTargetSchema = z
   .object({ orderId: id, reason: z.enum(ORDER_REFUND_REASONS), amount: z.number().int().positive().nullable() })
   .strict();
 
-/** `order:<id>`: reason and amount (null = everything refundable) are bound to the approval. */
+/**
+ * `order:<id>`: reason and amount (null = everything refundable) are bound to the approval, together
+ * with the order's Polar id and currency read from the stored order, so the approver sees exactly
+ * which payment and currency the minor-unit amount refers to.
+ */
 export async function orderRefundTarget(db: AppDb, target: z.infer<typeof orderRefundTargetSchema>): Promise<SensitiveTarget> {
-  const [order] = await db.select({ id: orders.id }).from(orders).where(eq(orders.id, target.orderId)).limit(1);
+  const [order] = await db
+    .select({ id: orders.id, polarOrderId: orders.polarOrderId, currency: orders.currency })
+    .from(orders)
+    .where(eq(orders.id, target.orderId))
+    .limit(1);
   if (!order) throw operatorNotFound("Order");
-  return { resource: `order:${order.id}`, args: { orderId: order.id, reason: target.reason, amount: target.amount } };
+  return {
+    resource: `order:${order.id}`,
+    args: { orderId: order.id, polarOrderId: order.polarOrderId, currency: order.currency, reason: target.reason, amount: target.amount },
+  };
 }
 
 export const ledgerReverseTargetSchema = z.object({ entryId: id, reason: z.string().trim().min(5).max(1000) }).strict();

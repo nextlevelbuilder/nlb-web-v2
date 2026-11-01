@@ -29,7 +29,8 @@ MCP tool exposure (toolkits#19), a general task manager, new UI.
 | 2 | `feat/36-member-apis` | Courses catalogue/library, owned assets, my directory products, leaderboards, Builder League gate through `authorize()`; OpenAPI | merged (#90) |
 | 3 | `feat/36-operator-content` | operator Courses, assets, directory/moderation; OpenAPI | merged (#91) |
 | 4 | `feat/36-operator-accounts` | operator users/orgs, membership/entitlements (migration `entitlement_grants`), Polar commerce; OpenAPI | merged (#92) |
-| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | in review |
+| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | merged (#93) |
+| 6 | `feat/36-operator-commerce-reads` | operator subscriptions (read, cancel/resume through Polar), customers, purchased entitlements list, one directory product; refund approval binds Polar order id and currency; OpenAPI | in review |
 
 ## Sensitive actions added (approval required)
 `courses.video.archive`, `users.user.ban`, `membership.entitlement.grant`, `membership.entitlement.revoke`,
