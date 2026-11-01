@@ -89,3 +89,31 @@ export function listProducts(db: AppDb, filter: { status: string | null; limit: 
     .orderBy(desc(products.updatedAt))
     .limit(filter.limit);
 }
+
+/** One product with its current revision and recent submissions (with their moderation case). */
+export async function getProduct(db: AppDb, productId: string) {
+  const [product] = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+  if (!product) return null;
+  const [currentRevision, recentSubmissions] = await Promise.all([
+    product.currentRevisionId
+      ? db.select().from(productRevisions).where(eq(productRevisions.id, product.currentRevisionId)).limit(1).then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+    db
+      .select({
+        id: submissions.id,
+        revisionId: submissions.revisionId,
+        submitterId: submissions.submitterId,
+        status: submissions.status,
+        createdAt: submissions.createdAt,
+        reviewedAt: submissions.reviewedAt,
+        caseId: moderationCases.id,
+        caseStatus: moderationCases.status,
+      })
+      .from(submissions)
+      .leftJoin(moderationCases, eq(moderationCases.submissionId, submissions.id))
+      .where(eq(submissions.productId, productId))
+      .orderBy(desc(submissions.createdAt))
+      .limit(20),
+  ]);
+  return { ...product, currentRevision, submissions: recentSubmissions };
+}

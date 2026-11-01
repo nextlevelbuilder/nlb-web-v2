@@ -86,7 +86,7 @@ export const accountPaths: Record<string, unknown> = {
   "/api/v1/operator/commerce/orders/{id}/refund": {
     post: op(
       "Refund an order through Polar",
-      "Sensitive (`commerce.order.refund`, target `{ orderId, reason, amount }`; `amount` null refunds everything still refundable). Answers 202: Polar's `order.refunded` webhook updates the order and revokes what it paid for. `already_refunded`, `refund_amount_too_high` (409), `refund_failed` (502).",
+      "Sensitive (`commerce.order.refund`, target `{ orderId, reason, amount }`; `amount` null refunds everything still refundable; the approval also binds the stored Polar order id and currency). Answers 202: Polar's `order.refunded` webhook updates the order and revokes what it paid for. `already_refunded`, `refund_amount_too_high` (409), `refund_failed` (502).",
       {
         params: [pathId("id")],
         body: object(
@@ -97,6 +97,46 @@ export const accountPaths: Record<string, unknown> = {
         data: object({ orderId: str, refundId: str, refundStatus: str, amount: int, currency: str, orderStatus: str }),
       }
     ),
+  },
+  "/api/v1/operator/commerce/subscriptions": {
+    get: op("List subscriptions", "Stored Polar subscriptions, newest first; `?userId=`, `?customerId=`, `?status=`.", {
+      params: [{ name: "userId", in: "query", schema: str }, { name: "customerId", in: "query", schema: str }, { name: "status", in: "query", schema: str }, limitParam],
+      data: { type: "array", items: ref("OperatorSubscription") },
+    }),
+  },
+  "/api/v1/operator/commerce/subscriptions/{id}": {
+    get: op("Get a subscription", "With the linked user.", { params: [pathId("id")], data: ref("OperatorSubscription") }),
+  },
+  "/api/v1/operator/commerce/subscriptions/{id}/cancel": {
+    post: op(
+      "Cancel a subscription at period end",
+      "Asks Polar to end the subscription when the current period ends and stores the state Polar answers with; access lasts until then. `subscription_ended`, `already_canceling` (409), `subscription_update_failed` (502).",
+      { params: [pathId("id")], data: ref("OperatorSubscription") }
+    ),
+  },
+  "/api/v1/operator/commerce/subscriptions/{id}/resume": {
+    post: op("Resume a subscription", "Undoes a pending cancel through Polar. `subscription_ended`, `not_canceling` (409), `subscription_update_failed` (502).", {
+      params: [pathId("id")],
+      data: ref("OperatorSubscription"),
+    }),
+  },
+  "/api/v1/operator/commerce/customers": {
+    get: op("List customers", "Polar customers, newest first; `?userId=` only, so no email travels in a URL.", {
+      params: [{ name: "userId", in: "query", schema: str }, limitParam],
+    }),
+  },
+  "/api/v1/operator/commerce/customers/{id}": {
+    get: op("Get a customer", "With their stored orders and subscriptions.", { params: [pathId("id")] }),
+  },
+  "/api/v1/operator/membership/entitlements": {
+    get: op("List purchased entitlements", "Newest first; `?userId=`, `?featureKey=`, `?all=true` includes inactive ones. Manual grants are on `…/membership/users/{userId}`.", {
+      params: [
+        { name: "userId", in: "query", schema: str },
+        { name: "featureKey", in: "query", schema: str },
+        { name: "all", in: "query", schema: { type: "string", enum: ["true", "false"] } },
+        limitParam,
+      ],
+    }),
   },
   "/api/v1/operator/commerce/webhooks": {
     get: op("List problem webhook deliveries", "Polar deliveries that failed (`?status=failed`, default) or are unprocessed (`pending`). Payloads are never returned.", {
@@ -133,6 +173,14 @@ export const accountSchemas: Record<string, unknown> = {
     properties: {
       id: str, polarOrderId: str, polarProductId: str, productName: str, amount: { type: "string", description: "Minor units, as stored from Polar" }, currency: str, status: str,
       paidAt: nullableTime, createdAt: time, customerEmail: str, customerUserId: { type: ["string", "null"] },
+    },
+  },
+  OperatorSubscription: {
+    type: "object",
+    properties: {
+      id: str, polarSubscriptionId: str, polarProductId: str, productName: str, status: str, currentPeriodStart: nullableTime, currentPeriodEnd: nullableTime,
+      cancelAtPeriodEnd: { type: ["boolean", "null"] }, pastDueSince: nullableTime, endedAt: nullableTime, customerId: str, customerUserId: { type: ["string", "null"] },
+      createdAt: time, updatedAt: time,
     },
   },
 };

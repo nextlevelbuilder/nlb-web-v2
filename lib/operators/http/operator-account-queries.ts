@@ -4,7 +4,7 @@
  */
 import { and, desc, eq, isNotNull, like, or, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { customers, members, orders, organizations, users, webhookEvents } from "@/lib/db/schema";
+import { customers, entitlements, members, orders, organizations, subscriptions, users, webhookEvents } from "@/lib/db/schema";
 
 /** Escapes LIKE wildcards so a search term matches literally. */
 const likePrefix = (term: string) => `${term.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
@@ -104,6 +104,92 @@ export function listOrders(db: AppDb, filter: { userId: string | null; status: s
 export async function getOrder(db: AppDb, orderId: string) {
   const [row] = await db.select({ order: orders, customerEmail: customers.email, customerUserId: customers.userId }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(eq(orders.id, orderId)).limit(1);
   return row ?? null;
+}
+
+const subscriptionColumns = {
+  id: subscriptions.id,
+  polarSubscriptionId: subscriptions.polarSubscriptionId,
+  polarProductId: subscriptions.polarProductId,
+  productName: subscriptions.productName,
+  status: subscriptions.status,
+  currentPeriodStart: subscriptions.currentPeriodStart,
+  currentPeriodEnd: subscriptions.currentPeriodEnd,
+  cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
+  pastDueSince: subscriptions.pastDueSince,
+  endedAt: subscriptions.endedAt,
+  createdAt: subscriptions.createdAt,
+  updatedAt: subscriptions.updatedAt,
+  customerId: subscriptions.customerId,
+  customerUserId: customers.userId,
+};
+
+/** Stored Polar subscriptions, newest first: by linked user, customer or status. */
+export function listSubscriptions(db: AppDb, filter: { userId: string | null; customerId: string | null; status: string | null; limit: number }) {
+  const where: SQL[] = [];
+  if (filter.userId) where.push(eq(customers.userId, filter.userId));
+  if (filter.customerId) where.push(eq(subscriptions.customerId, filter.customerId));
+  if (filter.status) where.push(eq(subscriptions.status, filter.status));
+  return db
+    .select(subscriptionColumns)
+    .from(subscriptions)
+    .innerJoin(customers, eq(customers.id, subscriptions.customerId))
+    .where(where.length ? and(...where) : undefined)
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(filter.limit);
+}
+
+export async function getSubscription(db: AppDb, subscriptionId: string) {
+  const [row] = await db
+    .select({ subscription: subscriptions, customerUserId: customers.userId })
+    .from(subscriptions)
+    .innerJoin(customers, eq(customers.id, subscriptions.customerId))
+    .where(eq(subscriptions.id, subscriptionId))
+    .limit(1);
+  return row ?? null;
+}
+
+const customerColumns = {
+  id: customers.id,
+  email: customers.email,
+  name: customers.name,
+  polarCustomerId: customers.polarCustomerId,
+  userId: customers.userId,
+  createdAt: customers.createdAt,
+};
+
+/** Polar customers, newest first: by linked user only, so no email ever travels in a URL. */
+export function listCustomers(db: AppDb, filter: { userId: string | null; limit: number }) {
+  return db
+    .select(customerColumns)
+    .from(customers)
+    .where(filter.userId ? eq(customers.userId, filter.userId) : undefined)
+    .orderBy(desc(customers.createdAt))
+    .limit(filter.limit);
+}
+
+/** One customer with their stored orders and subscriptions. */
+export async function getCustomer(db: AppDb, customerId: string) {
+  const [customer] = await db.select(customerColumns).from(customers).where(eq(customers.id, customerId)).limit(1);
+  if (!customer) return null;
+  const [customerOrders, customerSubscriptions] = await Promise.all([
+    db.select(orderColumns).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)).limit(100),
+    listSubscriptions(db, { userId: null, customerId, status: null, limit: 100 }),
+  ]);
+  return { ...customer, orders: customerOrders, subscriptions: customerSubscriptions };
+}
+
+/** Entitlements written by purchases, newest first: by user, feature key, and active only unless `all`. */
+export function listEntitlements(db: AppDb, filter: { userId: string | null; featureKey: string | null; all: boolean; limit: number }) {
+  const where: SQL[] = [];
+  if (filter.userId) where.push(eq(entitlements.userId, filter.userId));
+  if (filter.featureKey) where.push(eq(entitlements.featureKey, filter.featureKey));
+  if (!filter.all) where.push(eq(entitlements.isActive, true));
+  return db
+    .select()
+    .from(entitlements)
+    .where(where.length ? and(...where) : undefined)
+    .orderBy(desc(entitlements.createdAt))
+    .limit(filter.limit);
 }
 
 /**

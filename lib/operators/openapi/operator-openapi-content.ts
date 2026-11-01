@@ -82,6 +82,11 @@ export const contentPaths: Record<string, unknown> = {
       params: [{ name: "status", in: "query", schema: { type: "string", pattern: "^[a-z_]{1,40}$" } }, limitParam],
     }),
   },
+  "/api/v1/operator/directory/products/{id}": {
+    get: op("Get a directory product", "Any status, with its current revision and its 20 most recent submissions and their moderation case.", {
+      params: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+    }),
+  },
   "/api/v1/operator/directory/moderation": {
     get: op("Moderation queue", "Cases with product and revision, highest priority first; `?status=` in_review (default), open or decided.", {
       params: [{ name: "status", in: "query", schema: { type: "string", enum: ["open", "in_review", "decided"], default: "in_review" } }, limitParam],
