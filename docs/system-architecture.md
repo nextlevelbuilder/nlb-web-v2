@@ -19,6 +19,7 @@ These decisions are recorded in `plans/reports/advisor-261013-1240-nlb-web-v2-re
 
 ## Request path
 
+0. The gateway Worker ([`gateway/worker.ts`](../gateway/worker.ts)) owns the public domains and forwards each request to this Worker over a service binding, through this Worker's Workers Cache. Anonymous public page requests lose visitor cookies and get `Accept-Language` pinned to the path locale first, so every visitor shares one cached render ([deployment-guide.md](./deployment-guide.md#edge-gateway)). [`worker.ts`](../worker.ts) sets the Cache-Control those entries follow ([`lib/edge-cache-policy.ts`](../lib/edge-cache-policy.ts)).
 1. [`middleware.ts`](../middleware.ts):
    - Rewrites `*.md` paths to `/api/markdown`. These are markdown twins of pages.
    - Passes everything else through next-intl locale routing ([`i18n/routing.ts`](../i18n/routing.ts)). English is unprefixed and Vietnamese lives under `/vi`. Detection uses the `NEXT_LOCALE` cookie, then `Accept-Language`.
