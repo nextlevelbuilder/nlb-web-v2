@@ -1,21 +1,7 @@
-import { BuilderEnvelopeSchema, BuilderErrorSchema } from "@nextlevelbuilder/contracts";
-import { ToolError, type ToolContext } from "../tool-context.js";
 import type { McpToolDefinition, resolveToolEnv } from "./index.js";
+import { bodyOf, idProp, limitProp, operatorSchema as schema, operatorToolFactory, pathId, type JsonSchemaProps } from "./operator-http.js";
 
 type ResolveToolEnv = typeof resolveToolEnv;
-type JsonSchemaProps = Record<string, unknown>;
-type Args = Record<string, unknown>;
-
-/** Tool arguments that select the endpoint and credentials rather than the request itself. */
-const CREDENTIAL_KEYS = ["api_url", "session_cookie"] as const;
-
-const credentialProps: JsonSchemaProps = {
-  api_url: { type: "string", description: "Allowed directory API endpoint (optional)" },
-  session_cookie: {
-    type: "string",
-    description: "Operator's Better Auth session cookie (or NLB_SESSION_COOKIE) for stdio and Worker callers. OAuth calls act as the signed-in operator and refuse it. API keys are refused."
-  }
-};
 
 const AUTH_NOTE = "Platform operator with the live:manage grant only: OAuth with the mcp:operator scope (offered only to operators at consent) or an operator's session cookie. API keys are refused and every call is audited.";
 const APPROVAL_NOTE = "Sensitive: needs approvalId of an approval another operator approved for exactly this target (live_admin_request_approval, then live_admin_decide_approval by a second operator). Without it the API answers 409 approval_required.";
@@ -25,109 +11,8 @@ const APPROVAL_STATUSES = ["pending", "approved", "rejected", "consumed", "expir
 const SENSITIVE_ACTIONS = ["live.ticket.refund", "live.event.cancel", "live.poll.override"] as const;
 const REFUND_REASONS = ["duplicate", "fraudulent", "customer_request", "service_disruption", "satisfaction_guarantee", "other"] as const;
 
-interface LiveCall {
-  method: "GET" | "POST" | "PATCH";
-  path: string;
-  query?: Record<string, string | number | undefined>;
-  body?: unknown;
-  /** The path names one item, so a 404 means it does not exist. */
-  resource?: boolean;
-}
-
-function isAnonymousWorker(context?: ToolContext): boolean {
-  return context !== undefined && !context.oauth && context.workerAuth !== true;
-}
-
-function resolveSessionCookie(args: Args, context?: ToolContext): string | undefined {
-  if (context?.oauth) return undefined;
-  if (typeof args.session_cookie === "string" && args.session_cookie.trim()) return args.session_cookie.trim();
-  return typeof process !== "undefined" ? process.env?.NLB_SESSION_COOKIE?.trim() || undefined : undefined;
-}
-
-/** Splits credentials from request arguments and refuses unknown or missing ones (the API refuses unknown body keys too). */
-function splitArgs(tool: string, inputSchema: McpToolDefinition["inputSchema"], args: Args): { credentials: Args; rest: Args } {
-  const credentials: Args = {};
-  const rest: Args = {};
-  const unknown: string[] = [];
-  for (const [key, value] of Object.entries(args)) {
-    if ((CREDENTIAL_KEYS as readonly string[]).includes(key)) {
-      if (value !== undefined && typeof value !== "string") throw new ToolError(`Invalid arguments: ${key} must be a string`, { details: [{ path: key, message: "Expected string" }] });
-      credentials[key] = value;
-    } else if (key in inputSchema.properties) {
-      if (value !== undefined) rest[key] = value;
-    } else {
-      unknown.push(key);
-    }
-  }
-  const missing = (inputSchema.required ?? []).filter((key) => rest[key] === undefined);
-  const details = [
-    ...unknown.map((path) => ({ path, message: "Unknown argument" })),
-    ...missing.map((path) => ({ path, message: "Required" }))
-  ];
-  if (details.length) {
-    throw new ToolError(`Invalid arguments for ${tool}: ${details.map((d) => `${d.path}: ${d.message}`).join("; ")}`, { details });
-  }
-  return { credentials, rest };
-}
-
-const LiveErrorSchema = BuilderErrorSchema;
-
-async function liveRequest(resolveEnv: ResolveToolEnv, credentials: Args, context: ToolContext | undefined, call: LiveCall): Promise<unknown> {
-  // The configured API key is never sent: operator routes refuse API keys outright.
-  const { apiUrl } = resolveEnv({ api_url: credentials.api_url }, context);
-  const headers: Record<string, string> = { Accept: "application/json" };
-  const cookie = resolveSessionCookie(credentials, context);
-  if (cookie) headers.Cookie = cookie;
-  if (call.body !== undefined) headers["Content-Type"] = "application/json";
-
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(call.query ?? {})) {
-    if (value !== undefined) params.set(key, String(value));
-  }
-  const search = params.size ? `?${params.toString()}` : "";
-
-  const response = await (context?.fetch ?? fetch)(`${apiUrl}${call.path}${search}`, {
-    method: call.method,
-    headers,
-    body: call.body !== undefined ? JSON.stringify(call.body) : undefined,
-    signal: AbortSignal.timeout(20000)
-  });
-  const text = await response.text();
-  let json: unknown;
-  try {
-    json = text ? JSON.parse(text) : {};
-  } catch {
-    json = undefined;
-  }
-  if (!response.ok) {
-    const parsed = LiveErrorSchema.safeParse(json);
-    const code = parsed.success ? parsed.data.error.code : undefined;
-    const message = parsed.success
-      ? parsed.data.error.message
-      : response.status === 404 && call.resource ? "Not found" : (text.trim().slice(0, 500) || response.statusText || "Request failed");
-    const data: Record<string, unknown> = { status: response.status };
-    if (code !== undefined) data.code = code;
-    if (parsed.success && parsed.data.error.details !== undefined) data.details = parsed.data.error.details;
-    if (response.status === 401 || code === "not_operator") {
-      data.hint = context?.oauth
-        ? "This account needs an unrevoked live:manage operator grant and a connection authorized with mcp:operator. Reconnect the MCP client after the grant is added."
-        : "Operator tools need an operator's signed-in session cookie (session_cookie or NLB_SESSION_COOKIE), or OAuth with mcp:operator.";
-    }
-    throw new ToolError(`NLB Live operator API error (HTTP ${response.status}${code ? ` ${code}` : ""}: ${message})`, data);
-  }
-  if (json === undefined) throw new Error(`NLB Live operator API returned a non-JSON response for ${call.path}`);
-  const envelope = BuilderEnvelopeSchema.safeParse(json);
-  if (!envelope.success) throw new Error(`NLB Live operator API response schema mismatch for ${call.path}: ${envelope.error.message}`);
-  return json;
-}
-
-const enc = encodeURIComponent;
-const pathId = (value: unknown) => enc(String(value));
-
 // --- JSON Schema fragments ---
 
-const idProp = (description: string) => ({ type: "string", minLength: 1, maxLength: 200, description });
-const limitProp = (max = 100) => ({ type: "integer", minimum: 1, maximum: max });
 const instantProp = (description: string) => ({ type: "string", format: "date-time", description: `${description}. ISO 8601 with an explicit offset, e.g. 2026-11-02T20:00:00+07:00` });
 const approvalIdProp = idProp("Id of an approved approval for this exact target (from live_admin_request_approval)");
 const title = { type: "string", maxLength: 200 };
@@ -155,15 +40,6 @@ const eventFieldProps: JsonSchemaProps = {
   recordingNoticeVi: longText(5000)
 };
 
-function schema(properties: JsonSchemaProps, required: string[] = []): McpToolDefinition["inputSchema"] {
-  return { type: "object", properties: { ...properties, ...credentialProps }, ...(required.length ? { required } : {}) };
-}
-
-/** Request arguments without the path id(s) the tool takes in snake_case. */
-function bodyOf(args: Args, ...pathKeys: string[]): Args {
-  return Object.fromEntries(Object.entries(args).filter(([key]) => !pathKeys.includes(key)));
-}
-
 const ADMIN = "/api/v1/live-admin";
 
 /**
@@ -172,25 +48,7 @@ const ADMIN = "/api/v1/live-admin";
  * cancellations and winner overrides, so no tool here can act alone on those.
  */
 export function createLiveOperatorTools(resolveEnv: ResolveToolEnv): McpToolDefinition[] {
-  function define(
-    name: string,
-    description: string,
-    inputSchema: McpToolDefinition["inputSchema"],
-    build: (args: Args) => LiveCall
-  ): McpToolDefinition {
-    return {
-      name,
-      description: `${description} ${AUTH_NOTE}`,
-      inputSchema,
-      handler: async (args, context) => {
-        if (isAnonymousWorker(context)) {
-          throw new ToolError(`Unauthorized: Tool '${name}' is for platform operators and requires a valid Worker authorization token.`, { status: 401 });
-        }
-        const { credentials, rest } = splitArgs(name, inputSchema, args);
-        return liveRequest(resolveEnv, credentials, context, build(rest));
-      }
-    };
-  }
+  const define = operatorToolFactory({ label: "NLB Live operator API", capability: "live:manage" }, resolveEnv, AUTH_NOTE);
 
   return [
     // --- Reads ---
