@@ -50,3 +50,13 @@ Staging after `staging.nextlevelbuilder.io` moved to `nextlevelbuilder-gateway-s
 | `POST /mcp` initialize, `/api/auth/get-session`, OpenAPI, sitemap, static chunks | same status as the web Worker directly |
 
 RSC entries still vary on `next-router-state-tree`, so each source page and target page pair has its own entry, but that entry is now shared by all visitors.
+
+Production after `nextlevelbuilder.io` and `www` moved to `nextlevelbuilder-gateway` (2026-11-01, release #84), each request with a different `_ga` and GA4 session cookie:
+
+| Case | Result |
+|---|---|
+| `/`, `/blog`, `/vi` (already warm) | HIT 0.13–0.36 s |
+| `/courses`, `/mcp-server`, `/vi/blog` | first MISS 2.8–5.1 s, then HIT 0.12–0.20 s |
+| `Accept-Language: vi` on `/`, `NEXT_LOCALE=vi` on `/courses` | 307 to the `/vi` path |
+| `/account` | `private, no-cache, no-store` |
+| `POST /mcp` initialize (main domain and `mcp.nextlevelbuilder.io`), `/api/auth/get-session`, `/api/openapi.json`, sitemap, robots, `llms.txt`, markdown twin, static chunk | 200 |
