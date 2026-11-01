@@ -77,6 +77,7 @@ describe("platform operator MCP tools", () => {
     for (const name of PLATFORM_OPERATOR_READ_TOOLS) expect(tools[name].annotations).toMatchObject({ readOnlyHint: true });
     expect(tools.operator_commerce_refund_order.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: true });
     expect(tools.operator_approvals_decide.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false });
+    expect(tools.operator_commerce_cancel_subscription.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false });
   });
 
   it("refuses anonymous HTTP callers and OAuth tokens without mcp:operator before any request", () => {
@@ -145,7 +146,15 @@ describe("platform operator MCP tools", () => {
     ["operator_users_get", { user_id: "u1" }, "GET", "/api/v1/operator/users/u1", {}],
     ["operator_users_list_orgs", { q: "nlb" }, "GET", "/api/v1/operator/users/orgs", { q: "nlb" }],
     ["operator_users_get_org", { org_id: "org1" }, "GET", "/api/v1/operator/users/orgs/org1", {}],
-    ["operator_membership_list_entitlements", { user_id: "u1" }, "GET", "/api/v1/operator/membership/users/u1", {}],
+    ["operator_commerce_list_subscriptions", { user_id: "u1", customer_id: "c1", status: "active" }, "GET", "/api/v1/operator/commerce/subscriptions", { userId: "u1", customerId: "c1", status: "active" }],
+    ["operator_commerce_get_subscription", { subscription_id: "s1" }, "GET", "/api/v1/operator/commerce/subscriptions/s1", {}],
+    ["operator_commerce_cancel_subscription", { subscription_id: "s1" }, "POST", "/api/v1/operator/commerce/subscriptions/s1/cancel", {}],
+    ["operator_commerce_resume_subscription", { subscription_id: "s1" }, "POST", "/api/v1/operator/commerce/subscriptions/s1/resume", {}],
+    ["operator_commerce_list_customers", { user_id: "u1", limit: 3 }, "GET", "/api/v1/operator/commerce/customers", { userId: "u1", limit: "3" }],
+    ["operator_commerce_get_customer", { customer_id: "c1" }, "GET", "/api/v1/operator/commerce/customers/c1", {}],
+    ["operator_membership_list_entitlements", { user_id: "u1", feature_key: "video:v1", all: true }, "GET", "/api/v1/operator/membership/entitlements", { userId: "u1", featureKey: "video:v1", all: "true" }],
+    ["operator_membership_get_user_access", { user_id: "u1" }, "GET", "/api/v1/operator/membership/users/u1", {}],
+    ["operator_directory_get_product", { product_id: "p1" }, "GET", "/api/v1/operator/directory/products/p1", {}],
     ["operator_directory_list_products", { status: "in_review" }, "GET", "/api/v1/operator/directory/products", { status: "in_review" }],
     ["operator_directory_list_moderation", { status: "open", limit: 20 }, "GET", "/api/v1/operator/directory/moderation", { status: "open", limit: "20" }],
     ["operator_approvals_list", { domain: "commerce", status: "approved" }, "GET", "/api/v1/operator/approvals", { domain: "commerce", status: "approved" }],
@@ -200,8 +209,8 @@ describe("platform operator MCP tools", () => {
 
   it("names the domain grant in the hint when an OAuth caller is not an operator of that domain", async () => {
     const fetchFn = mockFetch({ error: { code: "not_operator", message: "Operator access required" } }, 403);
-    const context = toolContextFor(oauth(["mcp:operator"], fetchFn), "operator_membership_list_entitlements", {});
-    const err = await failure(tool("operator_membership_list_entitlements").handler({ user_id: "u1" }, context));
+    const context = toolContextFor(oauth(["mcp:operator"], fetchFn), "operator_membership_get_user_access", {});
+    const err = await failure(tool("operator_membership_get_user_access").handler({ user_id: "u1" }, context));
     expect(err.data).toMatchObject({ status: 403, code: "not_operator" });
     expect(String(err.data.hint)).toContain("membership:manage");
   });

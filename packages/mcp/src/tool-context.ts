@@ -160,20 +160,31 @@ export const AFFILIATE_OPERATOR_WRITE_TOOLS = [
 export const PLATFORM_OPERATOR_READ_TOOLS = [
   "operator_commerce_list_orders",
   "operator_commerce_get_order",
+  "operator_commerce_list_subscriptions",
+  "operator_commerce_get_subscription",
+  "operator_commerce_list_customers",
+  "operator_commerce_get_customer",
   "operator_commerce_list_webhook_failures",
   "operator_users_list",
   "operator_users_get",
   "operator_users_list_orgs",
   "operator_users_get_org",
   "operator_membership_list_entitlements",
+  "operator_membership_get_user_access",
   "operator_directory_list_products",
+  "operator_directory_get_product",
   "operator_directory_list_moderation",
   "operator_approvals_list",
   "operator_approvals_get"
 ] as const;
 
-/** Platform operator writes (mcp:operator). The refund also needs a second operator's approval for the exact target. */
+/**
+ * Platform operator writes (mcp:operator). Subscription cancel and resume undo each other; the refund also
+ * needs a second operator's approval for the exact target.
+ */
 export const PLATFORM_OPERATOR_WRITE_TOOLS = [
+  "operator_commerce_cancel_subscription",
+  "operator_commerce_resume_subscription",
   "operator_commerce_refund_order",
   "operator_approvals_request",
   "operator_approvals_decide"
