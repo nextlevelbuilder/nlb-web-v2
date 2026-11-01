@@ -10,6 +10,7 @@ import { privacyPaths, privacySchemas } from "@/lib/builder-league/openapi/priva
 import { livePaths, liveSchemas } from "@/lib/live/openapi";
 import { affiliatePaths, affiliateSchemas } from "@/lib/referrals/openapi";
 import { operatorPaths, operatorSchemas } from "@/lib/operators/openapi";
+import { memberPaths, memberSchemas } from "@/lib/access/http/member-openapi";
 
 /**
  * Whether the NLB Live member and operator API is part of this public document. Off until Live
@@ -66,6 +67,7 @@ export const openApiSpec = {
       ...(PUBLISH_LIVE_OPENAPI ? livePaths : {}),
       ...(PUBLISH_AFFILIATE_OPENAPI ? affiliatePaths : {}),
       ...operatorPaths,
+      ...memberPaths,
       "/api/v1/onboarding-status": {
         get: {
           operationId: "getOnboardingStatus",
@@ -454,6 +456,7 @@ export const openApiSpec = {
         ...(PUBLISH_LIVE_OPENAPI ? liveSchemas : {}),
         ...(PUBLISH_AFFILIATE_OPENAPI ? affiliateSchemas : {}),
         ...operatorSchemas,
+        ...memberSchemas,
         PulseSummary: {
           type: "object",
           properties: {

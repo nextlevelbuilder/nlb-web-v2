@@ -15,6 +15,7 @@ import { getDb, type AppDb } from "@/lib/db";
 import { builderPilotMembers } from "@/lib/db/schema";
 import { resolveCaller, type ResolvedCaller } from "@/lib/auth-api-key";
 import type { McpDelegationContext } from "@/lib/auth-mcp-delegation";
+import { authorize, subjectFromCaller } from "@/lib/access/authorize";
 import { getCommunityTier } from "./membership";
 import { BuilderApiError, assertSameSite, fail, isSafeMethod } from "./http";
 import type { ActorRole, CommunityTier } from "./types";
@@ -110,6 +111,20 @@ export async function requireBuilderLeagueUser(
   });
   const flagEnabled = isBuilderLeagueEnabled();
   if (!caller?.user) throw denied(flagEnabled, 401, "unauthorized");
+  // The shared policy adds what `canUse` alone does not check: bans and the credential's scope.
+  const decision = await authorize(
+    {
+      subject: subjectFromCaller(caller, caller.authType === "delegation" ? { scopes: [DELEGATION_SCOPE[scope]] } : {}),
+      action: scope === "builder:write" ? "participate" : "read",
+      resource: { kind: "builder_league" },
+    },
+    { db }
+  );
+  if (!decision.allow) {
+    if (decision.reason === "no_entitlement") throw denied(flagEnabled, 403, "membership_required");
+    if (decision.reason === "unauthenticated") throw denied(flagEnabled, 401, "unauthorized");
+    throw flagEnabled ? new BuilderApiError(403, decision.reason, "Not allowed") : notFoundError();
+  }
   const access = await getViewerAccess(db, { id: caller.user.id, role: caller.user.role });
   if (!access.canUse) throw denied(flagEnabled, 403, "membership_required");
   assertSameSiteSessionWrite(request, caller);

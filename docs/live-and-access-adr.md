@@ -34,6 +34,8 @@ The runtime is a Cloudflare Worker on D1. D1 has no interactive transactions: on
 | `builder:league` | read, participate | signed-in, not banned, and Builder League `getViewerAccess().canUse` (pilot paid member while `BUILDER_LEAGUE_ENABLED` is off, every paid member once it is on, admins); `participate` needs a write scope |
 | `operator:<domain>` | manage | live `platform_operators` row with the exact `<domain>:manage` capability, via a session or an MCP delegation carrying `mcp:operator`; API keys never qualify |
 
+Member reads outside Live ask the same resolver per resource ([`lib/access/http/member-route.ts`](../lib/access/http/member-route.ts)): `GET /api/v1/courses/library` and `/courses/videos/{slug}` report `canWatch` from `video:<id>` watch, `/api/v1/assets[/{id}]` checks `org:<id>` read or `asset:<id>` download, `/api/v1/directory/mine` checks `org:<id>` read per organization, and `/api/v1/leaderboards` checks `leaderboard:<board>` read. The Builder League member gate (`requireBuilderLeagueUser`) also asks `builder:league` (`read`, or `participate` for writes), which adds the ban and scope checks to its membership rule.
+
 Fail closed: a missing user, banned user (ban not expired), revoked operator, unknown resource or a provider error is a deny. Read actions need a read or write scope; mutating actions need a write scope. Sessions carry all member scopes; API keys and delegations carry only what they were issued. Operator scopes are never default scopes, and a valid client token never escalates beyond the user's own current rights.
 
 ### Platform operators, approvals and audit
