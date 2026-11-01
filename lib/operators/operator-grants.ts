@@ -127,3 +127,13 @@ export async function revokeOperator(db: AppDb, userId: string, now: Date = new 
     .returning({ userId: platformOperators.userId });
   return changed.length === 1;
 }
+
+export type OperatorRow = typeof platformOperators.$inferSelect;
+
+/** Every operator row, live ones first, newest grant first. Revoked rows are kept for history. */
+export async function listOperators(db: AppDb): Promise<OperatorRow[]> {
+  return db
+    .select()
+    .from(platformOperators)
+    .orderBy(sql`${platformOperators.revokedAt} is not null`, sql`${platformOperators.grantedAt} desc`);
+}

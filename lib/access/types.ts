@@ -22,7 +22,7 @@ export interface AccessSubject {
 /**
  * Typed resources. String form (used in audit rows and entitlement keys):
  * `video:<id>`, `live:event:<id>`, `live:ticket:<eventId>`, `live:replay:<eventId>`, `live:poll:<roundId>`,
- * `asset:<id>`, `operator:<domain>`.
+ * `asset:<id>`, `org:<id>`, `builder:league`, `leaderboard:<board>`, `operator:<domain>`.
  */
 export type AccessResource =
   | { kind: "video"; id: string; polarProductId: string | null }
@@ -31,6 +31,12 @@ export type AccessResource =
   | { kind: "live_replay"; eventId: string }
   | { kind: "live_poll"; roundId: string }
   | { kind: "asset"; id: string }
+  /** An organization the subject belongs to (its products and assets are the subject's own). */
+  | { kind: "org"; id: string }
+  /** The Builder League as a whole: read its member surfaces or participate (submit, claim, confirm). */
+  | { kind: "builder_league" }
+  /** A public leaderboard: `directory` (product rankings) or a Builder League board key. */
+  | { kind: "leaderboard"; board: string }
   | { kind: "operator"; domain: OperatorDomain };
 
 export type AccessAction =
@@ -40,6 +46,7 @@ export type AccessAction =
   | "purchase"
   | "join"
   | "download"
+  | "participate"
   | "manage";
 
 export type OperatorDomain = "live" | "courses" | "assets" | "directory" | "users" | "membership" | "commerce" | "builder_league" | "community" | "affiliate" | "system";
@@ -78,6 +85,13 @@ export const SENSITIVE_OPERATOR_ACTIONS = [
   "affiliate.rules.publish",
   "operator.grant",
   "operator.revoke",
+  "courses.video.archive",
+  "users.user.ban",
+  "membership.entitlement.grant",
+  "membership.entitlement.revoke",
+  "commerce.order.refund",
+  "builder_league.ledger.reverse",
+  "builder_league.privacy.delete",
 ] as const;
 export type SensitiveOperatorAction = (typeof SENSITIVE_OPERATOR_ACTIONS)[number];
 
@@ -104,6 +118,10 @@ export type AccessBasis =
   | "live_ticket"
   | "live_replay_entitlement"
   | "verified_account"
+  /** The subject is a member of the organization that owns the resource. */
+  | "org_member"
+  /** Builder League access as decided by `getViewerAccess` (flag, pilot list, paid tier, admin). */
+  | "builder_league_member"
   | "operator_capability";
 
 export type DenyReason =
@@ -136,6 +154,12 @@ export function resourceKey(resource: AccessResource): string {
       return `live:poll:${resource.roundId}`;
     case "asset":
       return `asset:${resource.id}`;
+    case "org":
+      return `org:${resource.id}`;
+    case "builder_league":
+      return "builder:league";
+    case "leaderboard":
+      return `leaderboard:${resource.board}`;
     case "operator":
       return `operator:${resource.domain}`;
   }

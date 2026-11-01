@@ -25,7 +25,7 @@ export const WRITE_SCOPES: readonly string[] = ["mcp:write", "api:write"];
 export const LEGACY_API_KEY_SCOPES: readonly string[] = ["api:read", "api:write"];
 
 /** Member actions that change state and therefore need a write scope. `manage` is handled separately. */
-const MUTATING_ACTIONS: ReadonlySet<AccessAction> = new Set<AccessAction>(["vote", "purchase"]);
+const MUTATING_ACTIONS: ReadonlySet<AccessAction> = new Set<AccessAction>(["vote", "purchase", "participate"]);
 
 /** True when the subject's credential may perform a member (non-operator) action. */
 export function hasMemberScopeFor(subject: AccessSubject, action: AccessAction): boolean {
