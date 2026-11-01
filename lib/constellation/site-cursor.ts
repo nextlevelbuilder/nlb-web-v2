@@ -49,7 +49,23 @@ export function initSiteCursor(ring: HTMLElement, dot: HTMLElement): () => void 
       pair.y((e.clientY - r.top - r.height / 2) * 0.38);
     }
   };
-  const onOver = (e: PointerEvent) => ring.classList.toggle('is-hover', !!(e.target as Element | null)?.closest?.(HOVER_TARGETS));
+  // Embedded widgets (the Dewee chat) render in open shadow roots, where `html.has-cursor *` does not
+  // reach and their own `cursor: pointer` would show the native cursor next to ours.
+  const shadowSheet = new CSSStyleSheet();
+  shadowSheet.replaceSync('*, *::before, *::after { cursor: none !important; }');
+  const shadowRoots = new Set<ShadowRoot>();
+  const hideNativeCursorIn = (root: ShadowRoot | null | undefined) => {
+    if (!root || shadowRoots.has(root)) return;
+    shadowRoots.add(root);
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, shadowSheet];
+  };
+
+  const onOver = (e: PointerEvent) => {
+    hideNativeCursorIn((e.target as Element | null)?.shadowRoot);
+    // composedPath()[0] is the element inside a shadow root; e.target is retargeted to its host.
+    const target = e.composedPath()[0] as Element | undefined;
+    ring.classList.toggle('is-hover', !!target?.closest?.(HOVER_TARGETS));
+  };
   const onDown = () => ring.classList.add('is-down');
   const onUp = () => ring.classList.remove('is-down');
   const onLeave = () => { release(); gsap.to([ring, dot], { opacity: 0, duration: 0.3 }); };
@@ -71,6 +87,7 @@ export function initSiteCursor(ring: HTMLElement, dot: HTMLElement): () => void 
     html.removeEventListener('pointerleave', onLeave);
     html.removeEventListener('pointerenter', onEnter);
     html.classList.remove('has-cursor');
+    for (const root of shadowRoots) root.adoptedStyleSheets = root.adoptedStyleSheets.filter((sheet) => sheet !== shadowSheet);
     gsap.killTweensOf([ring, dot]);
   };
 }

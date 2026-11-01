@@ -110,7 +110,8 @@ html[data-theme="dark"] .graticule { opacity: .28; }
 main, .site-footer { position: relative; z-index: 2; }
 
 /* ---------- custom cursor (fine pointers only) ---------- */
-.cursor { position: fixed; left: 0; top: 0; z-index: 300; pointer-events: none; display: none; }
+/* Above the Dewee chat widget (z-index 2147483000), so the cursor stays visible over the chat panel. */
+.cursor { position: fixed; left: 0; top: 0; z-index: 2147483001; pointer-events: none; display: none; }
 html.has-cursor .cursor { display: block; }
 html.has-cursor, html.has-cursor * { cursor: none !important; }
 .cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--accent); }
