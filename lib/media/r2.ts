@@ -1,7 +1,7 @@
 import { getDb, type AppDb } from "@/lib/db";
 import { publicMediaUrl } from "@/lib/media/public-media-url";
 import { assets } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import crypto from "crypto";
 
 export const ALLOWED_MIME_TYPES = [
@@ -113,4 +113,18 @@ export async function promoteAssetToPublic(assetId: string, customDb?: AppDb) {
     .returning();
 
   return promoted;
+}
+
+/**
+ * Reject a staging asset after review: it is never promoted and stays private to its organization.
+ * Returns null when the asset is missing or no longer in staging.
+ */
+export async function rejectStagingAsset(assetId: string, customDb?: AppDb) {
+  const db = customDb || getDb();
+  const [rejected] = await db
+    .update(assets)
+    .set({ status: "rejected" })
+    .where(and(eq(assets.id, assetId), eq(assets.status, "staging")))
+    .returning();
+  return rejected ?? null;
 }

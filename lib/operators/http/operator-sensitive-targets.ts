@@ -13,7 +13,8 @@ import type { OperatorDomain, SensitiveOperatorAction } from "@/lib/access/types
 import { OPERATOR_DOMAINS } from "@/lib/access/types";
 import { isOperatorCapability } from "@/lib/operators/operator-grants";
 import { sensitiveActionDomain } from "@/lib/operators/operator-actions";
-import { operatorInvalid } from "@/lib/operators/operator-service-error";
+import { operatorInvalid, operatorNotFound } from "@/lib/operators/operator-service-error";
+import { getVideoBySlug } from "@/lib/courses/course-video-service";
 
 export interface SensitiveTarget {
   resource: string;
@@ -34,6 +35,15 @@ export function operatorGrantTarget(userId: string, capability: string): Sensiti
   return { resource: userResource(userId), args: { userId, capability } };
 }
 
+export const videoArchiveTargetSchema = z.object({ slug: id }).strict();
+
+/** `video:<id>`: archiving hides the video from new buyers; existing buyers keep watching. */
+export async function videoArchiveTarget(db: AppDb, slug: string): Promise<SensitiveTarget> {
+  const video = await getVideoBySlug(slug, db);
+  if (!video) throw operatorNotFound("Video");
+  return { resource: `video:${video.id}`, args: { slug } };
+}
+
 const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
   "operator.grant": (_db, target) => {
     const { userId, capability } = operatorGrantTargetSchema.parse(target);
@@ -43,6 +53,7 @@ const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
     const { userId, capability } = operatorGrantTargetSchema.parse(target);
     return operatorGrantTarget(userId, capability);
   },
+  "courses.video.archive": (db, target) => videoArchiveTarget(db, videoArchiveTargetSchema.parse(target).slug),
 };
 
 /** Sensitive actions whose approvals are requested and read through `/api/v1/operator/approvals`. */

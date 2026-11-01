@@ -68,6 +68,12 @@ export async function listPublishedVideos(db: AppDb): Promise<CourseVideoRow[]> 
     .orderBy(sql`${courseVideos.weekNumber} is null`, asc(courseVideos.weekNumber), desc(courseVideos.publishedAt));
 }
 
+/** Every video for operators, optionally one status, most recently updated first. */
+export async function listVideos(db: AppDb, status?: CourseVideoRow["status"]): Promise<CourseVideoRow[]> {
+  const query = db.select().from(courseVideos);
+  return (status ? query.where(eq(courseVideos.status, status)) : query).orderBy(desc(courseVideos.updatedAt));
+}
+
 export async function getVideoBySlug(slug: string, db: AppDb): Promise<CourseVideoRow | null> {
   const [video] = await db.select().from(courseVideos).where(eq(courseVideos.slug, slug)).limit(1);
   return video ?? null;

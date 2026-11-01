@@ -6,10 +6,11 @@
  */
 import { OPERATOR_DOMAINS } from "@/lib/access/types";
 import { OPERATOR_APPROVAL_ACTIONS } from "@/lib/operators/http/operator-sensitive-targets";
-import { operatorSchemas } from "./operator-openapi-schemas";
+import { operatorSchemas as coreSchemas } from "./operator-openapi-schemas";
+import { contentPaths, contentSchemas } from "./operator-openapi-content";
 import { envelope, errors, idParam, int, object, op, pagedEnvelope, ref, str } from "./operator-openapi-shared";
 
-export { operatorSchemas };
+export const operatorSchemas: Record<string, unknown> = { ...coreSchemas, ...contentSchemas };
 
 const domainParam = {
   name: "domain",
@@ -86,4 +87,4 @@ const corePaths: Record<string, unknown> = {
   },
 };
 
-export const operatorPaths: Record<string, unknown> = { ...corePaths };
+export const operatorPaths: Record<string, unknown> = { ...corePaths, ...contentPaths };
