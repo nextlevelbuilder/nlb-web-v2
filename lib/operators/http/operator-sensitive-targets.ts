@@ -15,7 +15,7 @@ import { isOperatorCapability } from "@/lib/operators/operator-grants";
 import { sensitiveActionDomain } from "@/lib/operators/operator-actions";
 import { operatorInvalid, operatorNotFound } from "@/lib/operators/operator-service-error";
 import { eq } from "drizzle-orm";
-import { orders, users } from "@/lib/db/schema";
+import { orders, scoreLedger, users } from "@/lib/db/schema";
 import { getVideoBySlug } from "@/lib/courses/course-video-service";
 import { GRANTABLE_FEATURE_KEY, getEntitlementGrant } from "@/lib/membership/entitlement-grants";
 import { ORDER_REFUND_REASONS } from "@/lib/commerce/order-refunds";
@@ -95,6 +95,22 @@ export async function orderRefundTarget(db: AppDb, target: z.infer<typeof orderR
   return { resource: `order:${order.id}`, args: { orderId: order.id, reason: target.reason, amount: target.amount } };
 }
 
+export const ledgerReverseTargetSchema = z.object({ entryId: id, reason: z.string().trim().min(5).max(1000) }).strict();
+
+/** `builder_league:ledger:<entryId>`: the reversal reason becomes the negative entry's reason. */
+export async function ledgerReverseTarget(db: AppDb, target: z.infer<typeof ledgerReverseTargetSchema>): Promise<SensitiveTarget> {
+  const [entry] = await db.select({ id: scoreLedger.id }).from(scoreLedger).where(eq(scoreLedger.id, target.entryId)).limit(1);
+  if (!entry) throw operatorNotFound("Ledger entry");
+  return { resource: `builder_league:ledger:${entry.id}`, args: { entryId: entry.id, reason: target.reason } };
+}
+
+export const privacyDeleteTargetSchema = z.object({ userId: id }).strict();
+
+/** `user:<id>`: deleting a member's Builder League data cannot be undone. */
+export function privacyDeleteTarget(userId: string): SensitiveTarget {
+  return { resource: userResource(userId), args: { userId } };
+}
+
 const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
   "operator.grant": (_db, target) => {
     const { userId, capability } = operatorGrantTargetSchema.parse(target);
@@ -109,6 +125,8 @@ const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
   "membership.entitlement.grant": (db, target) => entitlementGrantTarget(db, entitlementGrantTargetSchema.parse(target)),
   "membership.entitlement.revoke": (db, target) => entitlementRevokeTarget(db, entitlementRevokeTargetSchema.parse(target).grantId),
   "commerce.order.refund": (db, target) => orderRefundTarget(db, orderRefundTargetSchema.parse(target)),
+  "builder_league.ledger.reverse": (db, target) => ledgerReverseTarget(db, ledgerReverseTargetSchema.parse(target)),
+  "builder_league.privacy.delete": (_db, target) => privacyDeleteTarget(privacyDeleteTargetSchema.parse(target).userId),
 };
 
 /** Sensitive actions whose approvals are requested and read through `/api/v1/operator/approvals`. */

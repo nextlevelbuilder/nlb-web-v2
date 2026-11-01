@@ -27,9 +27,9 @@ MCP tool exposure (toolkits#19), a general task manager, new UI.
 |---|---|---|---|
 | 1 | `feat/36-operator-core` | generic operator route + errors, sensitive-target registry, `/api/v1/operator/{approvals,audit}`, new resource kinds (`asset`, `org`, `builder_league`, `leaderboard`) and the `asset:<id>` policy, ADR | merged (#88) |
 | 2 | `feat/36-member-apis` | Courses catalogue/library, owned assets, my directory products, leaderboards, Builder League gate through `authorize()`; OpenAPI | merged (#90) |
-| 3 | `feat/36-operator-content` | operator Courses, assets, directory/moderation; OpenAPI | open (#91) |
-| 4 | `feat/36-operator-accounts` | operator users/orgs, membership/entitlements (migration `entitlement_grants`), Polar commerce; OpenAPI | in review |
-| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | pending |
+| 3 | `feat/36-operator-content` | operator Courses, assets, directory/moderation; OpenAPI | merged (#91) |
+| 4 | `feat/36-operator-accounts` | operator users/orgs, membership/entitlements (migration `entitlement_grants`), Polar commerce; OpenAPI | open (#92) |
+| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | in review |
 
 ## Sensitive actions added (approval required)
 `courses.video.archive`, `users.user.ban`, `membership.entitlement.grant`, `membership.entitlement.revoke`,
