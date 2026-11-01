@@ -179,6 +179,25 @@ describe("MCP OAuth resource server", () => {
     expect(verified.payload).toMatchObject({ sub: "user-1", scope: "mcp:operator", method: "POST", path: "/api/v1/live-admin/events/evt%201/open-sales" });
   });
 
+  it("signs platform operator calls for mcp:operator and challenges tokens without it", async () => {
+    upstreamRequests = [];
+    const denied = await call("operator_commerce_list_orders", await token({ scope: "mcp:read mcp:write mcp:keys" }));
+    expect(denied.status).toBe(403);
+    expect(denied.response.headers.get("WWW-Authenticate")).toContain('scope="mcp:operator"');
+    expect((await call("operator_commerce_refund_order", undefined, { order_id: "o1", approvalId: "ap1", reason: "duplicate", amount: null })).status).toBe(401);
+    expect(upstreamRequests).toHaveLength(0);
+
+    const res = await call("operator_users_get", await token({ scope: "mcp:operator" }), { user_id: "u 1" });
+    expect(res.status).toBe(200);
+    expect(res.isError).toBe(false);
+    expect(upstreamRequests).toHaveLength(1);
+    const sent = upstreamRequests[0];
+    expect(sent.authorization).toBeUndefined();
+    expect(sent.cookie).toBeUndefined();
+    const verified = await verifyAssertion(sent.assertion!);
+    expect(verified.payload).toMatchObject({ sub: "user-1", scope: "mcp:operator", method: "GET", path: "/api/v1/operator/users/u%201" });
+  });
+
   it("answers 403 insufficient_scope without leaking identity into a later anonymous request", async () => {
     const keys = await call("list_api_keys", await token({ scope: "mcp:write" }));
     expect(keys.status).toBe(403);

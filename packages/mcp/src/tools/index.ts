@@ -4,6 +4,7 @@ import { createBlogTools } from "./blog.js";
 import { createBuilderLeagueTools } from "./builder-league.js";
 import { createCourseTools } from "./courses.js";
 import { createLiveOperatorTools } from "./live-operator.js";
+import { createPlatformOperatorTools } from "./platform-operator.js";
 import { createOnboardingTools } from "./onboarding.js";
 import {
   toServerDocumentSafe,
@@ -1068,5 +1069,6 @@ export const TOOLS: McpToolDefinition[] = [
   ...createOnboardingTools(resolveToolEnv),
   ...createCourseTools(resolveToolEnv),
   ...createLiveOperatorTools(resolveToolEnv),
+  ...createPlatformOperatorTools(resolveToolEnv),
   ...createAffiliateTools(resolveToolEnv)
 ];

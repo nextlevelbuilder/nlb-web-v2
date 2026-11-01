@@ -3,7 +3,7 @@ import type { PageLocale } from "./page-locale";
 /** A client the page shows connection steps for; the snippet itself lives in the page. */
 export type McpClientId = "claudeCode" | "claudeApp" | "configFile" | "local";
 
-export type McpToolGroupId = "directory" | "launch" | "traffic" | "keys" | "membership" | "admin";
+export type McpToolGroupId = "directory" | "launch" | "traffic" | "keys" | "membership" | "admin" | "operator";
 
 /** Copy of the /mcp-server page (the official MCP server introduction). */
 export type McpServerCopy = {
@@ -81,6 +81,7 @@ export const mcpServerCopy: Record<PageLocale, McpServerCopy> = {
       keys: { title: "API keys", access: "Sign in · mcp:keys", desc: "Manage the keys your scripts and CI use." },
       membership: { title: "Membership", access: "Sign in · mcp:read", desc: "Check your membership onboarding status." },
       admin: { title: "Blog and courses", access: "Admins only", desc: "Draft, publish and revise blog posts; upload course videos and transcripts." },
+      operator: { title: "Platform operations", access: "Operators only · mcp:operator", desc: "Read orders, accounts, entitlements and every directory listing (unlike the public list_products), run NLB Live and affiliate operations, and refund an order only after a second operator approves that exact refund. The site checks your grant for each domain (commerce:manage, users:manage and so on) on every call and audits it." },
     },
     promptsTitle: "Try asking",
     prompts: [
@@ -142,6 +143,7 @@ export const mcpServerCopy: Record<PageLocale, McpServerCopy> = {
       keys: { title: "API key", access: "Đăng nhập · mcp:keys", desc: "Quản lý key mà script và CI của bạn sử dụng." },
       membership: { title: "Membership", access: "Đăng nhập · mcp:read", desc: "Kiểm tra trạng thái onboarding membership." },
       admin: { title: "Blog và khóa học", access: "Chỉ admin", desc: "Soạn, xuất bản và chỉnh sửa bài blog; tải video khóa học và transcript." },
+      operator: { title: "Vận hành nền tảng", access: "Chỉ người vận hành · mcp:operator", desc: "Đọc đơn hàng, tài khoản, quyền truy cập và mọi listing trong directory (khác với list_products công khai), vận hành NLB Live và affiliate, và chỉ hoàn tiền một đơn sau khi người vận hành thứ hai duyệt đúng khoản hoàn đó. Website kiểm tra quyền của bạn theo từng mảng (commerce:manage, users:manage…) ở mỗi lệnh gọi và ghi audit." },
     },
     promptsTitle: "Thử hỏi agent",
     prompts: [

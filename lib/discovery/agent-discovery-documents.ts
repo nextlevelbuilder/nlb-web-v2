@@ -8,7 +8,8 @@
  *
  * Builder League (pilot-only behind `BUILDER_LEAGUE_ENABLED`) is described in all three from
  * ./builder-league-discovery.ts; its MCP tool names appear only on the server card. The NLB Live operator
- * tools (./live-operator-discovery.ts) are on the server card only, as their routes are not in OpenAPI.
+ * tools (./live-operator-discovery.ts) and the platform operator tools (./platform-operator-discovery.ts) are
+ * listed on the server card.
  *
  * The MCP facts mirror packages/mcp (server name, version, protocol versions served by MCP SDK v2)
  * and the `<site>/.well-known/oauth-protected-resource/mcp` document.
@@ -17,6 +18,7 @@ import { siteUrl } from "@/lib/seo";
 import { DISCOVERY_PATHS } from "./discovery-link-header";
 import { BUILDER_LEAGUE_AVAILABILITY, BUILDER_LEAGUE_MCP_TOOLS, BUILDER_LEAGUE_ROUTE_PREFIX, builderLeagueDiscovery } from "./builder-league-discovery";
 import { liveOperatorDiscovery } from "./live-operator-discovery";
+import { platformOperatorDiscovery } from "./platform-operator-discovery";
 
 export { DISCOVERY_PATHS };
 
@@ -52,7 +54,7 @@ export function mcpServerCard() {
     name: "io.nextlevelbuilder/directory",
     version: MCP_SERVER_VERSION,
     title: "Next Level Builders Directory",
-    description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding; platform operators also run NLB Live.",
+    description: "Use Next Level Builders from any MCP client: search, read and submit directory products, check rankings and traffic, manage API keys, blog posts, Builder League progress and membership onboarding; platform operators also run NLB Live and manage orders, accounts, entitlements and listings.",
     websiteUrl: `${site}/mcp-server`,
     repository: { url: TOOLKITS_REPOSITORY, source: "github", subfolder: "packages/mcp" },
     icons: [
@@ -76,6 +78,7 @@ export function mcpServerCard() {
         llmsFull: `${site}${DISCOVERY_PATHS.llmsFull}`,
         builderLeague: { ...builderLeagueDiscovery(`${site}${DISCOVERY_PATHS.openApi}`), tools: [...BUILDER_LEAGUE_MCP_TOOLS] },
         liveOperator: liveOperatorDiscovery(),
+        platformOperator: platformOperatorDiscovery(),
       },
     },
   };
