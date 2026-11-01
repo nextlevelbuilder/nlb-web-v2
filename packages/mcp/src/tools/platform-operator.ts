@@ -22,7 +22,8 @@ const domainProp = { type: "string", enum: [...APPROVAL_DOMAINS], description: "
 
 /**
  * Builds the platform operator tools over `/api/v1/operator/*` (scope `mcp:operator`): commerce, users,
- * membership and directory reads, plus the order refund behind a two-person approval. Distinct from the
+ * membership and directory reads, subscription cancel and resume, and the order refund behind a two-person
+ * approval. Distinct from the
  * public directory tools (`list_products`), which show only published listings. The web is the authority:
  * it checks the domain grant, audits every call, binds approvals to the exact target and calls Polar.
  */
@@ -46,6 +47,24 @@ export function createPlatformOperatorTools(resolveEnv: ResolveToolEnv): McpTool
     commerce("operator_commerce_get_order", "Get one stored Polar order with its customer's email and user id.",
       schema({ order_id: idProp("Order id") }, ["order_id"]),
       (a) => ({ method: "GET", path: `${OP}/commerce/orders/${pathId(a.order_id)}`, resource: true })),
+    commerce("operator_commerce_list_subscriptions", "List stored Polar subscriptions newest first, optionally of one user, customer or status.",
+      schema({ user_id: idProp("Only subscriptions of this user"), customer_id: idProp("Only subscriptions of this Polar customer"), status: statusFilter, limit: limitProp() }),
+      (a) => ({ method: "GET", path: `${OP}/commerce/subscriptions`, query: { userId: a.user_id as string | undefined, customerId: a.customer_id as string | undefined, status: a.status as string | undefined, limit: a.limit as number | undefined } })),
+    commerce("operator_commerce_get_subscription", "Get one stored Polar subscription with the linked user id.",
+      schema({ subscription_id: idProp("Subscription id") }, ["subscription_id"]),
+      (a) => ({ method: "GET", path: `${OP}/commerce/subscriptions/${pathId(a.subscription_id)}`, resource: true })),
+    commerce("operator_commerce_cancel_subscription", "Ask Polar to end a subscription at the current period end; access lasts until then and operator_commerce_resume_subscription undoes it. Audited.",
+      schema({ subscription_id: idProp("Subscription id") }, ["subscription_id"]),
+      (a) => ({ method: "POST", path: `${OP}/commerce/subscriptions/${pathId(a.subscription_id)}/cancel`, resource: true })),
+    commerce("operator_commerce_resume_subscription", "Ask Polar to keep a subscription that was set to end at the period end. Audited.",
+      schema({ subscription_id: idProp("Subscription id") }, ["subscription_id"]),
+      (a) => ({ method: "POST", path: `${OP}/commerce/subscriptions/${pathId(a.subscription_id)}/resume`, resource: true })),
+    commerce("operator_commerce_list_customers", "List Polar customers newest first, optionally of one user. There is no email filter, so no email ends up in a URL.",
+      schema({ user_id: idProp("Only the customer of this user"), limit: limitProp() }),
+      (a) => ({ method: "GET", path: `${OP}/commerce/customers`, query: { userId: a.user_id as string | undefined, limit: a.limit as number | undefined } })),
+    commerce("operator_commerce_get_customer", "Get one Polar customer with their stored orders and subscriptions.",
+      schema({ customer_id: idProp("Customer id") }, ["customer_id"]),
+      (a) => ({ method: "GET", path: `${OP}/commerce/customers/${pathId(a.customer_id)}`, resource: true })),
     commerce("operator_commerce_list_webhook_failures", "List Polar webhook deliveries that failed (default) or are still pending. No payloads.",
       schema({ status: { type: "string", enum: ["failed", "pending"] }, limit: limitProp() }),
       (a) => ({ method: "GET", path: `${OP}/commerce/webhooks`, query: { status: a.status as string | undefined, limit: a.limit as number | undefined } })),
@@ -75,7 +94,10 @@ export function createPlatformOperatorTools(resolveEnv: ResolveToolEnv): McpTool
       (a) => ({ method: "GET", path: `${OP}/users/orgs/${pathId(a.org_id)}`, resource: true })),
 
     // --- Membership ---
-    membership("operator_membership_list_entitlements", "What a user can reach: effective membership tier, entitlements written by purchases and manual grants (revoked ones included), kept apart so a grant never reads as a payment.",
+    membership("operator_membership_list_entitlements", "List entitlements written by purchases newest first, optionally of one user or feature key; active only unless all is true. Manual grants are per user in operator_membership_get_user_access.",
+      schema({ user_id: idProp("Only entitlements of this user"), feature_key: searchProp("Exact feature key, e.g. video:<id>"), all: { type: "boolean", description: "Include inactive entitlements" }, limit: limitProp() }),
+      (a) => ({ method: "GET", path: `${OP}/membership/entitlements`, query: { userId: a.user_id as string | undefined, featureKey: a.feature_key as string | undefined, all: a.all === undefined ? undefined : String(a.all), limit: a.limit as number | undefined } })),
+    membership("operator_membership_get_user_access", "What a user can reach: effective membership tier, entitlements written by purchases and manual grants (revoked ones included), kept apart so a grant never reads as a payment.",
       schema({ user_id: idProp("User id") }, ["user_id"]),
       (a) => ({ method: "GET", path: `${OP}/membership/users/${pathId(a.user_id)}`, resource: true })),
 
@@ -83,6 +105,9 @@ export function createPlatformOperatorTools(resolveEnv: ResolveToolEnv): McpTool
     directory("operator_directory_list_products", "List directory products of every organization in any status (drafts, in review, rejected, published). Use list_products for the public, published catalog.",
       schema({ status: { type: "string", pattern: "^[a-z_]{1,40}$", description: "Exact product status" }, limit: limitProp() }),
       (a) => ({ method: "GET", path: `${OP}/directory/products`, query: { status: a.status as string | undefined, limit: a.limit as number | undefined } })),
+    directory("operator_directory_get_product", "Get one directory product in any status with its current revision and recent submissions. Use get_product for the public listing.",
+      schema({ product_id: idProp("Product id") }, ["product_id"]),
+      (a) => ({ method: "GET", path: `${OP}/directory/products/${pathId(a.product_id)}`, resource: true })),
     directory("operator_directory_list_moderation", "List the moderation queue, highest priority first (default in_review). Decisions are made by a named human on the website, never by an agent.",
       schema({ status: { type: "string", enum: ["open", "in_review", "decided"] }, limit: limitProp() }),
       (a) => ({ method: "GET", path: `${OP}/directory/moderation`, query: { status: a.status as string | undefined, limit: a.limit as number | undefined } })),

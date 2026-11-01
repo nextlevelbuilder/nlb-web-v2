@@ -341,7 +341,8 @@ For platform operators. Every tool needs `mcp:operator` and calls `/api/v1/opera
 
 - **Credentials**: OAuth calls carry the MCP delegation only; `session_cookie`, `api_key` and an `api_url` other than the configured one are refused. Stdio and Worker callers send an operator session cookie (`session_cookie` or `NLB_SESSION_COOKIE`); API keys are never sent. `api_url` must be an allowed NLB endpoint.
 - **Bounded output**: `limit` is at most 100, and a response over 512 KiB is refused with `response_too_large` instead of being returned. Errors carry `status`, `code` and `details` from the API.
-- **Product management vs. the public catalog**: `operator_directory_list_products` lists every organization's products in any status; `list_products` stays the public, published catalog.
+- **Product management vs. the public catalog**: `operator_directory_list_products` and `operator_directory_get_product` cover every organization's products in any status; `list_products` and `get_product` stay the public, published catalog.
+- **Subscriptions**: `operator_commerce_cancel_subscription` asks Polar to end the subscription at the period end (access lasts until then); `operator_commerce_resume_subscription` undoes it. Both are audited and need no approval.
 - **Two-person refund**: `operator_commerce_refund_order` needs `approvalId`. Call `operator_approvals_request` with `domain: "commerce"`, `action: "commerce.order.refund"` and `target: { orderId, reason, amount }` (`amount` in minor units, or `null` for everything refundable); a different operator approves it with `operator_approvals_decide`. The approval binds that exact target, is single-use and expires (default 30 minutes), so a retried call cannot refund twice. The web then asks Polar; the `order.refunded` webhook updates the order and revokes what it paid for.
 - **Not tools on purpose**: moderation decisions (session-only on the web, a named human decides), bans, manual entitlement grants and revocations.
 
@@ -349,12 +350,16 @@ For platform operators. Every tool needs `mcp:operator` and calls `/api/v1/opera
 |---|---|
 | `operator_commerce_list_orders` | `GET /api/v1/operator/commerce/orders` (`user_id`, `status`, `limit`) |
 | `operator_commerce_get_order` | `GET …/commerce/orders/{id}` |
+| `operator_commerce_list_subscriptions` · `operator_commerce_get_subscription` | `GET …/commerce/subscriptions` (`user_id`, `customer_id`, `status`) · `GET …/commerce/subscriptions/{id}` |
+| `operator_commerce_cancel_subscription` · `operator_commerce_resume_subscription` | `POST …/commerce/subscriptions/{id}/cancel` · `…/resume` |
+| `operator_commerce_list_customers` · `operator_commerce_get_customer` | `GET …/commerce/customers` (`user_id`, no email filter) · `GET …/commerce/customers/{id}` |
 | `operator_commerce_list_webhook_failures` | `GET …/commerce/webhooks` (`failed` or `pending`, no payloads) |
 | `operator_commerce_refund_order` | `POST …/commerce/orders/{id}/refund` (approval, answers 202) |
 | `operator_users_list` · `operator_users_get` | `GET …/users` (`q`) · `GET …/users/{id}` |
 | `operator_users_list_orgs` · `operator_users_get_org` | `GET …/users/orgs` (`q`) · `GET …/users/orgs/{id}` |
-| `operator_membership_list_entitlements` | `GET …/membership/users/{userId}`: tier, purchased entitlements and manual grants |
-| `operator_directory_list_products` | `GET …/directory/products` (`status`, `limit`) |
+| `operator_membership_list_entitlements` | `GET …/membership/entitlements` (`user_id`, `feature_key`, `all`): purchased entitlements |
+| `operator_membership_get_user_access` | `GET …/membership/users/{userId}`: tier, purchased entitlements and manual grants |
+| `operator_directory_list_products` · `operator_directory_get_product` | `GET …/directory/products` (`status`, `limit`) · `GET …/directory/products/{id}` |
 | `operator_directory_list_moderation` | `GET …/directory/moderation` (`open`, `in_review`, `decided`) |
 | `operator_approvals_list` · `operator_approvals_request` | `GET` · `POST /api/v1/operator/approvals?domain=` |
 | `operator_approvals_get` · `operator_approvals_decide` | `GET …/approvals/{id}?domain=` · `POST …/approvals/{id}/decision?domain=` |
