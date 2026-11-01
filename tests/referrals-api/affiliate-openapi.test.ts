@@ -15,6 +15,8 @@ const MEMBER_PATHS = [
   "/api/v1/affiliates/commissions",
   "/api/v1/affiliates/payouts",
   "/api/v1/affiliates/payout-method",
+  "/api/v1/affiliates/verification",
+  "/api/v1/affiliates/tax-documents",
 ];
 
 const OPERATOR_PATHS = [
@@ -23,6 +25,8 @@ const OPERATOR_PATHS = [
   "/api/v1/affiliate-admin/affiliates",
   "/api/v1/affiliate-admin/affiliates/{id}/suspend",
   "/api/v1/affiliate-admin/affiliates/{id}/reinstate",
+  "/api/v1/affiliate-admin/affiliates/{id}/verification",
+  "/api/v1/affiliate-admin/affiliates/{id}/tax-documents",
   "/api/v1/affiliate-admin/conversions",
   "/api/v1/affiliate-admin/conversions/{id}/hold",
   "/api/v1/affiliate-admin/conversions/{id}/release",
@@ -66,6 +70,7 @@ describe("affiliate OpenAPI module", () => {
     const paths = affiliatePaths as Spec["paths"];
     expect(paths["/api/v1/affiliates/payout-method"].get.security).toEqual([{ SessionAuth: [] }]);
     expect(paths["/api/v1/affiliates/payout-method"].put.security).toEqual([{ SessionAuth: [] }]);
+    expect(paths["/api/v1/affiliates/verification"].post.security).toEqual([{ SessionAuth: [] }]);
     for (const [path, methods] of Object.entries(paths)) {
       for (const op of Object.values(methods)) {
         expect(op.operationId, path).toMatch(/^affiliate/);

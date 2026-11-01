@@ -57,6 +57,13 @@
       "when": 1793442886333,
       "tag": "0007_chat_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793505282196,
+      "tag": "0008_affiliate_risk_kyc_tax",
+      "breakpoints": true
     }
   ]
 }

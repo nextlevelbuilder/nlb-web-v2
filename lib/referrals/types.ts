@@ -65,4 +65,19 @@ export interface ProgramRules {
     otherBps: number | null;
   };
   termsVersion: string;
+  /** Fraud heuristic thresholds; missing in rules published before they existed (defaults apply). */
+  fraud?: FraudRules;
 }
+
+/** Thresholds of the automatic fraud heuristics; a matching conversion is accrued as `held`. */
+export interface FraudRules {
+  /** More than this many conversions for one affiliate inside the window is a velocity hit. */
+  velocityMaxConversions: number;
+  velocityWindowHours: number;
+  /** A device used by this many distinct referred buyers of one affiliate (this one included) is a cluster. */
+  deviceClusterMinBuyers: number;
+  deviceClusterWindowDays: number;
+}
+
+/** Why a conversion was held automatically by a fraud heuristic. */
+export type FraudSignal = "velocity" | "shared_instrument" | "device_cluster";

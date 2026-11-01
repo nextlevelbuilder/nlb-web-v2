@@ -27,3 +27,5 @@ export const payoutMethodSchema = z
     accountNumber: z.unknown().optional(),
   })
   .strict();
+
+export const verificationStartSchema = z.object({ locale: z.enum(["en", "vi"]).optional() }).strict();

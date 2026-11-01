@@ -22,11 +22,14 @@ export type ReferralErrorCode =
   | "payout_method_required"
   | "withholding_rule_missing"
   | "verification_required"
+  | "verification_not_required"
+  | "verification_rejected"
+  | "verification_unavailable"
   | "period_not_closed"
   | "nothing_to_pay"
   | "discount_failed";
 
-export type ReferralErrorStatus = 400 | 403 | 404 | 409 | 422 | 502;
+export type ReferralErrorStatus = 400 | 403 | 404 | 409 | 422 | 502 | 503;
 
 export class ReferralError extends Error {
   constructor(

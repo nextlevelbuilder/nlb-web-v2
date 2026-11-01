@@ -126,10 +126,15 @@ export const affiliateAttributions = sqliteTable(
     polarDiscountId: text("polar_discount_id"),
     polarCheckoutId: text("polar_checkout_id"),
     status: text("status").$type<AffiliateAttributionStatus>().notNull().default("pending"),
+    /** Keyed hash of the buyer's first-party visitor id at checkout (fraud heuristics); null without one. */
+    deviceHash: text("device_hash"),
     createdAt: createdAt(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("affiliate_attributions_buyer_idx").on(t.buyerUserId, t.createdAt)]
+  (t) => [
+    index("affiliate_attributions_buyer_idx").on(t.buyerUserId, t.createdAt),
+    index("affiliate_attributions_device_idx").on(t.affiliateId, t.deviceHash),
+  ]
 );
 
 /**
@@ -198,10 +203,15 @@ export const affiliatePayoutMethods = sqliteTable(
     payeeType: text("payee_type").$type<PayeeType>().notNull(),
     residency: text("residency").$type<PayeeResidency>().notNull(),
     status: text("status").$type<"active" | "archived">().notNull().default("active"),
+    /** Keyed hash of the normalized PayPal email or bank account, to spot one instrument shared by several affiliates. */
+    instrumentHash: text("instrument_hash"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("affiliate_payout_methods_affiliate_idx").on(t.affiliateId, t.status)]
+  (t) => [
+    index("affiliate_payout_methods_affiliate_idx").on(t.affiliateId, t.status),
+    index("affiliate_payout_methods_instrument_idx").on(t.instrumentHash),
+  ]
 );
 
 /**
@@ -241,6 +251,9 @@ export const affiliatePayoutItems = sqliteTable(
     serviceFeeMinor: integer("service_fee_minor").notNull(),
     /** Tax withheld under the documented rule for this payee; 0 until a rule is approved. */
     withholdingMinor: integer("withholding_minor").notNull(),
+    /** Rates applied, snapshot from the rules version of the batch (null on items created before they were recorded). */
+    serviceFeeBps: integer("service_fee_bps"),
+    withholdingBps: integer("withholding_bps"),
     netMinor: integer("net_minor").notNull(),
     status: text("status").$type<PayoutItemStatus>().notNull().default("pending"),
     payoutCurrency: text("payout_currency"),
@@ -266,9 +279,31 @@ export const affiliateVerifications = sqliteTable(
     provider: text("provider").notNull(),
     providerReference: text("provider_reference").notNull(),
     status: text("status").$type<VerificationStatus>().notNull(),
+    /** Provider decision labels (e.g. a reject reason code), never document data. */
+    statusDetail: text("status_detail"),
     verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("affiliate_verifications_affiliate_idx").on(t.affiliateId, t.status)]
+  (t) => [
+    index("affiliate_verifications_affiliate_idx").on(t.affiliateId, t.status),
+    uniqueIndex("affiliate_verifications_affiliate_provider").on(t.affiliateId, t.provider),
+    uniqueIndex("affiliate_verifications_provider_reference").on(t.provider, t.providerReference),
+  ]
+);
+
+/**
+ * Devices seen on an affiliate's own signed-in sessions, as keyed hashes of the first-party visitor id.
+ * A referred buyer checking out from one of these devices is likely the affiliate (fraud heuristics).
+ */
+export const affiliateDevices = sqliteTable(
+  "affiliate_devices",
+  {
+    id: id(),
+    affiliateId: text("affiliate_id").notNull(),
+    deviceHash: text("device_hash").notNull(),
+    createdAt: createdAt(),
+    lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [uniqueIndex("affiliate_devices_affiliate_device").on(t.affiliateId, t.deviceHash), index("affiliate_devices_device_idx").on(t.deviceHash)]
 );

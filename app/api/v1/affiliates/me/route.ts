@@ -6,18 +6,23 @@ import { affiliateSummary } from "@/lib/referrals/affiliate-read-models";
 import { enrollSchema } from "@/lib/referrals/http/affiliate-member-schemas";
 import { withReferralErrors } from "@/lib/referrals/http/referral-http-errors";
 import { assertAffiliatesEnabled, requireAffiliateCaller, requireEnrolledAffiliate } from "@/lib/referrals/http/referral-request-context";
+import { trackAffiliateSessionDevice } from "@/lib/referrals/risk-signals";
 
 export const dynamic = "force-dynamic";
 
-/** The caller's affiliate account: status, level, budget, balances and masked payout method. 404 `not_enrolled`. */
+/**
+ * The caller's affiliate account: status, level, budget, balances and masked payout method. 404
+ * `not_enrolled`. A browser session also records its device for the fraud heuristics.
+ */
 export async function GET(request: Request) {
   return withReferralErrors(async () => {
     assertAffiliatesEnabled();
     const db = getDb();
     const now = new Date();
-    const { userId } = await requireAffiliateCaller(request, db);
+    const { caller, userId } = await requireAffiliateCaller(request, db);
     const affiliate = await requireEnrolledAffiliate(db, userId);
-    return ok(await affiliateSummary(db, affiliate, now));
+    const response = ok(await affiliateSummary(db, affiliate, now));
+    return caller.authType === "session" ? trackAffiliateSessionDevice(db, affiliate.id, request, response, now) : response;
   });
 }
 
