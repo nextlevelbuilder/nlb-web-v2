@@ -46,6 +46,7 @@ Fail closed: a missing user, banned user (ban not expired), revoked operator, un
 - Every operator decision, allowed or denied, writes an append-only `operator_audit_logs` row with action, resource, argument hash, approval id and a non-personal summary. Two exceptions keep probing from flooding the table: anonymous denies are not written, and a signed-in caller who is denied access (any access deny reason, such as `not_operator`, `missing_capability` or `credential_not_allowed`) writes at most one deny row per action and reason per minute. Allows and approval events are always written.
 - Operator writes call domain services, never arbitrary SQL. Polar stays the source of truth for payments: a manual grant is never recorded as a Polar order.
 - Content operators: `/api/v1/operator/courses/videos` (list every status, create, patch, publish through Polar) with archiving only through the approval-gated `…/{slug}/archive` (`courses.video.archive`, target `{ slug }`, resource `video:<id>`); `/api/v1/operator/assets` (list, promote, reject; staging assets only); `/api/v1/operator/directory` (products, moderation queue, ranking snapshots). A moderation decision is session-only and recorded with the operator as the named human reviewer, because policy forbids an agent from approving a listing.
+- Account operators: `/api/v1/operator/users` (search, read with tier, capabilities and organizations; ban through `users.user.ban`, target `{ userId, reason, expiresAt }`, which also ends the account's sessions; unban without approval; `…/users/orgs`), `/api/v1/operator/membership` (a user's tier, purchased entitlements and grants; Polar resync; manual grants), `/api/v1/operator/commerce` (orders, refunds, failed or pending webhook deliveries without payloads). A manual grant (`membership.entitlement.grant`, target `{ userId, featureKey, validUntil }`, `video:<id>` or `live:replay:<eventId>` only) is an `entitlement_grants` row, never an order, purchase or `entitlements` row; `hasActiveEntitlement` honours unrevoked, unexpired grants, and `membership.entitlement.revoke` keeps the row as history. A refund (`commerce.order.refund`, target `{ orderId, reason, amount }`) only asks Polar and answers 202; the `order.refunded` webhook changes the order and revokes what it paid for.
 
 ### Live voting
 
@@ -95,7 +96,7 @@ OAuth 2.1 defaults for MCP clients (Authorization Code + PKCE S256, audience bin
 
 ## Data model
 
-Tables in [`lib/db/live-access-schema.ts`](../lib/db/live-access-schema.ts), migration `drizzle/migrations/0004_live_access.sql` (additive: new tables only). Payment and access stay canonical in `orders` and `entitlements`.
+Tables in [`lib/db/live-access-schema.ts`](../lib/db/live-access-schema.ts), migration `drizzle/migrations/0004_live_access.sql` (additive: new tables only). Payment and access stay canonical in `orders` and `entitlements`; manual operator grants live apart in `entitlement_grants` (`drizzle/migrations/0009_entitlement_grants.sql`), with at most one unrevoked grant per user and feature key.
 
 ## Consequences
 
