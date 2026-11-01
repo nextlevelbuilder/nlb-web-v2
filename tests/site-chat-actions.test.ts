@@ -60,6 +60,35 @@ describe("site chat page actions", () => {
     expect((listener.mock.calls[0][0] as CustomEvent).detail).toEqual({ plan: "premium", billing: "quarterly" });
   });
 
+  it("keeps every catalog result under the widget's 8192-character limit", async () => {
+    const courses = Array.from({ length: 80 }, (_, i) => ({
+      title: `NLB Weekly #${i + 1}: Xây dựng sản phẩm với Claude Code và đội ngũ agent`,
+      url: `https://nextlevelbuilder.io/vi/courses/nlb-weekly-${i + 1}-xay-dung-san-pham-voi-claude-code-va-doi-ngu-agent`,
+      locale: "vi",
+      priceUsd: 9,
+      durationMinutes: 110,
+      week: i + 1,
+    }));
+    const faq = Array.from({ length: 13 }, (_, i) => ({ question: `Câu hỏi ${i}?`, answer: "Trả lời ".repeat(40) }));
+    const catalog = { site: "https://nextlevelbuilder.io", plans: [], links: { courses: "https://nextlevelbuilder.io/vi/courses" }, courses, faq };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog))));
+    const { byName } = actions();
+
+    const offer = (await byName["site.catalog"].handler({}, ctx)) as Record<string, unknown>;
+    expect(offer).toMatchObject({ courseCount: 80, faqCount: 13 });
+    expect(offer).not.toHaveProperty("courses");
+
+    const all = (await byName["site.courses"].handler({}, ctx)) as { total: number; courses: unknown[]; more?: number };
+    expect(JSON.stringify(all).length).toBeLessThan(8192);
+    expect(all.total).toBe(80);
+    expect(all.more).toBe(80 - all.courses.length);
+
+    const one = (await byName["site.courses"].handler({ query: "weekly #7: xay dung" }, ctx)) as { courses: Array<{ slug: string }> };
+    expect(one.courses.map((course) => course.slug)).toEqual(["nlb-weekly-7-xay-dung-san-pham-voi-claude-code-va-doi-ngu-agent"]);
+
+    expect(JSON.stringify(await byName["site.faq"].handler({}, ctx)).length).toBeLessThan(8192);
+  });
+
   it("posts the lead with consent, locale and page", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "l1" }), { status: 201 }));
     vi.stubGlobal("fetch", fetchMock);

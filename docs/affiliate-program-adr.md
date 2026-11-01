@@ -138,11 +138,69 @@ so correctness comes from unique keys and conditional updates, not transactions.
   open; only a masked hint is readable. Setting a method is session-only. Operators reveal details only
   through an audited session route.
 - Withholding rates are part of the rules. Vietnamese rates ship as `null`, which blocks Vietnamese
-  payees until a tax adviser approves the rates. Bank payees also need a `verified` identity record;
-  eKYC is P2 and we store only the provider reference, never raw documents.
+  payees until a tax adviser approves the rates. Rates take effect only from a published rules
+  version: the built-in defaults (version 0) never supply a Vietnamese rate, even if edited in code.
+  Each payout item records the service fee and withholding rates it was computed with
+  (`service_fee_bps`, `withholding_bps`), so a later rules change never rewrites a recorded payout.
+  Bank payees also need a `verified` identity record (see eKYC below).
 - Member views never show buyer identity: a conversion is a date, plan and amounts. The member
   ledger omits an operator's free-text reason (`reason: null` on entries an operator wrote, such as
   holds and adjustments); system reasons such as `refund` stay.
+
+### Identity verification (eKYC)
+
+- Provider: **Sumsub**, behind the `EkycProvider` contract
+  ([`lib/referrals/ekyc/`](../lib/referrals/ekyc/)). We chose it because it supports Vietnamese
+  CCCD/passport capture with liveness in a hosted WebSDK link (no document ever reaches NLB), signs
+  webhooks with HMAC, and works from a Worker with plain `fetch`. A Vietnamese-only vendor (FPT.AI,
+  VNPT eKYC) would need our own capture UI and document upload, which we do not want to hold. Another
+  provider is a new adapter of the same contract.
+- Flow: a Vietnamese bank payee starts a check (`POST /api/v1/affiliates/verification`, session
+  only) and gets a 30-minute hosted link; the provider's signed webhook
+  (`/api/webhooks/ekyc/sumsub`, `X-Payload-Digest`) records the outcome. `GREEN` → `verified`;
+  `RED` + `FINAL` → `rejected` (an operator handles it); `RED` + `RETRY`, reset, pending or on hold
+  → `pending`; deactivated or deleted → `expired`. An event older than the stored decision changes
+  nothing.
+- Stored: one `affiliate_verifications` row per affiliate and provider with the provider applicant
+  id, status, decision labels (e.g. `RETRY,UNSATISFACTORY_PHOTOS`) and timestamps. Never documents,
+  OCR output, selfies or the name on the document. Member and operator views omit the applicant id
+  too.
+- `verification_required` blocks a Vietnamese bank payout until the status is `verified`, and blocks
+  it again if a later event rejects, resets or deactivates the applicant.
+- The adapter follows the published Sumsub API (request signing, applicant by external id, WebSDK
+  link, webhook digest) but has not run against a real Sumsub account: it needs a sandbox run before
+  `AFFILIATE_EKYC_ENABLED` is turned on anywhere.
+
+### Fraud heuristics
+
+Evaluated once when a conversion is created from a settled order. Any match accrues it as `held`
+with hold reason `risk:<signals>`; an operator releases or reverses it. Nothing is refused, so a
+false positive costs only review time. Thresholds are part of the rules (`fraud`, defaults below).
+
+- `velocity`: the affiliate already has 10 conversions in the last 24 hours.
+- `shared_instrument`: another affiliate registered the same payout instrument (PayPal email or
+  bank name and account number), active or archived. Polar does not expose a buyer card
+  fingerprint to us, so the payout instrument is the payment instrument we can compare; it catches
+  one person running several affiliate accounts.
+- `device_cluster`: the buyer checked out from a browser seen on the affiliate's own signed-in
+  session, or 2 distinct referred buyers of the affiliate used the same browser within 90 days.
+- Signals are keyed hashes, never raw values: HMAC-SHA256 with a key derived (HKDF) from
+  `ONBOARDING_ENCRYPTION_KEY`. The device signal is the first-party visitor cookie `nlb_wv`, set on
+  an affiliate's dashboard visit unless the browser sends Global Privacy Control or Do Not Track,
+  and recorded on the attribution snapshot at checkout. We store no IP address or user agent.
+- The checks read state before the conversion is written, so concurrent conversions can miss each
+  other. That is acceptable for a review heuristic; no money invariant depends on it.
+
+### Tax documents
+
+- `GET /api/v1/affiliates/tax-documents?year=&format=json|csv` (and the audited operator twin under
+  `/api/v1/affiliate-admin/affiliates/{id}/tax-documents`) returns a yearly withholding statement:
+  every paid payout of the tax year (Vietnam time, UTC+7) with gross, service fee, tax withheld, the
+  recorded rates, payout currency, FX rate and external reference, plus totals and a deterministic
+  document number `NLB-AFF-WHT-<year>-<affiliate>`. `final` turns true once the year has ended.
+- It is built only from paid items, so it never shows an unapproved rate. It is the data source for
+  the official withholding certificate finance issues through its registered e-invoice system, not
+  that certificate.
 
 ### Interfaces
 
@@ -159,6 +217,9 @@ so correctness comes from unique keys and conditional updates, not transactions.
 - `AFFILIATES_ENABLED`: member and public surfaces 404 and checkout attribution is off while false.
   Operator APIs and maturation run regardless. Production `false`, staging `true`.
 - `AFFILIATE_PAYOUTS_ENABLED`: recording payments. `false` everywhere until the gates below pass.
+- `AFFILIATE_EKYC_ENABLED`: starting checks and the Sumsub webhook (404 while off). `false`
+  everywhere until the Sumsub sandbox run passes; needs the `SUMSUB_*` secrets. While off, Vietnamese
+  bank payouts stay blocked by `verification_required`.
 
 ## Launch gates
 
@@ -166,20 +227,25 @@ so correctness comes from unique keys and conditional updates, not transactions.
    refund and cookie notices. Bump `AFFILIATE_TERMS_VERSION` if the text changes.
 2. Finance review of fees, threshold and the reconciliation report on staging data.
 3. Tax adviser approval of Vietnamese withholding rates (publish rules with the rates).
-4. Then set `AFFILIATES_ENABLED=true` in production, publish the OpenAPI paths, and later
+4. Sumsub account, level and webhook configured, `SUMSUB_*` secrets set, a sandbox run of the whole
+   flow, then `AFFILIATE_EKYC_ENABLED=true` (needed only for Vietnamese bank payees).
+5. Then set `AFFILIATES_ENABLED=true` in production, publish the OpenAPI paths, and later
    `AFFILIATE_PAYOUTS_ENABLED=true` before the first payout run.
 
 ## Phases
 
 - **P1 (this ADR):** rules, links, attribution, ledger, payouts workflow, REST, MCP/CLI parity, UI,
   policies, flags off in production.
-- **P2:** eKYC provider for bank payees, approved withholding, fraud heuristics (velocity, shared
-  payment instruments, device clusters), affiliate-facing tax documents.
+- **P2 (built, flags off):** eKYC adapter for bank payees, published-rules-only withholding with
+  recorded rates, fraud heuristics (velocity, shared payment instruments, device clusters),
+  affiliate-facing tax documents. The launch gates above still apply.
 
 ## Data model
 
 [`lib/db/affiliate-schema.ts`](../lib/db/affiliate-schema.ts), migration
-`drizzle/migrations/0005_affiliate_program.sql` (additive).
+`drizzle/migrations/0005_affiliate_program.sql` (additive); P2 adds
+`drizzle/migrations/0008_affiliate_risk_kyc_tax.sql` (additive: `affiliate_devices`, device and
+instrument hashes, recorded payout rates, verification detail and uniqueness).
 
 ## Consequences
 

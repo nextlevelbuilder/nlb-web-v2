@@ -1,5 +1,6 @@
 import type { PageAction } from 'dewee-webchat';
 import { OPEN_CHECKOUT_EVENT } from '@/components/checkout/use-checkout-deep-link';
+import type { ChatCatalog } from '@/lib/chat/chat-catalog';
 import { localizedPath } from '@/lib/seo';
 
 /** Pages the agent may open. Slugged pages take a `slug` that matches SLUG. */
@@ -31,6 +32,48 @@ function stripLocale(pathname: string): string {
 }
 
 /**
+ * The widget replaces an action result longer than 8192 characters with `{ truncated: true }`, so the
+ * catalog is served in parts and the course list stops below this budget, saying how many it left out.
+ */
+const COURSES_RESULT_BUDGET = 7000;
+
+async function fetchCatalog(locale: string, signal: AbortSignal): Promise<ChatCatalog> {
+  const response = await fetch(`/api/chat/catalog?locale=${locale}`, { signal });
+  if (!response.ok) throw new Error('Catalog unavailable');
+  return response.json();
+}
+
+function fold(text: string): string {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
+}
+
+export function listCourses(catalog: ChatCatalog, query: string) {
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  const matches = catalog.courses.filter((course) => words.every((word) => fold(course.title).includes(word)));
+  const courses = [];
+  let size = 0;
+  for (const course of matches) {
+    const item = {
+      title: course.title,
+      slug: course.url.slice(course.url.lastIndexOf('/') + 1),
+      language: course.locale,
+      priceUsd: course.priceUsd,
+      minutes: course.durationMinutes,
+      week: course.week,
+    };
+    size += JSON.stringify(item).length + 1;
+    if (size > COURSES_RESULT_BUDGET) break;
+    courses.push(item);
+  }
+  return {
+    coursesUrl: `${catalog.links.courses}/`,
+    total: matches.length,
+    courses,
+    ...(courses.length < matches.length ? { more: matches.length - courses.length, hint: 'Pass a query to narrow the list.' } : {}),
+  };
+}
+
+/**
  * Page actions the Dewee agent can call. Agent arguments are untrusted: every handler validates them
  * and only builds same-site URLs. Leads are `mutate`, so the widget asks the visitor before saving,
  * and that approval is the consent recorded with the lead.
@@ -40,14 +83,35 @@ export function buildSiteChatActions({ locale, push }: SiteChatActionDeps): Page
     {
       name: 'site.catalog',
       description:
-        'Current plans (Premium, VIP) with prices, features, seats left and checkout links; published courses with links and prices; FAQ; key page links. Call this before quoting any price, feature or link.',
+        'Current plans (Premium, VIP) with prices, features, seats left and checkout links; refund guarantee; which plans include courses; key page links. Call this before quoting any price, feature or link. Courses and FAQ have their own actions.',
       parameters: { type: 'object', properties: {}, additionalProperties: false },
       sensitivity: 'read',
       handler: async (_args, ctx) => {
-        const response = await fetch(`/api/chat/catalog?locale=${locale}`, { signal: ctx.signal });
-        if (!response.ok) throw new Error('Catalog unavailable');
-        return response.json();
+        const { courses, faq, ...offer } = await fetchCatalog(locale, ctx.signal);
+        return { ...offer, courseCount: courses.length, faqCount: faq.length };
       },
+    },
+    {
+      name: 'site.courses',
+      description:
+        'Published course videos: title, slug, language, price in USD, length and week. A course link is coursesUrl + slug. Pass query to filter by words in the title.',
+      parameters: {
+        type: 'object',
+        properties: { query: { type: 'string', maxLength: 100 } },
+        additionalProperties: false,
+      },
+      sensitivity: 'read',
+      handler: async (args: { query?: unknown }, ctx) => {
+        const catalog = await fetchCatalog(locale, ctx.signal);
+        return listCourses(catalog, typeof args.query === 'string' ? args.query : '');
+      },
+    },
+    {
+      name: 'site.faq',
+      description: 'Frequently asked questions with answers (refunds, access, community, payment). Call before answering a policy question.',
+      parameters: { type: 'object', properties: {}, additionalProperties: false },
+      sensitivity: 'read',
+      handler: async (_args, ctx) => ({ faq: (await fetchCatalog(locale, ctx.signal)).faq }),
     },
     {
       name: 'site.navigate',

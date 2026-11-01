@@ -13,6 +13,13 @@ const SENSITIVE_ACTION_DOMAIN: Record<SensitiveOperatorAction, OperatorDomain> =
   "affiliate.rules.publish": "affiliate",
   "operator.grant": "system",
   "operator.revoke": "system",
+  "courses.video.archive": "courses",
+  "users.user.ban": "users",
+  "membership.entitlement.grant": "membership",
+  "membership.entitlement.revoke": "membership",
+  "commerce.order.refund": "commerce",
+  "builder_league.ledger.reverse": "builder_league",
+  "builder_league.privacy.delete": "builder_league",
 };
 
 export function isSensitiveOperatorAction(action: string): action is SensitiveOperatorAction {

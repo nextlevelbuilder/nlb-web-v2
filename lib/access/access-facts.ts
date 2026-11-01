@@ -1,6 +1,6 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { entitlements, liveTickets, users } from "@/lib/db/schema";
+import { assets, entitlements, liveTickets, members, users } from "@/lib/db/schema";
 
 /**
  * Fresh facts `authorize()` reads on every call. Nothing here is cached, so a ban, refund, revoked
@@ -10,18 +10,20 @@ import { entitlements, liveTickets, users } from "@/lib/db/schema";
 export interface SubjectUserFacts {
   emailVerified: boolean;
   banned: boolean;
+  /** Better Auth role; only the Builder League access rule reads it (its admins keep access). */
+  role: string;
 }
 
 /** Identity facts for a user, or null when the user does not exist. A ban counts until `ban_expires`. */
 export async function loadUserFacts(db: AppDb, userId: string, now: Date): Promise<SubjectUserFacts | null> {
   const [row] = await db
-    .select({ emailVerified: users.emailVerified, banned: users.banned, banExpires: users.banExpires })
+    .select({ emailVerified: users.emailVerified, banned: users.banned, banExpires: users.banExpires, role: users.role })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
   if (!row) return null;
   const banned = Boolean(row.banned) && (!row.banExpires || row.banExpires.getTime() > now.getTime());
-  return { emailVerified: row.emailVerified === true, banned };
+  return { emailVerified: row.emailVerified === true, banned, role: row.role };
 }
 
 /** True when the user holds an active, unexpired entitlement for `featureKey`. */
@@ -49,4 +51,31 @@ export async function hasActiveLiveTicket(db: AppDb, userId: string, eventId: st
     .where(and(eq(liveTickets.eventId, eventId), eq(liveTickets.userId, userId), eq(liveTickets.status, "active")))
     .limit(1);
   return Boolean(row);
+}
+
+/** True when the user has a membership row in the organization. */
+export async function isOrgMember(db: AppDb, userId: string, orgId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: members.id })
+    .from(members)
+    .where(and(eq(members.organizationId, orgId), eq(members.userId, userId)))
+    .limit(1);
+  return Boolean(row);
+}
+
+export interface AssetFacts {
+  orgId: string;
+  /** Promoted to the public CDN path (`approved` with a public URL). */
+  isPublic: boolean;
+}
+
+/** Ownership and visibility of an uploaded asset, or null when it does not exist. */
+export async function loadAssetFacts(db: AppDb, assetId: string): Promise<AssetFacts | null> {
+  const [row] = await db
+    .select({ orgId: assets.orgId, status: assets.status, publicUrl: assets.publicUrl })
+    .from(assets)
+    .where(eq(assets.id, assetId))
+    .limit(1);
+  if (!row) return null;
+  return { orgId: row.orgId, isPublic: row.status === "approved" && Boolean(row.publicUrl) };
 }

@@ -9,6 +9,7 @@ import type { AppDb } from "@/lib/db";
 import { affiliateAttributions, affiliateConversions } from "@/lib/db/schema";
 import { bucketBalanceSql, ledgerInsertSelect, recordLedgerMove, reversedTotalSql } from "./commission-ledger";
 import { AFFILIATE_METADATA_KEY } from "./affiliate-checkout";
+import { evaluateConversionRisk, riskHoldReason } from "./fraud-heuristics";
 import { commissionMinor, reversalTarget } from "./program-math";
 import { getActiveRules } from "./program-rules";
 import { ReferralError, referralNotFound } from "./referral-errors";
@@ -80,7 +81,7 @@ async function findConversionByOrder(db: AppDb, polarOrderId: string): Promise<C
   return row ?? null;
 }
 
-/** Reasons to freeze a conversion for review instead of accruing it as normal. */
+/** Snapshot mismatches that freeze a conversion for review instead of accruing it as normal. */
 function holdReasonFor(attribution: typeof affiliateAttributions.$inferSelect, order: PolarOrderForReferral, currency: string): string | null {
   const productId = order.product_id ?? order.product?.id ?? null;
   if (productId !== attribution.polarProductId) return "product_mismatch";
@@ -99,7 +100,12 @@ async function createConversion(
   now: Date
 ): Promise<ConversionRow | null> {
   const { rules } = await getActiveRules(db);
-  const holdReason = holdReasonFor(attribution, order, rules.currency);
+  // A snapshot mismatch wins; otherwise the fraud heuristics may hold it (`risk:<signals>`).
+  const holdReason =
+    holdReasonFor(attribution, order, rules.currency) ??
+    riskHoldReason(
+      await evaluateConversionRisk(db, rules, { affiliateId: attribution.affiliateId, buyerUserId: attribution.buyerUserId, deviceHash: attribution.deviceHash, now })
+    );
   const subtotal = int(order.subtotal_amount);
   const discount = int(order.discount_amount);
   const net = order.net_amount === undefined ? Math.max(0, subtotal - discount) : int(order.net_amount);

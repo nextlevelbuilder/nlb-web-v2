@@ -36,6 +36,8 @@ const time = { type: "string", format: "date-time" };
 const nullableTime = { type: ["string", "null"], format: "date-time" };
 
 const idParam = { name: "id", in: "path", required: true, schema: str };
+const yearParam = { name: "year", in: "query", required: false, schema: { type: "integer", minimum: 2026 }, description: "Tax year in Vietnam time (UTC+7); default the current year" };
+const formatParam = { name: "format", in: "query", required: false, schema: { type: "string", enum: ["json", "csv"], default: "json" }, description: "`csv` returns a `text/csv` attachment instead of the JSON envelope" };
 const limitParam = (fallback: number, max: number) => ({ name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: max, default: fallback } });
 const idempotencyHeader = { name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", maxLength: 128 } };
 const approvalId = { type: "string", description: "Approved two-person approval for this exact action and arguments" };
@@ -47,6 +49,8 @@ const ERROR_TEXT: Record<number, string> = {
   404: "Not found (`not_found`, `not_enrolled`), or hidden while `AFFILIATES_ENABLED` is off",
   409: "Conflict with the current state (`conflict`, `invalid_transition`, `already_enrolled`, `code_taken`, approval failures)",
   422: "Rule refused (`over_budget`, `terms_not_accepted`)",
+  502: "The identity verification provider did not respond (`verification_unavailable`); retry",
+  503: "Identity verification is not enabled or configured (`verification_unavailable`)",
 };
 
 function errors(...statuses: number[]): Record<string, { description: string; content: unknown }> {
@@ -185,6 +189,36 @@ const memberPaths: Record<string, unknown> = {
       errors: [401, 404],
     }),
   },
+  "/api/v1/affiliates/tax-documents": {
+    get: member({
+      operationId: "affiliateGetTaxStatement",
+      summary: "My withholding statement",
+      description:
+        "Recorded payouts of one tax year with gross, NLB service fee, tax withheld, the rates applied and net, plus totals. The data source for the official withholding certificate finance issues; not the certificate itself.",
+      parameters: [yearParam, formatParam],
+      ok: { description: "Withholding statement", schema: ref("AffiliateTaxStatement") },
+      errors: [400, 401, 404],
+    }),
+  },
+  "/api/v1/affiliates/verification": {
+    get: member({
+      operationId: "affiliateGetVerification",
+      summary: "My identity verification status",
+      description: "Status of the eKYC check required for Vietnamese bank payouts (`not_started` when none). Never the provider reference or document data.",
+      ok: { description: "Verification status", schema: ref("AffiliateVerification") },
+      errors: [401, 404],
+    }),
+    post: member({
+      operationId: "affiliateStartVerification",
+      summary: "Start identity verification",
+      description:
+        "Starts or resumes the eKYC check for a Vietnamese bank payout and returns a short-lived link to the provider's hosted flow (`url`, null once verified). Documents go to the provider, never to NLB. Session only, same-site.",
+      security: SESSION_AUTH,
+      requestBody: { required: false, content: json(object({ locale: { type: "string", enum: ["en", "vi"] } })) },
+      ok: { description: "Verification started", schema: object({ verification: ref("AffiliateVerification"), url: { type: ["string", "null"], format: "uri" } }, ["verification", "url"]) },
+      errors: [400, 401, 403, 404, 409, 502, 503],
+    }),
+  },
   "/api/v1/affiliates/payout-method": {
     get: member({
       operationId: "affiliateGetPayoutMethod",
@@ -261,6 +295,25 @@ const operatorPaths: Record<string, unknown> = {
       parameters: [statusParam(["active", "suspended"]), limitParam(50, 200)],
       ok: { description: "Affiliates", schema: object({ affiliates: { type: "array", items: ref("AffiliateOperatorAccount") } }) },
       errors: [400, 401, 403],
+    }),
+  },
+  "/api/v1/affiliate-admin/affiliates/{id}/verification": {
+    get: operator({
+      operationId: "affiliateAdminGetVerification",
+      summary: "An affiliate's identity verification status",
+      parameters: [idParam],
+      ok: { description: "Verification status", schema: ref("AffiliateVerification") },
+      errors: [401, 403, 404],
+    }),
+  },
+  "/api/v1/affiliate-admin/affiliates/{id}/tax-documents": {
+    get: operator({
+      operationId: "affiliateAdminGetTaxStatement",
+      summary: "An affiliate's withholding statement",
+      description: "Recorded payouts of one tax year with fees, tax withheld and rates, for issuing the official withholding certificate. Audited.",
+      parameters: [idParam, yearParam, formatParam],
+      ok: { description: "Withholding statement", schema: ref("AffiliateTaxStatement") },
+      errors: [400, 401, 403, 404],
     }),
   },
   "/api/v1/affiliate-admin/affiliates/{id}/suspend": {
@@ -505,6 +558,18 @@ export const affiliateSchemas: Record<string, unknown> = {
       bankVnServiceFeeBps: bps,
       withholding: object({ vnIndividualBps: nullableInt, vnBusinessBps: nullableInt, otherBps: nullableInt }, ["vnIndividualBps", "vnBusinessBps", "otherBps"]),
       termsVersion: str,
+      fraud: {
+        ...object(
+          {
+            velocityMaxConversions: { type: "integer", minimum: 1, maximum: 1000 },
+            velocityWindowHours: { type: "integer", minimum: 1, maximum: 720 },
+            deviceClusterMinBuyers: { type: "integer", minimum: 2, maximum: 100 },
+            deviceClusterWindowDays: { type: "integer", minimum: 1, maximum: 365 },
+          },
+          ["velocityMaxConversions", "velocityWindowHours", "deviceClusterMinBuyers", "deviceClusterWindowDays"]
+        ),
+        description: "Fraud heuristic thresholds; defaults apply when omitted. A matching conversion is accrued as `held`.",
+      },
     },
     ["currency", "levels", "eligiblePlans", "attributionWindowDays", "holdDays", "payoutThresholdMinor", "paypalServiceFeeBps", "bankVnServiceFeeBps", "withholding", "termsVersion"]
   ),
@@ -606,6 +671,8 @@ export const affiliateSchemas: Record<string, unknown> = {
       grossMinor: int,
       serviceFeeMinor: int,
       withholdingMinor: int,
+      serviceFeeBps: { ...nullableInt, description: "Service fee rate applied (null on items created before rates were recorded)" },
+      withholdingBps: { ...nullableInt, description: "Withholding rate applied, from the published rules (null on items created before rates were recorded)" },
       netMinor: int,
       status: { type: "string", enum: ["pending", "paid", "cancelled"] },
       payoutCurrency: nullableStr,
@@ -614,6 +681,53 @@ export const affiliateSchemas: Record<string, unknown> = {
       providerFeeMinor: nullableInt,
       externalReference: nullableStr,
       paidAt: nullableTime,
+    },
+  },
+  AffiliateVerification: {
+    type: "object",
+    properties: {
+      status: { type: "string", enum: ["not_started", "pending", "verified", "rejected", "expired"] },
+      provider: nullableStr,
+      detail: { ...nullableStr, description: "Provider decision labels, e.g. `RETRY,UNSATISFACTORY_PHOTOS`" },
+      verifiedAt: nullableTime,
+      updatedAt: nullableTime,
+    },
+  },
+  AffiliateTaxStatement: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["withholding_statement"] },
+      documentNumber: str,
+      affiliateId: str,
+      year: int,
+      currency: str,
+      final: { type: "boolean", description: "The tax year has ended; a running year can still gain lines" },
+      generatedAt: time,
+      lines: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            payoutItemId: str,
+            period: str,
+            paidAt: time,
+            methodType: { type: "string", enum: ["paypal", "bank_vn"] },
+            payeeType: { type: ["string", "null"], enum: ["individual", "business", null] },
+            residency: { type: ["string", "null"], enum: ["vn", "other", null] },
+            grossMinor: int,
+            serviceFeeBps: nullableInt,
+            serviceFeeMinor: int,
+            withholdingBps: nullableInt,
+            withholdingMinor: int,
+            netMinor: int,
+            payoutCurrency: nullableStr,
+            fxRate: nullableStr,
+            payoutAmountMinor: nullableInt,
+            externalReference: nullableStr,
+          },
+        },
+      },
+      totals: { type: "object", properties: { payouts: int, grossMinor: int, serviceFeeMinor: int, withholdingMinor: int, netMinor: int } },
     },
   },
   AffiliatePayoutBatch: {

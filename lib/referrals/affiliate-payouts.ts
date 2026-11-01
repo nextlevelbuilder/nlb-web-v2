@@ -20,9 +20,10 @@ import { isUniqueViolation } from "@/lib/membership/member-access";
 import { bucketBalanceSql, ledgerInsertSelect, recordLedgerMove } from "./commission-ledger";
 import { matureDueConversions } from "./affiliate-conversions";
 import { payoutAmounts } from "./program-math";
-import { getActiveRules } from "./program-rules";
+import { getActiveRules, withholdingFrom, type ActiveRules } from "./program-rules";
 import { ReferralError, referralInvalid, referralNotFound } from "./referral-errors";
 import { isAffiliatePayoutsEnabled } from "./referral-env";
+import { instrumentHashFor } from "./risk-signals";
 import type { PayeeResidency, PayeeType, PayoutMethodType, ProgramRules } from "./types";
 
 export type PayoutBatchRow = typeof affiliatePayoutBatches.$inferSelect;
@@ -82,13 +83,14 @@ export async function setPayoutMethod(db: AppDb, affiliateId: string, input: Pay
     displayHint = `${bankName} ${mask(accountNumber)}`;
   }
   const sealedDetails = await encryptSecret(JSON.stringify(details), undefined, payoutDetailsAad(affiliateId));
+  const instrumentHash = await instrumentHashFor(type, details);
   await db
     .update(affiliatePayoutMethods)
     .set({ status: "archived", updatedAt: now })
     .where(and(eq(affiliatePayoutMethods.affiliateId, affiliateId), eq(affiliatePayoutMethods.status, "active")));
   const [row] = await db
     .insert(affiliatePayoutMethods)
-    .values({ affiliateId, type, sealedDetails, displayHint, payeeType, residency, createdAt: now, updatedAt: now })
+    .values({ affiliateId, type, sealedDetails, displayHint, payeeType, residency, instrumentHash, createdAt: now, updatedAt: now })
     .returning();
   return row;
 }
@@ -123,10 +125,14 @@ export async function revealPayoutDetails(row: PayoutMethodRow): Promise<Record<
 // Fees, withholding and eligibility
 // ------------------------------------------------------------------
 
-/** Approved withholding rate for this payee class, or null when no rule was approved yet. */
-export function withholdingBpsFor(rules: ProgramRules, method: Pick<PayoutMethodRow, "payeeType" | "residency">): number | null {
-  if (method.residency === "vn") return method.payeeType === "business" ? rules.withholding.vnBusinessBps : rules.withholding.vnIndividualBps;
-  return rules.withholding.otherBps;
+/**
+ * Approved withholding rate for this payee class, or null when no rule was approved yet. Rates come
+ * only from published rules (`withholdingFrom`): the built-in defaults never supply a Vietnamese rate.
+ */
+export function withholdingBpsFor(active: ActiveRules, method: Pick<PayoutMethodRow, "payeeType" | "residency">): number | null {
+  const withholding = withholdingFrom(active);
+  if (method.residency === "vn") return method.payeeType === "business" ? withholding.vnBusinessBps : withholding.vnIndividualBps;
+  return withholding.otherBps;
 }
 
 export function serviceFeeBpsFor(rules: ProgramRules, type: PayoutMethodType): number {
@@ -216,7 +222,7 @@ export async function previewPayouts(db: AppDb, periodInput: unknown, now = new 
     if (!method) blockers.push("payout_method_required");
     else {
       serviceFeeBps = serviceFeeBpsFor(rules, method.type);
-      withholdingBps = withholdingBpsFor(rules, method);
+      withholdingBps = withholdingBpsFor({ version, rules }, method);
       if (withholdingBps === null) blockers.push("withholding_rule_missing");
       if (method.type === "bank_vn" && !verifiedIds.has(affiliateId)) blockers.push("verification_required");
     }
@@ -271,7 +277,7 @@ function lockPayeeStatements(db: AppDb, input: { batchId: string; currency: stri
   const item = db
     .insert(affiliatePayoutItems)
     .select(
-      sql`select ${itemId}, ${input.batchId}, ${line.affiliateId}, ${method.id}, ${method.type}, ${amounts.grossMinor}, ${amounts.serviceFeeMinor}, ${amounts.withholdingMinor}, ${amounts.netMinor}, 'pending', null, null, null, null, null, null, null, ${at}, ${at}
+      sql`select ${itemId}, ${input.batchId}, ${line.affiliateId}, ${method.id}, ${method.type}, ${amounts.grossMinor}, ${amounts.serviceFeeMinor}, ${amounts.withholdingMinor}, ${line.serviceFeeBps}, ${line.withholdingBps}, ${amounts.netMinor}, 'pending', null, null, null, null, null, null, null, ${at}, ${at}
         where ${bucketBalanceSql("affiliate", line.affiliateId, "available")} >= ${amounts.grossMinor}
           and exists (select 1 from affiliate_payout_batches b where b.id = ${input.batchId} and b.status = 'draft')`
     )
