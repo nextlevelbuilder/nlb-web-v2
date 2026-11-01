@@ -108,6 +108,16 @@ ONBOARDING_ENCRYPTION_KEY=
 # Optional internal Lark incoming webhook for admin notifications.
 LARK_ADMIN_WEBHOOK_URL=
 
+# --- Affiliate identity verification (eKYC, Sumsub) ---
+# AFFILIATE_EKYC_ENABLED is a wrangler var ("false" until the Sumsub sandbox is verified).
+# Sumsub app token and secret key (dashboard > Developers > App tokens).
+SUMSUB_APP_TOKEN=
+SUMSUB_SECRET_KEY=
+# Secret key of the Sumsub webhook pointed at /api/webhooks/ekyc/sumsub.
+SUMSUB_WEBHOOK_SECRET=
+# Verification level name configured in the Sumsub dashboard.
+SUMSUB_LEVEL_NAME=
+
 # --- Telegram ---
 # Bot token from @BotFather.
 TELEGRAM_BOT_TOKEN=

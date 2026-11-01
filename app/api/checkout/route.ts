@@ -10,6 +10,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { polar } from "@/lib/polar";
 import { ReferralError } from "@/lib/referrals/referral-errors";
+import { readVisitorId } from "@/lib/referrals/risk-signals";
 import { AFFILIATE_COOKIE, attachCheckoutId, attributeCheckout, type AttributionAttempt } from "@/lib/referrals/affiliate-checkout";
 import { isAffiliatesEnabled } from "@/lib/referrals/referral-env";
 
@@ -124,6 +125,7 @@ export async function POST(request: Request) {
           polarProductId: productId,
           explicitCode: referralCode ?? null,
           cookieValue,
+          visitorId: readVisitorId(request),
         });
         if (referral.applied) {
           options.nlbUserId = buyer.id;

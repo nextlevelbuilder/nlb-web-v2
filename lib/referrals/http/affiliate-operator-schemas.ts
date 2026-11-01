@@ -26,6 +26,10 @@ export const programRulesSchema = z
     bankVnServiceFeeBps: bps,
     withholding: z.object({ vnIndividualBps: bps.nullable(), vnBusinessBps: bps.nullable(), otherBps: bps.nullable() }).strict(),
     termsVersion: z.string().max(40),
+    fraud: z
+      .object({ velocityMaxConversions: z.number().int(), velocityWindowHours: z.number().int(), deviceClusterMinBuyers: z.number().int(), deviceClusterWindowDays: z.number().int() })
+      .strict()
+      .optional(),
   })
   .strict() satisfies z.ZodType<ProgramRules>;
 

@@ -168,6 +168,8 @@ export function payoutItemView(item: typeof affiliatePayoutItems.$inferSelect, p
     grossMinor: item.grossMinor,
     serviceFeeMinor: item.serviceFeeMinor,
     withholdingMinor: item.withholdingMinor,
+    serviceFeeBps: item.serviceFeeBps,
+    withholdingBps: item.withholdingBps,
     netMinor: item.netMinor,
     status: item.status,
     payoutCurrency: item.payoutCurrency,

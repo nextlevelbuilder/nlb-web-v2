@@ -3,7 +3,7 @@ import type { AppDb } from "@/lib/db";
 import { affiliateProgramRules } from "@/lib/db/schema";
 import { BPS } from "./program-math";
 import { ReferralError } from "./referral-errors";
-import type { ProgramRules } from "./types";
+import type { FraudRules, ProgramRules } from "./types";
 
 /** Version of the Affiliate Agreement an affiliate accepts (content/policies/affiliate-agreement.ts). */
 export const AFFILIATE_TERMS_VERSION = "2026-10-31";
@@ -29,7 +29,27 @@ export const DEFAULT_PROGRAM_RULES: ProgramRules = {
   bankVnServiceFeeBps: 0,
   withholding: { vnIndividualBps: null, vnBusinessBps: null, otherBps: 0 },
   termsVersion: AFFILIATE_TERMS_VERSION,
+  fraud: {
+    velocityMaxConversions: 10,
+    velocityWindowHours: 24,
+    deviceClusterMinBuyers: 2,
+    deviceClusterWindowDays: 90,
+  },
 };
+
+/** Fraud thresholds of a rules document, falling back to the defaults for rules published without them. */
+export function fraudRulesOf(rules: ProgramRules): FraudRules {
+  return { ...DEFAULT_PROGRAM_RULES.fraud!, ...rules.fraud };
+}
+
+/**
+ * Approved withholding rates take effect only from published rules. The built-in defaults (version 0)
+ * never supply a Vietnamese rate, so VN payees stay blocked until a reviewed version is published.
+ */
+export function withholdingFrom(active: ActiveRules): ProgramRules["withholding"] {
+  const { withholding } = active.rules;
+  return active.version > 0 ? withholding : { ...withholding, vnIndividualBps: null, vnBusinessBps: null };
+}
 
 export interface ActiveRules {
   version: number;
@@ -72,6 +92,15 @@ export function validateProgramRules(rules: ProgramRules): ProgramRules {
   if (!isBps(rules.paypalServiceFeeBps, 5000) || !isBps(rules.bankVnServiceFeeBps, 5000)) fail("service fees must be 0-5000 bps");
   for (const value of Object.values(rules.withholding ?? {})) if (value !== null && !isBps(value, 5000)) fail("withholding must be null or 0-5000 bps");
   if (!rules.termsVersion?.trim()) fail("termsVersion is required");
+  if (rules.fraud !== undefined) {
+    const fraud = rules.fraud;
+    const within = (value: unknown, min: number, max: number) => Number.isInteger(value) && (value as number) >= min && (value as number) <= max;
+    if (!fraud || typeof fraud !== "object") fail("fraud must be an object");
+    if (!within(fraud.velocityMaxConversions, 1, 1000)) fail("fraud.velocityMaxConversions must be 1-1000");
+    if (!within(fraud.velocityWindowHours, 1, 720)) fail("fraud.velocityWindowHours must be 1-720");
+    if (!within(fraud.deviceClusterMinBuyers, 2, 100)) fail("fraud.deviceClusterMinBuyers must be 2-100");
+    if (!within(fraud.deviceClusterWindowDays, 1, 365)) fail("fraud.deviceClusterWindowDays must be 1-365");
+  }
   return { ...rules, levels };
 }
 

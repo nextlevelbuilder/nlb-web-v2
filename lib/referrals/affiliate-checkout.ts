@@ -18,6 +18,7 @@ import { termsFor } from "./program-math";
 import { getActiveRules } from "./program-rules";
 import { ReferralError } from "./referral-errors";
 import { isAffiliatesEnabled } from "./referral-env";
+import { deviceHashFor } from "./risk-signals";
 import type { AffiliateAttributionSource } from "./types";
 
 /** Polar metadata key carrying the attribution id. */
@@ -129,6 +130,8 @@ export interface AttributeCheckoutInput {
   /** Code the buyer brought to checkout (`?ref=` or typed). Wins over the cookie. */
   explicitCode?: string | null;
   cookieValue?: string | null;
+  /** First-party visitor id of the buyer's browser; kept on the snapshot only as a keyed hash (fraud heuristics). */
+  visitorId?: string | null;
   now?: Date;
 }
 
@@ -236,6 +239,7 @@ async function decideAttribution(db: AppDb, client: ReferralDiscountsClient, inp
       discountBps: terms.discountBps,
       commissionBps: terms.commissionBps,
       polarDiscountId,
+      deviceHash: await deviceHashFor(input.visitorId),
       createdAt: now,
       expiresAt: new Date(now.getTime() + ATTRIBUTION_BINDING_TTL_MS),
     })
