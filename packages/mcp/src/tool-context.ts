@@ -152,10 +152,48 @@ export const AFFILIATE_OPERATOR_WRITE_TOOLS = [
   "affiliate_admin_cancel_batch"
 ] as const;
 
+/**
+ * Platform operator reads over `/api/v1/operator/*` (mcp:operator): commerce, users, membership and
+ * directory management, distinct from the public directory reads. The web checks the matching
+ * `<domain>:manage` grant on every call, so seeing a tool never implies the caller may use it.
+ */
+export const PLATFORM_OPERATOR_READ_TOOLS = [
+  "operator_commerce_list_orders",
+  "operator_commerce_get_order",
+  "operator_commerce_list_subscriptions",
+  "operator_commerce_get_subscription",
+  "operator_commerce_list_customers",
+  "operator_commerce_get_customer",
+  "operator_commerce_list_webhook_failures",
+  "operator_users_list",
+  "operator_users_get",
+  "operator_users_list_orgs",
+  "operator_users_get_org",
+  "operator_membership_list_entitlements",
+  "operator_membership_get_user_access",
+  "operator_directory_list_products",
+  "operator_directory_get_product",
+  "operator_directory_list_moderation",
+  "operator_approvals_list",
+  "operator_approvals_get"
+] as const;
+
+/**
+ * Platform operator writes (mcp:operator). Subscription cancel and resume undo each other; the refund also
+ * needs a second operator's approval for the exact target.
+ */
+export const PLATFORM_OPERATOR_WRITE_TOOLS = [
+  "operator_commerce_cancel_subscription",
+  "operator_commerce_resume_subscription",
+  "operator_commerce_refund_order",
+  "operator_approvals_request",
+  "operator_approvals_decide"
+] as const;
+
 /** Operator reads of every domain: private, and advertised as read-only even when they POST a preview. */
-export const OPERATOR_READ_TOOLS = [...LIVE_OPERATOR_READ_TOOLS, ...AFFILIATE_OPERATOR_READ_TOOLS] as const;
+export const OPERATOR_READ_TOOLS = [...LIVE_OPERATOR_READ_TOOLS, ...AFFILIATE_OPERATOR_READ_TOOLS, ...PLATFORM_OPERATOR_READ_TOOLS] as const;
 /** Operator writes of every domain (mcp:operator, mutating). */
-export const OPERATOR_WRITE_TOOLS = [...LIVE_OPERATOR_WRITE_TOOLS, ...AFFILIATE_OPERATOR_WRITE_TOOLS] as const;
+export const OPERATOR_WRITE_TOOLS = [...LIVE_OPERATOR_WRITE_TOOLS, ...AFFILIATE_OPERATOR_WRITE_TOOLS, ...PLATFORM_OPERATOR_WRITE_TOOLS] as const;
 
 /** Reads that always need an identity (no anonymous fallback). */
 export const PRIVATE_READ_TOOLS = [
@@ -196,7 +234,7 @@ export function isLiveOperatorTool(name: string): boolean {
   return (LIVE_OPERATOR_READ_TOOLS as readonly string[]).includes(name) || (LIVE_OPERATOR_WRITE_TOOLS as readonly string[]).includes(name);
 }
 
-/** Tools of any operator domain (NLB Live, affiliate finance): all need mcp:operator. */
+/** Tools of any operator domain (NLB Live, affiliate finance, platform operators): all need mcp:operator. */
 export function isOperatorTool(name: string): boolean {
   return (OPERATOR_READ_TOOLS as readonly string[]).includes(name) || (OPERATOR_WRITE_TOOLS as readonly string[]).includes(name);
 }

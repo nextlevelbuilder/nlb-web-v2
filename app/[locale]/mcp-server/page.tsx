@@ -38,6 +38,15 @@ const TOOL_GROUPS: Array<[McpToolGroupId, string[]]> = [
   ["keys", ["list_api_keys", "create_api_key", "revoke_api_key"]],
   ["membership", ["onboarding_get_status"]],
   ["admin", ["blog_*", "course_*"]],
+  ["operator", [
+    "operator_commerce_list_orders", "operator_commerce_get_order", "operator_commerce_refund_order",
+    "operator_commerce_list_subscriptions", "operator_commerce_get_subscription", "operator_commerce_cancel_subscription", "operator_commerce_resume_subscription",
+    "operator_commerce_list_customers", "operator_commerce_get_customer", "operator_commerce_list_webhook_failures",
+    "operator_users_list", "operator_users_get", "operator_users_list_orgs", "operator_users_get_org",
+    "operator_membership_list_entitlements", "operator_membership_get_user_access",
+    "operator_directory_list_products", "operator_directory_get_product", "operator_directory_list_moderation",
+    "operator_approvals_*", "live_admin_*", "affiliate_admin_*",
+  ]],
 ];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

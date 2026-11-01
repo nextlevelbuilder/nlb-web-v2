@@ -1,6 +1,7 @@
-import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
-import { customers, entitlements, orders, subscriptions, users, type courseVideos } from "@/lib/db/schema";
+import { customers, orders, subscriptions, users, type courseVideos } from "@/lib/db/schema";
+import { hasActiveEntitlement } from "@/lib/access/access-facts";
 import type { MembershipPlan } from "@/lib/polar";
 import { resolveEffectiveTier } from "@/lib/membership/effective-tier";
 import { toMembershipState } from "@/lib/membership/member-access";
@@ -23,7 +24,7 @@ export interface CanWatchOptions {
 
 /**
  * True when the viewer may watch the video:
- * 1. an active, unexpired `video:<id>` entitlement, or
+ * 1. an active, unexpired `video:<id>` entitlement (a purchase or an operator grant), or
  * 2. a paid (or only partially refunded) order for the video's Polar product placed with the
  *    viewer's email, or
  * 3. a subscription that currently grants a membership tier listed in the course access policy
@@ -41,19 +42,7 @@ export async function canWatchVideo(
 ): Promise<boolean> {
   const now = options.now ?? new Date();
 
-  const [entitlement] = await db
-    .select({ id: entitlements.id })
-    .from(entitlements)
-    .where(
-      and(
-        eq(entitlements.userId, userId),
-        eq(entitlements.featureKey, videoFeatureKey(video.id)),
-        eq(entitlements.isActive, true),
-        or(isNull(entitlements.validUntil), gt(entitlements.validUntil, now))
-      )
-    )
-    .limit(1);
-  if (entitlement) return true;
+  if (await hasActiveEntitlement(db, userId, videoFeatureKey(video.id), now)) return true;
 
   const [user] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
   const email = user?.email.trim().toLowerCase();

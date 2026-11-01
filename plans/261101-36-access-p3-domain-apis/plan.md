@@ -25,11 +25,12 @@ MCP tool exposure (toolkits#19), a general task manager, new UI.
 ## PRs (each self-green, merged into `dev` with `gh pr merge --merge`)
 | # | Branch | Scope | Status |
 |---|---|---|---|
-| 1 | `feat/36-operator-core` | generic operator route + errors, sensitive-target registry, `/api/v1/operator/{approvals,audit}`, new resource kinds (`asset`, `org`, `builder_league`, `leaderboard`) and the `asset:<id>` policy, ADR | pending |
-| 2 | `feat/36-member-apis` | Courses catalogue/library, owned assets, my directory products, leaderboards, Builder League gate through `authorize()`; OpenAPI | pending |
-| 3 | `feat/36-operator-content` | operator Courses, assets, directory/moderation; OpenAPI | pending |
-| 4 | `feat/36-operator-accounts` | operator users/orgs, membership/entitlements (migration `entitlement_grants`), Polar commerce; OpenAPI | pending |
-| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | pending |
+| 1 | `feat/36-operator-core` | generic operator route + errors, sensitive-target registry, `/api/v1/operator/{approvals,audit}`, new resource kinds (`asset`, `org`, `builder_league`, `leaderboard`) and the `asset:<id>` policy, ADR | merged (#88) |
+| 2 | `feat/36-member-apis` | Courses catalogue/library, owned assets, my directory products, leaderboards, Builder League gate through `authorize()`; OpenAPI | merged (#90) |
+| 3 | `feat/36-operator-content` | operator Courses, assets, directory/moderation; OpenAPI | merged (#91) |
+| 4 | `feat/36-operator-accounts` | operator users/orgs, membership/entitlements (migration `entitlement_grants`), Polar commerce; OpenAPI | merged (#92) |
+| 5 | `feat/36-operator-league-system` | operator Builder League, onboarding/community, system (operators, jobs, audit); OpenAPI; docs | merged (#93) |
+| 6 | `feat/36-operator-commerce-reads` | operator subscriptions (read, cancel/resume through Polar), customers, purchased entitlements list, one directory product; refund approval binds Polar order id and currency; OpenAPI | in review |
 
 ## Sensitive actions added (approval required)
 `courses.video.archive`, `users.user.ban`, `membership.entitlement.grant`, `membership.entitlement.revoke`,

@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GET as getSpec } from "@/app/api/openapi.json/route";
 import { operatorPaths, operatorSchemas } from "@/lib/operators/openapi";
@@ -29,6 +31,19 @@ describe("operator OpenAPI", () => {
     expect(request.requestBody?.content["application/json"].schema.properties?.action.enum?.sort()).toEqual([...OPERATOR_APPROVAL_ACTIONS].sort());
     for (const path of ["/api/v1/operator/approvals", "/api/v1/operator/approvals/{id}", "/api/v1/operator/approvals/{id}/decision"]) {
       for (const operation of Object.values(spec.paths[path])) expect(operation.parameters?.map((param) => param.name)).toContain("domain");
+    }
+  });
+
+  it("documents every route under app/api/v1/operator with each exported method", async () => {
+    const root = join(process.cwd(), "app", "api", "v1", "operator");
+    const routes = (readdirSync(root, { recursive: true }) as string[]).filter((file) => file.endsWith(`${sep}route.ts`) || file === "route.ts");
+    expect(routes.length).toBeGreaterThan(10);
+    for (const file of routes) {
+      const dir = relative(root, join(root, file, "..")).split(sep).filter(Boolean);
+      const path = ["/api/v1/operator", ...dir.map((part) => part.replace(/^\[(.+)\]$/, "{$1}"))].join("/");
+      const routeModule = (await import(/* @vite-ignore */ join(root, file))) as Record<string, unknown>;
+      const methods = ["GET", "POST", "PATCH", "PUT", "DELETE"].filter((method) => typeof routeModule[method] === "function");
+      expect(Object.keys((operatorPaths[path] ?? {}) as object).sort(), path).toEqual(methods.map((method) => method.toLowerCase()).sort());
     }
   });
 });

@@ -13,7 +13,12 @@ import type { OperatorDomain, SensitiveOperatorAction } from "@/lib/access/types
 import { OPERATOR_DOMAINS } from "@/lib/access/types";
 import { isOperatorCapability } from "@/lib/operators/operator-grants";
 import { sensitiveActionDomain } from "@/lib/operators/operator-actions";
-import { operatorInvalid } from "@/lib/operators/operator-service-error";
+import { operatorInvalid, operatorNotFound } from "@/lib/operators/operator-service-error";
+import { eq } from "drizzle-orm";
+import { orders, scoreLedger, users } from "@/lib/db/schema";
+import { getVideoBySlug } from "@/lib/courses/course-video-service";
+import { GRANTABLE_FEATURE_KEY, getEntitlementGrant } from "@/lib/membership/entitlement-grants";
+import { ORDER_REFUND_REASONS } from "@/lib/commerce/order-refunds";
 
 export interface SensitiveTarget {
   resource: string;
@@ -34,6 +39,89 @@ export function operatorGrantTarget(userId: string, capability: string): Sensiti
   return { resource: userResource(userId), args: { userId, capability } };
 }
 
+export const videoArchiveTargetSchema = z.object({ slug: id }).strict();
+
+/** `video:<id>`: archiving hides the video from new buyers; existing buyers keep watching. */
+export async function videoArchiveTarget(db: AppDb, slug: string): Promise<SensitiveTarget> {
+  const video = await getVideoBySlug(slug, db);
+  if (!video) throw operatorNotFound("Video");
+  return { resource: `video:${video.id}`, args: { slug } };
+}
+
+/** An ISO instant normalised to `toISOString()`, so the same moment always hashes the same. */
+const instant = z
+  .string()
+  .datetime({ offset: true })
+  .transform((value) => new Date(value).toISOString());
+
+async function requireUser(db: AppDb, userId: string): Promise<void> {
+  const [row] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!row) throw operatorNotFound("User");
+}
+
+export const userBanTargetSchema = z.object({ userId: id, reason: z.string().trim().min(1).max(500), expiresAt: instant.nullable() }).strict();
+
+/** `user:<id>`: the ban reason and end are part of what the second operator approves. */
+export async function userBanTarget(db: AppDb, target: z.infer<typeof userBanTargetSchema>): Promise<SensitiveTarget> {
+  await requireUser(db, target.userId);
+  return { resource: userResource(target.userId), args: { userId: target.userId, reason: target.reason, expiresAt: target.expiresAt } };
+}
+
+export const entitlementGrantTargetSchema = z
+  .object({ userId: id, featureKey: z.string().regex(GRANTABLE_FEATURE_KEY, "featureKey must be video:<id> or live:replay:<eventId>"), validUntil: instant.nullable() })
+  .strict();
+
+export async function entitlementGrantTarget(db: AppDb, target: z.infer<typeof entitlementGrantTargetSchema>): Promise<SensitiveTarget> {
+  await requireUser(db, target.userId);
+  return { resource: userResource(target.userId), args: { userId: target.userId, featureKey: target.featureKey, validUntil: target.validUntil } };
+}
+
+export const entitlementRevokeTargetSchema = z.object({ grantId: id }).strict();
+
+export async function entitlementRevokeTarget(db: AppDb, grantId: string): Promise<SensitiveTarget> {
+  const grant = await getEntitlementGrant(db, grantId);
+  if (!grant) throw operatorNotFound("Grant");
+  return { resource: userResource(grant.userId), args: { grantId } };
+}
+
+export const orderRefundTargetSchema = z
+  .object({ orderId: id, reason: z.enum(ORDER_REFUND_REASONS), amount: z.number().int().positive().nullable() })
+  .strict();
+
+/**
+ * `order:<id>`: reason and amount (null = everything refundable) are bound to the approval, together
+ * with the order's Polar id and currency read from the stored order, so the approver sees exactly
+ * which payment and currency the minor-unit amount refers to.
+ */
+export async function orderRefundTarget(db: AppDb, target: z.infer<typeof orderRefundTargetSchema>): Promise<SensitiveTarget> {
+  const [order] = await db
+    .select({ id: orders.id, polarOrderId: orders.polarOrderId, currency: orders.currency })
+    .from(orders)
+    .where(eq(orders.id, target.orderId))
+    .limit(1);
+  if (!order) throw operatorNotFound("Order");
+  return {
+    resource: `order:${order.id}`,
+    args: { orderId: order.id, polarOrderId: order.polarOrderId, currency: order.currency, reason: target.reason, amount: target.amount },
+  };
+}
+
+export const ledgerReverseTargetSchema = z.object({ entryId: id, reason: z.string().trim().min(5).max(1000) }).strict();
+
+/** `builder_league:ledger:<entryId>`: the reversal reason becomes the negative entry's reason. */
+export async function ledgerReverseTarget(db: AppDb, target: z.infer<typeof ledgerReverseTargetSchema>): Promise<SensitiveTarget> {
+  const [entry] = await db.select({ id: scoreLedger.id }).from(scoreLedger).where(eq(scoreLedger.id, target.entryId)).limit(1);
+  if (!entry) throw operatorNotFound("Ledger entry");
+  return { resource: `builder_league:ledger:${entry.id}`, args: { entryId: entry.id, reason: target.reason } };
+}
+
+export const privacyDeleteTargetSchema = z.object({ userId: id }).strict();
+
+/** `user:<id>`: deleting a member's Builder League data cannot be undone. */
+export function privacyDeleteTarget(userId: string): SensitiveTarget {
+  return { resource: userResource(userId), args: { userId } };
+}
+
 const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
   "operator.grant": (_db, target) => {
     const { userId, capability } = operatorGrantTargetSchema.parse(target);
@@ -43,6 +131,13 @@ const RESOLVERS: Partial<Record<SensitiveOperatorAction, TargetResolver>> = {
     const { userId, capability } = operatorGrantTargetSchema.parse(target);
     return operatorGrantTarget(userId, capability);
   },
+  "courses.video.archive": (db, target) => videoArchiveTarget(db, videoArchiveTargetSchema.parse(target).slug),
+  "users.user.ban": (db, target) => userBanTarget(db, userBanTargetSchema.parse(target)),
+  "membership.entitlement.grant": (db, target) => entitlementGrantTarget(db, entitlementGrantTargetSchema.parse(target)),
+  "membership.entitlement.revoke": (db, target) => entitlementRevokeTarget(db, entitlementRevokeTargetSchema.parse(target).grantId),
+  "commerce.order.refund": (db, target) => orderRefundTarget(db, orderRefundTargetSchema.parse(target)),
+  "builder_league.ledger.reverse": (db, target) => ledgerReverseTarget(db, ledgerReverseTargetSchema.parse(target)),
+  "builder_league.privacy.delete": (_db, target) => privacyDeleteTarget(privacyDeleteTargetSchema.parse(target).userId),
 };
 
 /** Sensitive actions whose approvals are requested and read through `/api/v1/operator/approvals`. */

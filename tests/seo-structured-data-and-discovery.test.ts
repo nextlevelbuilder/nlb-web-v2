@@ -164,6 +164,15 @@ describe("agent discovery documents", () => {
     expect([...meta.liveOperator.tools].sort()).toEqual([...definedTools].sort());
   });
 
+  it("lists the platform operator tools on the server card", () => {
+    const meta = mcpServerCard()._meta["io.nextlevelbuilder/discovery"];
+    expect(meta.platformOperator).toMatchObject({ scope: "mcp:operator" });
+    const toolSource = readFileSync(resolve(process.cwd(), "packages/mcp/src/tools/platform-operator.ts"), "utf8");
+    const definedTools = [...toolSource.matchAll(/\("(operator_[a-z_]+)"/g)].map((match) => match[1]);
+    expect(definedTools.length).toBeGreaterThan(0);
+    expect([...meta.platformOperator.tools].sort()).toEqual([...definedTools].sort());
+  });
+
   it("advertises discovery links in one header value", () => {
     const header = discoveryLinkHeader();
     for (const fragment of ['</llms.txt>; rel="alternate"', '</api/openapi.json>; rel="service-desc"', '</.well-known/api-catalog>; rel="api-catalog"', '</.well-known/mcp.json>; rel="describedby"']) {

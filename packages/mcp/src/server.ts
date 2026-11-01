@@ -34,7 +34,8 @@ const DESTRUCTIVE_TOOLS: ReadonlySet<string> = new Set([
   "live_admin_override_round_winner",
   // Archiving a link (status archived) is permanent; a cancelled payout batch cannot be reopened.
   "affiliate_update_link",
-  "affiliate_admin_cancel_batch"
+  "affiliate_admin_cancel_batch",
+  "operator_commerce_refund_order"
 ]);
 
 /** Whether an HTTP caller must prove an identity (OAuth or the Worker token) before running the tool. */

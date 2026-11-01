@@ -6,10 +6,13 @@
  */
 import { OPERATOR_DOMAINS } from "@/lib/access/types";
 import { OPERATOR_APPROVAL_ACTIONS } from "@/lib/operators/http/operator-sensitive-targets";
-import { operatorSchemas } from "./operator-openapi-schemas";
+import { operatorSchemas as coreSchemas } from "./operator-openapi-schemas";
+import { contentPaths, contentSchemas } from "./operator-openapi-content";
+import { accountPaths, accountSchemas } from "./operator-openapi-accounts";
+import { leagueSystemPaths } from "./operator-openapi-league-system";
 import { envelope, errors, idParam, int, object, op, pagedEnvelope, ref, str } from "./operator-openapi-shared";
 
-export { operatorSchemas };
+export const operatorSchemas: Record<string, unknown> = { ...coreSchemas, ...contentSchemas, ...accountSchemas };
 
 const domainParam = {
   name: "domain",
@@ -32,13 +35,13 @@ const corePaths: Record<string, unknown> = {
     },
     post: op(
       "Request an approval",
-      "For a sensitive action of `?domain=`. A different operator must approve it; it expires after `ttlMinutes` (default 30) and is consumed once by the requester. `operator.grant` and `operator.revoke` take `target: { userId, capability }`.",
+      "For a sensitive action of `?domain=`. A different operator must approve it; it expires after `ttlMinutes` (default 30) and is consumed once by the requester. `target` lists exactly the arguments the action runs with: `operator.grant` and `operator.revoke` take `{ userId, capability }`, `courses.video.archive` `{ slug }`, `users.user.ban` `{ userId, reason, expiresAt }`, `membership.entitlement.grant` `{ userId, featureKey, validUntil }`, `membership.entitlement.revoke` `{ grantId }`, `commerce.order.refund` `{ orderId, reason, amount }`, `builder_league.ledger.reverse` `{ entryId, reason }`, `builder_league.privacy.delete` `{ userId }` (null fields included).",
       {
         params: [domainParam],
         body: object(
           {
             action: { type: "string", enum: [...OPERATOR_APPROVAL_ACTIONS] },
-            target: { type: "object", additionalProperties: { type: "string" } },
+            target: { type: "object", additionalProperties: { type: ["string", "integer", "null"] } },
             reason: str,
             ttlMinutes: { type: "integer", minimum: 1, maximum: 1440 },
           },
@@ -86,4 +89,4 @@ const corePaths: Record<string, unknown> = {
   },
 };
 
-export const operatorPaths: Record<string, unknown> = { ...corePaths };
+export const operatorPaths: Record<string, unknown> = { ...corePaths, ...contentPaths, ...accountPaths, ...leagueSystemPaths };
