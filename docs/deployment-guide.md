@@ -17,7 +17,7 @@ Bindings and resource ids live in [`wrangler.jsonc`](../wrangler.jsonc). Product
 
 [`gateway/worker.ts`](../gateway/worker.ts) is a few-KB Worker ([`gateway/wrangler.jsonc`](../gateway/wrangler.jsonc)) that forwards every request over the `WEB` service binding to the web Worker's default entrypoint. Service binding calls go through the web Worker's Workers Cache. Before forwarding, anonymous public page requests drop the visitor's cookies and pin `Accept-Language` to the path locale ([`lib/edge-cache-gateway.ts`](../lib/edge-cache-gateway.ts)), so visitors with different analytics cookies share one cached render. A hit is served without starting the web Worker's large isolate. Everything else is forwarded unchanged.
 
-CI deploys the gateway right after the web Worker. The custom domains were moved with the Workers custom-domain API (`PUT /accounts/{account}/workers/domains` with `override_existing_origin: true`), which reassigns a hostname without a gap: `staging.nextlevelbuilder.io` on 2026-11-01. To roll back, run the same call with `"service"` set to the web Worker (`nextlevelbuilder-web` or `nextlevelbuilder-web-staging`); the web Worker serves the domain directly as before.
+CI deploys the gateway right after the web Worker. The custom domains were moved with the Workers custom-domain API (`PUT /accounts/{account}/workers/domains` with `override_existing_origin: true`), which reassigns a hostname without a gap: `staging.nextlevelbuilder.io`, `nextlevelbuilder.io` and `www.nextlevelbuilder.io`, all on 2026-11-01. To roll back, run the same call with `"service"` set to the web Worker (`nextlevelbuilder-web` or `nextlevelbuilder-web-staging`); the web Worker serves the domain directly as before.
 
 ## Wrangler access
 
