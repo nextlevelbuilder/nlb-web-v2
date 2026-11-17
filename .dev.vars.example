@@ -91,6 +91,10 @@ DISCORD_GUILD_ID=
 DISCORD_PREMIUM_ROLE_ID=
 # Incoming webhook URL that gets one embed per paid checkout (secret; unset skips the notification).
 DISCORD_SALES_WEBHOOK_URL=
+# SePay webhook API key (secret): SePay sends it as `Authorization: Apikey <key>`.
+SEPAY_WEBHOOK_API_KEY=
+# Discord incoming webhook for paid SePay orders (secret; unset skips the notification).
+SEPAY_ORDERS_DISCORD_WEBHOOK_URL=
 # Discord OAuth2 application client id (member account linking).
 DISCORD_CLIENT_ID=
 # Discord OAuth2 application client secret.

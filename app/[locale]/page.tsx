@@ -20,6 +20,7 @@ import ToolkitsChapter from "@/components/constellation/toolkits-chapter";
 import FaqChapter from "@/components/constellation/faq-chapter";
 import FinaleChapter from "@/components/constellation/finale-chapter";
 import HomeClient from "./home-client";
+import { isSepayEnabled } from "@/lib/payments/sepay-catalog";
 import "./constellation-home.css";
 
 // Seats, activity and launched products are read from D1 per request, never at build time.
@@ -86,7 +87,7 @@ export default async function Home({ params }: { params: Params }) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(membershipJsonLd(locale)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faq) }} />
-      <HomeClient locale={locale} productIds={data.productIds} seats={data.seats} activity={data.activity}>
+      <HomeClient locale={locale} productIds={data.productIds} seats={data.seats} activity={data.activity} bankTransfer={isSepayEnabled()}>
         {/* Every chapter renders unconditionally: ScrollTrigger pins re-parent top-level sections. */}
         <main id="main">
           <HookChapter />

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ChapterPlate from "@/components/constellation/chapter-plate";
 import { CourseLockedPanel } from "@/components/courses/course-locked-panel";
+import { isSepayEnabled } from "@/lib/payments/sepay-catalog";
 import { CourseVideoPlayer } from "@/components/courses/course-video-player";
 import { resolveCaller } from "@/lib/auth-api-key";
 import { getDb } from "@/lib/db";
@@ -96,6 +97,7 @@ export default async function CourseVideoPage({ params, searchParams }: CourseVi
               locale={locale}
               signedIn={Boolean(caller)}
               paymentReturned={paymentReturned}
+              bankTransfer={isSepayEnabled()}
             />
           )}
         </div>

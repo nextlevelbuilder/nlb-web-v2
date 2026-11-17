@@ -26,6 +26,8 @@ interface CheckoutContextValue {
   referralCode: string | null;
   /** Buyer discount the server applied for that code, in basis points, once checkout started. */
   referralAppliedBps: number | null;
+  /** VietQR bank-transfer checkout (SePay) is available. */
+  bankTransfer: boolean;
 }
 
 const CheckoutContext = createContext<CheckoutContextValue | null>(null);
@@ -52,9 +54,10 @@ function isCheckoutUrl(value: unknown): value is string {
   }
 }
 
-export function CheckoutProvider({ productIds, seats, children }: {
+export function CheckoutProvider({ productIds, seats, bankTransfer = false, children }: {
   productIds: MembershipProductIds;
   seats: SeatAvailability | null;
+  bankTransfer?: boolean;
   children: ReactNode;
 }) {
   const isAvailable = useCallback(
@@ -110,8 +113,8 @@ export function CheckoutProvider({ productIds, seats, children }: {
 
   const value = useMemo<CheckoutContextValue>(() => ({
     productIds, seats, plan, setPlan, billing, setBilling, agreed, setAgreed,
-    source, pending, failed, isAvailable, startCheckout, referralCode, referralAppliedBps,
-  }), [productIds, seats, plan, billing, agreed, source, pending, failed, isAvailable, startCheckout, referralCode, referralAppliedBps]);
+    source, pending, failed, isAvailable, startCheckout, referralCode, referralAppliedBps, bankTransfer,
+  }), [bankTransfer, productIds, seats, plan, billing, agreed, source, pending, failed, isAvailable, startCheckout, referralCode, referralAppliedBps]);
 
   return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>;
 }

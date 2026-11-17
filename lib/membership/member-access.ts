@@ -1,3 +1,4 @@
+import { getSepayMembershipStates } from "@/lib/payments/sepay-orders";
 import { and, eq, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/lib/db";
 import { customers, orders, subscriptions, users } from "@/lib/db/schema";
@@ -49,7 +50,8 @@ export async function getLinkedSubscriptions(db: AppDb, userId: string): Promise
  */
 export async function getMemberTier(db: AppDb, userId: string, now: Date = new Date()): Promise<EffectiveTier> {
   const rows = await getLinkedSubscriptions(db, userId);
-  return resolveEffectiveTier(rows.map(toMembershipState), now, getPastDueGraceDays());
+  const prepaid = await getSepayMembershipStates(db, userId, now);
+  return resolveEffectiveTier([...rows.map(toMembershipState), ...prepaid], now, getPastDueGraceDays());
 }
 
 /**

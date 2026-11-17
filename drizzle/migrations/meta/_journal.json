@@ -71,6 +71,13 @@
       "when": 1793511945481,
       "tag": "0009_entitlement_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1794929716155,
+      "tag": "0010_sepay_orders",
+      "breakpoints": true
     }
   ]
 }

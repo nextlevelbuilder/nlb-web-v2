@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCheckout } from '@/components/home/checkout-context';
 import TermsAgreementCheckbox from '@/components/home/terms-agreement-checkbox';
 import CheckoutError from './checkout-error';
+import { localizedPath } from '@/lib/seo';
 import { formatBps } from '@/components/affiliates/affiliate-format';
 import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PRICES, type MembershipPlan } from '@/lib/constants/launch';
 
@@ -17,7 +18,7 @@ import { MEMBERSHIP_PLAN_NAMES, MEMBERSHIP_PRICES, type MembershipPlan } from '@
 export default function CheckoutConfirmPanel({ plan, source }: { plan: MembershipPlan; source: string }) {
   const t = useTranslations('home');
   const tReferral = useTranslations('affiliateCheckout');
-  const { billing, agreed, pending, source: activeSource, isAvailable, startCheckout, referralCode, referralAppliedBps } = useCheckout();
+  const { billing, agreed, pending, source: activeSource, isAvailable, startCheckout, referralCode, referralAppliedBps, bankTransfer } = useCheckout();
   const locale = useLocale();
   const hintId = useId();
   const price = MEMBERSHIP_PRICES[plan][billing];
@@ -64,6 +65,16 @@ export default function CheckoutConfirmPanel({ plan, source }: { plan: Membershi
           {busy && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
           {busy ? t('checkout.processing') : t('checkout.continue')}
         </Button>
+        {bankTransfer && (
+          <a
+            className={`btn btn-ghost w-full${!agreed || !isAvailable(plan) ? ' pointer-events-none opacity-50' : ''}`}
+            aria-disabled={!agreed || !isAvailable(plan)}
+            tabIndex={!agreed || !isAvailable(plan) ? -1 : undefined}
+            href={`${localizedPath('/checkout/bank-transfer', locale)}?sku=${plan}_${billing}`}
+          >
+            {t('checkout.bankTransfer')}
+          </a>
+        )}
         <CheckoutError source={source} />
         <p className="mono-label text-center text-ink-3">{t('pricing.note')}</p>
       </div>
