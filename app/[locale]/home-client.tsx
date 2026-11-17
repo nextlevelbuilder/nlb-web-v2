@@ -15,6 +15,8 @@ interface HomeClientProps {
   productIds: MembershipProductIds;
   seats: SeatAvailability | null;
   activity: MembershipActivity[];
+  /** VietQR bank-transfer checkout (SePay) is offered next to Polar. */
+  bankTransfer: boolean;
   /** Server-rendered chapters (the <main> element). */
   children: ReactNode;
 }
@@ -23,9 +25,9 @@ interface HomeClientProps {
  * Client shell for the homepage: shared checkout state, the sky + scroll engine (re-created per
  * locale), the sticky CTA, the activity toast and the orbit progress control.
  */
-export default function HomeClient({ locale, productIds, seats, activity, children }: HomeClientProps) {
+export default function HomeClient({ locale, productIds, seats, activity, bankTransfer, children }: HomeClientProps) {
   return (
-    <CheckoutProvider productIds={productIds} seats={seats}>
+    <CheckoutProvider productIds={productIds} seats={seats} bankTransfer={bankTransfer}>
       <HomeEngineClient key={locale} />
       {children}
       <StickyCta />

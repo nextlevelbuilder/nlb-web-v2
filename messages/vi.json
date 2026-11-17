@@ -917,6 +917,7 @@
       "dialogDescription": "Kiểm tra gói của bạn, đồng ý với Điều khoản, rồi thanh toán an toàn qua Polar.",
       "planLabel": "Gói của bạn",
       "continue": "Tiếp tục tới thanh toán Polar",
+      "bankTransfer": "Chuyển khoản ngân hàng bằng VND (VietQR)",
       "close": "Đóng"
     },
     "toolkits": {

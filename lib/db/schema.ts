@@ -859,3 +859,4 @@ export * from "./builder-league-schema";
 export * from "./live-access-schema";
 export * from "./affiliate-schema";
 export * from "./chat-leads-schema";
+export * from "./sepay-schema";

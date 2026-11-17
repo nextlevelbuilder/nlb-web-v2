@@ -16,6 +16,7 @@ Docs own the **why** and the **where**. Behaviour lives in code: each page links
 | [live-runbook.md](./live-runbook.md) | Launch and operate NLB Live: Zoom secrets, first operators, rounds and events, OpenAPI publishing, retiring the old MCP Worker |
 | [affiliate-program-adr.md](./affiliate-program-adr.md) | Understand the affiliate program: levels and incentive budget, attribution, the commission ledger, payouts, flags and launch gates |
 | [courses.md](./courses.md) | Set up or operate paid course videos (Polar + Cloudflare Stream) |
+| [sepay-payments.md](./sepay-payments.md) | Operate VietQR bank-transfer checkout through SePay: flow, prepaid memberships, prices, secrets, rollout |
 | [membership-onboarding.md](./membership-onboarding.md) | Operate post-checkout onboarding: tier rules, Discord/Telegram access, jobs and cron, secrets, backfill, rollback |
 | [website-chat.md](./website-chat.md) | Operate the Dewee website chat: agent setup, page actions, leads, identity, secrets |
 | [deployment-guide.md](./deployment-guide.md) | Deploy, provision Cloudflare resources and secrets, apply D1 migrations |

@@ -56,12 +56,25 @@ export function maskEmail(email: string): string {
 
 export interface SalesNotification {
   productName: string;
-  /** Minor units (cents), as Polar sends it. */
+  /** Minor units of the currency (cents for USD, whole dong for VND). */
   amount: number;
   currency: string;
   customerEmail: string;
   source: "Polar" | "SePay";
   paidAt?: Date;
+  /** Order reference shown in the embed (SePay order code). */
+  reference?: string;
+  /** Post to this webhook instead of `DISCORD_SALES_WEBHOOK_URL`. */
+  webhookUrl?: string;
+}
+
+/** Minor-unit exponent of a currency (2 for USD, 0 for VND). */
+function currencyExponent(currency: string): number {
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+  } catch {
+    return 2;
+  }
 }
 
 /**
@@ -70,20 +83,20 @@ export interface SalesNotification {
  * is unset, Discord refuses, or the call times out.
  */
 export async function sendDiscordSalesNotification(params: SalesNotification): Promise<boolean> {
-  const webhookUrl = env.DISCORD_SALES_WEBHOOK_URL;
+  const webhookUrl = params.webhookUrl ?? env.DISCORD_SALES_WEBHOOK_URL;
   if (!webhookUrl) {
-    console.warn("DISCORD_SALES_WEBHOOK_URL not configured. Skipping sales notification.");
+    console.warn("Sales webhook not configured. Skipping sales notification.");
     return false;
   }
 
-  const { productName, amount, currency, customerEmail, source, paidAt = new Date() } = params;
+  const { productName, amount, currency, customerEmail, source, reference, paidAt = new Date() } = params;
+  const exponent = currencyExponent(currency.toUpperCase());
+  const major = amount / 10 ** exponent;
   let formattedAmount: string;
   try {
-    formattedAmount = new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(
-      amount / 100
-    );
+    formattedAmount = new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(major);
   } catch {
-    formattedAmount = `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}`;
+    formattedAmount = `${major.toFixed(exponent)} ${currency.toUpperCase()}`;
   }
 
   const payload = {
@@ -96,6 +109,7 @@ export async function sendDiscordSalesNotification(params: SalesNotification): P
           { name: "Amount", value: formattedAmount, inline: true },
           { name: "Email", value: maskEmail(customerEmail), inline: true },
           { name: "Source", value: source, inline: true },
+          ...(reference ? [{ name: "Order", value: reference, inline: true }] : []),
         ],
         timestamp: paidAt.toISOString(),
       },

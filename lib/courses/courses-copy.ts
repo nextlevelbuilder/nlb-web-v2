@@ -20,6 +20,7 @@ export interface CoursesCopy {
   playerError: string;
   retry: string;
   checkoutError: string;
+  bankTransferButton: string;
   paymentPending: string;
   unavailable: string;
   /** Masthead: chapter plate name and the h1 split around its italic accent phrase. */
@@ -103,6 +104,7 @@ const en: CoursesCopy = {
   playerError: "We could not load the player.",
   retry: "Try again",
   checkoutError: "We could not start checkout. Please try again.",
+  bankTransferButton: "Pay by bank transfer (VND)",
   paymentPending: "Payment received. Access unlocks as soon as Polar confirms the order, usually within a minute.",
   unavailable: "Playback is temporarily unavailable. Please try again later.",
   plateName: "Observatory",
@@ -186,6 +188,7 @@ const vi: CoursesCopy = {
   playerError: "Không thể tải trình phát.",
   retry: "Thử lại",
   checkoutError: "Không thể bắt đầu thanh toán. Vui lòng thử lại.",
+  bankTransferButton: "Chuyển khoản ngân hàng (VND)",
   paymentPending: "Đã nhận thanh toán. Quyền xem sẽ mở ngay khi Polar xác nhận đơn hàng, thường trong vòng một phút.",
   unavailable: "Tạm thời không thể phát video. Vui lòng thử lại sau.",
   plateName: "Đài quan sát",

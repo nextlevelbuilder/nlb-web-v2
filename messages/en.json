@@ -917,6 +917,7 @@
       "dialogDescription": "Check your plan, accept the Terms, then pay on Polar's secure checkout.",
       "planLabel": "Your plan",
       "continue": "Continue to Polar checkout",
+      "bankTransfer": "Pay by bank transfer in VND (VietQR)",
       "close": "Close"
     },
     "toolkits": {

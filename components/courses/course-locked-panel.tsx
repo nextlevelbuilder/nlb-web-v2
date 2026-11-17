@@ -13,10 +13,12 @@ interface CourseLockedPanelProps {
   locale: string;
   signedIn: boolean;
   paymentReturned: boolean;
+  /** VietQR bank-transfer checkout (SePay) is available. */
+  bankTransfer?: boolean;
 }
 
 /** Locked state: explains the two ways in (buy this video, or VIP) and starts a Polar checkout. */
-export function CourseLockedPanel({ slug, priceCents, currency, locale, signedIn, paymentReturned }: CourseLockedPanelProps) {
+export function CourseLockedPanel({ slug, priceCents, currency, locale, signedIn, paymentReturned, bankTransfer = false }: CourseLockedPanelProps) {
   const copy = getCoursesCopy(locale);
   const price = formatCoursePrice(priceCents, currency, locale);
   const [pending, setPending] = useState(false);
@@ -64,9 +66,16 @@ export function CourseLockedPanel({ slug, priceCents, currency, locale, signedIn
           <ShoppingCart aria-hidden className="h-5 w-5 text-primary" />
           <p className="text-step-sm text-ink-2">{copy.buyOption(price)}</p>
           {signedIn ? (
-            <button type="button" className="btn btn-primary btn-sm mt-auto self-start" onClick={() => void startCheckout()} disabled={pending} aria-busy={pending}>
-              {copy.buyButton(price)}
-            </button>
+            <div className="mt-auto flex flex-wrap gap-2">
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void startCheckout()} disabled={pending} aria-busy={pending}>
+                {copy.buyButton(price)}
+              </button>
+              {bankTransfer && (
+                <Link className="btn btn-ghost btn-sm" href={`${localizedPath("/checkout/bank-transfer", locale)}?course=${encodeURIComponent(slug)}`}>
+                  {copy.bankTransferButton}
+                </Link>
+              )}
+            </div>
           ) : (
             <Link className="btn btn-primary btn-sm mt-auto self-start" href={signInHref}>{copy.signInToBuy}</Link>
           )}

@@ -84,6 +84,20 @@ const envSchema = z.object({
   DISCORD_GUILD_ID: z.string().optional(),
   DISCORD_PREMIUM_ROLE_ID: z.string().optional(),
   DISCORD_SALES_WEBHOOK_URL: z.string().url().optional(),
+
+  // SePay (Vietnamese bank transfer via VietQR). Off unless SEPAY_ENABLED is "true".
+  SEPAY_ENABLED: z.enum(["true", "false"]).optional(),
+  // API key SePay sends as `Authorization: Apikey <key>` on every webhook (secret).
+  SEPAY_WEBHOOK_API_KEY: z.string().optional(),
+  // Receiving bank account shown in the QR (SePay-linked account) and its VietQR bank code.
+  SEPAY_BANK_ACCOUNT: z.string().optional(),
+  SEPAY_BANK_CODE: z.string().optional(),
+  // VND per USD used to derive VND prices from the USD list prices.
+  SEPAY_USD_VND_RATE: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  // USD list price of the Publishing Studio Toolkit; unset means the toolkit is not sold via SePay.
+  SEPAY_PUBLISHING_TOOLKIT_USD: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  // Discord incoming webhook that gets one message per paid SePay order (secret).
+  SEPAY_ORDERS_DISCORD_WEBHOOK_URL: z.string().url().optional(),
   // Better Auth
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
